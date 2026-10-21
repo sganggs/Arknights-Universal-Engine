@@ -1,6 +1,6 @@
-// Enemy abilities (docs/spec/foes.md 敌能-1…敌能-4, 敌能-22, 敌能-30): the hooks through which the content's behaviours
+// Enemy abilities (docs/spec/foes.md 敌能-1…敌能-4, 敌能-22, 敌能-30, 敌能-39): the hooks through which the content's behaviours
 // act on an enemy's talents and skills, the skills' cooldowns, delayed explosions, 直击 bolts, the enemies an enemy
-// brings in and 吞噬.
+// brings in, 吞噬, and one draw from the match.
 import { secondsToFrames, FPS } from '@aue/math';
 import { KIND } from '@aue/schema';
 import { statsOf } from './attrs.js';
@@ -88,6 +88,7 @@ export const BOLT_RADIUS = 0.3;
  *   it stands there
  * @property {(key: string, o: import('./broods.js').BringIn) => Unit[]} summon brings in enemies of a key on its route
  *   (敌能-22): those that appeared now
+ * @property {() => number} draw one uniform draw in [0, 1) from the match (随机-1)
  * @property {(u: Unit) => void} remove an enemy's HP to 0 outright: it is knocked down at the frame's end (敌能-24)
  * @property {(t: Unit) => boolean} devour 吞噬 (敌能-30): whether the unit was devoured
  * @property {(t: Unit, key: string, init: { mods?: Record<string, number>, flags?: Record<string, boolean>, value?: number }) => void} lend
@@ -162,7 +163,6 @@ function contextOf(w, c, e, of) {
     state: { get: (k) => ab[`${name}.${k}`] ?? 0, set: (k, v) => { ab[`${name}.${k}`] = v; } },
     blocked: e.blockedBy >= 0,
     hurt: (ab['@hurt'] ?? 0) === 1,
-    // Reading it starts the count (敌能-38): only an enemy whose ability asks carries a tally.
     get taken() { if (!Object.hasOwn(ab, '@taken')) ab['@taken'] = 0; return ab['@taken']; },
     unblocked: (ab['@unblocked'] ?? 0) === 1,
     fell: (ab['@fell'] ?? 0) === 1,
@@ -175,11 +175,7 @@ function contextOf(w, c, e, of) {
     allies: (radius) => w.units.filter((u) => u.kind === KIND.ENEMY && u.base.neutral !== true && u.hp > 0 && !u.hidden && dist2(u, e) <= radius * radius),
     talentOf: (u, t) => (u.kind === KIND.ENEMY ? defOf(c, u).talents?.[t] ?? null : null),
     buffValue: (u, key) => u.buffs.find((b) => b.key === key)?.value ?? null,
-    setBuff: (u, key, value, mods) => {
-      const b = u.buffs.find((x) => x.key === key);
-      if (b) retune(u, b, value, mods);
-      else addBuff(u, makeBuff({ key, src: e.id, value, mods }));
-    },
+    setBuff: (u, key, value, mods) => { setBuffOf(e, u, key, value, mods); },
     blocker: () => (e.blockedBy >= 0 ? w.units.find((u) => u.id === e.blockedBy) ?? null : null),
     tagsOf: (u) => (u.kind === KIND.ENEMY ? defOf(c, u).tags ?? [] : []),
     tileKey: () => { const [r, col] = tileOf(e); return tileAt(c.level, r, col)?.key ?? ''; },
@@ -200,6 +196,7 @@ function contextOf(w, c, e, of) {
     release: () => { release(e); },
     placeDevice: (key) => { const [r, col] = tileOf(e); return spawnDevice(w, c, key, r, col); },
     summon: (key, o) => bringIn(w, c, e, key, o),
+    draw: () => draw(w),
     remove: (u) => { if (u.kind === KIND.ENEMY) knockDown(u); },
     devour: (t) => devour(e, t),
     lend: (t, key, init) => { lend(e, t, key, init); },
@@ -207,6 +204,16 @@ function contextOf(w, c, e, of) {
     enemies: () => w.units.filter((u) => u.kind === KIND.ENEMY && u.base.neutral !== true && u.hp > 0),
     fly: () => { becomeFlyer(e); },
   };
+}
+
+/**
+ * The context's `setBuff` (敌能-2): retunes the buff of this key the unit holds, or gives it one from the enemy.
+ * @param {Unit} e @param {Unit} u @param {string} key @param {number} value @param {Record<string, number>} mods
+ */
+function setBuffOf(e, u, key, value, mods) {
+  const b = u.buffs.find((x) => x.key === key);
+  if (b) retune(u, b, value, mods);
+  else addBuff(u, makeBuff({ key, src: e.id, value, mods }));
 }
 
 /** Frames a lent buff lasts without being given again (敌能-25): it outlasts the next frame's buff tick. */

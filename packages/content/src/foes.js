@@ -1,4 +1,4 @@
-// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-38): behaviours by talent and skill name. The
+// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-39): behaviours by talent and skill name. The
 // game data holds only the multipliers; FOE_EXTRAS adds, per enemy, the parameters PRTS gives (radii, delays, bolts …)
 // to the blackboards the behaviours read, or a talent the data does not have. They act only through the context (ADR 0055).
 
@@ -16,6 +16,7 @@ import { statueBehaviors } from './statue.js';
 import { auraBehaviors } from './auras.js';
 import { chargedBehaviors } from './charged.js';
 import { staticBehaviors } from './static.js';
+import { timeBehaviors } from './times.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').EnemyDef} EnemyDef */
 
@@ -127,6 +128,18 @@ export const FOE_EXTRAS = Object.freeze({
   enemy_1229_darmy_2: { talents: { epdamage: { el: 4 } }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E7%8E%8B%E5%BA%AD%E5%86%9B%E6%88%98%E5%A3%AB&oldid=436441` },
   enemy_1275_dwlock: { talents: { empty: { el: 4 } }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E7%8E%8B%E5%BA%AD%E5%86%9B%E6%9C%AF%E5%B8%88&oldid=436440` },
   enemy_1275_dwlock_2: { talents: { empty: { el: 4 } }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E7%8E%8B%E5%BA%AD%E5%86%9B%E6%9C%AF%E5%B8%88&oldid=436440` },
+  // 岁兽残响 bodies: 无法被阻挡，不进行普通攻击，具有特殊生命值机制 (the data has no talent for it)
+  enemy_1196_msfyin: { talents: { hitCount: {} }, source: `${PRTS}%E6%9C%A8%E5%88%B6%E7%91%9E%E5%8D%B0&oldid=365791` },
+  enemy_1196_msfyin_2: { talents: { hitCount: {} }, source: `${PRTS}%E7%BA%A2%E6%9C%A8%E7%91%9E%E5%8D%B0&oldid=365790` },
+  enemy_1198_msfshu: { talents: { hitCount: {} }, source: `${PRTS}%E5%B0%8F%E8%AF%B4%E5%8D%B7%E8%BD%B4&oldid=353547` },
+  enemy_1198_msfshu_2: { talents: { hitCount: {} }, source: `${PRTS}%E8%AF%97%E7%94%BB%E5%8D%B7%E8%BD%B4&oldid=365788` },
+  enemy_1200_msfjin: { talents: { hitCount: {} }, source: `${PRTS}%E9%9D%92%E9%93%9C%E9%95%9C&oldid=365787` },
+  enemy_1200_msfjin_2: { talents: { hitCount: {} }, source: `${PRTS}%E9%BB%84%E9%93%9C%E9%95%9C&oldid=365786` },
+  enemy_1202_msfzhi: { talents: { hitCount: {} }, source: `${PRTS}%E6%9C%A8%E5%88%B6%E9%95%87%E7%BA%B8&oldid=365785` },
+  enemy_1202_msfzhi_2: { talents: { hitCount: {} }, source: `${PRTS}%E7%BA%A2%E6%9C%A8%E9%95%87%E7%BA%B8&oldid=353556` },
+  // 磨砻 / 雅气: 因坠落以外的原因死亡后才召唤 (the data's DeadSpawn has no fall)
+  enemy_1195_sfyin: { talents: { DeadSpawn: { fall: 0 } }, source: `${PRTS}%E7%A3%A8%E7%A0%BB&oldid=381889` },
+  enemy_1197_sfshu_2: { talents: { DeadSpawn: { fall: 0 } }, source: `${PRTS}%E9%9B%85%E6%B0%94&oldid=381892` },
 });
 
 /**
@@ -293,7 +306,7 @@ const PowerHit = Object.freeze({
 /** Behaviours by talent or skill name. @type {Readonly<Record<string, FoeBehavior>>} */
 export const foeBehaviors = Object.freeze({
   boom, Boom, FirstAttack, atkup, ranged, CrossAttack, Bomb, PowerHit, ...moreFoeBehaviors, ...prisonerBehaviors, ...avengerBehaviors, ...hoverBehaviors,
-  ...summonerBehaviors, ...partisanBehaviors, ...sarkazBehaviors, ...elementHitBehaviors, ...devourerBehaviors, ...refractBehaviors, ...statueBehaviors, ...auraBehaviors, ...chargedBehaviors, ...staticBehaviors,
+  ...summonerBehaviors, ...partisanBehaviors, ...sarkazBehaviors, ...elementHitBehaviors, ...devourerBehaviors, ...refractBehaviors, ...statueBehaviors, ...auraBehaviors, ...chargedBehaviors, ...staticBehaviors, ...timeBehaviors,
 });
 
 /**

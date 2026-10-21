@@ -303,15 +303,18 @@ const seenOf = (src, dmg) => (dmg.sourceless ? null : src);
 /**
  * Takes HP (伤害-9): never below 1 for an undying unit (不死; its maximum when below 1); at 0 or below the unit is at 0
  * and leaves the field at the end of the frame (帧-1) — unless a `fatal` handler prevents it (钩子-3): then it keeps 1 HP
- * (its maximum when below 1). Then the `damaged` event. The
+ * (its maximum when below 1). A 特殊生命值 unit (敌能-39) loses 1 instead of `amount`, except for 生命流失; the event and
+ * the return stay `amount`. Then the `damaged` event. The
  * hit counts as its source's (the kill's), also when the events see none.
  * @param {World} w @param {Unit | null} src @param {Unit} t @param {number} amount @param {Damage} dmg
  */
 function loseHp(w, src, t, amount, dmg) {
-  const seen = seenOf(src, dmg), hurt = !dmg.hpLoss && amount > 0 ? tracker(t, 'lastHurt') : undefined;
+  const seen = seenOf(src, dmg), s = statsOf(t);
+  const hurt = !dmg.hpLoss && amount > 0 ? tracker(t, 'lastHurt') : undefined;
   if (hurt) stamp(hurt, w.frame);
-  t.hp -= amount;
-  if (t.hp <= 0 && statsOf(t).flags.undying) t.hp = Math.min(1, statsOf(t).maxHp);
+  // 特殊生命值 (敌能-39): the calculated damage stays the event and the return; only the HP change is 1. 生命流失 is not a successful hit.
+  t.hp -= !dmg.hpLoss && s.flags.hitCount ? 1 : amount;
+  if (t.hp <= 0 && s.flags.undying) t.hp = Math.min(1, s.maxHp);
   if (t.hp <= 0) {
     t.hp = 0;
     const saved = hasHook(w, 'fatal') && emit(w, 'fatal', { unit: t, source: seen, credit: src, dmg, amount, prevented: false }).prevented;
@@ -430,7 +433,8 @@ function tallyTaken(target) {
  * its source's rune SP (符文-4; given the content), then the target's defences, `mul`, an attack's floor by its source's
  * talents (职业-31; given the content), the source's multiplier, the 工事 multiplier (地图-3; given the content), the target's 伤判
  * effects, the `hpDamage` event, then the HP. A `sourceless` hit takes neither its source's penetration nor its
- * multipliers, and its events see no source (`credit` names it). Returns the HP taken.
+ * multipliers, and its events see no source (`credit` names it). Returns the damage that reached the HP (伤害-9): for
+ * 特殊生命值 (敌能-39) that is still the calculated damage, while the HP itself falls by 1.
  * @param {World} w @param {Unit | null} src @param {Unit} target @param {Damage} dmg @param {import('./types.js').Content} [c]
  */
 export function dealDamage(w, src, target, dmg, c) {
