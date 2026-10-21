@@ -18,7 +18,7 @@ import { traitWhiles } from './whiles.js';
 import { afterOwnHit, attacked, hitSp, caughtSp } from './riders.js';
 import { reachKeys } from './reach.js';
 import { ALLY_COLLIDER_RADIUS } from './constants.js';
-import { foeTargets, foeAttack, foeHit, foeLanded, isFoeOf } from './foes.js';
+import { foeTargets, foeAttack, foeHit, foeLanded, foeCancelHit, isFoeOf } from './foes.js';
 import { makeBuff, addBuff, removeBuff } from './buffs.js';
 import { tileOf } from './body.js';
 import { tickSkill, beforeAttack, attackMods, afterAttack } from './skills.js';
@@ -137,6 +137,7 @@ function damageOf(load, t) {
  * @param {World} w @param {Content} c @param {Unit | null} src @param {Unit} t @param {Load} load
  */
 function hitTarget(w, c, src, t, load) {
+  if (src && src.kind === KIND.ENEMY && !load.hit && foeCancelHit(w, c, src, t)) return;
   let total = 0;
   for (let k = 0; k < load.times; k++) total += oneHit(w, c, src, t, load);
   if (src && load.displace && t.hp > 0) displaceOnHit(w, c, src, t, load.displace);

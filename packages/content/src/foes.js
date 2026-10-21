@@ -1,4 +1,4 @@
-// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-48): behaviours by talent and skill name. The
+// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-49): behaviours by talent and skill name. The
 // game data holds only the multipliers; FOE_EXTRAS adds, per enemy, the parameters PRTS gives (radii, delays, bolts …)
 // to the blackboards the behaviours read, or a talent the data does not have. They act only through the context (ADR 0055).
 
@@ -24,6 +24,7 @@ import { runnerBehaviors } from './runners.js';
 import { takeDmg } from './chalice.js';
 import { unbalanceBehaviors } from './unbalance.js';
 import { floatBehaviors, takeOffOwns } from './float.js';
+import { sanktaBehaviors } from './sankta.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').EnemyDef} EnemyDef */
 
@@ -112,9 +113,12 @@ export const FOE_EXTRAS = Object.freeze({
   enemy_10118_ymgprc: { skills: { PowerAttack: { times: 2 } }, source: `${PRTS}%E6%BE%AA&oldid=358826` },
   // 静态刚体, as each page's ability cell says (the data has no talent for it; 敌能-37). Not their other talents — those are other behaviours.
   enemy_1017_defdrn: { talents: { Static: {} }, source: `${PRTS}%E5%BE%A14&oldid=380622` },
-  enemy_10083_hlbird: { talents: { Static: {} }, source: `${PRTS}%E2%80%9C%E8%90%A8%E7%A7%91%E5%A1%94%E4%B9%8B%E7%BF%BC%E2%80%9D&oldid=375648` },
-  enemy_10084_hlegle: { talents: { Static: {} }, source: `${PRTS}%E2%80%9C%E8%90%A8%E7%A7%91%E5%A1%94%E4%B9%8B%E7%9C%BC%E2%80%9D&oldid=388054` },
-  enemy_10085_hllevi_2: { talents: { Static: {} }, source: `${PRTS}%E2%80%9C%E8%90%A8%E7%A7%91%E5%A1%94%E6%98%82%E9%A6%96%E2%80%9D&oldid=376212` },
+  // 自惧's half and 「最终」 are not in the data (敌能-49). Static stays the 敌能-37 row.
+  enemy_10083_hlbird: { talents: { Static: {}, SelfFear: { hp_ratio: 0.5, speed_final: 1 } }, source: `${PRTS}%E2%80%9C%E8%90%A8%E7%A7%91%E5%A1%94%E4%B9%8B%E7%BF%BC%E2%80%9D&oldid=375648` },
+  // 夺弹's page mark is `steal` (the hit hook is `cancelHit`; the data's own key is `attack@minus_bullet`).
+  enemy_10084_hlegle: { talents: { Static: {}, SelfFear: { hp_ratio: 0.5, speed_final: 1 }, DamageOrBullet: { steal: 1 } }, source: `${PRTS}%E2%80%9C%E8%90%A8%E7%A7%91%E5%A1%94%E4%B9%8B%E7%9C%BC%E2%80%9D&oldid=388054` },
+  // 昂首's 自惧 has no 「最终」 (`speed_final` 0). 祈祷邀约's 不可对空 / 无视迷彩 are `air` 0 and `camou` 1.
+  enemy_10085_hllevi_2: { talents: { Static: {}, SelfFear: { hp_ratio: 0.5, speed_final: 0 } }, skills: { Roar: { air: 0, camou: 1 } }, source: `${PRTS}%E2%80%9C%E8%90%A8%E7%A7%91%E5%A1%94%E6%98%82%E9%A6%96%E2%80%9D&oldid=376212` },
   enemy_1430_lrrook: { talents: { Static: {} }, source: `${PRTS}%E6%84%A7%E6%82%94%E9%AD%82%E7%81%B5%E5%9C%A3%E6%9D%AF&oldid=386513` },
   // 元素损伤 on the normal attack (敌能-38). `el` is the 元素-1 id (1 神经, 2 侵蚀, 3 灼燃, 4 凋亡); the data has only the ratio.
   // 底海滑动者/富营养的滑动者: 普通攻击额外造成攻击力15%的神经损伤
@@ -343,6 +347,7 @@ export const foeBehaviors = Object.freeze({
   boom, Boom, FirstAttack, atkup, ranged, CrossAttack, Bomb, PowerHit, ...moreFoeBehaviors, ...prisonerBehaviors, ...avengerBehaviors, ...hoverBehaviors,
   ...summonerBehaviors, ...partisanBehaviors, ...sarkazBehaviors, ...elementHitBehaviors, ...nestBehaviors, ...devourerBehaviors, ...blightBehaviors, ...refractBehaviors, ...statueBehaviors, ...auraBehaviors, ...chargedBehaviors, ...staticBehaviors, ...timeBehaviors, ...emberBehaviors, ...runnerBehaviors, takeDmg, ...unbalanceBehaviors,
   ...floatBehaviors,
+  ...sanktaBehaviors,
 });
 
 /**
@@ -373,6 +378,7 @@ export const FOE_NEEDS = Object.freeze({
   Bleeding: Object.freeze(['attack@bleeding_damage', 'attack@duration']),
   // 喷气人's 升空 (敌能-48). Another TakeOff blackboard stays incomplete (takeOffOwns).
   TakeOff: Object.freeze(['duration', 'balloon_s[fly].move_speed']),
+  SelfFear: Object.freeze(['hp_ratio', 'speed_final']), DamageOrBullet: Object.freeze(['steal']), Roar: Object.freeze(['air', 'camou']),
 });
 
 /**
