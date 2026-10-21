@@ -234,3 +234,25 @@ test('[敌能-52] silence does not stop a new layer, and layers do not expire', 
   assert.equal(cut(e)?.left, -1);
   assert.equal(attrs.statsOf(e).def, 3200);
 });
+
+test('[敌能-2] hpDamage gets the hit: its source, credit, amount after 伤判, and dmg; a sourceless hit has no source', () => {
+  /** @type {any[]} */
+  const seen = [];
+  const c = /** @type {any} */ (tinyContent());
+  c.enemies = { probe: { ...record(0, {}), talents: { probe: {} } } };
+  c.behaviors = { foes: { probe: { hpDamage: (/** @type {any} */ _ctx, /** @type {any} */ hit) => { seen.push(hit); } } } };
+  c.level.waves = [oneWave([spawnAt(0, 'probe')])];
+  const w = createWorld(c, { seed: 1, players: 1 });
+  step(w, c);
+  const e = /** @type {Unit} */ (w.units.find((u) => u.key === 'probe'));
+  damage.dealDamage(w, e, e, { type: 'true', amount: 30 }, c);
+  damage.dealDamage(w, e, e, { type: 'arts', amount: 20, sourceless: true }, c);
+  damage.dealDamage(w, null, e, { type: 'true', amount: 0 }, c);
+  assert.equal(seen.length, 2);
+  assert.equal(seen[0].source, e);
+  assert.equal(seen[0].credit, e);
+  assert.equal(seen[0].amount, 30);
+  assert.equal(seen[0].dmg.type, 'true');
+  assert.equal(seen[1].source, null);
+  assert.equal(seen[1].credit, e);
+});
