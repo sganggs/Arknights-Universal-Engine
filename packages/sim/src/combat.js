@@ -661,7 +661,8 @@ export function enemyTargets(w, e) {
  */
 export function enemyAttack(w, c, e) {
   const s = statsOf(e);
-  if (s.disabled || s.atk <= 0 || e.hidden || s.flags.noAttack) { e.swing = null; return false; }
+  // 恐惧 cancels a swing already under way, unlike 战栗 (状态-10, INF-0293). It is not one of the eight 阻止攻击 flags.
+  if (s.disabled || s.atk <= 0 || e.hidden || s.flags.noAttack || s.flags.fear) { e.swing = null; return false; }
   const swinging = e.swing !== null;
   if (e.swing) advanceSwing(w, c, e);
   if (e.atkCd > 0) { e.atkCd--; return swinging; }

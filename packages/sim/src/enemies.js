@@ -7,6 +7,8 @@ import { tryBlock, keepOrRelease } from './blocking.js';
 import { enemyAttack } from './combat.js';
 import { foeTick, carried } from './foes.js';
 import { slideStep } from './displacement.js';
+import { induceStep } from './induce.js';
+import { statsOf } from './attrs.js';
 
 /** @typedef {import('./types.js').World} World @typedef {import('./types.js').Unit} Unit @typedef {import('./types.js').Content} Content */
 
@@ -45,6 +47,13 @@ function enemyTurn(w, c, e) {
   const speed = speedOf(c, e);
   if (speed === 0) { e.anim = ANIM.IDLE; return; }
   const x = e.x, y = e.y;
+  const flags = statsOf(e).flags;
+  if (flags.fear || flags.attract) {
+    induceStep(w, c, e, speed);
+    e.anim = e.x !== x || e.y !== y ? ANIM.MOVE : ANIM.IDLE;
+    tryBlock(w, c, e);
+    return;
+  }
   if (followRoute(w, c, e, speed)) { reachGoal(w, c, e); return; }
   e.anim = e.x !== x || e.y !== y ? ANIM.MOVE : ANIM.IDLE;
   tryBlock(w, c, e);

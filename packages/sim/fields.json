@@ -21,11 +21,13 @@
   ],
   "x": [
     "packages/sim/src/routes.js",
-    "packages/sim/src/blocking.js"
+    "packages/sim/src/blocking.js",
+    "packages/sim/src/induce.js"
   ],
   "y": [
     "packages/sim/src/routes.js",
-    "packages/sim/src/blocking.js"
+    "packages/sim/src/blocking.js",
+    "packages/sim/src/induce.js"
   ],
   "leg": [
     "packages/sim/src/routes.js"
@@ -153,5 +155,8 @@
   ],
   "reachExtra": [
     "packages/sim/src/reach.js"
+  ],
+  "drift": [
+    "packages/sim/src/induce.js"
   ]
 }

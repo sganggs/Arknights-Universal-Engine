@@ -7,6 +7,7 @@ import { statsOf } from './attrs.js';
 import { liftoffRefused } from './targeting.js';
 import { makeBuff, addBuff, removeBuff, consumeStack, count, decayRate } from './buffs.js';
 import { emit, hasHook } from './bus.js';
+import { noteFear, noteAttract } from './induce.js';
 
 /** @typedef {import('./types.js').Unit} Unit @typedef {import('./types.js').Buff} Buff */
 /** @typedef {import('./attrs.js').Stats} Stats */
@@ -52,6 +53,8 @@ export const STATUS = Object.freeze({
   levitate: status({ flags: { levitate: true }, heavy: true, refuse: (s) => s.flying }),
   groundbind: status({ flags: { groundbind: true }, heavy: true, refuse: (s) => !s.flying }),
   fear: status({ flags: { fear: true }, resist: true, refuse: (_s, u) => u.kind !== KIND.ENEMY }),
+  // 1000000: the page keeps every attract until it ends and states no cap (状态-11, INF-0296). Independent needs a cap.
+  attract: status({ rule: 'independent', maxStacks: 1_000_000, flags: { attract: true }, resist: true }),
   disarmedCombat: status({ flags: { disarmedCombat: true } }),
   palsy: status({ rule: 'stack', maxStacks: 3, resist: true, flags: { palsy: true }, every: 1 }),
   palsyShake: status({ flags: { palsyShake: true } }),
@@ -75,6 +78,7 @@ export const STATUS = Object.freeze({
  * @property {number} [value] its strength, for statuses that have one
  * @property {number} [stacks] layers, for statuses that stack
  * @property {string} [tag] a mark for the behaviour that applies it, to find the buff again
+ * @property {{ x: number, y: number }} [point] where 诱导 walks; without one it uses the source's tile (状态-11)
  */
 
 /** Frames from the options: given frames, or seconds converted (时间-2), or −1 for no end. @param {StatusOptions} o */
@@ -86,7 +90,7 @@ const immuneTo = (u, flag) => (u.base.immune ?? []).includes(flag);
 /**
  * The buff a status gives (状态-5): a heavy unit (重量 > 3) halves 浮空 and 缚地 by decaying them twice as fast, its
  * weight taken when the status is applied.
- * @param {StatusKey} key @param {Unit} target @param {StatusOptions} o @returns {Buff}
+ * @param {StatusKey} key @param {Unit} target @param {StatusOptions & { n?: number }} o @returns {Buff}
  */
 export function statusBuff(key, target, o = {}) {
   const t = STATUS[key], value = o.value ?? t.value;
@@ -94,7 +98,7 @@ export function statusBuff(key, target, o = {}) {
   const heavy = t.heavy && statsOf(target).massLevel > 3;
   return makeBuff({
     key, src: o.src?.id ?? -1, rule: t.rule, value, mods: t.mods(value), flags: t.flags, stacks: o.stacks ?? 1,
-    maxStacks: t.maxStacks, left: framesOf(o), resist: t.resist, decay: heavy ? 2 : 1, every: t.every, fixed: t.every > 0, tag: o.tag,
+    maxStacks: t.maxStacks, left: framesOf(o), resist: t.resist, decay: heavy ? 2 : 1, every: t.every, fixed: t.every > 0, tag: o.tag, n: o.n,
   });
 }
 
@@ -114,6 +118,16 @@ function applyCold(target, cold) {
 }
 
 /**
+ * Fear and attract record where they were applied before the buff exists (状态-10, 状态-11). Attract's mark id is the
+ * buff's counter. Anything else is unchanged.
+ * @param {Unit} target @param {StatusKey} k @param {StatusOptions} o @returns {StatusOptions & { n?: number }}
+ */
+function noted(target, k, o) {
+  if (k === 'fear') noteFear(target, o.src ?? null);
+  return k === 'attract' ? { ...o, n: noteAttract(target, o.src ?? null, o.point) } : o;
+}
+
+/**
  * Puts a status on a unit (状态-5…状态-7). Cold and freeze from an enemy are the enemy kinds. Returns the buff now in
  * the list, or null when it does not take hold (浮空 on a flying unit, 缚地 on a ground unit, 恐惧 on a character).
  * Does not look at 起飞: the caller already decided that (阻挡-2), so a handler that lifts the target does not cancel it.
@@ -122,8 +136,8 @@ function applyCold(target, cold) {
 function giveStatus(target, key, o) {
   const fromEnemy = o.src?.kind === KIND.ENEMY;
   const k = fromEnemy && key === 'cold' ? 'enemyCold' : fromEnemy && key === 'freeze' ? 'enemyFreeze' : key;
-  if (STATUS[k].refuse(statsOf(target), target)) return null;
-  const b = statusBuff(k, target, o);
+  if (STATUS[k].refuse(statsOf(target), target) || framesOf(o) === 0) return null;
+  const b = statusBuff(k, target, noted(target, k, o));
   if (b.left === 0) return null;
   return k === 'cold' || k === 'enemyCold' ? applyCold(target, b) : addBuff(target, b);
 }

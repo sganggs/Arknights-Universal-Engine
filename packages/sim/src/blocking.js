@@ -17,7 +17,7 @@ import { makeBuff, addBuff, setLeft, removeBuff } from './buffs.js';
 export const canBlock = (s) => !(s.flags.stun || s.flags.sleep || s.flags.sidelined);
 
 /** Whether an enemy can be blocked now (阻挡-1): not 无法被阻挡, 恐惧, 浮空 or 沉睡. @param {Stats} s */
-export const blockable = (s) => !(s.flags.unblockable || s.flags.fear || s.flags.levitate || s.flags.sleep);
+export const blockable = (s) => !(s.flags.unblockable || s.flags.fear || s.flags.attract || s.flags.levitate || s.flags.sleep);
 
 /** The enemies a unit blocks, in the order they were blocked (阻挡-3). @param {World} w @param {Unit} op @returns {Unit[]} */
 export function heldBy(w, op) {
