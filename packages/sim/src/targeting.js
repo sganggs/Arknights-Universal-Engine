@@ -2,7 +2,8 @@
 // 阻挡, then 仇恨值 compared at a precision of 0.1, then the order they appeared in — by a stable insertion sort.
 import { KIND } from '@aue/schema';
 import { offsetTile } from './dir.js';
-import { bodyKeys } from './body.js';
+import { bodyKeys, cornerIn, crossing } from './body.js';
+import { ENEMY_COLLIDER_RADIUS } from './constants.js';
 import { roundHalfEven } from '@aue/math';
 import { statsOf } from './attrs.js';
 
@@ -26,11 +27,25 @@ export function rangeKeys(grid, at, offsets, extend = 0) {
   return keys;
 }
 
-/** Whether any tile of a unit is among the keys (体积-1, 体积-2). @param {Unit} u @param {Set<number>} keys @param {Grid} grid */
-export function inKeys(u, keys, grid) {
+/** Whether tile (r, c) is on the grid and among the keys. @param {Set<number>} keys @param {Grid} grid @param {number} r @param {number} c */
+const keyed = (keys, grid, r, c) => r >= 0 && r < grid.rows && c >= 0 && c < grid.cols && keys.has(r * grid.cols + c);
+
+/**
+ * Whether a unit is in a range of tiles (索敌-1, 体积-5): a huge unit when a tile of its rectangle is (体积-2); a regular
+ * enemy when its collider overlaps one of them — its own tile, or the next row, column or diagonal tile its circle
+ * reaches (`byTile`: by its own tile alone, as 谬因 searches); any other unit by its tile (体积-1). No allocation: the
+ * targeting of every frame asks it for every unit.
+ * @param {Unit} u @param {Set<number>} keys @param {Grid} grid @param {boolean} [byTile]
+ */
+export function inKeys(u, keys, grid, byTile = false) {
   if (/** @type {any} */ (u).hitArea) return bodyKeys(u, grid).some((k) => keys.has(k));
   const r = roundHalfEven(u.y), col = roundHalfEven(u.x);
-  return r >= 0 && r < grid.rows && col >= 0 && col < grid.cols && keys.has(r * grid.cols + col);
+  if (keyed(keys, grid, r, col)) return true;
+  if (byTile || u.kind !== KIND.ENEMY) return false;
+  const dy = u.y - r, dx = u.x - col, sr = crossing(dy, ENEMY_COLLIDER_RADIUS), sc = crossing(dx, ENEMY_COLLIDER_RADIUS);
+  if (sr !== 0 && keyed(keys, grid, r + sr, col)) return true;
+  if (sc !== 0 && keyed(keys, grid, r, col + sc)) return true;
+  return sr !== 0 && sc !== 0 && cornerIn(dx, dy, ENEMY_COLLIDER_RADIUS) && keyed(keys, grid, r + sr, col + sc);
 }
 
 /**

@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 import { createWorld, step, traits, attrs } from '@aue/sim';
 import { tinyContent } from '@aue/testkit';
 import rangeTable from '../data/ranges.json' with { type: 'json' };
-import { BRANCHES, coveredBranch, withTrait, skeletonContent, loadTraining, operatorAt, ROSTER } from '../src/index.js';
+import { BRANCHES, coveredBranch, withTrait, withOwnTrait, OPERATOR_TRAITS, skeletonContent, loadTraining, operatorAt, matchContent, ROSTER } from '../src/index.js';
 
 /** @type {Record<string, { name: string, profession: string, position: string[] }>} */
 const ALL = JSON.parse(readFileSync(new URL('fixtures/branches.json', import.meta.url), 'utf8')).branches;
@@ -319,4 +319,16 @@ test('[职业-23] [干员-7] the push and pull modules, XAH-X\'s jumps and 白�
   const id = /** @type {string} */ (Object.entries(ROSTER).find(([, r]) => r.name === '白面鸮')?.[0]), t = await loadTraining(id);
   const b = { elite: 2, level: t.phases[2].maxLevel, potential: 1, trust: 0, skill: -1, skillLevel: 1 }, module = t.modules.findIndex((m) => m.type === 'RIN-X');
   assert.ok(operatorAt(t, { ...b, module, moduleLevel: 3 }).range.length > operatorAt(t, b).range.length, '攻击范围扩大 beside the module\'s SP aura numbers');
+});
+
+test('[职业-7] [体积-5] 谬因 searches by tile: her own trait data over her 轰击术师 trait, in a match\'s records too; others keep theirs', async () => {
+  assert.deepEqual(Object.keys(OPERATOR_TRAITS), ['char_4229_aphris']);
+  const aphris = await real('char_4229_aphris'), t = traits.traitOfDef(withOwnTrait('char_4229_aphris', aphris));
+  assert.deepEqual([t.rangeTiles, t.filter, t.targets, traits.traitOfDef(aphris).rangeTiles], [true, 'ALL', 'all', false]);
+  const sniper = await real('char_1021_kroos2');
+  assert.equal(withOwnTrait('char_1021_kroos2', sniper), sniper);
+  const build = { elite: 2, level: 1, potential: 1, trust: 0, skill: 0, skillLevel: 1 };
+  const ops = /** @type {Record<string, any>} */ ((await matchContent({ level: 'act1multi_01', difficulty: 'NORMAL', seed: 1,
+    decks: [[{ id: 'char_4229_aphris', build }, { id: 'char_1021_kroos2', build }]] })).operators);
+  assert.deepEqual([traits.traitOfDef(ops['char_4229_aphris#0']).rangeTiles, traits.traitOfDef(ops['char_1021_kroos2#0']).rangeTiles], [true, false]);
 });

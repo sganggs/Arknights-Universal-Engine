@@ -202,6 +202,19 @@ test('[兼容-4] damage as a kit sees it: hit may scale it, hpDamage lower it, f
   assert.deepEqual(b.errors, []);
 });
 
+test('[兼容-4] [体积-5] the enemies in range of tiles: by the tiles their colliders overlap; by their own for an operator that searches by tile (谬因)', () => {
+  const { c, w, b } = match({}, ['sniper']);
+  step(w, c, [DEPLOY.sniper]);
+  while (!unit(w, 'slime')) step(w, c);
+  const s = b.unitOf(unit(w, 'sniper')), e = unit(w, 'slime');
+  e.x = 3.5625; e.y = 1;
+  const at = (/** @type {number} */ col) => b.enemiesInKeys([1 * 6 + col], s).map((x) => x.defId);
+  assert.deepEqual([at(3), at(4)], [['slime'], ['slime']], 'on (1, 4), its collider over (1, 3)');
+  c.operators.sniper = { ...c.operators.sniper, trait: { ...c.operators.sniper.trait, rangeTiles: true } };
+  assert.deepEqual([at(3), at(4)], [[], ['slime']], 'by its tile');
+  assert.deepEqual(b.enemiesInKeys([1 * 6 + 3], null).map((x) => x.defId), ['slime'], 'no attacker: by its collider');
+});
+
 test('[兼容-4] attacks, skills and statuses as a kit sees them: targets it may change in place, why a skill starts, seconds', () => {
   const log = /** @type {string[]} */ ([]);
   const kit = () => ({ skills: {}, install(/** @type {ShBattle} */ b, /** @type {any} */ u) {

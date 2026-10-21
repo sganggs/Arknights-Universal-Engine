@@ -6,7 +6,7 @@ import { KIND } from '@aue/schema';
 import { statsOf, intervalFrames } from './attrs.js';
 import { makeBuff, addBuff, removeBuff, retune, count } from './buffs.js';
 import { ELEMENTS, epOf, currentElement } from './elements.js';
-import { precisionKey, insertionSort, selectable, hostile } from './targeting.js';
+import { precisionKey, insertionSort, selectable, hostile, inKeys } from './targeting.js';
 import { tileOf } from './body.js';
 import { traitOf, traitAsk } from './traits.js';
 import { launch } from './swing.js';
@@ -171,30 +171,41 @@ export function healOrder(c, op, cands) {
   return insertionSort(rows, (a, b) => a.k - b.k || a.e - b.e).map((r) => r.u);
 }
 
-/** Whether a 要塞's target is one for its melee attack (职业-12): it blocks it, or it stands on its tile. @param {Unit} op @param {Unit} t */
-const fortressMelee = (op, t) => t.blockedBy === op.id || (tileOf(t)[0] === tileOf(op)[0] && tileOf(t)[1] === tileOf(op)[1]);
+/** A 要塞's own tile as a range of one tile (职业-12), for inKeys. @param {Content} c @param {Unit} op */
+function ownTile(c, op) {
+  const [r, col] = tileOf(op), grid = { rows: c.level.height, cols: c.level.width };
+  return { keys: new Set([r * grid.cols + col]), grid };
+}
 
 /**
- * A 要塞's candidates (职业-12): the others, then the enemies on its own tile (its melee range, which its range need not
- * hold) — those it may select, in creation order.
+ * Whether a 要塞's target is one for its melee attack (职业-12): it blocks it, or it is in its own tile's range — an
+ * enemy whose collider overlaps that tile (体积-5).
+ * @param {Content} c @param {Unit} op @param {Unit} t
+ */
+const fortressMelee = (c, op, t) => {
+  const own = ownTile(c, op);
+  return t.blockedBy === op.id || inKeys(t, own.keys, own.grid);
+};
+
+/**
+ * A 要塞's candidates (职业-12): the others, then the enemies in its own tile's range (its melee range, which its range
+ * need not hold; by their colliders, 体积-5) — those it may select, in creation order.
  * @param {World} w @param {Content} c @param {Unit} op @param {Unit[]} found the others, in their order
  */
 export function fortressTargets(w, c, op, found) {
   if (!(traitOf(c, op).fortress > 0)) return found;
-  const [r, col] = tileOf(op);
-  const own = w.units.filter((u) => hostile(u) && !found.includes(u) && selectable(u)
-    && tileOf(u)[0] === r && tileOf(u)[1] === col);
+  const tile = ownTile(c, op), own = w.units.filter((u) => hostile(u) && !found.includes(u) && selectable(u) && inKeys(u, tile.keys, tile.grid));
   return [...found, ...own];
 }
 
 /**
  * The splash of a 要塞's ranged attack on a target (职业-12), or null: its melee attack's — on one it blocks or that
- * stands on its tile — and any other operator's have none of their own.
+ * overlaps its tile — and any other operator's have none of their own.
  * @param {Content} c @param {Unit} op @param {Unit} t @returns {import('./types.js').Splash | null}
  */
 export function fortressSplash(c, op, t) {
   const r = op.kind === KIND.OPERATOR ? traitOf(c, op).fortress : 0;
-  return r > 0 && !fortressMelee(op, t) ? { radius: r, scale: 1, ground: false } : null;
+  return r > 0 && !fortressMelee(c, op, t) ? { radius: r, scale: 1, ground: false } : null;
 }
 
 /**

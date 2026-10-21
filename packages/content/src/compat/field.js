@@ -2,7 +2,7 @@
 // the enemies on tiles or within a radius that an ability may select (索敌-2), the unit on a tile, the enemies a unit
 // blocks; damage (伤害-7, 元素-2), healing (伤害-11), 生命流失 (伤害-10), retreat (撤退-1) and 移动 (部署-9). The battle's methods
 // (battle.js) call these; units are the kits' (unit.js).
-import { KIND, attrs, body, damage, traits, elements, deck, blocking, routes, paths, sp, moveOperator, canMoveTo } from '@aue/sim';
+import { KIND, attrs, body, constants, damage, traits, elements, deck, blocking, routes, paths, sp, moveOperator, canMoveTo } from '@aue/sim';
 import { canTargetEnemy } from './sh/targeting.js';
 import { localOrder } from './sh/dir.js';
 import { ELEMENT } from './mods.js';
@@ -14,14 +14,25 @@ import { ELEMENT } from './mods.js';
 const gridOf = (b) => ({ rows: b.c.level.height, cols: b.c.level.width });
 
 /**
- * The enemies on the tile keys, in the keys' order, that `attacker` may select with `profile` (索敌-2); one on several
- * tiles once.
+ * Whether an operator searches its range by the tile of each enemy's position, not by its collider (体积-5: 谬因's trait
+ * data). @param {ShBattle} b @param {ShUnit | null} attacker
+ */
+const searchesByTile = (b, attacker) => {
+  const u = attacker?.u;
+  return !!u && u.kind === KIND.OPERATOR && traits.traitOf(b.c, u).rangeTiles === true;
+};
+
+/**
+ * The enemies in the range of the tile keys, in the keys' order, that `attacker` may select with `profile` (索敌-2): a
+ * regular enemy by the tiles its collider overlaps (体积-5) — by its own tile for an attacker that searches by tile —, a
+ * huge one by its rectangle's; one on several tiles once.
  * @param {ShBattle} b @param {Iterable<number> | null | undefined} keys @param {ShUnit | null} attacker @param {Record<string, any>} [profile]
  * @returns {ShUnit[]}
  */
 export function enemiesInKeys(b, keys, attacker, profile) {
   if (!keys) return [];
-  const g = gridOf(b), list = b.enemies.map((e) => ({ e, at: body.bodyKeys(e, g) })), out = /** @type {ShUnit[]} */ ([]);
+  const g = gridOf(b), byTile = searchesByTile(b, attacker), out = /** @type {ShUnit[]} */ ([]);
+  const list = b.enemies.map((e) => ({ e, at: byTile ? body.bodyKeys(e, g) : body.colliderKeys(e, g, constants.ENEMY_COLLIDER_RADIUS) }));
   for (const k of keys) {
     for (const { e, at } of list) if (at.includes(k) && !out.includes(e) && canTargetEnemy(attacker, e, profile)) out.push(e);
   }

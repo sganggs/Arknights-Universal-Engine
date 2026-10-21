@@ -383,3 +383,17 @@ export function withTrait(op) {
   if (!b) return rest;
   return { ...rest, ...(b.dmgType ? { dmgType: b.dmgType } : {}), trait: { ...b.trait?.(traitBb, hiddenBb, moduleType, moduleText), bb: { ...traitBb } } };
 }
+
+/**
+ * Trait data of single operators beyond their branch's, by character id (职业-7). 谬因: her search and attack judge an
+ * enemy by the tile of its position, not by its collider (体积-5; PRTS 谬因 oldid=435070, 链路协议 备注
+ * "谬因的索敌与攻击始终采用格子判定而非碰撞判定").
+ * @type {Readonly<Record<string, Readonly<Partial<TraitDef>>>>}
+ */
+export const OPERATOR_TRAITS = Object.freeze({ char_4229_aphris: Object.freeze({ rangeTiles: true }) });
+
+/**
+ * An operator record with its own trait data (OPERATOR_TRAITS) over its branch's; another operator's as it is.
+ * @param {string} id the character id @param {OperatorDef} op @returns {OperatorDef}
+ */
+export const withOwnTrait = (id, op) => (Object.hasOwn(OPERATOR_TRAITS, id) ? { ...op, trait: { ...op.trait, ...OPERATOR_TRAITS[id] } } : op);

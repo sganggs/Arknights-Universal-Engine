@@ -32,3 +32,9 @@
 - **每帧时长**：一帧是 1/30 秒（`TICK`，时间-1）。
 
 - 来源：[PRTS「游戏数据基础」oldid=440563](https://prts.wiki/index.php?title=%E6%B8%B8%E6%88%8F%E6%95%B0%E6%8D%AE%E5%9F%BA%E7%A1%80&oldid=440563)：「move_multiplier 默认值为0.5」
+
+### 常量-6 敌方碰撞半径
+
+普通敌人的碰撞体积是半径 0.1 格的圆（`ENEMY_COLLIDER_RADIUS`），我方的范围按它判定（体积-5）。
+
+- 来源：[PRTS「作战机制」oldid=433935](https://prts.wiki/index.php?title=%E4%BD%9C%E6%88%98%E6%9C%BA%E5%88%B6&oldid=433935)「碰撞体积与位置识别」：「索敌抬手等均使用碰撞箱」；半径为推断 INF-0287

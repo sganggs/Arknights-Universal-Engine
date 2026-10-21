@@ -152,7 +152,7 @@ test('[攻击-1] [技能-8] an operator\'s reach is the same set while nothing i
   }
 });
 
-test('[体积-1] [体积-2] inKeys is the tiles of the body: the same answer as bodyKeys, at halves and off the map too', () => {
+test('[体积-1] [体积-2] inKeys of a unit other than a regular enemy is the tiles of its body: the same answer as bodyKeys, at halves and off the map too', () => {
   const grid = { rows: 3, cols: 6 }, pos = fc.integer({ min: -4, max: 16 }).map((n) => n / 2);
   const area = fc.option(fc.record({ w: fc.integer({ min: 1, max: 3 }), h: fc.integer({ min: 1, max: 3 }), dx: fc.constantFrom(0, 0.5), dy: fc.constantFrom(0, -0.5) }), { nil: undefined });
   fc.assert(fc.property(pos, pos, area, fc.uniqueArray(fc.integer({ min: 0, max: 17 }), { maxLength: 6 }), (x, y, hitArea, ks) => {

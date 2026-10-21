@@ -1,4 +1,4 @@
-// Official constants of the battle (spec 常量-1…常量-5), with the names of the Stronghold-compatible content interface
+// Official constants of the battle (spec 常量-1…常量-6), with the names of the Stronghold-compatible content interface
 // (ADR 0012). Each value has its source in docs/spec/constants.md. Constants of later mechanics (statuses, elements,
 // push and pull …) arrive with them; the grid's size is per level and is not here (the content adapter, M4).
 import { FPS } from '@aue/math';
@@ -11,6 +11,9 @@ export const MIN_DAMAGE_RATIO = 0.05;
 
 /** Collider radius of an allied unit, in tiles (spec 常量-2). */
 export const ALLY_COLLIDER_RADIUS = 0.25;
+
+/** Collider radius of a regular enemy, in tiles: what a range must overlap to reach it (spec 常量-6, 体积-5). */
+export const ENEMY_COLLIDER_RADIUS = 0.1;
 
 /** Block radius, in tiles: ground and flying (spec 常量-3). */
 export const BLOCK_RADIUS = Object.freeze({ ground: 0.70709997, fly: 0.8944 });

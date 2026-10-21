@@ -1,4 +1,4 @@
-// Where a unit can be hit (spec 体积-1…体积-4), with the functions of the Stronghold-compatible content interface
+// Where a unit can be hit (spec 体积-1…体积-5), with the functions of the Stronghold-compatible content interface
 // (ADR 0012). A regular unit is a point: it is on the tile of its position, rounded half to even as the official client
 // does. A huge unit (`hitArea` { w, h, dx, dy } in tiles) is a rectangle w columns × h rows centred on its position
 // moved dx columns and dy rows; it is on every tile the rectangle overlaps. The grid's size is a parameter (levels
@@ -73,6 +73,39 @@ export function bodyDist(u, x, y) {
 
 /** Is the unit's body within r tiles of (x, y)? @param {Body} u @param {number} x @param {number} y @param {number} r */
 export const bodyInRadius = (u, x, y, r) => bodyDist(u, x, y) <= r + EPS;
+
+/**
+ * The tiles a regular unit's collider, a circle of `radius` around its position, overlaps (spec 体积-5): its own tile
+ * (体积-1), the next row or column where the circle crosses that edge of it, and the diagonal tile where it passes the
+ * corner; touching is not overlapping. Tiles off the grid are left out. A huge unit's are the tiles of its rectangle
+ * (体积-2).
+ * @param {Body} u @param {Grid} g @param {number} radius @returns {number[]}
+ */
+export function colliderKeys(u, g, radius) {
+  if (hitRect(u)) return bodyKeys(u, g);
+  const [r, c] = tileOf(u), out = /** @type {number[]} */ ([]);
+  const dy = u.y - r, dx = u.x - c, sr = crossing(dy, radius), sc = crossing(dx, radius);
+  const cells = [[r, c], [r + sr, c, sr], [r, c + sc, sc], [r + sr, c + sc, sr && sc && cornerIn(dx, dy, radius) ? 1 : 0]];
+  for (const [kr, kc, on = 1] of cells) if (on && kr >= 0 && kr < g.rows && kc >= 0 && kc < g.cols && !out.includes(kr * g.cols + kc)) out.push(kr * g.cols + kc);
+  return out;
+}
+
+/**
+ * Which way a circle of `radius`, `d` from its tile's centre along one axis, crosses into the next tile along it: 1 or
+ * −1 when it passes that edge (more than 0.5 − radius from the centre), 0 when it stays inside (spec 体积-5).
+ * @param {number} d @param {number} radius @returns {-1 | 0 | 1}
+ */
+export const crossing = (d, radius) => (d > 0.5 - radius ? 1 : d < radius - 0.5 ? -1 : 0);
+
+/**
+ * Whether a circle of `radius` around a point passes the corner of its tile that it is nearest: the point lies dx, dy
+ * from its tile's centre, and the corner is 0.5 − |dx|, 0.5 − |dy| from it (spec 体积-5; squares, no root).
+ * @param {number} dx @param {number} dy @param {number} radius
+ */
+export function cornerIn(dx, dy, radius) {
+  const ax = 0.5 - Math.abs(dx), ay = 0.5 - Math.abs(dy);
+  return ax * ax + ay * ay < radius * radius;
+}
 
 /** Chebyshev reach in tiles from tile (r, c) to the body: 0 on it, 1 on the eight around … (spec 体积-4). @param {Body} u @param {number} r @param {number} c @param {Grid} g */
 export function bodyTileReach(u, r, c, g) {
