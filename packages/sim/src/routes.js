@@ -98,14 +98,19 @@ export function segmentClear(m, p, q, fly) {
   return true;
 }
 
+/** Whether this leg is flown straight (路线-2): an air route, or a unit that has itself become a flyer (敌能-34).
+ * @param {Route} route @param {Unit} e */
+const air = (route, e) => route.motion === 'FLY' || e.base.motion === 'FLY';
+
 /**
- * The path of a move leg from where the enemy stands (路线-2): a flyer straight to the end; a ground enemy along the
- * flow field from its tile — straight to the end when the field does not reach it — first back to its tile centre when
- * it stands off the centre and the straight line to the first point would cross a tile it cannot walk. Flat [x, y, …].
+ * The path of a move leg from where the enemy stands (路线-2): a flyer — an air route, or a unit that has itself become
+ * one (敌能-34) — straight to the end; a ground enemy along the flow field from its tile — straight to the end when the
+ * field does not reach it — first back to its tile centre when it stands off the centre and the straight line to the
+ * first point would cross a tile it cannot walk. Flat [x, y, …].
  * @param {Content} c @param {Route} route @param {Unit} e @param {Extract<Leg, { t: 'move' }>} leg @returns {number[]}
  */
 export function planLeg(c, route, e, leg) {
-  if (route.motion === 'FLY') return [leg.x, leg.y];
+  if (air(route, e)) return [leg.x, leg.y];
   const m = c.level, k = keyAt(m, e.x, e.y), f = flowField(m, leg.r, leg.c, { diagonal: route.allowDiagonal ?? true });
   const pts = chain(f, k).flatMap((t) => [t % m.width, Math.floor(t / m.width)]);
   if (pts.length === 0 || pts[pts.length - 2] !== leg.x || pts[pts.length - 1] !== leg.y) pts.push(leg.x, leg.y);
@@ -156,6 +161,17 @@ function holds(w, e, leg, moved) {
 }
 
 /**
+ * The enemy's own motion becomes flying (敌能-34, 路线-2): the leg it is on is planned again from here, as a content
+ * move drops a plan (路线-5).
+ * @param {Unit} e
+ */
+export function becomeFlyer(e) {
+  e.base.motion = 'FLY';
+  e.path = [];
+  e.pt = 0;
+}
+
+/**
  * Content moves a unit (路线-5): it stands at (x, y) at once; an enemy plans the move leg it is on afresh from there —
  * its leg, a wait it is in and its route stay.
  * @param {Unit} u @param {number} x @param {number} y
@@ -177,7 +193,7 @@ export function displace(u, x, y) {
 export function wayKeys(c, e) {
   const m = c.level, route = m.routes[e.route], leg = e.route >= 0 ? legsOf(route)[e.leg] : null, k = keyAt(m, e.x, e.y);
   if (!leg || leg.t !== 'move' || k < 0) return [];
-  return routeTiles(m, k, leg.r * m.width + leg.c, { fly: route.motion === 'FLY', diagonal: route.allowDiagonal ?? true }) ?? [k];
+  return routeTiles(m, k, leg.r * m.width + leg.c, { fly: air(route, e), diagonal: route.allowDiagonal ?? true }) ?? [k];
 }
 
 /**
@@ -287,11 +303,11 @@ export function followRoute(w, c, e, speed) {
 /**
  * The 终点距离 from tile k through the move legs from leg i on (索敌-6): the flow-field distances — tile steps — from
  * each point to the next; after an appear the next distance starts where the enemy appears; a leg no field reaches
- * counts its straight length. Patrol runs are counted once.
- * @param {Level} m @param {Route} route @param {Leg[]} legs @param {number} i @param {number} k
+ * counts its straight length. Patrol runs are counted once. `fly` is this enemy's leg (路线-2): an air route, or a unit
+ * that has itself become a flyer (敌能-34).
+ * @param {Level} m @param {Leg[]} legs @param {number} i @param {number} k @param {boolean} fly
  */
-function stepsFrom(m, route, legs, i, k) {
-  const fly = route.motion === 'FLY';
+function stepsFrom(m, legs, i, k, fly) {
   let d = 0, from = k;
   for (let j = i; j < legs.length; j++) {
     const leg = legs[j];
@@ -318,11 +334,12 @@ export function pathDistance(c, e) {
   let i = e.leg;
   while (legs[i].t !== 'move') i++;
   const leg = /** @type {Extract<Leg, { t: 'move' }>} */ (legs[i]);
-  const f = flowField(m, leg.r, leg.c, { fly: route.motion === 'FLY' });
+  const flying = air(route, e);
+  const f = flowField(m, leg.r, leg.c, { fly: flying });
   if (k < 0 || f.dist[k] < 0) return hypot(leg.x - e.x, leg.y - e.y);
   const tx = i === e.leg && e.pt * 2 < e.path.length ? e.path[e.pt * 2] : leg.x;
   const ty = i === e.leg && e.pt * 2 < e.path.length ? e.path[e.pt * 2 + 1] : leg.y;
   const hx = tx - e.x, hy = ty - e.y, len = hypot(hx, hy);
   const corr = len > 0 ? ((k % m.width - e.x) * hx + (Math.floor(k / m.width) - e.y) * hy) / len : 0;
-  return stepsFrom(m, route, legs, i, k) + corr;
+  return stepsFrom(m, legs, i, k, flying) + corr;
 }

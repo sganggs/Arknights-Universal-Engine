@@ -11,7 +11,7 @@ import { dealEp } from './elements.js';
 import { selectable, sortAllies, friendly, evadesGround, stealthed } from './targeting.js';
 import { tileOf } from './body.js';
 import { tileAt } from './level.js';
-import { board, alight, detour, wayKeys } from './routes.js';
+import { board, alight, detour, wayKeys, becomeFlyer } from './routes.js';
 import { draw } from './rng.js';
 import { release } from './blocking.js';
 import { spawnDevice } from './devices.js';
@@ -94,6 +94,7 @@ export const BOLT_RADIUS = 0.3;
  * @property {(t: Unit, area: 'cross' | 'square') => Unit[]} around the units it may attack on a unit's tile and the four
  *   tiles next to it (a cross) or the eight around it (a square), in creation order (敌能-29)
  * @property {() => Unit[]} enemies every enemy on the field that is not neutral, selectable or not (敌能-25)
+ * @property {() => void} fly its own motion becomes flying and the move it is on is planned again (路线-2, 敌能-34)
  */
 
 /**
@@ -200,6 +201,7 @@ function contextOf(w, c, e, of) {
     lend: (t, key, init) => { lend(e, t, key, init); },
     around: (t, area) => around(w, e, t, area),
     enemies: () => w.units.filter((u) => u.kind === KIND.ENEMY && u.base.neutral !== true && u.hp > 0),
+    fly: () => { becomeFlyer(e); },
   };
 }
 
