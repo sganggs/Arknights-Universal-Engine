@@ -1,4 +1,4 @@
-// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-51): behaviours by talent and skill name. The
+// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-52): behaviours by talent and skill name. The
 // game data holds only the multipliers; FOE_EXTRAS adds, per enemy, the parameters PRTS gives (radii, delays, bolts …)
 // to the blackboards the behaviours read, or a talent the data does not have. They act only through the context (ADR 0055).
 
@@ -27,6 +27,7 @@ import { floatBehaviors, takeOffOwns } from './float.js';
 import { sanktaBehaviors } from './sankta.js';
 import { periodicBehaviors } from './periodic.js';
 import { blockDamageBehaviors } from './blockdamage.js';
+import { mirrorBehaviors } from './mirror.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').EnemyDef} EnemyDef */
 
@@ -189,6 +190,10 @@ export const FOE_EXTRAS = Object.freeze({
   enemy_1063_rageth_2: { talents: { periodic_damage: { self: 1 }, noFly: {} }, source: `${PRTS}%E7%8B%82%E6%9A%B4%E5%AE%BF%E4%B8%BB%E6%8E%B7%E9%AA%A8%E6%89%8B&oldid=375738` },
   enemy_1089_ltlntc: { talents: { periodic_damage: { self: 1 } }, source: `${PRTS}%E5%86%AC%E7%81%B5%E8%A1%80%E5%B7%AB&oldid=386577` },
   enemy_1089_ltlntc_2: { talents: { periodic_damage: { self: 1 } }, source: `${PRTS}%E5%86%AC%E7%81%B5%E8%A1%80%E5%B7%AB%E5%A4%A7%E5%B8%88&oldid=375740` },
+  // 弧光镜卫: 仅在层数≥2层时生效. 15/45 are the page's visual marks, not a rule (敌能-52).
+  enemy_1329_cbshld: { talents: { def_reduce: { gate: 2 } }, source: `${PRTS}%E5%BC%A7%E5%85%89%E9%95%9C%E5%8D%AB&oldid=382112` },
+  // 弧光镜卫长: the same talent and keys; its older page predates the ≥2 wording (敌能-52, INF-0403). 15/60 are visual only.
+  enemy_1329_cbshld_2: { talents: { def_reduce: { gate: 2 } }, source: `${PRTS}%E5%BC%A7%E5%85%89%E9%95%9C%E5%8D%AB%E9%95%BF&oldid=353797` },
 });
 
 /**
@@ -360,6 +365,7 @@ export const foeBehaviors = Object.freeze({
   ...sanktaBehaviors,
   ...periodicBehaviors,
   ...blockDamageBehaviors,
+  ...mirrorBehaviors,
 });
 
 /**
@@ -393,6 +399,7 @@ export const FOE_NEEDS = Object.freeze({
   SelfFear: Object.freeze(['hp_ratio', 'speed_final']), DamageOrBullet: Object.freeze(['steal']), Roar: Object.freeze(['air', 'camou']),
   periodic_damage: Object.freeze(['self']),
   Shield: Object.freeze(['max_block_damage_cnt', 'block_damage_cnt']),
+  def_reduce: Object.freeze(['gate']),
 });
 
 /**
