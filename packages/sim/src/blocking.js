@@ -130,14 +130,13 @@ function blockCap(c, op) {
 
 /**
  * Squared block radius of one candidate (常量-3). Ground stays 0.49999037. Flying is 0.79995137 × k², where
- * k = 1 + the summed `blockRadiusScale` additives. A missing or non-positive sum counts as 0, so the multiplier stays
- * at least 1: the published minimum is "?" (推断 INF-0288).
+ * k = 1 + the summed `blockRadiusScale` additives (推断 INF-0288), at least 0: the default lower bound of 阻挡半径倍率
+ * (数值范围). A negative sum shrinks the flying radius, down to nothing.
  * @param {Stats} os @param {boolean} flying
  */
 function radiusSq(os, flying) {
   if (!flying) return BLOCK_RADIUS_SQ.ground;
-  const added = os.sum.blockRadiusScale ?? 0;
-  const k = 1 + (added > 0 ? added : 0);
+  const scale = 1 + (os.sum.blockRadiusScale ?? 0), k = scale > 0 ? scale : 0;
   return BLOCK_RADIUS_SQ.fly * k * k;
 }
 

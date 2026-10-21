@@ -308,7 +308,7 @@ test('[常量-3] [阻挡-1] +0.23 blocks a flyer just outside the plain radius; 
   assert.equal(tryBlock(w, c, enemyAt(w, c, 'e1', 5.75, 3)), false, 'ground 0.75² stays outside');
 });
 
-test('[常量-3] blockRadiusScale adds, and a negative sum does not shrink the flying radius', () => {
+test('[常量-3] blockRadiusScale adds; a negative sum shrinks the flying radius, down to nothing', () => {
   const c = field(2), w = worldWith(c, [['gA', 3, 5]]), op = w.units[0];
   addBuff(op, makeBuff({ key: 'sky', flags: { blockFly: true }, mods: { blockRadiusScale: 0.1 } }));
   const far = enemyAt(w, c, 'e1', 6, 3);
@@ -318,11 +318,16 @@ test('[常量-3] blockRadiusScale adds, and a negative sum does not shrink the f
   assert.equal(tryBlock(w, c, far), true, '0.1 + 0.13 blocks it');
   const neg = worldWith(c, [['gA', 3, 5]]), nOp = neg.units[0];
   addBuff(nOp, makeBuff({ key: 'sky', flags: { blockFly: true }, mods: { blockRadiusScale: -0.5 } }));
-  const inside = enemyAt(neg, c, 'e1', 5.8, 3), outside = enemyAt(neg, c, 'e1', 5.9, 3);
+  const inside = enemyAt(neg, c, 'e1', 5.4, 3), outside = enemyAt(neg, c, 'e1', 5.5, 3);
   inside.base.motion = 'FLY';
   outside.base.motion = 'FLY';
-  assert.equal(tryBlock(neg, c, inside), true, '0.8² stays inside the plain flying square');
-  assert.equal(tryBlock(neg, c, outside), false, '0.9² stays outside');
+  assert.equal(tryBlock(neg, c, inside), true, '0.4² is inside 0.79995137 × 0.5²');
+  assert.equal(tryBlock(neg, c, outside), false, '0.5² is outside it');
+  const none = worldWith(c, [['gA', 3, 5]]), zOp = none.units[0];
+  addBuff(zOp, makeBuff({ key: 'sky', flags: { blockFly: true }, mods: { blockRadiusScale: -1.5 } }));
+  const under = enemyAt(none, c, 'e1', 5, 3);
+  under.base.motion = 'FLY';
+  assert.equal(tryBlock(none, c, under), false, 'the scale stops at 0: no flying radius at all');
 });
 
 test('[阻挡-1] noNewBlock keeps the blocks it has and refuses a new one by contact', () => {
