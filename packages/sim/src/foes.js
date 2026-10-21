@@ -1,10 +1,10 @@
-// Enemy abilities (docs/spec/foes.md 敌能-1…敌能-4, 敌能-22, 敌能-30, 敌能-39): the hooks through which the content's behaviours
+// Enemy abilities (docs/spec/foes.md 敌能-1…敌能-4, 敌能-22, 敌能-30, 敌能-39, 敌能-45): the hooks through which the content's behaviours
 // act on an enemy's talents and skills, the skills' cooldowns, delayed explosions, 直击 bolts, the enemies an enemy
 // brings in, 吞噬, and one draw from the match.
 import { secondsToFrames, FPS } from '@aue/math';
 import { KIND } from '@aue/schema';
 import { statsOf } from './attrs.js';
-import { addBuff, removeBuff, makeBuff, retune, setLeft } from './buffs.js';
+import { addBuff, removeBuff, makeBuff, retune, setLeft, setBaseMaxHp } from './buffs.js';
 import { inflict } from './status.js';
 import { dealDamage, heal, setHp, knockDown } from './damage.js';
 import { dealEp } from './elements.js';
@@ -80,6 +80,8 @@ export const BOLT_RADIUS = 0.3;
  * @property {(b: { x: number, y: number, radius: number, delay: number, air: boolean, sourced: boolean, buff?: import('./buffs.js').BuffInit } & Payload) => void} blast
  * @property {(b: { dx: number, dy: number, blast?: number } & Payload) => void} bolt
  * @property {(t: Unit, hp: number) => void} setHp sets a unit's HP outright (伤害-9)
+ * @property {(hp: number) => void} setBaseMaxHp sets this enemy's base maximum HP and the cached maximum, without
+ *   rescaling its current HP (敌能-45). A later buff refresh would scale a still-positive HP if the cache were stale.
  * @property {() => void} resetSkills its skills' cooldowns back to their first ones (敌能-18)
  * @property {(u: Unit) => boolean} onWay whether a unit's tile is on its way to the end of the move it is on, its own tile
  *   included (寻路-2)
@@ -195,6 +197,7 @@ function contextOf(w, c, e, of) {
       w.events.push({ type: 'bolt', id: e.id });
     },
     setHp: (t, hp) => { setHp(t, hp); },
+    setBaseMaxHp: (hp) => { setBaseMaxHp(e, hp); },
     resetSkills: () => { for (const s of defOf(c, e).skills ?? []) ab[`${s.key}.cd`] = secondsToFrames(s.initCooldown); },
     onWay: (u) => wayKeys(c, e).includes(keyAt(c.level, u.x, u.y)),
     detour: (row, col) => { detour(c, e, row, col); },
