@@ -264,8 +264,8 @@ export class ShBattle {
 
   /**
    * Stronghold's push (位移-2): 力度 `force` on an enemy from `from`'s centre — along `dir` ({x, y}) when given, `fixed`
-   * / `fixedAngle` waiving the corrections, `inward` towards `from`, `effect` an effect's push. 1 when it got a speed,
-   * else 0 (the slide that follows takes its frames, 位移-3).
+   * / `fixedAngle` waiving the corrections, `inward` towards `from`, `effect` an effect's push. 1 when the force takes
+   * hold — a speed, or a 静态刚体 entering 失衡 (位移-5) — else 0 (the slide that follows takes its frames, 位移-3).
    * @param {ShUnit} e @param {number} force @param {{ from?: { x: number, y: number } | null, dir?: { x: number, y: number } | null, fixed?: boolean, fixedAngle?: boolean, inward?: boolean, effect?: boolean }} [o]
    */
   push(e, force, o = {}) {

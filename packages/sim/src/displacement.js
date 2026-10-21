@@ -1,8 +1,9 @@
-// Displacement (docs/spec/displacement.md 位移-1…位移-4): a push gives an enemy a speed at once by its 受力等级 — the
+// Displacement (docs/spec/displacement.md 位移-1…位移-5): a push gives an enemy a speed at once by its 受力等级 — the
 // force's 力度 less its 重量等级 — away from the pusher or along a direction; a pull drags it for a second toward a
 // point in front of the puller with a force that falls off as it nears; the enemy is then in 失衡 (UNBALANCE): each
 // frame friction takes μg·dt off its speed, a pull adds its force, then it moves, a wall stops it, and the state ends
-// once its speed is at most 0.1, its 0.1 s 失衡硬直 and its pull are over. In 失衡 it neither walks, attacks nor is blocked.
+// once its speed is at most 0.1, its 0.1 s 失衡硬直 and its pull are over. A 静态刚体 enters the same state with no speed
+// and leaves it when the force does (位移-5). In 失衡 it neither walks, attacks nor is blocked.
 import { FPS, hypot } from '@aue/math';
 import { KIND } from '@aue/schema';
 import { statsOf } from './attrs.js';
@@ -43,12 +44,14 @@ export const PULL_STOP = 0.6708;
 /**
  * A pull (位移-4) of 力度 `force` on `t` toward `to` (a point in front of the puller at `by`): none at a 受力等级 of −3 or
  * below; else for 1 s (0.5 s below −1) it is pulled each frame by the 受力等级's force × (its distance to `to` ÷ that
- * distance as the pull began)⁴; it is released from its blocker and its swing cut. Whether it is pulled.
+ * distance as the pull began)⁴; it is released from its blocker and its swing cut. Whether it is pulled. A 静态刚体 is
+ * pulled into 失衡 with no speed for the same duration (位移-5).
  * With `trauma` (移动创伤, 职业-23), the distance it is moved is damage of `per` a tile, dealt every `every` frames by `src`.
  * @param {World} w @param {Content} c @param {Unit} t @param {number} force
  * @param {{ to: { x: number, y: number }, by: { x: number, y: number }, trauma?: { per: number, every: number, src: number } }} o
  */
 export function pull(w, c, t, force, o) {
+  if (isStatic(t)) return staticPull(t, force, o);
   const level = displaceable(t) ? forceLevel(t, force) : -3, x0 = len(t.x - o.to.x, t.y - o.to.y);
   if (level <= -3 || !(x0 > 0)) return false;
   const s = t.slide ?? { vx: 0, vy: 0, hard: 0 }, f = PULL_FORCE[/** @type {keyof typeof PULL_FORCE} */ (String(Math.min(3, level)))];
@@ -78,15 +81,27 @@ const DIRECTIONAL_MIN = 0.25;
 /** @param {number} x @param {number} y */
 const len = (x, y) => Math.sqrt(x * x + y * y);
 
+/** An enemy still on the field (位移-1): alive, not disappeared, not neutral. @param {Unit} u */
+function present(u) {
+  return u.kind === KIND.ENEMY && u.hp > 0 && !u.hidden && u.base.neutral !== true;
+}
+
 /**
  * Whether a unit can be displaced (位移-1): an enemy on the field with HP, not disappeared, not in the air, not 失衡免疫
- * (flag `noDisplace`).
+ * (flag `noDisplace`), not a 静态刚体 (flag `staticBody`, 位移-5).
  * @param {Unit} u
  */
 export function displaceable(u) {
-  if (u.kind !== KIND.ENEMY || u.hp <= 0 || u.hidden || u.base.neutral === true) return false;
+  if (!present(u)) return false;
   const s = statsOf(u);
-  return !s.flying && !s.flags.noDisplace;
+  return !s.flying && !s.flags.noDisplace && !s.flags.staticBody;
+}
+
+/** A 静态刚体 a force can put into 失衡 (位移-5): on the field, the flag set, and not 失衡免疫. @param {Unit} u */
+function isStatic(u) {
+  if (!present(u)) return false;
+  const s = statsOf(u);
+  return s.flags.staticBody === true && !s.flags.noDisplace;
 }
 
 /** A push's 受力等级 on a unit (位移-1): its 力度 less the unit's 重量等级. @param {Unit} u @param {number} force */
@@ -112,12 +127,49 @@ function aim(t, level, o) {
 }
 
 /**
+ * Puts a 静态刚体 into 失衡 with no speed (位移-5): released, its swing cut. `pull` is a force that is still acting.
+ * @param {Unit} t @param {NonNullable<NonNullable<Unit['slide']>['pull']>} [pull]
+ */
+function holdStatic(t, pull) {
+  t.slide = { vx: 0, vy: 0, hard: 0, ...(pull ? { pull } : {}) };
+  release(t);
+  t.swing = null;
+}
+
+/**
+ * A push on a 静态刚体 (位移-5): the same direction rules as 位移-2, but no speed and no immediate step. It enters 失衡
+ * when the force would have given a speed. Whether it did.
+ * @param {Unit} t @param {number} force @param {PushOptions} o
+ */
+function staticPush(t, force, o) {
+  const a = aim(t, forceLevel(t, force), o);
+  if (!a || a.level <= -3) return false;
+  holdStatic(t);
+  return true;
+}
+
+/**
+ * A pull on a 静态刚体 (位移-5): the same 受力等级 and duration as 位移-4, kept so the state can see the force, but no
+ * speed. Whether it entered 失衡.
+ * @param {Unit} t @param {number} force @param {{ to: { x: number, y: number }, by: { x: number, y: number } }} o
+ */
+function staticPull(t, force, o) {
+  const level = forceLevel(t, force), x0 = len(t.x - o.to.x, t.y - o.to.y);
+  if (level <= -3 || !(x0 > 0)) return false;
+  const f = PULL_FORCE[/** @type {keyof typeof PULL_FORCE} */ (String(Math.min(3, level)))];
+  holdStatic(t, { x: o.to.x, y: o.to.y, bx: o.by.x, by: o.by.y, f, x0, left: level < -1 ? FPS / 2 : FPS, stop: false });
+  return true;
+}
+
+/**
  * A push (位移-2) of 力度 `force` on `t`: its speed by the 受力等级 (none at −3 or below) in the push's direction, added to
  * what it slides at; it is released from its blocker and its swing cut; a ballistic push (the default) moves it one
- * frame at that speed at once, an effect's (`effect`) from the next frame. Whether it got a speed.
+ * frame at that speed at once, an effect's (`effect`) from the next frame. Whether the force took: a speed, or a
+ * 静态刚体 entering 失衡 (位移-5).
  * @param {World} w @param {Content} c @param {Unit} t @param {number} force @param {PushOptions} o
  */
 export function push(w, c, t, force, o) {
+  if (isStatic(t)) return staticPush(t, force, o);
   if (!displaceable(t)) return false;
   const a = aim(t, forceLevel(t, force), o);
   if (!a || a.level <= -3) return false;
@@ -146,14 +198,27 @@ function step(c, t, dx, dy) {
 }
 
 /**
+ * One frame of a 静态刚体's 失衡 (位移-5): it stays put. The state ends on the frame that spends the last of the force
+ * (a push has none left), or at once when it is lifted (浮空).
+ * @param {Content} c @param {Unit} t @param {World} [w]
+ */
+function staticStep(c, t, w) {
+  const p = t.slide?.pull;
+  if (statsOf(t).flags.levitate || !p || p.left <= 1) return settle(t, w, c);
+  t.slide = { vx: 0, vy: 0, hard: 0, pull: { ...p, left: p.left - 1 } };
+  return true;
+}
+
+/**
  * One frame of 失衡 (位移-3, 位移-4): friction first, then a pull's force, then the move; the state ends — the slide gone,
- * its way planned afresh — once its speed is at most 0.1 with its 硬直 and pull over, or when it is lifted (浮空). Whether
- * it is still in 失衡.
+ * its way planned afresh — once its speed is at most 0.1 with its 硬直 and pull over, or when it is lifted (浮空). A
+ * 静态刚体 does not move and leaves when the force does (位移-5). Whether it is still in 失衡.
  * @param {Content} c @param {Unit} t @param {World} [w] the world, for 移动创伤's damage (职业-23)
  */
 export function slideStep(c, t, w) {
   const s = t.slide;
   if (!s) return false;
+  if (statsOf(t).flags.staticBody) return staticStep(c, t, w);
   const v = len(s.vx, s.vy), nv = Math.max(0, v - FRICTION / FPS), k = v > 0 ? nv / v : 0, p = s.pull && s.pull.left > 0 ? s.pull : undefined;
   const [vx, vy] = p ? pulled(t, p, s.vx * k, s.vy * k) : [s.vx * k, s.vy * k];
   t.slide = { vx, vy, hard: Math.max(0, s.hard - 1), ...(p ? { pull: { ...p, left: p.left - 1 } } : {}) };
