@@ -18,6 +18,7 @@ import { spawnDevice } from './devices.js';
 import { keyAt } from './paths.js';
 import { bringIn, hatch } from './broods.js';
 import { devour } from './deck.js';
+import { blightContext, tickBlight } from './blight.js';
 
 /** @typedef {import('./types.js').World} World @typedef {import('./types.js').Content} Content @typedef {import('./types.js').Unit} Unit */
 /** @typedef {import('./types.js').EnemyDef} EnemyDef @typedef {import('./types.js').Blast} Blast @typedef {import('./types.js').Bolt} Bolt */
@@ -102,6 +103,10 @@ export const BOLT_RADIUS = 0.3;
  * @property {() => Unit[]} enemies every enemy on the field that is not neutral, selectable or not (敌能-25)
  * @property {() => void} fly its own motion becomes flying and the move it is on is planned again (路线-2, 敌能-34)
  * @property {() => void} attackAgain its next attack may start at once: the attack cooldown is cleared (敌能-44, 攻击-2)
+ * @property {(o: { x: number, y: number, radius: number, life: number, low: number, high: number, air?: boolean, open?: boolean, wide?: boolean }) => void} zone
+ *   places a 污染秽蚀 zone (敌能-46)
+ * @property {(t: Unit, damage: number, seconds: number) => void} bleed gives or refreshes 逐腐 bleed (敌能-46)
+ * @property {(u: Unit) => boolean} onLow whether a unit's tile is 低地 (敌能-46)
  */
 
 /**
@@ -114,6 +119,8 @@ export const BOLT_RADIUS = 0.3;
  * @property {(ctx: FoeContext) => void} [death]
  * @property {(ctx: FoeContext, target: Unit, dealt: number, ranged: boolean) => void} [hit] a hit of its normal attack
  *   dealt damage (`ranged`: it came by a projectile)
+ * @property {(ctx: FoeContext, target: Unit, how: { dealt: number, ranged: boolean, skill: boolean }) => void} [landed]
+ *   a normal attack's hit connected (`dealt` may be 0; `skill`: the skill's attack). Splash does not (敌能-46)
  * @property {(ctx: FoeContext) => boolean} [fatal] its HP ran out: true when the ability keeps it on the field, its HP
  *   above 0
  * @property {(ctx: FoeContext) => void} [unbalanceEnd] 失衡 ended this turn, after the slide settled (敌能-2)
@@ -147,6 +154,17 @@ function abilities(c, e) {
   t.by.set(e.key, out);
   return out;
 }
+
+/**
+ * Context members single families add (敌能-34 `fly`, 敌能-44 `attackAgain`, 敌能-45 `setBaseMaxHp`), kept out of
+ * contextOf so it stays within its line budget.
+ * @param {Unit} e @param {Record<string, number>} ab
+ */
+const familyContext = (e, ab) => ({
+  fly: () => { becomeFlyer(e); },
+  attackAgain: () => { ab['@again'] = 1; },
+  setBaseMaxHp: (/** @type {number} */ hp) => { setBaseMaxHp(e, hp); },
+});
 
 /**
  * An ability's context (敌能-2): `of` is the ability — its name, blackboard and skill (null for a talent).
@@ -197,7 +215,6 @@ function contextOf(w, c, e, of) {
       w.events.push({ type: 'bolt', id: e.id });
     },
     setHp: (t, hp) => { setHp(t, hp); },
-    setBaseMaxHp: (hp) => { setBaseMaxHp(e, hp); },
     resetSkills: () => { for (const s of defOf(c, e).skills ?? []) ab[`${s.key}.cd`] = secondsToFrames(s.initCooldown); },
     onWay: (u) => wayKeys(c, e).includes(keyAt(c.level, u.x, u.y)),
     detour: (row, col) => { detour(c, e, row, col); },
@@ -210,8 +227,8 @@ function contextOf(w, c, e, of) {
     lend: (t, key, init) => { lend(e, t, key, init); },
     around: (t, area) => around(w, e, t, area),
     enemies: () => w.units.filter((u) => u.kind === KIND.ENEMY && u.base.neutral !== true && u.hp > 0),
-    fly: () => { becomeFlyer(e); },
-    attackAgain: () => { ab['@again'] = 1; },
+    ...blightContext(w, c, e),
+    ...familyContext(e, ab),
   };
 }
 
@@ -378,6 +395,15 @@ export function foeHit(w, c, e, t, how) {
 }
 
 /**
+ * A normal attack's hit connected (敌能-46): abilities' `landed`, also when the hit took no HP. Splash does not.
+ * @param {World} w @param {Content} c @param {Unit} e @param {Unit} t
+ * @param {{ dealt: number, ranged: boolean, skill: boolean }} how
+ */
+export function foeLanded(w, c, e, t, how) {
+  each(w, c, e, 'landed', (b, ctx) => b.landed?.(ctx, t, how));
+}
+
+/**
  * A unit takes a bolt's or an explosion's payload (敌能-3, 敌能-4).
  * @param {World} w @param {Content} c @param {Unit | null} src @param {Unit} t
  * @param {{ type: DamageType, amount: number, status: { key: string, seconds: number } | null, buff?: import('./buffs.js').BuffInit }} p
@@ -448,9 +474,10 @@ function blow(w, c) {
   w.blasts = keep;
 }
 
-/** The bolts, the explosions due this frame, then the enemies brought in due now (帧-1 step 8, 敌能-3, 敌能-4, 敌能-22). @param {World} w @param {Content} c */
+/** The bolts, the explosions due this frame, the enemies brought in due now, then 污染秽蚀 (帧-1, 敌能-3, 敌能-4, 敌能-22, 敌能-46). @param {World} w @param {Content} c */
 export function foeEffects(w, c) {
   flyBolts(w, c);
   blow(w, c);
   hatch(w, c);
+  tickBlight(w, c);
 }
