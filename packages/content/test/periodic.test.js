@@ -217,12 +217,14 @@ test('[敌能-50] a non-positive damage deals nothing, and the clock still runs'
   assert.ok(e.ab['periodic_damage.t'] > SEC);
 });
 
-test('[敌能-50] the tick can knock it down, with no kill credit, and 不死 keeps 1 HP', () => {
+test('[敌能-50] the tick can knock it down, credited to itself, and 不死 keeps 1 HP', () => {
   const key = 'enemy_1062_rager';
   const { c, w } = open({ [key]: host(key, 330, 100) }, [spawnAt(0, key)]);
   const e = ofKey(w, key)[0];
   /** @type {any[]} */
-  const deaths = [], kills = [];
+  const deaths = [];
+  /** @type {any[]} */
+  const kills = [];
   bus.on(w, 'death', (ctx) => { deaths.push(ctx); });
   bus.on(w, 'kill', (ctx) => { kills.push(ctx); });
   deploy(w, c, 'sniper', 2, 2);
@@ -230,14 +232,16 @@ test('[敌能-50] the tick can knock it down, with no kill credit, and 不死 ke
   run(w, c, SEC - 2);
   const ev = step(w, c);
   const hit = ev.find((x) => x.type === 'hit' && x.target === e.id);
-  assert.equal(hit?.id, -1);
+  assert.equal(hit?.id, e.id, 'credited to itself (伤害-7), like 敌能-42');
   assert.equal(hit?.damage, 330);
   assert.equal(w.units.includes(e), false);
   assert.equal(deaths.length, 1);
   assert.equal(deaths[0].reason, 'killed');
-  assert.equal(deaths[0].killer, null);
+  assert.equal(deaths[0].killer, e);
   assert.equal(deaths[0].unit, e);
-  assert.equal(kills.length, 0);
+  assert.equal(kills.length, 1);
+  assert.equal(kills[0].killer, e);
+  assert.equal(kills[0].victim, e);
   assert.equal(sniper.hp, sniper.maxHp);
   const kept = open({ [key]: host(key, 330, 100) }, [spawnAt(0, key)]);
   const u = ofKey(kept.w, key)[0];

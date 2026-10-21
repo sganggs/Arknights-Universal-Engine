@@ -1,5 +1,6 @@
 // Self true damage each second (docs/spec/foes.md 敌能-50). The clock counts this enemy's own turns, so it does not
-// advance while the enemy is carried or not yet on the field. The hit is sourceless: the context passes no source.
+// advance while the enemy is carried or not yet on the field. The hit is sourceless and credited to the enemy itself
+// (伤害-7), like 敌能-42's 失衡持续伤害.
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior */
 
