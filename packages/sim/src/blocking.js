@@ -74,13 +74,15 @@ function deployOffset(w, op, e) {
 }
 
 /**
- * Whether `op` may take `e` now (阻挡-2): it is alive and can block, it blocks this motion, and its block count holds
- * the enemy's weight on top of what it already holds.
+ * Whether `op` may take `e` now (阻挡-2, 阻挡-1): it is alive and can block, it is not refusing new contact
+ * (`noNewBlock`), it blocks this motion, and its block count holds the enemy's weight on top of what it already holds.
+ * A unit with `noNewBlock` keeps enemies it already blocks; 迷狂牢笼 judges new blocks when it is created or refreshed
+ * (character_table token_10055_phatm2_mndclv.description), and content assigns those with `blockBy`.
  * @param {World} w @param {Content} c @param {Unit} op @param {Stats} es
  */
 function takes(w, c, op, es) {
   const os = statsOf(op), cap = blockCap(c, op);
-  if (op.hp <= 0 || !canBlock(os) || !blocksMotion(c, op, os, es.flying) || cap <= 0) return false;
+  if (op.hp <= 0 || !canBlock(os) || os.flags.noNewBlock || !blocksMotion(c, op, os, es.flying) || cap <= 0) return false;
   return blockLoad(w, op) + es.blockCnt <= cap;
 }
 
@@ -95,22 +97,34 @@ function blockCap(c, op) {
 }
 
 /**
- * Blocks an enemy if it can be (阻挡-1): of the units that may take it and whose block radius it is inside —
- * (dx² + dy²) < r², r² = 0.49999037 for ground enemies, 0.79995137 for flying ones — the nearest, the earliest
- * created of equals. Returns whether the enemy is blocked.
+ * Squared block radius of one candidate (常量-3). Ground stays 0.49999037. Flying is 0.79995137 × k², where
+ * k = 1 + the summed `blockRadiusScale` additives. A missing or non-positive sum counts as 0, so the multiplier stays
+ * at least 1: the published minimum is "?" (推断 INF-0288).
+ * @param {Stats} os @param {boolean} flying
+ */
+function radiusSq(os, flying) {
+  if (!flying) return BLOCK_RADIUS_SQ.ground;
+  const added = os.sum.blockRadiusScale ?? 0;
+  const k = 1 + (added > 0 ? added : 0);
+  return BLOCK_RADIUS_SQ.fly * k * k;
+}
+
+/**
+ * Blocks an enemy if it can be (阻挡-1): of the units that may take it and whose own block radius it is inside —
+ * (dx² + dy²) < r², r² from 常量-3 for that unit — the nearest, the earliest created of equals. Returns whether the
+ * enemy is blocked.
  * @param {World} w @param {Content} c @param {Unit} e
  */
 export function tryBlock(w, c, e) {
   if (e.blockedBy >= 0) return true;
   const es = statsOf(e);
   if (e.hidden || e.base.neutral === true || !blockable(es)) return false;
-  const r2 = es.flying ? BLOCK_RADIUS_SQ.fly : BLOCK_RADIUS_SQ.ground;
   /** @type {Unit | null} */
   let best = null, bd = Infinity;
   for (const op of w.units) {
     if (op.kind === KIND.ENEMY || !friendly(op) || !sameGround(c, op, e)) continue;
     const dx = e.x - op.x, dy = e.y - op.y, d2 = dx * dx + dy * dy;
-    if (d2 < r2 && d2 < bd && takes(w, c, op, es)) { best = op; bd = d2; }
+    if (d2 < radiusSq(statsOf(op), es.flying) && d2 < bd && takes(w, c, op, es)) { best = op; bd = d2; }
   }
   if (!best) return false;
   e.blockedBy = best.id;
