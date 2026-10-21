@@ -3,7 +3,7 @@
 // attacker's attack — a healer's heals, a ranged attacker's projectiles — and the attacker waits out its interval.
 import { FPS, secondsToFrames, hypot } from '@aue/math';
 import { KIND, ANIM } from '@aue/schema';
-import { offsetTile, dirVec } from './dir.js';
+import { offsetTile, dirVec, frontOf } from './dir.js';
 import { push, pull, PULL_POINT } from './displacement.js';
 import { statsOf, computeStats, intervalFrames } from './attrs.js';
 import { inKeys, selectable, sortEnemies, sortAllies, firstN, evadesGround, hostile, friendly, stealthed } from './targeting.js';
@@ -550,12 +550,41 @@ function picked(w, out, pick) {
     ...(k.ignoreDef ? { ignoreDef: Math.max(out.ignoreDef ?? 0, k.ignoreDef) } : {}) };
 }
 
-/** A chance talent's chance now (攻击-4): its `skillProb` while the skill runs, when it has one. @param {Unit} op @param {import('./types.js').CritTalent} k */
-const chanceOf = (op, k) => (k.skillProb !== undefined && inSkill(op) ? k.skillProb : k.prob) + ammoChance(op, k);
+/**
+ * Whether the target's centre is on the tiles a front chance names (干员-12, 攻击-4). One tile is the tile ahead, not
+ * the operator's own. More than one also counts the operator's tile: the module remark says the check is then 范围内
+ * and includes it, read as the text's N tiles plus this one (推断 INF-0313).
+ * @param {Unit} op @param {Unit} t @param {number} n
+ */
+function ahead(op, t, n) {
+  const [r, c] = tileOf(op), [tr, tc] = tileOf(t);
+  if (n > 1 && r === tr && c === tc) return true;
+  for (let k = 1; k <= n; k++) {
+    const [fr, fc] = frontOf(r, c, op.dir, k);
+    if (fr === tr && fc === tc) return true;
+  }
+  return false;
+}
+
+/**
+ * A chance talent's chance now (攻击-4): `skillProb` while the skill runs; `front.prob` when the primary target's
+ * centre is on the tiles ahead, looked up as the chance is drawn and not when the hit lands (干员-12). No primary
+ * target keeps the original chance. The ammo bonus is added either way (职业-35).
+ * @param {World} w @param {Content} c @param {Unit} op @param {import('./types.js').CritTalent} k
+ */
+function chanceOf(w, c, op, k) {
+  let p = k.skillProb !== undefined && inSkill(op) ? k.skillProb : k.prob;
+  const f = k.front;
+  if (f) {
+    const primary = targetsOf(w, c, op)[0];
+    if (primary && ahead(op, primary, f.tiles)) p = f.prob;
+  }
+  return p + ammoChance(op, k);
+}
 
 /**
  * The chance talents of an operator's attack (攻击-4): for each, in order, one draw (随机-1); under its chance — its
- * `skillProb` while its skill runs, when it has one — the
+ * `skillProb` while its skill runs, or `front.prob` when the primary target stands on the tiles ahead — the
  * attack's 倍率 × its scale, its stun on each hit, its more targets, its attack bonus for this attack (added to the
  * attack's), the share of the targets' 防御 it ignores (the most), its hits × its `times`. A healing attack draws none.
  * @param {World} w @param {Content} c @param {Unit} op @param {AttackMods} mods @returns {AttackMods}
@@ -564,7 +593,7 @@ function critMods(w, c, op, mods) {
   let out = mods;
   if (mods.heal || healerNow(c, op)) return healMore(w, c, op, out);
   for (const k of c.operators[op.key].critTalents ?? []) {
-    if (draw(w) >= chanceOf(op, k)) continue;
+    if (draw(w) >= chanceOf(w, c, op, k)) continue;
     out = k.pick ? picked(w, out, k.pick) : crit(op, out, k);
   }
   return out;

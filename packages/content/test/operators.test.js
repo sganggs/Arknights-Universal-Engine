@@ -210,7 +210,7 @@ test('[干员-14] deployment parts: SP, random SP, heals of everyone, shield lay
     c('部署后立即获得35点技力', { sp: 35 }), c('部署后立即随机获得7~15点技力', { sp_min: 7, sp_max: 16 }),
     c('部署后立即恢复全场友方单位500点生命', { value: 500 }), c('部署后立刻恢复全体友方单位的生命值，恢复量为末药攻击力的160%', { heal_scale: 1.6 }),
     c('部署后立即获得3层护盾', { times: 3 }), c('部署后立即获得一层护盾，护盾破裂后获得9点技力', { sp: 9 }),
-  ], [{ sp: [35, 36] }, { sp: [7, 16] }, { heal: { value: 500 } }, { heal: { scale: 1.6 } }, { shield: 3 }, { shield: 1 }]);
+  ], [{ sp: [35, 36] }, { sp: [7, 16] }, { heal: { value: 500 } }, { heal: { scale: 1.6 } }, { shield: 3 }, { shield: 1, break: { sp: 9 } }]);
   assert.deepEqual([c('部署后立即对攻击范围内一个敌人投掷闪光弹', { stun: 4 }), c('首次部署后立即获得35点技力', { sp: 35 })], [null, null]);
   assert.deepEqual(operatorAt(await loadTraining('char_180_amgoat'), E2).deployTalents, [{ sp: [7, 16] }], '艾雅法拉');
 });

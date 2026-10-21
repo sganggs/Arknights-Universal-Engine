@@ -425,7 +425,7 @@ export function rangePart(c) {
 }
 
 /** The chance and what it does to the attack (干员-12): the clause, and what it gives from the blackboard — null without the keys it needs. */
-/** @typedef {{ prob: number, scale: number, stun?: number, more?: number, atk?: number, ignoreDef?: number, times?: number, skillProb?: number }} Crit */
+/** @typedef {{ prob: number, scale: number, stun?: number, more?: number, atk?: number, ignoreDef?: number, times?: number, skillProb?: number, front?: { tiles: number, prob: number } }} Crit */
 /** @type {readonly [RegExp, (bb: Record<string, number>) => Crit | null][]} */
 const CRITS = Object.freeze([
   [/^(?:攻击时|每次攻击|造成(?:物理)?伤害时)[，,]?有?\d+(?:\.\d+)?[%％]的?(?:几率|概率)(?:使)?(?:当次攻击的?)?攻击力提升至\d+(?:\.\d+)?[%％]$/u,
@@ -446,9 +446,26 @@ const CRIT_STUN = /^并(?:使敌人)?晕眩(?:敌人)?\d+(?:\.\d+)?秒$/u;
 const CRIT_MORE = /^且额外攻击一个目标$/u;
 /** A later sentence that raises the chance while the skill runs (干员-12): 「技能中这个几率提高到N%」 (`prob2`). */
 const CRIT_SKILL = /。技能中这个几率提高到\d+(?:\.\d+)?%/u;
+/** Counts a front-tile sentence names (干员-12). 两 and 二 are both two. */
+const TILE_N = Object.freeze(/** @type {Record<string, number>} */ ({
+  一: 1, 二: 2, 两: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9, 十: 10,
+}));
+/** A later sentence that raises the chance on the tiles ahead (干员-12): 「当敌人在正前方N格时，该几率提升到M%」 (`prob2`). */
+const FRONT = /。当敌人在正前方([一二两三四五六七八九十]|\d+)格时，该几率提升到\d+(?:\.\d+)?%/u;
 
 /** The chance while the skill runs (干员-12): `prob2` when a later sentence says so. @param {Talent} c */
 const skillChance = (c) => (CRIT_SKILL.test((c.description ?? '').replace(/<[^>]*>/g, '').replace(/（[^）]*）/g, '')) && has(c.bb, 'prob2') ? { skillProb: c.bb.prob2 } : {});
+
+/**
+ * The chance on the tiles ahead (干员-12). Empty when that sentence or `prob2` is absent, or N is not a count.
+ * @param {Talent} c @returns {{ front?: { tiles: number, prob: number } }}
+ */
+function frontChance(c) {
+  const bare = (c.description ?? '').replace(/<[^>]*>/g, '').replace(/（[^）]*）/g, '');
+  const m = FRONT.exec(bare);
+  const n = m ? (TILE_N[m[1]] ?? Number(m[1])) : 0;
+  return m && has(c.bb, 'prob2') && Number.isInteger(n) && n > 0 ? { front: { tiles: n, prob: c.bb.prob2 } } : {};
+}
 
 /**
  * The chance part of a talent (干员-12): in its first sentence a clause of CRITS — 「攻击时（，）（有）N%（的）几率/概率（当次
@@ -456,7 +473,8 @@ const skillChance = (c) => (CRIT_SKILL.test((c.description ?? '').replace(/<[^>]
  * attack for that attack), 「……无视目标的防御」, 「……造成二连击 / 连续攻击两次」, 「攻击有N%几率造成相当于攻击力M%的物理伤害」 —
  * with the blackboard keys it needs (`prob1` for `prob` too); for the first, the clause after it may add a stun of `stun`
  * seconds (「并使敌人晕眩N秒」) or one more target (「且额外攻击一个目标」); a later 「技能中这个几率提高到N%」 gives the chance
- * while the skill runs (`skillProb`, `prob2`). Null otherwise; hidden talents have none.
+ * while the skill runs (`skillProb`, `prob2`); a later 「当敌人在正前方N格时，该几率提升到M%」 gives that chance on those
+ * tiles (`front`, `prob2`). Null otherwise; hidden talents have none.
  * @param {Talent} c @returns {Crit | null}
  */
 export function critPart(c) {
@@ -468,9 +486,9 @@ export function critPart(c) {
     const form = CRITS.find(([re]) => re.test(x)), got = form ? form[1](c.bb) : null;
     if (!got) continue;
     const next = clauses[x === clauses[i] ? i + 1 : i + 2] ?? '';
-    const skill = skillChance(c);
+    const extra = { ...skillChance(c), ...frontChance(c) };
     return got.atk === undefined && got.ignoreDef === undefined && got.times === undefined
-      ? { ...got, ...(CRIT_STUN.test(next) && has(c.bb, 'stun') ? { stun: c.bb.stun } : {}), ...(CRIT_MORE.test(next) ? { more: 1 } : {}), ...skill } : { ...got, ...skill };
+      ? { ...got, ...(CRIT_STUN.test(next) && has(c.bb, 'stun') ? { stun: c.bb.stun } : {}), ...(CRIT_MORE.test(next) ? { more: 1 } : {}), ...extra } : { ...got, ...extra };
   }
   return null;
 }
@@ -547,16 +565,87 @@ function deployEffect(clause, bb) {
   return null;
 }
 
+/** What one broken shield layer does (干员-14). @typedef {{ mods?: { atkPct?: number, defPct?: number }, max?: number, sp?: number }} ShieldBreak */
+/** 「获得N点技力与(一|M)层护盾」: deploy SP is not the bare `sp` the break spends. */
+const SHIELD_AND_SP = /^获得\d+点技力与(\d+|一)层护盾$/u;
+
+/**
+ * Deploy SP and a shield in one clause (干员-14). The SP is the single blackboard key ending in `.sp` other than the
+ * bare `sp` (空弦 writes deploy SP as `archet_e_t_2.sp` and the break as `sp`). The bare key is the deploy SP only when
+ * the break does not spend it; both wanting it drops the clause.
+ * @param {string} clause @param {Record<string, number>} bb @param {boolean} breakUsesSp
+ * @returns {{ sp: [number, number], shield: number } | null}
+ */
+function shieldAndSp(clause, bb, breakUsesSp) {
+  const m = SHIELD_AND_SP.exec(clause);
+  if (!m) return null;
+  const keys = Object.keys(bb).filter((k) => k.endsWith('.sp') && k !== 'sp' && Number.isFinite(bb[k]));
+  const key = keys[0];
+  if (keys.length > 1) return null;
+  const sp = keys.length === 1 && key ? bb[key] : (breakUsesSp ? undefined : bb.sp);
+  if (!Number.isFinite(sp)) return null;
+  const named = m[1] === '一' ? 1 : Number(m[1]);
+  return { sp: [/** @type {number} */ (sp), /** @type {number} */ (sp) + 1], shield: Number.isFinite(bb.times) ? bb.times : named };
+}
+
+/**
+ * The ATK, DEF and SP a 「每层护盾破裂时」 lists (干员-14). Null when a subclause does not match, so a half-read break
+ * is not kept. The cap is `max_stack_cnt` when that key is present (推断 INF-0314).
+ * @param {string[]} parts @param {Record<string, number>} bb @returns {ShieldBreak | null}
+ */
+function layerBonus(parts, bb) {
+  /** @type {{ atkPct?: number, defPct?: number }} */
+  const mods = {};
+  let sp;
+  for (const p of parts) {
+    const m = /^(攻击力|防御力)[+＋]\d+(?:\.\d+)?%$/u.exec(p);
+    if (m) {
+      const key = m[1] === '攻击力' ? 'atk' : 'def', mod = m[1] === '攻击力' ? 'atkPct' : 'defPct';
+      if (!has(bb, key)) return null;
+      mods[mod] = bb[key];
+      continue;
+    }
+    if (/^获得\d+点技力$/u.test(p)) {
+      if (!Number.isFinite(bb.sp)) return null;
+      sp = bb.sp;
+      continue;
+    }
+    return null;
+  }
+  if (Object.keys(mods).length === 0 && sp === undefined) return null;
+  const capped = Object.keys(mods).length > 0 ? { mods, ...(Number.isFinite(bb.max_stack_cnt) ? { max: bb.max_stack_cnt } : {}) } : {};
+  return { ...capped, ...(sp === undefined ? {} : { sp }) };
+}
+
+/**
+ * What a broken layer of this shield does (干员-14), or null when the follow-on is absent or does not match.
+ * 「护盾破裂后获得N点技力」 keeps its SP even if a later clause is not read. A subclause under 「每层护盾破裂时」 that
+ * does not match drops the whole break.
+ * @param {string[]} clauses clauses after 「部署后立即」 @param {Record<string, number>} bb @returns {ShieldBreak | null}
+ */
+function shieldBreak(clauses, bb) {
+  const rest = clauses.slice(1), head = rest[0] ?? '';
+  if (/^护盾破裂后获得\d+点技力$/u.test(head)) return Number.isFinite(bb.sp) ? { sp: bb.sp } : null;
+  if (head !== '每层护盾破裂时') return null;
+  return layerBonus(rest.slice(1).flatMap((x) => x.split('且')).map((x) => x.trim()).filter((x) => x), bb);
+}
+
 /**
  * The deployment part of a talent (干员-14): its first sentence begins 「部署后立即」 or 「部署后立刻」 and its first clause
- * is one deployEffect reads. Null otherwise; hidden talents have none.
- * @param {Talent} c @returns {{ sp?: [number, number], heal?: { value: number } | { scale: number }, shield?: number } | null}
+ * is one deployEffect reads, or deploy SP together with a shield. A shield may say what a broken layer does. Null
+ * otherwise; hidden talents have none.
+ * @param {Talent} c
+ * @returns {{ sp?: [number, number], heal?: { value: number } | { scale: number }, shield?: number, break?: ShieldBreak } | null}
  */
 export function deployPart(c) {
   if (c.hidden || !c.description) return null;
-  const first = c.description.replace(/<[^>]*>/g, '').replace(/（[^）]*）/g, '').split(/[。；]/)[0];
-  if (!ON_DEPLOY.test(first)) return null;
-  return deployEffect(first.replace(ON_DEPLOY, '').split('，')[0].trim(), c.bb);
+  const text = c.description.replace(/<[^>]*>/g, '').replace(/（[^）]*）/g, '').split(/[。；]/)[0];
+  if (!ON_DEPLOY.test(text)) return null;
+  const clauses = text.replace(ON_DEPLOY, '').split('，').map((x) => x.trim()).filter((x) => x);
+  const br = shieldBreak(clauses, c.bb);
+  const head = deployEffect(clauses[0] ?? '', c.bb) ?? shieldAndSp(clauses[0] ?? '', c.bb, br?.sp !== undefined);
+  if (!head) return null;
+  return br ? { ...head, break: br } : head;
 }
 
 

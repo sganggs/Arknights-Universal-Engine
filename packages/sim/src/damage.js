@@ -4,7 +4,7 @@
 import { powi, FPS } from '@aue/math';
 import { KIND } from '@aue/schema';
 import { statsOf, activeBuffs } from './attrs.js';
-import { removeBuff, stamp, count } from './buffs.js';
+import { removeBuff, stamp, count, makeBuff, addBuff } from './buffs.js';
 import { draw } from './rng.js';
 import { MIN_DAMAGE_RATIO } from './constants.js';
 import { hurtSp, gainSp } from './sp.js';
@@ -257,6 +257,22 @@ function dodged(w, u, src, dmg) {
 }
 
 /**
+ * One layer of a deployment shield broke (部署-8, 干员-14). The talent's break stacks its ATK and DEF — additive, and
+ * with no end, the description's 持续时间无限 — and grants SP. gainSp grants none while the skill runs (技能-2). A
+ * shield that is not tagged is not one of these layers. Without `max`, the cap grows so the stacks are not stuck at 1.
+ * @param {Unit} u @param {number} n @param {import('./types.js').Content | undefined} c
+ */
+function brokeShield(u, n, c) {
+  const br = c && u.kind === KIND.OPERATOR ? c.operators[u.key]?.deployTalents?.[n]?.break : undefined;
+  if (!br) return;
+  if (br.sp && u.skill) gainSp(u.skill, br.sp);
+  if (!br.mods) return;
+  const cur = u.buffs.find((b) => b.key === 'shieldBreak');
+  const cap = br.max ?? (cur ? cur.stacks + 1 : 1);
+  addBuff(u, makeBuff({ key: 'shieldBreak', src: u.id, rule: 'stack', mods: br.mods, maxStacks: cap }));
+}
+
+/**
  * The target's 伤判 effects in turn (伤害-8): what the hit sets off as they begin (judged), a miss by the source's hit
  * rate, then its active buffs by event priority, highest first, then acquisition order. One that cancels the hit or
  * brings it to 0 ends the step; a dodge or a miss is the `dodge` event (钩子-3). `from`: the source, the tags of an enemy
@@ -271,7 +287,10 @@ export function takeDamage(w, u, amount, dmg, from = {}) {
   const order = activeBuffs(u.buffs).map((b, i) => ({ b, i })).sort((x, y) => y.b.prio - x.b.prio || x.i - y.i);
   let left = amount;
   for (const { b } of order) {
+    const hits = b.shieldHits;
     left = judge(w, u, b, left, { dmg, src, tags });
+    // The layer is already spent, and the buff may already be gone: the object still shows the drop (部署-8).
+    if (b.tag === 'shieldBreak' && b.shieldHits < hits) brokeShield(u, b.n, from.c);
     if (left < 0) dodged(w, u, src, dmg);
     if (!(left > 0)) return 0;
   }

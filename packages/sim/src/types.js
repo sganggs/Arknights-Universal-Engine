@@ -565,8 +565,9 @@
  */
 /**
  * A deployment talent (部署-8): SP between `sp[0]` and below `sp[1]`, a heal of every operator (`value` HP or `scale` × the
- * attack), shield layers.
- * @typedef {{ sp?: [number, number], heal?: { value: number } | { scale: number }, shield?: number }} DeployTalent
+ * attack), shield layers. `break` is what each broken layer does (干员-14): stacked `mods`, at most `max`, and `sp`.
+ * @typedef {{ sp?: [number, number], heal?: { value: number } | { scale: number }, shield?: number,
+ *   break?: { mods?: { atkPct?: number, defPct?: number }, max?: number, sp?: number } }} DeployTalent
  */
 /**
  * What a carried unit's deployment does (装置-6): for every operator on the field then, modifiers (`allyMods`) or a
@@ -583,8 +584,9 @@
 /**
  * A chance talent (攻击-4): on each attack, with chance `prob`, the attack's 倍率 × `scale`, and maybe a stun of `stun`
  * seconds on each hit and `more` targets, `atk` more attack (直接乘算) for that attack, `ignoreDef` of the targets' 防御
- * ignored, × `times` hits.
+ * ignored, × `times` hits. `front`: while the primary target's centre lies on those tiles, the chance is `front.prob` (干员-12).
  * @typedef {{ prob: number, scale: number, stun?: number, more?: number, atk?: number, ignoreDef?: number, times?: number, skillProb?: number,
+ *   front?: { tiles: number, prob: number },
  *   pick?: { times?: number, stun?: number, ignoreDef?: number }[], grow?: { power: string, step: number, max: number }, ammoProb?: number, sp?: number }} CritTalent
  */
 /**
