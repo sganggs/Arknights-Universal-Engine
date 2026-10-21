@@ -100,7 +100,7 @@ test('[敌能-49] the three read rows keep Static and gain only their page numbe
   }
 });
 
-test('[敌能-49] 自惧 applies on the crossing frame, once, for 5s, and a flyer flutters on its own tile', () => {
+test('[敌能-49] 半血恐惧 applies on the crossing frame, once, for 5s, and a flyer flutters on its own tile', () => {
   const { c, w } = open(WING, wingDef());
   step(w, c);
   const e = unit(w, WING), x0 = e.x, y0 = e.y;
@@ -130,7 +130,7 @@ test('[敌能-49] 自惧 applies on the crossing frame, once, for 5s, and a flye
   assert.equal(e.buffs.filter((b) => b.key === 'fear').length, 1, 'a later drop does not apply it again');
 });
 
-test('[敌能-49] 自惧 lasts 5s; 抵抗 shortens the fear and not the speed buff', () => {
+test('[敌能-49] 半血恐惧 lasts 5s; 抵抗 shortens the fear and not the speed buff', () => {
   const plain = open(WING, wingDef());
   step(plain.w, plain.c);
   const a = unit(plain.w, WING);

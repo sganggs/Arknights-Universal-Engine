@@ -27,7 +27,7 @@ function halfCrossed(ctx) {
 }
 
 /**
- * 自惧 (敌能-49). Once, on the crossing frame. A talent, so neither silence nor being unable to act stops it (如无特殊
+ * 半血恐惧 (敌能-49). Once, on the crossing frame. A talent, so neither silence nor being unable to act stops it (如无特殊
  * 说明，天赋默认不可沉默). Catalog fear, sourced to itself; the speed is a plain buff.
  * @type {FoeBehavior}
  */
