@@ -13,7 +13,7 @@ import { worksMul } from './works.js';
 import { inflict } from './status.js';
 import { damageFloor } from './talentmore.js';
 import { nonLethalCap } from './talentfight.js';
-import { stealthed } from './targeting.js';
+import { stealthed, liftoffRefused } from './targeting.js';
 
 /** @typedef {import('./types.js').Unit} Unit @typedef {import('./types.js').Buff} Buff @typedef {import('./types.js').World} World */
 /** @typedef {import('./types.js').DamageType} DamageType */
@@ -325,6 +325,18 @@ function untouchable(target, dmg) {
 }
 
 /**
+ * Whether a hit stops before the defences (伤害-7, 阻挡-2): the target is invincible or gone, or a ground enemy or
+ * hostile device is hitting a unit that took off. 起飞 is judged once here, before `hit`, so that event does not see a
+ * refused hit and a handler that lifts the target does not cancel this one. A sourceless hit has no selecting source.
+ * @param {World} w @param {Unit | null} src @param {Unit} target @param {Damage} dmg
+ */
+function hitStops(w, src, target, dmg) {
+  if (untouchable(target, dmg) || target.hidden) return true;
+  if (liftoffRefused(dmg.sourceless ? null : src, target)) return true;
+  return !hitGoesOn(w, src, target, dmg);
+}
+
+/**
  * The `hit` event before the defences (钩子-3): whether the hit goes on — not cancelled, the target still on the field
  * with HP, not made invincible by a handler.
  * @param {World} w @param {Unit | null} src @param {Unit} target @param {Damage} dmg
@@ -384,7 +396,8 @@ const floored = (c, seen, target, dmg, amount) => (c && seen ? nonLethalCap(c, s
 
 /**
  * Deals a hit (伤害-7): nothing to a unit already at 0 HP; 生命流失 goes straight to the HP; nothing to an invincible
- * unit (无敌, 沉睡, disappeared: 路线-4); otherwise the `hit` event, then the hit counts for 受击回复 (技能-2) and for
+ * unit (无敌, 沉睡, disappeared: 路线-4); nothing from a ground enemy or a hostile device onto a unit that took off
+ * (起飞, 阻挡-2) — judged once, before `hit`, so a handler that lifts the target does not cancel this hit; otherwise the `hit` event, then the hit counts for 受击回复 (技能-2) and for
  * its source's rune SP (符文-4; given the content), then the target's defences, `mul`, an attack's floor by its source's
  * talents (职业-31; given the content), the source's multiplier, the 工事 multiplier (地图-3; given the content), the target's 伤判
  * effects, the `hpDamage` event, then the HP. A `sourceless` hit takes neither its source's penetration nor its
@@ -395,7 +408,7 @@ export function dealDamage(w, src, target, dmg, c) {
   if (target.hp <= 0) return 0;
   settle(dmg);
   if (dmg.hpLoss) return loseHp(w, src, target, dmg.amount, dmg);
-  if (untouchable(target, dmg) || target.hidden || !hitGoesOn(w, src, target, dmg)) return 0;
+  if (hitStops(w, src, target, dmg)) return 0;
   hurtSp(target);
   if (c && src && !dmg.sourceless) runeSp(w, c, src);
   const seen = seenOf(src, dmg), ss = seen ? statsOf(seen) : null;

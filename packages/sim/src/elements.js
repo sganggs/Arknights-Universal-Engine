@@ -4,6 +4,7 @@
 import { FPS, secondsToFrames } from '@aue/math';
 import { KIND } from '@aue/schema';
 import { statsOf } from './attrs.js';
+import { liftoffRefused } from './targeting.js';
 import { makeBuff, addBuff, count, retune } from './buffs.js';
 import { inflict } from './status.js';
 import { dealDamage } from './damage.js';
@@ -77,13 +78,14 @@ const unaffected = (u) => {
 
 /**
  * Deals 元素损伤 (元素-2, 元素-3): nothing to a unit at 0 HP, invincible, disappeared, immune to elements (元素免疫) or
- * in a burst; otherwise the `elementHit` event (钩子-3: its handlers may change the amount or its multiplier, or cancel
+ * in a burst, or to a unit that took off when `src` is a ground enemy or a hostile device (起飞, 阻挡-2; judged once,
+ * before `elementHit`); otherwise the `elementHit` event (钩子-3: its handlers may change the amount or its multiplier, or cancel
  * it), then the element's value drops by what the unit takes, and at 0 the burst begins — the burst of `src`, the unit
  * that dealt it (元素-4). Returns the amount taken.
  * @param {World} w @param {Unit} u @param {Element} el @param {number} amount @param {Unit | null} [src]
  */
 export function dealEp(w, u, el, amount, src = null) {
-  if (!(amount > 0) || unaffected(u)) return 0;
+  if (!(amount > 0) || unaffected(u) || liftoffRefused(src, u)) return 0;
   const dmg = emit(w, 'elementHit', { source: src, target: u, dmg: { type: 'element', element: el, amount, mul: 1, cancel: false } }).dmg;
   if (dmg.cancel || unaffected(u) || !(dmg.amount * dmg.mul > 0)) return 0;
   const taken = epTaken(dmg.amount * dmg.mul, statsOf(u), el), left = epOf(u, el) - taken;

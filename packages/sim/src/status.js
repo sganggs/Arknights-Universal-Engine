@@ -4,6 +4,7 @@
 import { secondsToFrames } from '@aue/math';
 import { KIND } from '@aue/schema';
 import { statsOf } from './attrs.js';
+import { liftoffRefused } from './targeting.js';
 import { makeBuff, addBuff, removeBuff, consumeStack, count, decayRate } from './buffs.js';
 import { emit, hasHook } from './bus.js';
 
@@ -113,11 +114,12 @@ function applyCold(target, cold) {
 }
 
 /**
- * Applies a status (状态-5…状态-7). Cold and freeze from an enemy are the enemy kinds. Returns the buff now in the list,
- * or null when the status does not take hold (浮空 on a flying unit, 缚地 on a ground unit, 恐惧 on a character).
- * @param {Unit} target @param {StatusKey} key @param {StatusOptions} [o] @returns {Buff | null}
+ * Puts a status on a unit (状态-5…状态-7). Cold and freeze from an enemy are the enemy kinds. Returns the buff now in
+ * the list, or null when it does not take hold (浮空 on a flying unit, 缚地 on a ground unit, 恐惧 on a character).
+ * Does not look at 起飞: the caller already decided that (阻挡-2), so a handler that lifts the target does not cancel it.
+ * @param {Unit} target @param {StatusKey} key @param {StatusOptions} o @returns {Buff | null}
  */
-export function applyStatus(target, key, o = {}) {
+function giveStatus(target, key, o) {
   const fromEnemy = o.src?.kind === KIND.ENEMY;
   const k = fromEnemy && key === 'cold' ? 'enemyCold' : fromEnemy && key === 'freeze' ? 'enemyFreeze' : key;
   if (STATUS[k].refuse(statsOf(target), target)) return null;
@@ -127,16 +129,28 @@ export function applyStatus(target, key, o = {}) {
 }
 
 /**
- * A status in a battle (状态-5, 钩子-3): the `beforeStatus` event — a handler may cancel it, change its frames (−1 for
- * no end; none left cancels it) or its strength (the status's value) —, then the status as applyStatus gives it.
+ * Applies a status (状态-5…状态-7). A ground enemy or a hostile device cannot put one on a unit that took off (起飞,
+ * 阻挡-2). Returns the buff now in the list, or null when the status does not take hold.
+ * @param {Unit} target @param {StatusKey} key @param {StatusOptions} [o] @returns {Buff | null}
+ */
+export function applyStatus(target, key, o = {}) {
+  if (liftoffRefused(o.src ?? null, target)) return null;
+  return giveStatus(target, key, o);
+}
+
+/**
+ * A status in a battle (状态-5, 钩子-3): refused for 起飞 before the event (阻挡-2); then the `beforeStatus` event — a
+ * handler may cancel it, change its frames (−1 for no end; none left cancels it) or its strength (the status's value) —
+ * then the status. Taking off inside the handler does not cancel it: the check already passed.
  * @param {import('./types.js').World} w @param {Unit} target @param {StatusKey} key @param {StatusOptions} [o] @returns {Buff | null}
  */
 export function inflict(w, target, key, o = {}) {
-  if (!hasHook(w, 'beforeStatus')) return applyStatus(target, key, o);
+  if (liftoffRefused(o.src ?? null, target)) return null;
+  if (!hasHook(w, 'beforeStatus')) return giveStatus(target, key, o);
   const k = emit(w, 'beforeStatus', { source: o.src ?? null, target, status: key, frames: framesOf(o), strength: o.value, cancel: false });
   const frames = Number.isFinite(k.frames) ? Math.trunc(k.frames) : framesOf(o);
   if (k.cancel || target.hp <= 0 || (frames <= 0 && frames !== -1)) return null;
-  return applyStatus(target, key, { ...o, frames, seconds: undefined, value: k.strength });
+  return giveStatus(target, key, { ...o, frames, seconds: undefined, value: k.strength });
 }
 
 /** 麻痹 loses a layer every this many frames at a 综合抵抗衰减率 of 1 (状态-8: 10 s). */

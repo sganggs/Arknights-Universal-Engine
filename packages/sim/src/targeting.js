@@ -101,9 +101,24 @@ export const friendly = (u) => u.kind === KIND.OPERATOR || (u.kind === KIND.ENEM
 
 /**
  * 对地规避 of a unit that took off (起飞, flag `liftoff`, 阻挡-2): an enemy that is not flying cannot select it.
+ * Damage and status use `liftoffRefused` — a shot already in flight is not a new selection.
  * @param {Unit} src @param {Unit} u
  */
 export const evadesGround = (src, u) => src.kind === KIND.ENEMY && !statsOf(src).flying && !!statsOf(u).flags.liftoff;
+
+/**
+ * Whether `src` cannot land a hit, 元素损伤 or a status on `target` because it took off (起飞, 阻挡-2).
+ * A ground enemy cannot. A hostile device is a character, so its 行动方式 stays ground even when its motion says
+ * otherwise, unless it is 浮空. A flying enemy can. No source is not a selection, and neither is the same side.
+ * @param {Unit | null | undefined} src @param {Unit} target
+ */
+export function liftoffRefused(src, target) {
+  if (!src || !statsOf(target).flags.liftoff) return false;
+  const s = statsOf(src);
+  if (s.flags.levitate) return false;
+  const foe = src.kind === KIND.DEVICE ? src.base.hostile === true : src.kind === KIND.ENEMY && !s.flying;
+  return foe && friendly(target);
+}
 
 /** 仇恨值 of an enemy-type unit (索敌-3): 10⁸ × 嘲讽等级 − clamp(路径距离, −10⁸, 10⁸). @param {number} taunt @param {number} dist */
 export const enemyHatred = (taunt, dist) => 1e8 * taunt - Math.min(1e8, Math.max(-1e8, dist));
