@@ -212,10 +212,13 @@ function ownMods(level, bb, others) {
 /** Chinese numerals of extra targets and hits (技能-9). */
 const COUNT = Object.freeze(/** @type {Record<string, number>} */ ({ 一: 1, 两: 2, 二: 2, 三: 3, 1: 1, 2: 2, 3: 3 }));
 
+/** 不死 while the skill runs (技能-9): 「技能持续期间内干员的生命值（始终）不会低于1」. */
+const UNDYING = /^技能持续期间内干员的生命值(?:始终)?不会低于1$/u;
+
 /**
  * One sentence of a description as what it adds (技能-9), or null for a sentence it does not read.
  * @param {string} s the sentence, its placeholders as {key} @param {Record<string, number>} bb
- * @returns {{ mods?: Record<string, number>, attack?: NonNullable<SkillDef['extra']>['attack'] } | null}
+ * @returns {{ mods?: Record<string, number>, flags?: Record<string, boolean>, attack?: NonNullable<SkillDef['extra']>['attack'] } | null}
  */
 function phraseOf(s, bb) {
   let m;
@@ -229,6 +232,7 @@ function phraseOf(s, bb) {
   if ((m = /^(?:并)?获得\{prob\}的?物理(和法术)?闪避$/.exec(s)) && Number.isFinite(bb.prob)) return { mods: { dodgePhys: bb.prob, ...(m[1] ? { dodgeArts: bb.prob } : {}) } };
   if (s === '阻挡数变为0') return { mods: { blockCntMul: 0 } };
   if (s === '防御力降至0') return { mods: { defMul: 0 } };
+  if (UNDYING.test(s)) return { flags: { undying: true } };
   return hitPhraseOf(s, bb);
 }
 
@@ -320,9 +324,11 @@ function extraOf(level, own) {
   const said = plainOf(level).split(/[。；\n]/).filter((seg) => !/关闭技能时/.test(seg)).join('。');
   const parts = said.split(/[，。；\n]/).map((s) => phraseOf(s.trim(), bb)).filter((p) => p !== null);
   const mods = Object.assign({ ...own, ...selfZeros(hit.keys) }, ...parts.map((p) => p.mods ?? {}));
+  const flags = Object.assign({}, ...parts.map((p) => p.flags ?? {}));
   const attack = Object.assign({}, ...parts.map((p) => p.attack ?? {}), hit.debuff ? { hitDebuff: hit.debuff } : {});
   const has = (/** @type {object} */ o) => Object.keys(o).length > 0;
-  return has(mods) || has(attack) ? { extra: { ...(has(mods) ? { mods } : {}), ...(has(attack) ? { attack } : {}) } } : {};
+  if (!has(mods) && !has(flags) && !has(attack)) return {};
+  return { extra: { ...(has(mods) ? { mods } : {}), ...(has(flags) ? { flags } : {}), ...(has(attack) ? { attack } : {}) } };
 }
 
 /** The operator's own modifier of each attribute key a hit can lower (技能-5). @type {Record<string, string>} */

@@ -76,6 +76,13 @@ async function skillAt(id, skill) {
   return /** @type {any} */ (operatorAt(await loadTraining(id), { elite: 2, level: 1, potential: 1, trust: 0, skill, skillLevel: 7 }).skill);
 }
 
+test('[技能-9] 「技能持续期间内干员的生命值（始终）不会低于1」 on real skills: 不死 while the skill runs', async () => {
+  const [ghost2, ghost, acguad, ghost2s1] = await Promise.all([skillAt('char_1023_ghost2', 1), skillAt('char_143_ghost', 1), skillAt('char_609_acguad', 2), skillAt('char_1023_ghost2', 0)]);
+  for (const s of [ghost2, ghost, acguad]) assert.deepEqual(s.extra?.flags, { undying: true }, s.id);
+  assert.equal(ghost2s1.extra?.flags, undefined, '归溟幽灵鲨一技能 says nothing of it');
+  assert.equal(ghost2.extra.mods, undefined, 'its 攻击力 and 攻击速度 stay the generic blackboard mods');
+});
+
 test('[技能-4] [技能-5] real skills that say 持续时间无限 run until closed; an attribute shown without a percent is 直接加算', async () => {
   const [whitew, lisa, surtr, quercu] = await Promise.all([skillAt('char_140_whitew', 0), skillAt('char_358_lisa', 1), skillAt('char_350_surtr', 2), skillAt('char_492_quercu', 0)]);
   assert.deepEqual([whitew, lisa, surtr].map((s) => [s.forever, skills.kindOf(s)]), [[true, 'duration'], [true, 'duration'], [true, 'duration']], '拉普兰德 S1, 铃兰 S2, 史尔特尔 S3');

@@ -345,3 +345,24 @@ test('[技能-4] the ammo count of a skill whose blackboard says trigger_time ("
   const ev = run(a.w, a.c, 30 * 5, [[0, { type: 'skill', unit: a.guard.id }]]);
   assert.deepEqual(ev.filter((e) => e.type === 'hit').map((e) => e.damage).slice(0, 4), [150, 150, 150, 50]);
 });
+
+test('[技能-9] [状态-5] the flags a description gives hold while the skill runs: 不死 keeps the HP at 1, and ends with the skill', () => {
+  const { w, c, guard } = arena(sk({ cost: 5, init: 5, duration: 2, extra: { flags: { undying: true } } }));
+  run(w, c, 1, [[0, { type: 'skill', unit: guard.id }]]);
+  assert.equal(guard.skill?.active, true);
+  assert.equal(statsOf(guard).flags.undying, true);
+  dealDamage(w, null, guard, { type: 'true', amount: 1e9 });
+  assert.equal(guard.hp, 1, 'not below 1 while the skill runs');
+  run(w, c, 61);
+  assert.equal(guard.skill?.active, false);
+  assert.equal(guard.buffs.some((b) => b.key === 'skillFlags'), false);
+  dealDamage(w, null, guard, { type: 'true', amount: 1e9 });
+  assert.equal(guard.hp, 0, 'the skill over, a lethal hit is lethal');
+});
+
+test('[技能-9] flags are only held by a skill that runs: an instant one gives none', () => {
+  const { w, c, guard } = arena(sk({ cost: 5, init: 5, extra: { flags: { undying: true } } }));
+  run(w, c, 1, [[0, { type: 'skill', unit: guard.id }]]);
+  assert.equal(guard.buffs.some((b) => b.key === 'skillFlags'), false);
+  assert.equal(statsOf(guard).flags.undying, undefined);
+});

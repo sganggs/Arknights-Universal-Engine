@@ -91,12 +91,12 @@
  */
 
 /**
- * What a skill's description adds (技能-9): modifiers while it runs; and for its attacks, every enemy the operator blocks
+ * What a skill's description adds (技能-9): modifiers and flags while it runs; and for its attacks, every enemy the operator blocks
  * as targets, `more` targets than it would have, `times` hits, the damage type, a status each hit gives (at a chance
  * `prob`), modifiers each hit gives its target for some seconds (`hitDebuff`), the operator's own HP back for each attack
  * (`selfHeal`, a share of its maximum), the 元素损伤 each hit carries (`element`, `epScale` × its attack), a push or
  * pull of 力度 `force` on each target (`displace`; along the operator's facing for `along`).
- * @typedef {{ mods?: Record<string, number>, attack?: { blocked?: boolean, more?: number, times?: number, type?: DamageType,
+ * @typedef {{ mods?: Record<string, number>, flags?: Record<string, boolean>, attack?: { blocked?: boolean, more?: number, times?: number, type?: DamageType,
  *   hitStatus?: { key: import('./status.js').StatusKey, seconds: number, prob?: number }, hitDebuff?: { seconds: number, mods: Record<string, number> },
  *   selfHeal?: number, element?: import('./elements.js').Element, epScale?: number,
  *   displace?: { pull: boolean, force: number, along?: boolean } } }} SkillExtra
