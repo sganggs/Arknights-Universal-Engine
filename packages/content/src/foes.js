@@ -19,6 +19,10 @@ const PRTS = 'https://prts.wiki/index.php?title=';
  * @type {Readonly<Record<string, { talents?: Record<string, Record<string, number>>, skills?: Record<string, Record<string, number>>, source: string }>>}
  */
 export const FOE_EXTRAS = Object.freeze({
+  // 高能源石虫: 死亡爆炸（爆炸半径1.25，延迟1秒，爆炸时来源无效，造成攻击力400%的无途径物理溅射伤害，无视迷彩，不可对空）
+  enemy_1021_bslime: { talents: { boom: { radius: 1.25, delay: 1, arts: 0, air: 0, sourced: 0 } }, source: `${PRTS}%E9%AB%98%E8%83%BD%E6%BA%90%E7%9F%B3%E8%99%AB&oldid=413890` },
+  // 高能源石虫·α: 死亡爆炸（爆炸半径1.25，延迟1秒，爆炸时来源无效，造成攻击力400%物理溅射伤害，无视迷彩，不可对空）
+  enemy_1021_bslime_2: { talents: { boom: { radius: 1.25, delay: 1, arts: 0, air: 0, sourced: 0 } }, source: `${PRTS}%E9%AB%98%E8%83%BD%E6%BA%90%E7%9F%B3%E8%99%AB%C2%B7%CE%B1&oldid=375693` },
   // 冰爆源石虫: 死亡爆炸（爆炸半径1.65，延迟1秒，爆炸时来源无效 …… 物理溅射伤害 …… 不可对空）
   enemy_1067_snslime: { talents: { boom: { radius: 1.65, delay: 1, arts: 0, air: 0, sourced: 0 } }, source: `${PRTS}%E5%86%B0%E7%88%86%E6%BA%90%E7%9F%B3%E8%99%AB&oldid=435593` },
   // 冰爆源石虫·α: the same 死亡爆炸 (爆炸半径1.65，延迟1秒，爆炸时来源无效 …… 不可对空)

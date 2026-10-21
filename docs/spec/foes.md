@@ -44,17 +44,18 @@
 
 ### 敌能-5 死亡爆炸
 
-天赋 `boom`（冰爆源石虫、冰爆源石虫·α）、`Boom`（"喷射罐""喷爆罐"、辐能源石虫、辐能源石虫·α）：被击倒时，没有被沉默的话，在原地引发一次爆炸（敌能-3），伤害为攻击力 × `atk_scale`；有 `freeze` 时施加 `freeze` 秒的寒冷。有 `add_count` 时（辐能源石虫），场上其他每个有能量的敌人获得 `add_count` 点能量（敌能-13）。
+天赋 `boom`（冰爆源石虫、冰爆源石虫·α、高能源石虫、高能源石虫·α）、`Boom`（"喷射罐""喷爆罐"、辐能源石虫、辐能源石虫·α）：被击倒时，没有被沉默的话，在原地引发一次爆炸（敌能-3），伤害为攻击力 × `atk_scale`；有 `freeze` 时施加 `freeze` 秒的寒冷。有 `add_count` 时（辐能源石虫），场上其他每个有能量的敌人获得 `add_count` 点能量（敌能-13）。
 
 | 敌人 | 半径 | 延迟 | 类型 | 飞行单位 |
 |---|---|---|---|---|
 | 冰爆源石虫、冰爆源石虫·α | 1.65 | 1 秒 | 物理 | 不波及 |
+| 高能源石虫、高能源石虫·α | 1.25 | 1 秒 | 物理 | 不波及 |
 | "喷射罐""喷爆罐" | 1.55 | 0 | 法术 | 波及 |
 | 辐能源石虫、辐能源石虫·α | 1.25 | 0.5 秒 | 法术 | 不波及 |
 
 "喷射罐"死亡时还会熄灭周围的"紧急供暖器"，引擎还没有这种装置。
 
-- 来源：[PRTS「冰爆源石虫」oldid=435593](https://prts.wiki/index.php?title=%E5%86%B0%E7%88%86%E6%BA%90%E7%9F%B3%E8%99%AB&oldid=435593)「死亡爆炸（爆炸半径1.65，延迟1秒，爆炸时来源无效，造成攻击力200%的无途径物理溅射伤害并施加持续10秒的寒冷，无视迷彩，不可对空）」；[PRTS「"喷射罐"」oldid=435426](https://prts.wiki/index.php?title=%E2%80%9C%E5%96%B7%E5%B0%84%E7%BD%90%E2%80%9D&oldid=435426)「死亡后熄灭周围3x3范围内的紧急供暖器并对半径1.55范围内的我方单位造成攻击力100%的法术溅射伤害与10s寒冷（可被沉默）」；[PRTS「特殊机制」oldid=440928](https://prts.wiki/index.php?title=%E7%89%B9%E6%AE%8A%E6%9C%BA%E5%88%B6&oldid=440928)「如无特殊说明，此能力默认可沉默」；[PRTS「冰爆源石虫·α」oldid=435594](https://prts.wiki/index.php?title=%E5%86%B0%E7%88%86%E6%BA%90%E7%9F%B3%E8%99%AB%C2%B7%CE%B1&oldid=435594) 同冰爆源石虫；[PRTS「辐能源石虫」oldid=435841](https://prts.wiki/index.php?title=%E8%BE%90%E8%83%BD%E6%BA%90%E7%9F%B3%E8%99%AB&oldid=435841)、[PRTS「辐能源石虫·α」oldid=435842](https://prts.wiki/index.php?title=%E8%BE%90%E8%83%BD%E6%BA%90%E7%9F%B3%E8%99%AB%C2%B7%CE%B1&oldid=435842)「死亡爆炸（爆炸半径1.25，延迟0.5秒，造成攻击力400%的法术溅射伤害，不可对空；给予全场敌人1点能量）」，数据：Boom.atk_scale 4、add_count 1；"喷射罐"的延迟和对空为推断 INF-0072
+- 来源：[PRTS「冰爆源石虫」oldid=435593](https://prts.wiki/index.php?title=%E5%86%B0%E7%88%86%E6%BA%90%E7%9F%B3%E8%99%AB&oldid=435593)「死亡爆炸（爆炸半径1.65，延迟1秒，爆炸时来源无效，造成攻击力200%的无途径物理溅射伤害并施加持续10秒的寒冷，无视迷彩，不可对空）」；[PRTS「"喷射罐"」oldid=435426](https://prts.wiki/index.php?title=%E2%80%9C%E5%96%B7%E5%B0%84%E7%BD%90%E2%80%9D&oldid=435426)「死亡后熄灭周围3x3范围内的紧急供暖器并对半径1.55范围内的我方单位造成攻击力100%的法术溅射伤害与10s寒冷（可被沉默）」；[PRTS「特殊机制」oldid=440928](https://prts.wiki/index.php?title=%E7%89%B9%E6%AE%8A%E6%9C%BA%E5%88%B6&oldid=440928)「如无特殊说明，此能力默认可沉默」；[PRTS「冰爆源石虫·α」oldid=435594](https://prts.wiki/index.php?title=%E5%86%B0%E7%88%86%E6%BA%90%E7%9F%B3%E8%99%AB%C2%B7%CE%B1&oldid=435594) 同冰爆源石虫；[PRTS「辐能源石虫」oldid=435841](https://prts.wiki/index.php?title=%E8%BE%90%E8%83%BD%E6%BA%90%E7%9F%B3%E8%99%AB&oldid=435841)、[PRTS「辐能源石虫·α」oldid=435842](https://prts.wiki/index.php?title=%E8%BE%90%E8%83%BD%E6%BA%90%E7%9F%B3%E8%99%AB%C2%B7%CE%B1&oldid=435842)「死亡爆炸（爆炸半径1.25，延迟0.5秒，造成攻击力400%的法术溅射伤害，不可对空；给予全场敌人1点能量）」，数据：Boom.atk_scale 4、add_count 1；[PRTS「高能源石虫」oldid=413890](https://prts.wiki/index.php?title=%E9%AB%98%E8%83%BD%E6%BA%90%E7%9F%B3%E8%99%AB&oldid=413890)「死亡爆炸（爆炸半径1.25，延迟1秒，爆炸时来源无效，造成攻击力400%的无途径物理溅射伤害，无视迷彩，不可对空）」；[PRTS「高能源石虫·α」oldid=375693](https://prts.wiki/index.php?title=%E9%AB%98%E8%83%BD%E6%BA%90%E7%9F%B3%E8%99%AB%C2%B7%CE%B1&oldid=375693)「死亡爆炸（爆炸半径1.25，延迟1秒，爆炸时来源无效，造成攻击力400%物理溅射伤害，无视迷彩，不可对空）」「此能力可沉默。」，数据：boom.atk_scale 4；"喷射罐"的延迟和对空为推断 INF-0072
 
 ### 敌能-6 喷射
 
