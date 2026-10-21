@@ -19,6 +19,9 @@ import { attachInput } from './input.js';
 /** How deep nested prefabs are made inside one another. */
 const NEST = 8;
 
+// Paths outlive removals and must stay distinct across screens sharing an animator.
+let nextInstance = 0;
+
 /**
  * Unity's Slider showing a value (界面-7): the normalized value fills its fill image when that is a filled image, else
  * sets its fill rect's anchors — 0 to 1 across, and on the slider's axis up to the value (from the far end when the
@@ -194,7 +197,7 @@ export class Screen {
   instantiate(parent, tpl, at, o = {}) {
     const pn = this.ctx.pack.screens[tpl];
     if (!pn) throw new Error(`no prefab ${tpl} in the UI pack`);
-    const from = this.all.length, path = o.named ? `${parent.path}/${pn.name}` : `${parent.path}/${tpl}#${this.all.length}`;
+    const from = this.all.length, path = o.named ? `${parent.path}/${pn.name}` : `${parent.path}/${tpl}#${nextInstance++}`;
     const s = build(pn, parent, path, this, '');
     stencilScan(s);
     if (at != null && at < parent.kids.length) { parent.el.insertBefore(s.el, parent.kids[at].el); parent.kids.splice(at, 0, s); }

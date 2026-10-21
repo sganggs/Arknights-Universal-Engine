@@ -135,3 +135,26 @@ test('[界面-38] an emote pops by its seat\'s side: this seat\'s offset and loo
   assert.deepEqual(pops.map((p) => [p.rt.pos, e.screen.one('emoji_send_me', p)?.active, e.screen.one('emoji_send_mate', p)?.active]),
     [[[-365, 0], true, false], [[380, 0], false, true]]);
 });
+
+test('[界面-8] [界面-38] overlapping emotes expire independently after an earlier pop is removed', async () => {
+  const ui = setup();
+  // A synthetic six-second clip permits the same seat to send again after its five-second cool-down.
+  ui.ctx.pack.clips.actv3multi_battle_emoji_send = { wrap: 0, length: 6, curves: [] };
+  const e = createBattleEmotes(ui, { themes: [], emotes: [], picture: () => null, send() {} });
+  e.show(true, 't', 'A');
+  ui.tick(1);
+  e.show(false, 't', 'B');
+  ui.tick(5.01);
+  await Promise.resolve();
+  e.show(true, 't', 'C');
+  const pops = /** @type {import('../src/node.js').UiNode} */ (e.screen.one('pop_emoticon_item_self'));
+  const c = /** @type {import('../src/node.js').UiNode} */ (pops.kids.at(-1));
+  ui.tick(1);
+  await Promise.resolve();
+  assert.equal(c.gone, false, 'B finishing must not end C');
+  assert.ok(e.screen.all.includes(c));
+  assert.equal(ui.anim.playing.length, 1, 'C continues its own clip');
+  ui.tick(5.01);
+  await Promise.resolve();
+  assert.equal(pops.kids.length, 0);
+});
