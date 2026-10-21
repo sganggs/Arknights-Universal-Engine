@@ -22,6 +22,7 @@ import { foeTargets, foeAttack, foeHit, isFoeOf } from './foes.js';
 import { makeBuff, addBuff, removeBuff } from './buffs.js';
 import { tileOf } from './body.js';
 import { tickSkill, beforeAttack, attackMods, afterAttack } from './skills.js';
+import { skillCounter } from './skilltext.js';
 import { palsyInterrupts, inflict } from './status.js';
 import { draw } from './rng.js';
 import { dealEp, rampageAttack, restoreEp } from './elements.js';
@@ -185,6 +186,7 @@ function ridesOn(w, c, h, dmg, dealt) {
     if (!load.hit) hitSp(c, src, t);
   } else if (src && t.kind === KIND.OPERATOR) {
     attacked(w, c, t, src, dmg);
+    skillCounter(w, c, t, src, dmg);
     attackerHit(c, t, src);
     if (dealt > 0 && t.hp > 0) talentSp(w, c, t, 'attacked');
   }

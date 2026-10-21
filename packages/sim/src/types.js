@@ -91,15 +91,25 @@
  */
 
 /**
- * What a skill's description adds (技能-9): modifiers and flags while it runs; and for its attacks, every enemy the operator blocks
+ * What a skill's description adds (技能-9, 技能-14): modifiers and flags while it runs; and for its attacks, every enemy the operator blocks
  * as targets, `more` targets than it would have, `times` hits, the damage type, a status each hit gives (at a chance
  * `prob`), modifiers each hit gives its target for some seconds (`hitDebuff`), the operator's own HP back for each attack
  * (`selfHeal`, a share of its maximum), the 元素损伤 each hit carries (`element`, `epScale` × its attack), a push or
  * pull of 力度 `force` on each target (`displace`; along the operator's facing for `along`).
+ * 技能-14, read from other sentences: `counter` while the skill runs, a `barrier` gained as it starts, `bursts` at the
+ * start or the end, `selfStun` when it ends, `allyHeal` for a friendly unit. `hitScale` `'attack'` means a plain
+ * `atk_scale` belongs to the counter or the burst, so the attack's scale is `attack@atk_scale`.
  * @typedef {{ mods?: Record<string, number>, flags?: Record<string, boolean>, attack?: { blocked?: boolean, more?: number, times?: number, type?: DamageType,
  *   hitStatus?: { key: import('./status.js').StatusKey, seconds: number, prob?: number }, hitDebuff?: { seconds: number, mods: Record<string, number> },
  *   selfHeal?: number, element?: import('./elements.js').Element, epScale?: number,
- *   displace?: { pull: boolean, force: number, along?: boolean } } }} SkillExtra
+ *   displace?: { pull: boolean, force: number, along?: boolean } },
+ *   counter?: { scale: number, stat: 'atk' | 'def', type: DamageType, around?: boolean, ground?: boolean, cooldown?: number,
+ *     element?: import('./elements.js').Element, epScale?: number, silence?: number },
+ *   barrier?: { ratio: number, seconds: number, decay?: boolean, type?: 'phys', cap?: number, tied?: boolean },
+ *   bursts?: { at: 'start' | 'end', scale: number, type: DamageType, where: 'attack' | 'cells', range?: Cell[] }[],
+ *   selfStun?: { seconds: number },
+ *   allyHeal?: { scale: number, all?: boolean, others?: boolean, on: 'attack' | 'start', below?: number, range?: Cell[] },
+ *   hitScale?: 'attack' }} SkillExtra
  */
 /**
  * An enemy's skill (敌能-1): its name (prefabKey), first and later cooldowns in seconds, SP cost (spCost; 0 for none),

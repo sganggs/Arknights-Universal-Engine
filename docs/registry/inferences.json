@@ -2189,5 +2189,40 @@
     "statement": "说明给的标记（不死）在技能开始时作为自身的 Buff 加上、技能结束时去掉，不管技能有没有专门的行为；立即技能和下次攻击技能没有运行期间，不给标记。",
     "basis": "skill_table 的句子写「技能持续期间内」，PRTS「归溟幽灵鲨」oldid=361755 的备注写「技能期间持有不死」；都没有说标记挂在哪里，也没有说没有持续时间的技能怎样。",
     "status": "待查证"
+  },
+  {
+    "id": "INF-0316",
+    "clause": "技能-14",
+    "statement": "反击只认以「受到攻击时对目标、周围的敌人或周围的地面敌人造成……{atk_scale}的伤害」开头的句子。触发的是敌人的攻击，伤害不可闪避。周围是与干员距离的平方不超过 2.25，地面再排除飞行。「每{aoe_cd}秒最多触发一次」从这次触发的帧起算，没有打到人也开始算。同一句的沉默和元素损伤打在这些敌人身上，数值是触发时的攻击力或防御力 × atk_scale。",
+    "basis": "skill_table 斩业星熊 skchr_hsgma2_1、星熊 skchr_hsguma_2、年 skchr_nian_2、泡泡 skchr_bubble_2、菲莱 skchr_philae_2 的说明与 blackboard。说明写了周围、地面、冷却和附带的损伤，没有写格数、能不能闪避、冷却从哪一帧起算。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-0317",
+    "clause": "技能-14",
+    "statement": "屏障等于技能属性加成之后的最大生命值乘比例，再不超过「最多不超过」的比例。秒数先取屏障句里的 {键}秒，否则 shield_max_duration，否则技能持续时间。衰减是每 0.5 秒减少总屏障 × 0.5 ÷ 秒数。秒数取自技能或「持续至技能结束」的，技能结束时移除。「自身与其」「自身和召唤物」只给自己。",
+    "basis": "skill_table 砾 skchr_gravel_2、斥罪 skchr_judge_3、傀影 skchr_phatom_1、摩根 skchr_morgan_2、新约能天使 skchr_angel2_2、电弧 skchr_radian_1、响石 skchr_cairn_2 的说明与 blackboard。说明写了衰减和持续至技能结束，没有写每跳掉多少、多久跳一次，也没有写「与其」「和召唤物」的另一人怎么给。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-0318",
+    "clause": "技能-14",
+    "statement": "「立即对周围所有敌人造成相当于攻击力{atk_scale}」在技能开启时放，被动也放。「技能结束时」的那一句在结束时放；干员已无生命，或结束原因是离场，不放。写攻击范围的用当时的攻击范围；写周围所有且这一级有 rangeId 的用那些格子，否则用攻击范围。含飞行的敌人。这句的 plain atk_scale 不是普通攻击的倍率。",
+    "basis": "skill_table 余 skchr_yu_2、缄默德克萨斯 skchr_texas2_2、红 skchr_red_2、槐琥 skchr_waaifu_2、傀影 skchr_phatom_3、Misery skchr_acspec_3、薄绿 skchr_mint_2、车尔尼 skchr_pianst_2 的说明与 blackboard。说明写了立即和技能结束时，没有写被动是否照放、倒下或离场放不放、周围没有 rangeId 时用哪一块。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-0319",
+    "clause": "技能-14",
+    "statement": "「持续时间结束后」或「技能结束后」并且同一句晕眩 {stun} 秒、晕的不是敌人、摄影车、召唤物或装置时，晕的是干员自己，秒数是 plain stun。干员已无生命，或结束原因是离场，不晕。",
+    "basis": "skill_table 阿米娅 skchr_amiya_2、雷蛇 skchr_liskam_2、幽灵鲨 skchr_ghost_2、布洛卡 skchr_broca_2 的说明与 blackboard（plain stun，另有 attack@stun 的不算这一条）。说明没有写倒下或离场时还晕不晕。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-0320",
+    "clause": "技能-14",
+    "statement": "非医疗干员「恢复/治疗友方」：所有友方治疗主要范围里每个未满生命的友方，不另找 1.5 格；否则取生命比例最低的一个，主要范围里没有再取距离平方不超过 2.25 的。主要范围在句子写了附近、周围或范围内且这一级有 rangeId 时是那些格子。其他不含自己。血量不足一半是比例低于 0.5。「攻击范围」「攻击距离」里的攻击不算跟这次攻击一起，立即恢复的仍在开启时治疗。跟攻击一起、又没有持续时间的，种类是下次攻击。",
+    "basis": "skill_table 古米 skchr_sunbr_1、瑕光 skchr_blemsh_1 与 skchr_blemsh_3、塞雷娅 skchr_demkni_1 与 skchr_demkni_2、临光 skchr_nearl_1 的说明与 blackboard。说明写了附近、周围、所有、其他和不足一半，没有写补位半径、排序精度、rangeId 不算攻击范围变化，也没有写因此变成下次攻击。",
+    "status": "待查证"
   }
 ]

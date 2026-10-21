@@ -1,6 +1,6 @@
 # 技能
 
-实现见 `packages/sim/src/skills.js`（技能运行）和 `packages/sim/src/sp.js`（技力），官方技能的数据转换和行为见 `packages/content/src/skills.js`。
+实现见 `packages/sim/src/skills.js`、`packages/sim/src/skilltext.js`（技能运行）和 `packages/sim/src/sp.js`（技力），官方技能的数据转换和行为见 `packages/content/src/skills.js`、`packages/content/src/skilltext.js`。
 
 ### 技能-1 技能数据与种类
 
@@ -19,7 +19,7 @@
 | 被动 | 触发类型为被动 |
 | 弹药 | 持续类型为弹药（AMMO） |
 | 持续 | 持续时间大于 0 |
-| 下次攻击 | 没有持续时间，blackboard 有攻击类的键（技能-5） |
+| 下次攻击 | 没有持续时间，blackboard 有攻击类的键（技能-5），或技能-14 说这次攻击治疗友方 |
 | 立即 | 其余 |
 
 开启时切换到替身、持续时间不大于 0 的，按立即，不当作下次攻击（职业-15）。
@@ -95,7 +95,7 @@
   另外四种穿透（`def_penetrate`、`def_penetrate_fixed`、`magic_resist_penetrate`、`magic_resist_penetrate_fixed`）也按直接加算。`hp_recovery_per_sec_by_max_hp_ratio` 为正时，生命回复速度（直接加算）+ 技能开始时的最大生命值 × 这个数（如蛇屠箱二技能「每秒恢复最大生命的{hp_recovery_per_sec_by_max_hp_ratio}」）。
 
   说明里显示时不带百分号的 `atk`、`def`、`max_hp`（占位符写作 `{max_hp}` 而不是 `{max_hp:0%}`，如史尔特尔三技能「生命上限+{max_hp}」）是数值，按直接加算：修饰器换成 `atkFlat`、`defFlat`、`hpFlat`。说明把一个键给了别的单位（技能-11）时，它不是干员自己的属性键。
-- **攻击键**：技能发动的攻击中，`atk_scale`（或 `attack@atk_scale`）是攻击力倍率（伤害-6），`times`（或 `attack@times`）是每个目标受到的次数，`max_target`（或 `attack@max_target`）是目标数（索敌-3 取前 n 个）。行为可以给攻击修正加上一种元素和每下的元素损伤（元素-2）。
+- **攻击键**：技能发动的攻击中，`atk_scale`（或 `attack@atk_scale`）是攻击力倍率（伤害-6），`times`（或 `attack@times`）是每个目标受到的次数，`max_target`（或 `attack@max_target`）是目标数（索敌-3 取前 n 个）。行为可以给攻击修正加上一种元素和每下的元素损伤（元素-2）。技能-14 的反击或爆发占用的 plain `atk_scale` 不是这一下攻击的倍率；`attack@atk_scale` 仍是。
 - **`cost`**：立即技能和持续技能开始时，拥有者立刻获得这么多费用，不超过上限（如香草「获得 6 点部署费用，攻击力 +X%」，持续 10 秒）。
 
 - 来源：不带百分号的数值：[PRTS「史尔特尔」oldid=435132](https://prts.wiki/index.php?title=%E5%8F%B2%E5%B0%94%E7%89%B9%E5%B0%94&oldid=435132) 三技能「生命上限{{+|5000|…}}」（加算模板），数据 `max_hp` 5000、说明 `{max_hp}`；按占位符格式判断为推断 INF-0239；数据：battle/buff_template_data 中官方属性修饰器的类型分布（ATK 388 个中 MULTIPLIER 337 个；ATTACK_SPEED 214 个中 ADDITION 196 个；DEF 以 MULTIPLIER 为主；MAX_HP 以 MULTIPLIER 为主；MAGIC_RESISTANCE、BLOCK_CNT、SP_RECOVERY_PER_SEC、BASE_ATTACK_TIME、ABILITY_RANGE_FORWARD_EXTEND、TAUNT_LEVEL、各种穿透以 ADDITION 为主）；[PRTS「游戏数据基础」oldid=440563](https://prts.wiki/index.php?title=%E6%B8%B8%E6%88%8F%E6%95%B0%E6%8D%AE%E5%9F%BA%E7%A1%80&oldid=440563)「倍率」：攻击力倍率；键到效果的对应为推断 INF-0035；持续技能的 `cost` 在开始时获得：[PRTS「香草」oldid=435199](https://prts.wiki/index.php?title=%E9%A6%99%E8%8D%89&oldid=435199) 技能 1 描述「获得 6 点部署费用，攻击力 +5%」，持续 10 秒
@@ -141,7 +141,7 @@
 
 ### 技能-9 说明里写明的攻击变化与修饰器
 
-技能这一级的说明（去掉富文本标签，按「，」「。」「；」和换行分句——数据里写作 `\n` 两个字符的也是换行——，占位符记作 `{键}`）里，下面这些句子在通用效果（技能-5）之外另起作用；其余句子不读：
+技能这一级的说明（去掉富文本标签，按「，」「。」「；」和换行分句——数据里写作 `\n` 两个字符的也是换行——，占位符记作 `{键}`）里，下面这些句子在通用效果（技能-5）之外另起作用；其余句子不读（技能-14 另读的除外）：
 
 | 句子 | 作用 |
 |---|---|
@@ -220,3 +220,19 @@
 还没有实现的：引星棘刺三技能（向几名干员投掷、围成区域），旅骨未精英化时「潜水作业」的命中率固定为 0 的现象。引星棘刺的天赋「视界」见 部署-5。
 
 - 来源：数据：skill_table 锡人一、二技能，旅骨一、二技能，引星棘刺一、二技能的说明与 blackboard（`projectile_delay_time`、`projectile_range`、`atk_scale`、`interval`、`atk`、`move_speed`、`value`、`heavy_atk_scale`、`hp_recovery_per_sec_ratio`、`hp_recovery_per_sec_ratio_chr`、`def`、`heal_scale`、`projectile_move_speed`、`remaining_time`），character_table 天赋「凋敝魂灵」`skill@damage_scale`、「心相」`projectile_extend`；[PRTS「分支特性信息/data」oldid=427899](https://prts.wiki/index.php?title=%E5%88%86%E6%94%AF%E7%89%B9%E6%80%A7%E4%BF%A1%E6%81%AF/data&oldid=427899) 炼金师「投掷的炼金单元为弹道效果；干员离场时已投掷的炼金单元会留在场上，直至其持续时间结束，通常情况下其会缓存触发瞬间干员的相关属性，造成无来源伤害」；[PRTS「锡人」oldid=441640](https://prts.wiki/index.php?title=%E9%94%A1%E4%BA%BA&oldid=441640)「炼金单元落地后变为静止弹道……会缓存技能开启时自身的攻击力……影响半径1.0，造成无来源法术持续伤害」「攻击范围内无可选敌方单位时，选择攻击范围内的、自身正前方的>距离自身最远的地块，以该地块中心放置炼金单元」「可同时存在复数个，效果可叠加，影响半径2.0」「生命恢复的提供方式为增加目标的“生命回复速度”属性」，天赋「本天赋实际为技能炼金单元的效果，自身离场后也可继续生效」；[PRTS「旅骨」oldid=441660](https://prts.wiki/index.php?title=%E6%97%85%E9%AA%A8&oldid=441660)「炼金单元影响半径1.5」「2.0」；[PRTS「引星棘刺」oldid=435248](https://prts.wiki/index.php?title=%E5%BC%95%E6%98%9F%E6%A3%98%E5%88%BA&oldid=435248)「此天赋仅在投掷炼金单元时判定是否存在其他干员」，[PRTS「旅骨」oldid=441660](https://prts.wiki/index.php?title=%E6%97%85%E9%AA%A8&oldid=441660) 天赋「多个旅骨的命中率降低效果间取最终倍率最高者（即减少量更低者）」「优先选择生命比例最低>最晚部署的我方单位（不含装置职业单位）」「初始影响半径1.1，每秒扩大0.143，炼金单元移动速度0.1……移动方向始终为远离棘刺部署位置中心的方向；若投掷位置为棘刺所在格，炼金单元将不会移动」「治疗/回复降低效果乘算叠加」；battle_equip_table ALC-X「场上存在炼金单元时，技力自然恢复速度+0.1/秒」；落地时刻、结算的次数与时刻、范围的判定、技能的种类与发动时机为推断 INF-0243，天赋只作用于自己的炼金单元、ALC-X 只看自己的为推断 INF-0244
+
+### 技能-14 说明里的反击、屏障、爆发、自晕与治疗友方
+
+技能-9 不读的句子里，下面这些另读。读法同技能-9：去掉富文本标签，占位符记作 `{键}`，按「，」「。」「；」和换行分句；括号里的逗号仍算同一句。关闭技能的那一段（「关闭技能时」）不算。
+
+blackboard 的 `root`、`unmovable` 不读成命中束缚。现有技能里这两个键不是「攻击命中时束缚目标」：怒潮凛冬三技能的 `unmovable` 写在天赋替换上，傀影三技能的 `root` 是部署时随机控制里的一个状态，令二技能的键是 `ling_s2_unmovable.duration`，卡涅利安二技能是 `attack@root`（蓄力附加），水月二技能是 `attack@unmovable`（天赋的额外攻击）。没有一条干员技能的说明把这两个键写成自己攻击命中时的束缚。
+
+- **反击**：句子以「（每次）受到（敌人的）攻击时，对目标 / 周围的敌人 / 周围的地面敌人，造成（相当于）……攻击力或防御力 `{atk_scale}` 的物理、法术或真实伤害」开头。技能运行中，敌人的一次攻击打到干员时触发。对「目标」打这个敌人；对「周围」打距离平方不超过 2.25 的敌人，「地面」再去掉飞行的。伤害类型按这句，数值是当时的攻击力或防御力 × `atk_scale`。同一句里「并使其失去特殊能力{silence}秒」让这些敌人沉默那么久，「并附带{ep_damage_ratio}攻击力的神经/侵蚀/灼燃/凋亡/狂躁损伤」再附带这么多元素损伤（元素-2），「每{aoe_cd}秒最多触发一次」从这次起算冷却，没有打到人时也开始算。这次伤害不可闪避，不是攻击：不再次触发反击，不因此回复攻击技力。例子：斩业星熊一技能 `skchr_hsgma2_1`、星熊二技能 `skchr_hsguma_2`、年二技能 `skchr_nian_2`、泡泡二技能 `skchr_bubble_2`、菲莱二技能 `skchr_philae_2`。「该角色 / 该干员 / 该单位受到攻击时」、句里没有 `{atk_scale}`、写的是抵挡或「进行 1 次反击」的，不读。
+- **屏障**：句子写获得屏障，blackboard 里 `shield_hp_ratio`、`hp_ratio`、`shield_max_hp_ratio` 有一个出现在这句（「最多不超过」点名的那个键是上限，不是这个比例）。开启时，技能的属性加成已经加上，屏障 = 当时最大生命值 × 比例，再不超过上限 × 最大生命值。「物理伤害的屏障」只挡物理伤害。秒数：这句（连同紧接着的「该屏障……」「持续……」）里的 `{键}秒`；没有就用 `shield_max_duration`；再没有，技能有持续时间，或写了「持续至技能结束」，就用技能的秒数。写了「衰减」时，每 0.5 秒减少「总屏障 × 0.5 ÷ 秒数」。秒数取自技能或「持续至技能结束」的，结束时去掉；句子自己写了秒数的留到时间走完。「自身与其」「自身和召唤物」只给自己。例子：砾二技能 `skchr_gravel_2`、斥罪三技能 `skchr_judge_3`、傀影一技能 `skchr_phatom_1`、摩根二技能 `skchr_morgan_2`、新约能天使二技能 `skchr_angel2_2`、电弧一技能 `skchr_radian_1`、响石二技能 `skchr_cairn_2`。损伤屏障、溢出转成屏障、屏障被摧毁后再获得、把屏障给目标、装置或待部署区的，整段说明不读。
+- **爆发**：整段说明里「（部署后）立即对周围所有敌人造成相当于攻击力{atk_scale}的物理/法术/真实伤害」在开启时放一次，被动也放。例子：余二技能 `skchr_yu_2`、缄默德克萨斯二技能 `skchr_texas2_2`、红二技能 `skchr_red_2`、槐琥二技能 `skchr_waaifu_2`、傀影三技能 `skchr_phatom_3`、Misery 三技能 `skchr_acspec_3`。「技能结束时对攻击范围内所有敌人 / 周围所有敌人造成相当于攻击力{atk_scale}的……伤害」在结束时放一次。例子：薄绿二技能 `skchr_mint_2`、车尔尼二技能 `skchr_pianst_2`。写攻击范围的用当时的攻击范围；写周围所有、这一级又有 rangeId 的，用那个范围的格子；没有 rangeId 的用攻击范围。每个敌人一次，含飞行的，数值是当时攻击力 × `atk_scale`，不是普通攻击。干员已经没有生命，或结束原因是离场（`death`），不放。这句的 plain `atk_scale` 不是技能-5 的攻击倍率。
+- **结束时晕眩自己**：句子以「持续时间结束后」或「技能结束后」开头，同一句有「晕眩{stun}秒」，晕的不是敌人、摄影车、召唤物、装置。秒数是 plain `stun`，不是 `attack@stun`。没有生命或结束原因是离场时不晕。例子：阿米娅二技能 `skchr_amiya_2`、雷蛇二技能 `skchr_liskam_2`、幽灵鲨二技能 `skchr_ghost_2`、布洛卡二技能 `skchr_broca_2`、苍苔二技能 `skchr_bryota_2`、森蚺三技能 `skchr_zumama_3`、埃癸斯一技能 `skchr_aigis_1`、极光一技能 `skchr_aurora_1`、蚀清一技能 `skchr_serum_1`。
+- **治疗友方**：干员不是医疗时，同一句里有「恢复」或「治疗」、「友方」或「友军」、「生命」，以及 `{heal_scale}` 或 `{attack@heal_scale}`。数值是当时攻击力 × 这个数。「所有友方 / 友军」治疗主要范围里每个没满生命的友方（干员和召唤物都算），不向外再找。否则治疗其中生命比例最低的一个（精度 0.001，相同则按部署先后）；主要范围里没有，再找距离平方不超过 2.25 的。「其他」不含自己。「血量不足一半」只要比例低于一半的；「血量不足 N%」只要低于这个比例的。主要范围：句子有「附近」「周围」或「范围内」，这一级又有 rangeId，就用那个范围的格子，否则用攻击范围。这个范围不改攻击范围（技能-8）。句子里，或它前面直到上一个句号，有「攻击」（「攻击力」「攻击范围」「攻击距离」不算）的，跟这次攻击一起治疗；被动则每次攻击都治疗。否则在开启时治疗。没有持续时间、不是弹药、不是无限、不是被动、又是跟攻击一起治疗的，种类是下次攻击（技能-1）。「每秒」「八格」「改为」「伤害量」「治疗量」的不读。例子：古米一技能 `skchr_sunbr_1`、瑕光一技能 `skchr_blemsh_1`、瑕光三技能 `skchr_blemsh_3`、塞雷娅一技能 `skchr_demkni_1`、塞雷娅二技能 `skchr_demkni_2`、临光一技能 `skchr_nearl_1`、黍一技能 `skchr_shu_1`、深律一技能 `skchr_baslin_1`。
+
+医疗干员即使读到了也不治疗。技能 id 已经登记了专门行为（技能-6）时，这些效果不另做一遍。
+
+- 来源：数据：ArknightsGameData `17759cc8cdf37388414145d16262a3a06f3ab25e`（zh_CN）skill_table 的 levels[].description 与 blackboard，上列技能 id；不读成束缚的对照是 `skchr_headb2_3`、`skchr_ling_2`、`skchr_billro_2`、`skchr_mizuki_2`、`skchr_phatom_3` 的 `root`。句子的对应、周围按距离平方 2.25、反击不可闪避且只认敌人的攻击、冷却从触发当帧起算为推断 INF-0316；屏障在属性加成之后结算、衰减每 0.5 秒按总量线性减少、「自身与其」只给自己为推断 INF-0317；爆发的范围取法、被动开启时也放、无生命或离场不放、plain `atk_scale` 不作攻击倍率为推断 INF-0318；结束晕眩自己在无生命或离场时不晕为推断 INF-0319；治疗友方的选取、1.5 格的补位、主要范围用 rangeId、「攻击力」「攻击范围」「攻击距离」不算「攻击」、因此成为下次攻击为推断 INF-0320
