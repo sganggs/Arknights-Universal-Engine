@@ -3,6 +3,7 @@
 // blackboards, so a shape this file does not know stays uncovered (关卡-2) and does nothing at runtime.
 
 import { elements } from '@aue/sim';
+import { nestBuffOwns, nestPulseOwns, nestPulseTick, nestPulseUp } from './nest.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior */
 
@@ -38,13 +39,15 @@ function speedShape(bb) {
 }
 
 /**
- * Whether a talent of this name, with this blackboard, is the ability those names also mean (敌能-38). Any other name
- * is not this family's concern: the caller still asks FOE_NEEDS.
+ * Whether a talent of this name, with this blackboard, is an ability this file understands (敌能-38, 敌能-47).
+ * `EpDamage` with `pulse` is the nest pulse, not the on-hit element. `Buff` is the nest 抵抗 only in its shape.
+ * Any other name is not this family's concern: the caller still asks FOE_NEEDS.
  * @param {string} name @param {Record<string, unknown>} bb
  */
 export function elementHitOwns(name, bb) {
-  if (ELEMENT_NAMES.has(name)) return elementShape(bb);
+  if (ELEMENT_NAMES.has(name)) return elementShape(bb) || nestPulseOwns(name, bb);
   if (name === 'AttackSpeedUp') return speedShape(bb);
+  if (name === 'Buff') return nestBuffOwns(bb);
   return true;
 }
 
@@ -63,6 +66,9 @@ const onHit = Object.freeze({
     const hit = { ...mods, element: el, ep };
     return bb.cross === 1 ? { ...hit, cross: true, splashScale: 1 } : hit;
   },
+  // The nest pulse lives on this same behaviour (敌能-47). Any other blackboard of these names does neither.
+  spawn: (ctx) => { if (nestPulseOwns('EpDamage', ctx.bb)) nestPulseUp(ctx); },
+  tick: (ctx) => { if (nestPulseOwns('EpDamage', ctx.bb)) nestPulseTick(ctx); },
 });
 
 /** One shared key: a second buff of it would wait out the first and then extend it (状态-2), which 不可叠加 is not. */

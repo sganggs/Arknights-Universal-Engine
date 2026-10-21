@@ -1,4 +1,4 @@
-// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-46): behaviours by talent and skill name. The
+// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-47): behaviours by talent and skill name. The
 // game data holds only the multipliers; FOE_EXTRAS adds, per enemy, the parameters PRTS gives (radii, delays, bolts …)
 // to the blackboards the behaviours read, or a talent the data does not have. They act only through the context (ADR 0055).
 
@@ -10,6 +10,7 @@ import { summonerBehaviors } from './summoners.js';
 import { partisanBehaviors } from './partisans.js';
 import { sarkazBehaviors, stackCapped } from './sarkaz.js';
 import { elementHitBehaviors, elementHitOwns } from './elementhit.js';
+import { nestBehaviors, nestPulseOwns } from './nest.js';
 import { devourerBehaviors } from './devourers.js';
 import { emberBehaviors } from './embers.js';
 import { blightBehaviors } from './blight.js';
@@ -169,6 +170,10 @@ export const FOE_EXTRAS = Object.freeze({
   // 清明 / 堂皇: a fall does not spawn, and only the skill (not the talent of the same name) runs 范围隐匿.
   enemy_1209_sfden: { talents: { DeadSpawn: { fall: 0 } }, skills: { InvisibleShield: { cast: 1 } }, source: `${PRTS}%E6%B8%85%E6%98%8E&oldid=376397` },
   enemy_1209_sfden_2: { talents: { DeadSpawn: { fall: 0 } }, skills: { InvisibleShield: { cast: 1 } }, source: `${PRTS}%E5%A0%82%E7%9A%87&oldid=389600` },
+  // 深溟巢涌者 (敌能-47): 脉冲对每个目标都带神经损伤，持有抵抗状态（form 1）。黑板与富营养的相同，form 才分开两页。
+  enemy_1234_dsubrl: { talents: { EpDamage: { pulse: 1, form: 1 }, Buff: { form: 1 } }, source: `${PRTS}%E6%B7%B1%E6%BA%9F%E5%B7%A2%E6%B6%8C%E8%80%85&oldid=353623` },
+  // 富营养的巢涌者: 消失时不脉冲，神经损伤只在扣到生命时，倍率不是抵抗状态（form 2）。
+  enemy_1234_dsubrl_2: { talents: { EpDamage: { pulse: 1, form: 2 }, Buff: { form: 2 } }, source: `${PRTS}%E5%AF%8C%E8%90%A5%E5%85%BB%E7%9A%84%E5%B7%A2%E6%B6%8C%E8%80%85&oldid=376164` },
 });
 
 /**
@@ -335,7 +340,7 @@ const PowerHit = Object.freeze({
 /** Behaviours by talent or skill name. @type {Readonly<Record<string, FoeBehavior>>} */
 export const foeBehaviors = Object.freeze({
   boom, Boom, FirstAttack, atkup, ranged, CrossAttack, Bomb, PowerHit, ...moreFoeBehaviors, ...prisonerBehaviors, ...avengerBehaviors, ...hoverBehaviors,
-  ...summonerBehaviors, ...partisanBehaviors, ...sarkazBehaviors, ...elementHitBehaviors, ...devourerBehaviors, ...blightBehaviors, ...refractBehaviors, ...statueBehaviors, ...auraBehaviors, ...chargedBehaviors, ...staticBehaviors, ...timeBehaviors, ...emberBehaviors, ...runnerBehaviors, takeDmg, ...unbalanceBehaviors,
+  ...summonerBehaviors, ...partisanBehaviors, ...sarkazBehaviors, ...elementHitBehaviors, ...nestBehaviors, ...devourerBehaviors, ...blightBehaviors, ...refractBehaviors, ...statueBehaviors, ...auraBehaviors, ...chargedBehaviors, ...staticBehaviors, ...timeBehaviors, ...emberBehaviors, ...runnerBehaviors, takeDmg, ...unbalanceBehaviors,
 });
 
 /**
@@ -374,11 +379,11 @@ const abilitiesOf = (e) => [...Object.entries(e.talents ?? {}), ...(e.skills ?? 
 
 /**
  * Whether an ability has what its behaviour needs (关卡-2). A shared talent name only counts when its blackboard is the
- * shape that behaviour understands (敌能-38) — an `aura` only with 敌能-28's stack cap (敌能-45); anything else stays
- * incomplete.
+ * shape that behaviour understands (敌能-38, 敌能-47) — an `aura` only with 敌能-28's stack cap (敌能-45); anything else
+ * stays incomplete. The nest pulse does not need `el`: the page names 神经损伤.
  * @param {string} k @param {Record<string, unknown>} bb
  */
-const complete = (k, bb) => elementHitOwns(k, bb) && (k !== 'aura' || stackCapped(bb)) && (FOE_NEEDS[/** @type {keyof typeof FOE_NEEDS} */ (k)] ?? []).every((n) => typeof bb[n] === 'number');
+const complete = (k, bb) => elementHitOwns(k, bb) && (k !== 'aura' || stackCapped(bb)) && (nestPulseOwns(k, bb) || (FOE_NEEDS[/** @type {keyof typeof FOE_NEEDS} */ (k)] ?? []).every((n) => typeof bb[n] === 'number'));
 
 /**
  * The abilities (talents and skills) of the given enemies — their extras merged — that have no behaviour and are not
