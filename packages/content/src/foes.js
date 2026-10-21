@@ -1,4 +1,4 @@
-// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-32): behaviours by talent and skill name. The
+// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-38): behaviours by talent and skill name. The
 // game data holds only the multipliers; FOE_EXTRAS adds, per enemy, the parameters PRTS gives (radii, delays, bolts …)
 // to the blackboards the behaviours read. They act only through the context (ADR 0055).
 
@@ -9,6 +9,7 @@ import { hoverBehaviors } from './hover.js';
 import { summonerBehaviors } from './summoners.js';
 import { partisanBehaviors } from './partisans.js';
 import { sarkazBehaviors } from './sarkaz.js';
+import { elementHitBehaviors, elementHitOwns } from './elementhit.js';
 import { devourerBehaviors } from './devourers.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').EnemyDef} EnemyDef */
@@ -75,6 +76,32 @@ export const FOE_EXTRAS = Object.freeze({
   // 萨卡兹悖谬谍报官/谍报长: 初始技力=3, 技力上限=3 (rounds of ammunition)
   enemy_1317_wdexg: { talents: { 1: { ammo: 3 } }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E6%82%96%E8%B0%AC%E8%B0%8D%E6%8A%A5%E5%AE%98&oldid=436389` },
   enemy_1317_wdexg_2: { talents: { 1: { ammo: 3 } }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E6%82%96%E8%B0%AC%E8%B0%8D%E6%8A%A5%E9%95%BF&oldid=436390` },
+  // 元素损伤 on the normal attack (敌能-38). `el` is the 元素-1 id (1 神经, 2 侵蚀, 3 灼燃, 4 凋亡); the data has only the ratio.
+  // 底海滑动者/富营养的滑动者: 普通攻击额外造成攻击力15%的神经损伤
+  enemy_1148_dssbr: { talents: { epdamage: { el: 1 } }, source: `${PRTS}%E5%BA%95%E6%B5%B7%E6%BB%91%E5%8A%A8%E8%80%85&oldid=353445` },
+  enemy_1148_dssbr_2: { talents: { epdamage: { el: 1 } }, source: `${PRTS}%E5%AF%8C%E8%90%A5%E5%85%BB%E7%9A%84%E6%BB%91%E5%8A%A8%E8%80%85&oldid=353446` },
+  // 骇笑看客: 普通攻击附带自身攻击力20%的神经损伤
+  enemy_2009_csaudc: { talents: { combat: { el: 1 } }, source: `${PRTS}%E9%AA%87%E7%AC%91%E7%9C%8B%E5%AE%A2&oldid=354182` },
+  // 绯红歌伶: 普通攻击附带自身攻击力20%的神经损伤 (AttackSpeedUp is entirely in the data)
+  enemy_2010_csdcr: { talents: { attack: { el: 1 } }, source: `${PRTS}%E7%BB%AF%E7%BA%A2%E6%AD%8C%E4%BC%B6&oldid=354183` },
+  // 灼热源石虫/炽焰源石虫: 攻击造成法术伤害，并附加自身攻击力100%的灼燃损伤
+  enemy_1305_mhslim: { talents: { EpDamage: { el: 3 } }, source: `${PRTS}%E7%81%BC%E7%83%AD%E6%BA%90%E7%9F%B3%E8%99%AB&oldid=367189` },
+  enemy_1305_mhslim_2: { talents: { EpDamage: { el: 3 } }, source: `${PRTS}%E7%82%BD%E7%84%B0%E6%BA%90%E7%9F%B3%E8%99%AB&oldid=367187` },
+  // 控潮术师/领潮员/术师快艇: 目标及其周围四格, 攻击力80%的侵蚀损伤. `cross` 1 is that splash (敌能-26).
+  enemy_1161_tidmag: { talents: { EpDamage: { el: 2, cross: 1 } }, source: `${PRTS}%E6%8E%A7%E6%BD%AE%E6%9C%AF%E5%B8%88&oldid=365951` },
+  enemy_1161_tidmag_2: { talents: { EpDamage: { el: 2, cross: 1 } }, source: `${PRTS}%E9%A2%86%E6%BD%AE%E5%91%98&oldid=353468` },
+  enemy_1162_magmot: { talents: { EpDamage: { el: 2, cross: 1 } }, source: `${PRTS}%E6%9C%AF%E5%B8%88%E5%BF%AB%E8%89%87&oldid=353469` },
+  // 骨海漂流体: 攻击附加相当于攻击力20%的侵蚀损伤
+  enemy_2021_syfish: { talents: { EpDamage: { el: 2 } }, source: `${PRTS}%E9%AA%A8%E6%B5%B7%E6%BC%82%E6%B5%81%E4%BD%93&oldid=354187` },
+  // 掠海漂移体: the erosion is this family; empty `Float` keeps 近地悬浮 uncovered so the enemy stays refused (敌能-38).
+  enemy_2025_syufo: { talents: { EpDamage: { el: 2 }, Float: {}, noFly: {} }, source: `${PRTS}%E6%8E%A0%E6%B5%B7%E6%BC%82%E7%A7%BB%E4%BD%93&oldid=379242` },
+  // 无胄盟清扫小队: 普通攻击时额外造成攻击力35%的侵蚀损伤 (PowerAttack is another family)
+  enemy_1183_mlasrt: { talents: { EpDamage: { el: 2 }, noFly: {} }, source: `${PRTS}%E6%97%A0%E8%83%84%E7%9B%9F%E6%B8%85%E6%89%AB%E5%B0%8F%E9%98%9F&oldid=367257` },
+  // 萨卡兹王庭军战士/术师 and their elites: 凋亡, the same pages (no separate elite page). `el` 4.
+  enemy_1229_darmy: { talents: { epdamage: { el: 4 } }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E7%8E%8B%E5%BA%AD%E5%86%9B%E6%88%98%E5%A3%AB&oldid=436441` },
+  enemy_1229_darmy_2: { talents: { epdamage: { el: 4 } }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E7%8E%8B%E5%BA%AD%E5%86%9B%E6%88%98%E5%A3%AB&oldid=436441` },
+  enemy_1275_dwlock: { talents: { empty: { el: 4 } }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E7%8E%8B%E5%BA%AD%E5%86%9B%E6%9C%AF%E5%B8%88&oldid=436440` },
+  enemy_1275_dwlock_2: { talents: { empty: { el: 4 } }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E7%8E%8B%E5%BA%AD%E5%86%9B%E6%9C%AF%E5%B8%88&oldid=436440` },
 });
 
 /**
@@ -241,7 +268,7 @@ const PowerHit = Object.freeze({
 /** Behaviours by talent or skill name. @type {Readonly<Record<string, FoeBehavior>>} */
 export const foeBehaviors = Object.freeze({
   boom, Boom, FirstAttack, atkup, ranged, CrossAttack, Bomb, PowerHit, ...moreFoeBehaviors, ...prisonerBehaviors, ...avengerBehaviors, ...hoverBehaviors,
-  ...summonerBehaviors, ...partisanBehaviors, ...sarkazBehaviors, ...devourerBehaviors,
+  ...summonerBehaviors, ...partisanBehaviors, ...sarkazBehaviors, ...elementHitBehaviors, ...devourerBehaviors,
 });
 
 /**
@@ -258,6 +285,10 @@ export const FOE_COVERED = Object.freeze(['dead', 'Light', 'DmgUp', 'Stronger', 
 export const FOE_NEEDS = Object.freeze({
   boom: Object.freeze(['radius', 'delay']), Boom: Object.freeze(['radius', 'delay']), ranged: Object.freeze(['scale']),
   CrossAttack: Object.freeze(['bolts', 'hold', 'charge']), Targets: Object.freeze(['n']), 1: Object.freeze(['ammo']),
+  // The element is not in the enemy data (敌能-38). A ratio without `el` stays incomplete instead of guessing 凋亡.
+  epdamage: Object.freeze(['el']), empty: Object.freeze(['el']), EpDamage: Object.freeze(['el']),
+  combat: Object.freeze(['el']), attack: Object.freeze(['el']),
+  AttackSpeedUp: Object.freeze(['attack_speed', 'duration', 'stack_cnt']),
 });
 
 /**
@@ -266,8 +297,12 @@ export const FOE_NEEDS = Object.freeze({
  */
 const abilitiesOf = (e) => [...Object.entries(e.talents ?? {}), ...(e.skills ?? []).map((s) => /** @type {[string, Record<string, number | string>]} */ ([s.key, s.bb ?? {}]))];
 
-/** @param {string} k @param {Record<string, unknown>} bb @returns {boolean} whether an ability has what its behaviour needs */
-const complete = (k, bb) => (FOE_NEEDS[/** @type {keyof typeof FOE_NEEDS} */ (k)] ?? []).every((n) => typeof bb[n] === 'number');
+/**
+ * Whether an ability has what its behaviour needs (关卡-2). A shared talent name only counts when its blackboard is the
+ * shape that behaviour understands (敌能-38); anything else stays incomplete.
+ * @param {string} k @param {Record<string, unknown>} bb
+ */
+const complete = (k, bb) => elementHitOwns(k, bb) && (FOE_NEEDS[/** @type {keyof typeof FOE_NEEDS} */ (k)] ?? []).every((n) => typeof bb[n] === 'number');
 
 /**
  * The abilities (talents and skills) of the given enemies — their extras merged — that have no behaviour and are not

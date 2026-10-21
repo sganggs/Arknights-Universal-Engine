@@ -699,7 +699,8 @@
  * @property {number} frag the frame its spawn's fragment began
  * @property {number} wave the wave that must wait for it to be handled (波次-3), −1 for none
  * @property {boolean} [unharmful] it costs no life at the goal (目标-1)
- * @property {Record<string, number>} ab an enemy's ability state (敌能-2): cooldowns, marks, what it saw last turn
+ * @property {Record<string, number>} ab an enemy's ability state (敌能-2): cooldowns, marks, what it saw last turn;
+ *   `@taken` counts accepted hits once an ability of its asks (敌能-38); absent otherwise, and never on an operator
  * @property {SkillState | null} skill its skill, null when it has none (技能-1)
  * @property {Record<string, number>} ep element values below their maximum, by element (元素-1); none recorded is at its maximum
  * @property {number} paid the cost its deployment took, 0 for enemies (撤退-1)

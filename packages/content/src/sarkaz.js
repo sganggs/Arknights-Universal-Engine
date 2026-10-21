@@ -1,6 +1,7 @@
 // The Sarkaz (docs/spec/foes.md 敌能-28, 敌能-29, 敌能-32): the 重生造物 that shrug off damage and make their blockers
-// hold more, the supply carts and the 集恨者 that feed on them, 凋亡 on the royal guards' attacks and the 死亡之眼, the
-// sentries' alarm and the mercenaries standing by until it. They act only through the context (ADR 0055).
+// hold more, the supply carts and the 集恨者 that feed on them, the 死亡之眼, the sentries' alarm and the mercenaries
+// standing by until it. The royal guards' attack element is 敌能-38 (elementhit.js); 死亡之眼 stays 凋亡 here.
+// They act only through the context (ADR 0055).
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').FoeContext} FoeContext @typedef {import('@aue/sim').Unit} Unit */
 
@@ -72,11 +73,6 @@ const Creation = Object.freeze({
     const share = [...kinds.values()].reduce((a, v) => a + v, 0);
     return share > 0 ? { ...mods, element: NECROSIS, ep: ctx.stats(ctx.self).atk * share } : mods;
   },
-});
-
-/** 凋亡 on every attack (敌能-29): `attack@ep_damage_ratio` of its 攻击力 as 凋亡损伤 on each hit. @type {FoeBehavior} */
-const epdamage = Object.freeze({
-  attack: (ctx, mods) => ({ ...mods, element: NECROSIS, ep: ctx.stats(ctx.self).atk * ctx.bb['attack@ep_damage_ratio'] }),
 });
 
 /**
@@ -179,4 +175,4 @@ const revive = Object.freeze({
 });
 
 /** The behaviours of this file, by talent or skill name. @type {Readonly<Record<string, FoeBehavior>>} */
-export const sarkazBehaviors = Object.freeze({ dmg_res, buff_to_blocker, aura, Creation, epdamage, empty: epdamage, DeathEye, warn, Awake, revive });
+export const sarkazBehaviors = Object.freeze({ dmg_res, buff_to_blocker, aura, Creation, DeathEye, warn, Awake, revive });

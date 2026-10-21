@@ -383,9 +383,18 @@ const tagsOf = (c, src) => (c && src && src.kind === KIND.ENEMY ? /** @type {{ t
 const floored = (c, seen, target, dmg, amount) => (c && seen ? nonLethalCap(c, seen, target, dmg.isAttack ? Math.max(amount, damageFloor(c, seen, target)) : amount) : amount);
 
 /**
+ * An accepted hit counts for an enemy's on-hit talent (敌能-38), at the same gate as 受击回复 — only once an ability of
+ * its has asked for the count, so other enemies carry nothing. Operators are not counted.
+ * @param {Unit} target
+ */
+function tallyTaken(target) {
+  if (target.kind === KIND.ENEMY && target.ab && Object.hasOwn(target.ab, '@taken')) target.ab['@taken'] += 1;
+}
+
+/**
  * Deals a hit (伤害-7): nothing to a unit already at 0 HP; 生命流失 goes straight to the HP; nothing to an invincible
- * unit (无敌, 沉睡, disappeared: 路线-4); otherwise the `hit` event, then the hit counts for 受击回复 (技能-2) and for
- * its source's rune SP (符文-4; given the content), then the target's defences, `mul`, an attack's floor by its source's
+ * unit (无敌, 沉睡, disappeared: 路线-4); otherwise the `hit` event, then the hit counts for 受击回复 (技能-2) — and, for
+ * an enemy, its on-hit tally (敌能-38) — and for its source's rune SP (符文-4; given the content), then the target's defences, `mul`, an attack's floor by its source's
  * talents (职业-31; given the content), the source's multiplier, the 工事 multiplier (地图-3; given the content), the target's 伤判
  * effects, the `hpDamage` event, then the HP. A `sourceless` hit takes neither its source's penetration nor its
  * multipliers, and its events see no source (`credit` names it). Returns the HP taken.
@@ -397,6 +406,7 @@ export function dealDamage(w, src, target, dmg, c) {
   if (dmg.hpLoss) return loseHp(w, src, target, dmg.amount, dmg);
   if (untouchable(target, dmg) || target.hidden || !hitGoesOn(w, src, target, dmg)) return 0;
   hurtSp(target);
+  tallyTaken(target);
   if (c && src && !dmg.sourceless) runeSp(w, c, src);
   const seen = seenOf(src, dmg), ss = seen ? statsOf(seen) : null;
   let amount = mitigate(dmg.amount, dmg.type, statsOf(target), penetration(ss, dmg)) * /** @type {number} */ (dmg.mul);

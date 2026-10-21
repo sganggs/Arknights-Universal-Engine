@@ -52,6 +52,8 @@ export const BOLT_RADIUS = 0.3;
  * @property {{ get: (k: string) => number, set: (k: string, v: number) => void }} state its own ability state
  * @property {boolean} blocked
  * @property {boolean} hurt it took damage since its last turn
+ * @property {number} taken how many accepted hits it has taken, at the 受击回复 gate, since an ability of its first read this
+ *   (敌能-38); an enemy no ability asks about keeps no count
  * @property {boolean} unblocked its block ended since its last turn
  * @property {boolean} fell it fell into a 地穴 (地图-4)
  * @property {boolean} ready a skill's cooldown is over
@@ -158,6 +160,8 @@ function contextOf(w, c, e, of) {
     state: { get: (k) => ab[`${name}.${k}`] ?? 0, set: (k, v) => { ab[`${name}.${k}`] = v; } },
     blocked: e.blockedBy >= 0,
     hurt: (ab['@hurt'] ?? 0) === 1,
+    // Reading it starts the count (敌能-38): only an enemy whose ability asks carries a tally.
+    get taken() { if (!Object.hasOwn(ab, '@taken')) ab['@taken'] = 0; return ab['@taken']; },
     unblocked: (ab['@unblocked'] ?? 0) === 1,
     fell: (ab['@fell'] ?? 0) === 1,
     ready: skill !== null && (ab[`${name}.cd`] ?? 0) <= 0,

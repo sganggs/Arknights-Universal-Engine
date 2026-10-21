@@ -1972,5 +1972,33 @@
     "statement": "打多不等于都转：特性真群攻、技能把普通攻击变成多目标、不进行普通攻击、技能加长攻击距离的干员不转身；攻击「所有阻挡」的技能或天赋会转身。判定按这一刀来源的 mods（单体 / 特性群攻 / 技能多目标 / 攻击所有阻挡）。",
     "basis": "实机观察（录像：寒克（[录像](https://github.com/user-attachments/assets/809cafc7-0b68-4d5b-a445-d50038d92f05)）、琴柳（[录像](https://github.com/user-attachments/assets/7f74c8e5-d055-4a63-9894-58e4e707728f)）、新能（[录像](https://github.com/user-attachments/assets/a80c8bf5-3f83-42b9-a41d-5b38d0f1a63b)）、寒克与梓兰（[录像](https://github.com/user-attachments/assets/18b81d8f-dc28-4931-b9d6-4f4c91ec3ed6)））。哪些技能属于「打多」、哪些是「攻击所有阻挡」，取自公开数据（特性与技能的 mods）与技能描述，没有逐干员表。",
     "status": "待查证"
+  },
+  {
+    "id": "INF-0323",
+    "clause": "敌能-38",
+    "statement": "元素种类记在内容给这项能力补上的 blackboard 键 `el` 上，编号与元素-1 和爆发事件的 `el` 相同（1 神经、2 侵蚀、3 灼燃、4 凋亡、5 狂躁）。",
+    "basis": "敌人数据只有倍率，没有元素种类。PRTS 写的是损伤的名字。编号表是元素-1；键名沿用爆发事件（元素-3）。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-0324",
+    "clause": "敌能-38",
+    "statement": "天赋名 `epdamage`、`empty`、`EpDamage`、`combat`、`attack` 只有 blackboard 仅含 `attack@ep_damage_ratio` 与可选的 `el`、`cross` 时才是普通攻击附带的元素损伤；`AttackSpeedUp` 必须有 `attack_speed`、`duration`、`stack_cnt`，`warning_stack_cnt` 可有可无。多出来的键不是这项能力。",
+    "basis": "这些名字在 ArknightsGameData 17759cc8 的 enemy_database 里和别的形状共用（连锁、扇形、冻结、狂暴倍率、只有 attack_speed 的 AttackSpeedUp）。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-0325",
+    "clause": "敌能-38",
+    "statement": "绯红歌伶凑满次数后的攻击速度在它下一次回合才加上，不在第 20 次受击当帧；「不可叠加」是不再加第二份、也不刷新剩余时间。一次回合只消耗一批 stack_cnt，多出来的次数留到以后的回合，效果还在时这一批也扣掉。当时不在场的敌人得不到。同一帧两名歌伶也只加 100。",
+    "basis": "能力栏写「每受到20次可触发受击回复的伤害后」和「（不可叠加）」，没有写「立刻」。概述里的「立刻」不采用。受击是否计入沿用技能-2。+100 按直接加算。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-0326",
+    "clause": "敌能-38",
+    "statement": "掠海漂移体的近地悬浮在数据里没有天赋。内容补一个空天赋 `Float`，使它在近地悬浮实现前仍因关卡-2 不完整。不会攻击飞行单位算在同一项里，不另起一个键。",
+    "basis": "enemy_2025_syufo 在 enemy_database 17759cc8 里只有 EpDamage。PRTS oldid=379242 还有近地悬浮和不会攻击飞行单位。`Float` 是留给以后悬浮家族的占位键名。",
+    "status": "待查证"
   }
 ]
