@@ -322,7 +322,7 @@ test('[职业-23] [干员-7] the push and pull modules, XAH-X\'s jumps and 白�
 });
 
 test('[职业-7] [体积-5] 谬因 searches by tile: her own trait data over her 轰击术师 trait, in a match\'s records too; others keep theirs', async () => {
-  assert.deepEqual(Object.keys(OPERATOR_TRAITS), ['char_4229_aphris']);
+  assert.deepEqual(Object.keys(OPERATOR_TRAITS), ['char_4229_aphris', 'char_253_greyy', 'char_509_acast']);
   const aphris = await real('char_4229_aphris'), t = traits.traitOfDef(withOwnTrait('char_4229_aphris', aphris));
   assert.deepEqual([t.rangeTiles, t.filter, t.targets, traits.traitOfDef(aphris).rangeTiles], [true, 'ALL', 'all', false]);
   const sniper = await real('char_1021_kroos2');
@@ -331,4 +331,10 @@ test('[职业-7] [体积-5] 谬因 searches by tile: her own trait data over her
   const ops = /** @type {Record<string, any>} */ ((await matchContent({ level: 'act1multi_01', difficulty: 'NORMAL', seed: 1,
     decks: [[{ id: 'char_4229_aphris', build }, { id: 'char_1021_kroos2', build }]] })).operators);
   assert.deepEqual([traits.traitOfDef(ops['char_4229_aphris#0']).rangeTiles, traits.traitOfDef(ops['char_1021_kroos2#0']).rangeTiles], [true, false]);
+});
+
+test('[职业-8] [职业-7] 格雷伊 splashes at 1.0 and Pith (char_509_acast) at 0.9; other 扩散术师 keep the branch\'s 1.1', async () => {
+  const radius = async (/** @type {string} */ id) => traits.traitOfDef(withOwnTrait(id, await real(id))).splash?.radius;
+  assert.deepEqual([await radius('char_253_greyy'), await radius('char_509_acast'), await radius('char_612_accast')], [1, 0.9, 1.1]);
+  assert.equal(traits.traitOfDef(await real('char_253_greyy')).splash?.radius, 1.1, 'the branch alone is 1.1');
 });

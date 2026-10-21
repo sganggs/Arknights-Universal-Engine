@@ -387,10 +387,15 @@ export function withTrait(op) {
 /**
  * Trait data of single operators beyond their branch's, by character id (职业-7). 谬因: her search and attack judge an
  * enemy by the tile of its position, not by its collider (体积-5; PRTS 谬因 oldid=435070, 链路协议 备注
- * "谬因的索敌与攻击始终采用格子判定而非碰撞判定").
+ * "谬因的索敌与攻击始终采用格子判定而非碰撞判定"). 格雷伊 and Pith (char_509_acast): their 扩散术师 splash radius is 1.0 and 0.9,
+ * not the branch's 1.1 (职业-8; PRTS 溅射半径一览 oldid=275470, 特性「特殊」).
  * @type {Readonly<Record<string, Readonly<Partial<TraitDef>>>>}
  */
-export const OPERATOR_TRAITS = Object.freeze({ char_4229_aphris: Object.freeze({ rangeTiles: true }) });
+export const OPERATOR_TRAITS = Object.freeze({
+  char_4229_aphris: Object.freeze({ rangeTiles: true }),
+  char_253_greyy: Object.freeze({ splash: Object.freeze({ radius: 1, scale: 1, ground: false }) }),
+  char_509_acast: Object.freeze({ splash: Object.freeze({ radius: 0.9, scale: 1, ground: false }) }),
+});
 
 /**
  * An operator record with its own trait data (OPERATOR_TRAITS) over its branch's; another operator's as it is.
