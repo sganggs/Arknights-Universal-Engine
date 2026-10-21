@@ -190,7 +190,8 @@ function contextOf(w, c, e, of) {
     addBuff: (t, init) => { addBuff(t, makeBuff({ src: e.id, ...init })); },
     removeBuff: (t, key) => { removeBuff(t, key); },
     applyStatus: (t, key, o) => { inflict(w, t, /** @type {any} */ (key), { ...o, src: e }); },
-    dealDamage: (t, dmg) => dealDamage(w, e, t, dmg, c),
+    // sourceless is no source at all (敌能-50), not the credited sourceless hit of 伤害-7.
+    dealDamage: (t, dmg) => dealDamage(w, dmg.sourceless ? null : e, t, dmg, c),
     dealEp: (t, el, amount) => dealEp(w, t, /** @type {any} */ (el), amount, e),
     heal: (t, amount) => heal(w, e, t, amount),
     gainCost: () => {},
