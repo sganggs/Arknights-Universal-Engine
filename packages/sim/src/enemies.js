@@ -5,7 +5,7 @@ import { followRoute, speedOf } from './routes.js';
 import { enemyAtGoal, goalSeats } from './coop.js';
 import { tryBlock, keepOrRelease } from './blocking.js';
 import { enemyAttack } from './combat.js';
-import { foeTick, carried } from './foes.js';
+import { foeTick, foeUnbalanceEnd, carried } from './foes.js';
 import { slideStep } from './displacement.js';
 import { induceStep } from './induce.js';
 import { statsOf } from './attrs.js';
@@ -24,16 +24,17 @@ function reachGoal(w, c, e) {
 }
 
 /**
- * One enemy's turn (帧-1): one in 失衡 only slides (位移-3); otherwise it is released if its blocker is gone or cannot
- * block; it may be blocked; it attacks; an enemy that is not blocked and did not attack walks, and may be blocked where
- * it arrives.
+ * One enemy's turn (帧-1): one in 失衡 only slides (位移-3), and when that slide ends its abilities hear it (敌能-2);
+ * otherwise it is released if its blocker is gone or cannot block; it may be blocked; it attacks; an enemy that is not
+ * blocked and did not attack walks, and may be blocked where it arrives.
  * @param {World} w @param {Content} c @param {Unit} e
  */
 function enemyTurn(w, c, e) {
   foeTick(w, c, e);
   if (e.slide) {
-    slideStep(c, e, w);
+    const still = slideStep(c, e, w);
     e.anim = ANIM.IDLE;
+    if (!still) foeUnbalanceEnd(w, c, e);
     return;
   }
   keepOrRelease(w, e);

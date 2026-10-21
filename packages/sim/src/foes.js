@@ -46,12 +46,13 @@ export const BOLT_RADIUS = 0.3;
  * @property {(t: Unit, init: import('./buffs.js').BuffInit) => void} addBuff
  * @property {(t: Unit, key: string) => void} removeBuff
  * @property {(t: Unit, key: string, o?: object) => void} applyStatus
- * @property {(t: Unit, dmg: { type: DamageType, amount: number }) => number} dealDamage
+ * @property {(t: Unit, dmg: import('./damage.js').Damage) => number} dealDamage
  * @property {(t: Unit, el: string, amount: number) => number} dealEp
  * @property {(t: Unit, amount: number) => number} heal
  * @property {(n: number) => void} gainCost no effect for an enemy
  * @property {{ get: (k: string) => number, set: (k: string, v: number) => void }} state its own ability state
  * @property {boolean} blocked
+ * @property {boolean} unbalanced it is in 失衡 as this turn starts (位移-3); read-only
  * @property {boolean} hurt it took damage since its last turn
  * @property {number} taken how many accepted hits it has taken, at the 受击回复 gate, since an ability of its first read this
  *   (敌能-38); an enemy no ability asks about keeps no count
@@ -112,6 +113,7 @@ export const BOLT_RADIUS = 0.3;
  *   dealt damage (`ranged`: it came by a projectile)
  * @property {(ctx: FoeContext) => boolean} [fatal] its HP ran out: true when the ability keeps it on the field, its HP
  *   above 0
+ * @property {(ctx: FoeContext) => void} [unbalanceEnd] 失衡 ended this turn, after the slide settled (敌能-2)
  */
 
 /** The squared distance between two points. @param {{ x: number, y: number }} a @param {{ x: number, y: number }} b */
@@ -162,6 +164,7 @@ function contextOf(w, c, e, of) {
     gainCost: () => {},
     state: { get: (k) => ab[`${name}.${k}`] ?? 0, set: (k, v) => { ab[`${name}.${k}`] = v; } },
     blocked: e.blockedBy >= 0,
+    unbalanced: e.slide !== undefined,
     hurt: (ab['@hurt'] ?? 0) === 1,
     get taken() { if (!Object.hasOwn(ab, '@taken')) ab['@taken'] = 0; return ab['@taken']; },
     unblocked: (ab['@unblocked'] ?? 0) === 1,
@@ -302,6 +305,14 @@ export function foeTick(w, c, e) {
   for (const s of defOf(c, e).skills ?? []) if ((ab[`${s.key}.cd`] ?? 0) > 0) ab[`${s.key}.cd`]--;
   ab['@hp'] = e.hp;
   ab['@blocked'] = e.blockedBy >= 0 ? 1 : 0;
+}
+
+/**
+ * The frame 失衡 ends (敌能-2): after this turn's slide settled. `unbalanced` is already false.
+ * @param {World} w @param {Content} c @param {Unit} e
+ */
+export function foeUnbalanceEnd(w, c, e) {
+  each(w, c, e, 'unbalanceEnd', (b, ctx) => b.unbalanceEnd?.(ctx));
 }
 
 /**
