@@ -8,7 +8,7 @@ import { addBuff, removeBuff, makeBuff, retune, setLeft } from './buffs.js';
 import { inflict } from './status.js';
 import { dealDamage, heal, setHp, knockDown } from './damage.js';
 import { dealEp } from './elements.js';
-import { selectable, sortAllies, friendly, evadesGround } from './targeting.js';
+import { selectable, sortAllies, friendly, evadesGround, stealthed } from './targeting.js';
 import { tileOf } from './body.js';
 import { tileAt } from './level.js';
 import { board, alight, detour, wayKeys } from './routes.js';
@@ -223,13 +223,15 @@ function lend(e, t, key, init) {
 
 /**
  * The units enemy `e` may attack on unit `t`'s tile and the tiles around it (敌能-29): a cross or a square; on the field,
- * selectable or not, not evading a ground attacker; in creation order.
+ * selectable or not, not evading a ground attacker; in creation order. The locked target stays while 隐匿; the others do
+ * not when 隐匿 is in effect (索敌-2). 迷彩 does not leave one out.
  * @param {World} w @param {Unit} e @param {Unit} t @param {'cross' | 'square'} area @returns {Unit[]}
  */
 function around(w, e, t, area) {
   const [r, col] = tileOf(t);
   return w.units.filter((u) => {
     if (u.hp <= 0 || u.hidden || !isFoeOf(u, e) || evadesGround(e, u)) return false;
+    if (u !== t && stealthed(u)) return false;
     const [ur, uc] = tileOf(u), dr = Math.abs(ur - r), dc = Math.abs(uc - col);
     return area === 'square' ? Math.max(dr, dc) <= 1 : dr + dc <= 1;
   });
@@ -389,7 +391,7 @@ function flyBolts(w, c) {
 
 /**
  * One frame of the delayed explosions (敌能-3): each counts down; at 0 every unit an enemy may attack within its radius
- * — flying ones only if it reaches the air — takes it, camouflage or not.
+ * — flying ones only if it reaches the air — takes it, camouflage or not. 隐匿 in effect leaves a unit out (索敌-2).
  * @param {World} w @param {Content} c
  */
 function blow(w, c) {
@@ -400,7 +402,7 @@ function blow(w, c) {
     const src = b.src >= 0 ? w.units.find((u) => u.id === b.src) ?? null : null;
     w.events.push({ type: 'blast', x: b.x, y: b.y });
     for (const u of [...w.units]) {
-      if (u.hp <= 0 || u.hidden || !friendly(u)) continue;
+      if (u.hp <= 0 || u.hidden || !friendly(u) || stealthed(u)) continue;
       if (statsOf(u).flying && !b.air) continue;
       if (dist2(u, b) <= b.radius * b.radius) take(w, c, src, u, b);
     }

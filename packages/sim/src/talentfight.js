@@ -11,7 +11,7 @@ import { knockDown } from './damage.js';
 import { inflict } from './status.js';
 import { tileOf } from './body.js';
 import { reachKeys } from './reach.js';
-import { inKeys, hostile, selectable } from './targeting.js';
+import { inKeys, hostile, selectable, stealthed } from './targeting.js';
 import { traitOf, creditedDamage, gainCost } from './traits.js';
 import { withdraw } from './deck.js';
 import { targetsOf } from './combat.js';
@@ -236,8 +236,8 @@ export const ammoChance = (op, k) => (k.ammoProb && op.skill?.active ? k.ammoPro
 
 /**
  * The blasts of a while on the field (职业-35: `timedBlast`), after the operators' turns: an operator `after` seconds
- * from its deployment deals the enemies on its tile and the 8 around it physical damage of `scale` × its attack, then
- * 脆弱 of `fragile`, and retreats (撤退-1).
+ * from its deployment deals the enemies on its tile and the 8 around it physical damage of `scale` × its attack —
+ * not one whose 隐匿 is in effect (索敌-2); 迷彩 is not checked — then 脆弱 of `fragile`, and retreats (撤退-1).
  * @param {World} w @param {Content} c
  */
 export function timedBlasts(w, c) {
@@ -245,7 +245,7 @@ export function timedBlasts(w, c) {
     const x = op.kind === KIND.OPERATOR && op.hp > 0 ? traitOf(c, op).timedBlast : null;
     if (!x || w.frame - op.born !== secondsToFrames(x.after)) continue;
     const [r, col] = tileOf(op);
-    for (const e of w.units.filter((u) => hostile(u) && u.hp > 0 && !u.hidden && (([er, ec]) => Math.max(Math.abs(er - r), Math.abs(ec - col)) <= 1)(tileOf(u)))) {
+    for (const e of w.units.filter((u) => hostile(u) && u.hp > 0 && !u.hidden && !stealthed(u) && (([er, ec]) => Math.max(Math.abs(er - r), Math.abs(ec - col)) <= 1)(tileOf(u)))) {
       creditedDamage(w, c, op, e, { type: 'phys', amount: x.scale * statsOf(op).atk });
       if (e.hp > 0) inflict(w, e, 'fragile', { seconds: x.fragile.seconds, value: x.fragile.value, src: op });
     }

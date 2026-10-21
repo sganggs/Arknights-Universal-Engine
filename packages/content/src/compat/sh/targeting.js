@@ -23,20 +23,20 @@ export function tileKeyOf(u) {
 
 /** @typedef {{ alive: boolean, u: import('@aue/sim').Unit | null }} Target a kit's unit (compat/unit.js) */
 
-/** Whether an enemy is 隐匿 now (索敌-2). @param {Target} e */
-export const enemyStealthed = (e) => !!e.u && attrs.statsOf(e.u).flags.stealth === true;
+/** Whether 隐匿 is in effect (索敌-2): a block or a restore window counts as not. @param {Target} e */
+export const enemyStealthed = (e) => !!e.u && targeting.stealthed(e.u);
 
 /**
  * Whether an ability with Stronghold's profile may select an enemy (索敌-2): on the field with HP, not disappeared,
- * 无法选中, 隐匿 or out of the battle; asleep only for a profile that hits sleepers; flying only for one that can hit
- * flying units and is not ground-only; never one the profile skips.
+ * 无法选中, 隐匿 in effect or out of the battle; asleep only for a profile that hits sleepers; flying only for one that
+ * can hit flying units and is not ground-only; never one the profile skips.
  * @param {unknown} _attacker @param {Target} e @param {Record<string, any> | null | undefined} profile
  */
 export function canTargetEnemy(_attacker, e, profile) {
   const u = e?.u, p = profile ?? {};
   if (!u || !e.alive || u.hidden) return false;
   const s = attrs.statsOf(u), f = s.flags;
-  if (f.untargetable || f.stealth || f.sidelined || (f.sleep && !p.hitSleep)) return false;
+  if (f.untargetable || targeting.stealthed(u) || f.sidelined || (f.sleep && !p.hitSleep)) return false;
   if (s.flying && (!p.canHitFly || p.groundOnly)) return false;
   return !(typeof p.skipEnemy === 'function' && p.skipEnemy(e));
 }

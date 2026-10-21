@@ -56,8 +56,28 @@ export function inKeys(u, keys, grid, byTile = false) {
  * @property {boolean} [canHitStealth] it can select 隐匿 units (职业-31)
  */
 
-/** Whether a unit's flags make it 隐匿 now: `stealth`, not undone by an aura (`unstealth`, 职业-34). @param {Record<string, boolean>} f */
-export const stealthed = (f) => !!f.stealth && !f.unstealth;
+/** Whether a stealth-off window for this source is still running (索敌-2). @param {Unit} u @param {string} key */
+const windowOpen = (u, key) => u.buffs.some((o) => o.key === `stealthOff:${key}` && o.left !== 0);
+
+/**
+ * Whether 隐匿 is in effect (索敌-2): the flag, not undone by `unstealth` (职业-34). An enemy's is not, while it is
+ * blocked or every stealth source still has its restore window; an operator's is not lifted by a block. A flag with no
+ * source buff has nothing to time, so it stays.
+ * @param {Unit} u
+ */
+export function stealthed(u) {
+  const f = statsOf(u).flags;
+  if (!f.stealth || f.unstealth) return false;
+  if (u.kind !== KIND.ENEMY) return true;
+  if (u.blockedBy >= 0) return false;
+  let sourced = false, open = false;
+  for (const b of u.buffs) {
+    if (!b.flags.stealth) continue;
+    sourced = true;
+    if (!windowOpen(u, b.key)) open = true;
+  }
+  return !sourced || open;
+}
 
 /**
  * Whether a unit can be selected by the other side (索敌-2): on the field and not disappeared (路线-4), not 无法选中,
@@ -68,7 +88,7 @@ export const stealthed = (f) => !!f.stealth && !f.unstealth;
 export function selectable(u, sel = {}) {
   if (u.hp <= 0 || u.hidden) return false;
   const s = statsOf(u), f = s.flags;
-  if (f.untargetable || (stealthed(f) && !sel.canHitStealth) || (f.sleep && !sel.canHitSleep) || f.sidelined) return false;
+  if (f.untargetable || (stealthed(u) && !sel.canHitStealth) || (f.sleep && !sel.canHitSleep) || f.sidelined) return false;
   if (f.camou && !sel.ignoreCamou) return false;
   return !s.flying || !!sel.canHitFly;
 }

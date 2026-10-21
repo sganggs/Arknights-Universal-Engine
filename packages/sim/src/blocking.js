@@ -1,5 +1,6 @@
 // Blocking (docs/spec/blocking.md 阻挡-1…阻挡-4): an operator stops the enemies that come within its block radius, as
 // many as its block count holds; a blocked enemy stays where it is until it is released.
+import { secondsToFrames } from '@aue/math';
 import { KIND } from '@aue/schema';
 import { statsOf } from './attrs.js';
 import { tileAt } from './level.js';
@@ -7,6 +8,7 @@ import { tileOf } from './body.js';
 import { BLOCK_RADIUS_SQ } from './constants.js';
 import { friendly } from './targeting.js';
 import { sameGround } from './works.js';
+import { makeBuff, addBuff, setLeft, removeBuff } from './buffs.js';
 
 /** @typedef {import('./types.js').World} World @typedef {import('./types.js').Unit} Unit @typedef {import('./types.js').Content} Content */
 /** @typedef {import('./attrs.js').Stats} Stats */
@@ -53,10 +55,40 @@ export function blockBy(w, e, by) {
   return e.blockedBy === by.id;
 }
 
-/** Releases an enemy (阻挡-3). @param {Unit} e */
+/** 3 seconds, in frames (索敌-2, 时间-2): the delay when a stealth source does not name its own. */
+const STEALTH_RESTORE = secondsToFrames(3);
+
+/** The frames a stealth source waits after the block ends (索敌-2): its `restore`, or 3 seconds. @param {import('./types.js').Buff} b */
+const restoreFrames = (b) => (typeof b.restore === 'number' ? b.restore : STEALTH_RESTORE);
+
+/**
+ * Starts each stealth source's restore window (索敌-2). A source with no positive delay drops its window, and that pass
+ * is second so it wins when two sources share a key — one source still outside a window keeps 隐匿.
+ * @param {Unit} e
+ */
+function armStealth(e) {
+  if (e.kind !== KIND.ENEMY || e.hp <= 0) return;
+  const sources = e.buffs.filter((b) => b.flags.stealth);
+  for (const b of sources) {
+    const frames = restoreFrames(b);
+    if (!(frames > 0)) continue;
+    const key = `stealthOff:${b.key}`, off = e.buffs.find((o) => o.key === key);
+    if (off) setLeft(off, frames);
+    else addBuff(e, makeBuff({ key, flags: { stealthOff: true }, left: frames }));
+  }
+  for (const b of sources) if (!(restoreFrames(b) > 0)) removeBuff(e, `stealthOff:${b.key}`);
+}
+
+/**
+ * Releases an enemy (阻挡-3). Letting go of a block — and only that — starts its 隐匿 windows (索敌-2), so retreat,
+ * a fallen blocker and a kit's unblock all do.
+ * @param {Unit} e
+ */
 export function release(e) {
+  const held = e.blockedBy >= 0;
   e.blockedBy = -1;
   e.blockedAt = -1;
+  if (held) armStealth(e);
 }
 
 /**

@@ -31,6 +31,8 @@ export function makeBuff(o) {
   const stacks = Math.max(1, o.stacks ?? 1);
   return /** @type {Buff} */ ({
     key: o.key, ...d, mods: { ...o.mods }, flags: { ...o.flags }, stacks, maxStacks: Math.max(stacks, o.maxStacks ?? 1), acc: 0,
+    // Not a default: only a stealth source names its own delay (索敌-2). Stamping it on every buff would change every hash.
+    ...(o.restore !== undefined ? { restore: o.restore } : {}),
   });
 }
 

@@ -162,7 +162,7 @@ const WHEN = Object.freeze({
   firstDeploy: (w, _c, op) => !Object.hasOwn(w.players[op.owner]?.cards ?? {}, op.key),
   hpNotBelow: (_w, _c, op, v) => op.hp >= v * statsOf(op).maxHp,
   neverHurt: (_w, _c, op) => !hurtOnce(op),
-  stealthEnemies: (w, c, op) => inOwnRange(w, c, op).some((u) => hostile(u) && stealthed(statsOf(u).flags)),
+  stealthEnemies: (w, c, op) => inOwnRange(w, c, op).some((u) => hostile(u) && stealthed(u)),
   skillOrAfter: (w, _c, op, v) => (!!op.skill && op.skill.active) || afterSkill(w, op, v),
   lowSp: (_w, _c, op, v) => !!op.skill && !op.skill.active && op.skill.sp <= v * op.skill.cap,
   enemiesNear: (w, _c, op, v) => enemiesNear(w, op) >= v,

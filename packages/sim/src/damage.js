@@ -246,7 +246,7 @@ function judged(w, u, src, c) {
 /** Whether a talent's status reaches the enemy that hurt it (职业-27): one with HP, not invincible, 隐匿 or 无法选中. @param {Unit} e */
 function reachable(e) {
   const f = statsOf(e).flags;
-  return e.kind === KIND.ENEMY && e.hp > 0 && !f.invincible && !stealthed(f) && !f.untargetable;
+  return e.kind === KIND.ENEMY && e.hp > 0 && !f.invincible && !stealthed(e) && !f.untargetable;
 }
 
 /** A dodge or a miss (伤害-8): the `dodge` event (钩子-3), and one more on the target's `dodges` tracker (职业-26). @param {World} w @param {Unit} u @param {Unit | null} src @param {Damage} dmg */
@@ -321,7 +321,7 @@ function settle(dmg) {
  */
 function untouchable(target, dmg) {
   const f = statsOf(target).flags;
-  return !!(f.invincible || (f.sleep && !(dmg.throughSleep && !stealthed(f) && !f.untargetable)));
+  return !!(f.invincible || (f.sleep && !(dmg.throughSleep && !stealthed(target) && !f.untargetable)));
 }
 
 /**

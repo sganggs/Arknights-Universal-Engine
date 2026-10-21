@@ -7,7 +7,7 @@ import { test, before } from 'node:test';
 import assert from 'node:assert/strict';
 import fc from 'fast-check';
 import { loadOracle } from '@aue/testkit';
-import { targeting as T, buffs } from '../src/index.js';
+import { targeting as T, buffs, blocking } from '../src/index.js';
 
 const SEED = 20261011, G = { rows: 19, cols: 21 }, FPS = 30;
 /** @type {any} */
@@ -130,6 +130,49 @@ test('[索敌-2] immunity suppresses the flag: an immune unit is selectable as i
   assert.equal(T.selectable(withBuff({ flags: { camou: true } }, { base: { immune: ['camou'] } })), true);
   assert.equal(T.selectable(withBuff({ flags: { levitate: true } }, { base: { immune: ['levitate'] } })), true);
   assert.equal(T.selectable(withBuff({ flags: { stealth: true } }, { base: { immune: ['camou'] } })), false, 'another immunity does not help');
+});
+
+test('[索敌-2] an enemy\'s 隐匿 lifts while blocked and through its restore window; an operator\'s does not', () => {
+  const enemy = withBuff({ flags: { stealth: true } }, { blockedBy: 7 });
+  assert.equal(T.selectable(enemy), true, 'blocked');
+  assert.equal(T.stealthed(enemy), false);
+  blocking.release(enemy);
+  assert.equal(T.selectable(enemy), true, 'the window');
+  assert.equal(enemy.buffs.find((/** @type {any} */ b) => b.key === 'stealthOff:x')?.left, 90);
+  const op = withBuff({ flags: { stealth: true } }, { kind: 0, blockedBy: 7 });
+  blocking.release(op);
+  assert.equal(T.selectable(op), false);
+  assert.equal(op.buffs.some((/** @type {any} */ b) => String(b.key).startsWith('stealthOff:')), false);
+});
+
+test('[索敌-2] restore 0 returns at once, and one source still outside its window keeps 隐匿', () => {
+  const now = withBuff({ flags: { stealth: true }, restore: 0 }, { blockedBy: 4 });
+  blocking.release(now);
+  assert.equal(T.stealthed(now), true);
+  assert.equal(now.buffs.some((/** @type {any} */ b) => String(b.key).startsWith('stealthOff:')), false);
+  const both = mk(1, { blockedBy: 4, buffs: [buffs.makeBuff({ key: 'a', flags: { stealth: true }, restore: 0 }), buffs.makeBuff({ key: 'b', flags: { stealth: true } })] });
+  blocking.release(both);
+  assert.equal(T.stealthed(both), true, 'a has no window');
+  assert.equal(both.buffs.some((/** @type {any} */ b) => b.key === 'stealthOff:a'), false);
+  assert.equal(both.buffs.find((/** @type {any} */ b) => b.key === 'stealthOff:b')?.left, 90);
+  const closed = mk(2, { blockedBy: 4, buffs: [buffs.makeBuff({ key: 'a', flags: { stealth: true } }), buffs.makeBuff({ key: 'b', flags: { stealth: true } })] });
+  blocking.release(closed);
+  assert.equal(T.stealthed(closed), false);
+});
+
+test('[索敌-2] releasing again refills the window; a free enemy\'s release does not; a dead enemy arms none', () => {
+  const e = withBuff({ flags: { stealth: true } }, { blockedBy: 3 });
+  blocking.release(e);
+  const window = /** @type {import('../src/types.js').Buff} */ (e.buffs.find((/** @type {any} */ b) => b.key === 'stealthOff:x'));
+  buffs.setLeft(window, 10);
+  e.blockedBy = 8;
+  blocking.release(e);
+  assert.equal(window.left, 90);
+  blocking.release(e);
+  assert.equal(window.left, 90, 'already free');
+  const dead = withBuff({ flags: { stealth: true } }, { blockedBy: 3, hp: 0 });
+  blocking.release(dead);
+  assert.equal(dead.buffs.some((/** @type {any} */ b) => String(b.key).startsWith('stealthOff:')), false);
 });
 
 /** Candidate enemies of the differential test: a taunt level, a path distance bucket (all different) and a blocked flag. */

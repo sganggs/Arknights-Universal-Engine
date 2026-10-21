@@ -670,6 +670,7 @@
  * @property {number} n a counter its behaviour keeps (麻痹's decay, 狂躁's damage)
  * @property {string} tag marks a buff a behaviour made, to find it again ("" for none)
  * @property {string} act the key its behaviour is found by, "" for its own key (状态-1)
+ * @property {number} [restore] frames until this source of 隐匿 returns after the enemy is released (索敌-2); absent is 90, and 0 is at once
  */
 
 /**

@@ -6,7 +6,7 @@ import { KIND, ANIM } from '@aue/schema';
 import { offsetTile, dirVec } from './dir.js';
 import { push, pull, PULL_POINT } from './displacement.js';
 import { statsOf, computeStats, intervalFrames } from './attrs.js';
-import { inKeys, selectable, sortEnemies, sortAllies, firstN, evadesGround, hostile, friendly } from './targeting.js';
+import { inKeys, selectable, sortEnemies, sortAllies, firstN, evadesGround, hostile, friendly, stealthed } from './targeting.js';
 import { dealDamage, heal } from './damage.js';
 import { emit, hasHook } from './bus.js';
 import { pathDistance } from './routes.js';
@@ -265,13 +265,15 @@ const loadOf = (a, mods) => ({
 
 /**
  * The units an enemy's tile splash reaches (敌能-7, 敌能-8): those it may attack on the target's tile and the four tiles
- * next to it (a cross), or the eight around it (a square).
+ * next to it (a cross), or the eight around it (a square). The locked target is included while 隐匿; the others are not
+ * when 隐匿 is in effect (索敌-2). 迷彩 does not leave one out.
  * @param {World} w @param {Unit} a @param {Unit} t @param {'cross' | 'square'} area @returns {Unit[]}
  */
 function areaOf(w, a, t, area) {
   const [r, col] = tileOf(t);
   return w.units.filter((u) => {
     if (u.hp <= 0 || u.hidden || !isFoeOf(u, a) || evadesGround(a, u)) return false;
+    if (u !== t && stealthed(u)) return false;
     const [ur, uc] = tileOf(u), dr = Math.abs(ur - r), dc = Math.abs(uc - col);
     return area === 'square' ? Math.max(dr, dc) <= 1 : dr + dc <= 1;
   });
@@ -306,11 +308,12 @@ export function traitScale(w, c, a, t) {
 
 /**
  * The enemies a splash around a target reaches (职业-8): every other enemy on the field within the radius of it —
- * hidden ones not, flying ones only when the splash is not ground-only.
+ * hidden ones not, 隐匿 ones not while it is in effect (索敌-2), 迷彩 ones still; flying ones only when the splash is
+ * not ground-only.
  * @param {World} w @param {Unit} t @param {import('./types.js').Splash} s @returns {Unit[]}
  */
 function splashOf(w, t, s) {
-  return w.units.filter((u) => u !== t && hostile(u) && u.hp > 0 && !u.hidden
+  return w.units.filter((u) => u !== t && hostile(u) && u.hp > 0 && !u.hidden && !stealthed(u)
     && !(s.ground && statsOf(u).flying) && (u.x - t.x) * (u.x - t.x) + (u.y - t.y) * (u.y - t.y) <= s.radius * s.radius);
 }
 

@@ -2,7 +2,7 @@
 // each enemy spawns by a wave, is moved where the test needs it and stands still.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createWorld, step, attrs, status } from '@aue/sim';
+import { createWorld, step, attrs, status, targeting } from '@aue/sim';
 import { tinyContent, oneWave, spawnAt } from '@aue/testkit';
 import { levelContent } from '../src/index.js';
 
@@ -82,19 +82,24 @@ test('[敌能-13] 能量夺取: every 2 s 匪帮斧手 takes one from each enemy
   assert.deepEqual([valueOf(axe, 'energy'), valueOf(bomber, 'energy')], [1, 24]);
 });
 
-test('[敌能-14] 隐匿 with 强击: hidden until blocked; then one strike of 200 % on its blocker; hidden again 3 s after the block ends', () => {
+test('[敌能-14] 隐匿 with 强击: the buff stays while blocked, the strike spends the mark, and the mark returns when 隐匿 does', () => {
   const { w, c, es: [e], ops: [g] } = arena([['enemy_1299_ymkilr', 1, 4]], [['guard', 1, 1]]);
   assert.ok(attrs.statsOf(e).flags.stealth);
   e.x = 1;
   run(w, c, 3);
   assert.equal(e.blockedBy, g.id);
-  assert.equal(attrs.statsOf(e).flags.stealth, undefined);
+  assert.equal(attrs.statsOf(e).flags.stealth, true, 'the buff stays');
+  assert.equal(targeting.stealthed(e), false);
+  assert.equal(e.ab['InvisibleCombat.mark'], 0);
   assert.equal(1e6 - g.hp >= 2 * 800 - 100, true, 'the strike');
   step(w, c, [[0, { type: 'retreat', unit: g.id }]]);
   run(w, c, 2);
-  assert.deepEqual([e.blockedBy, attrs.statsOf(e).flags.stealth], [-1, undefined], 'unblocked, not yet hidden');
+  assert.equal(e.blockedBy, -1);
+  assert.equal(targeting.stealthed(e), false, 'unblocked, not yet hidden');
+  assert.equal(e.ab['InvisibleCombat.mark'], 0);
   run(w, c, 90);
-  assert.ok(attrs.statsOf(e).flags.stealth, 'hidden again');
+  assert.equal(targeting.stealthed(e), true, 'hidden again');
+  assert.equal(e.ab['InvisibleCombat.mark'], 1);
 });
 
 test('[敌能-15] 引导: after 10 s it channels 5 s without attacking, then 200 % as arts on its target and +100 攻击速度 for 20 s', () => {

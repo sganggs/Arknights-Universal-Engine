@@ -28,13 +28,14 @@ export function zoneScale(c, op, t, tr) {
 const dist2 = (a, b) => (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y);
 
 /**
- * The next enemy a damage chain jumps to from `at` (职业-11): a selectable enemy (flying ones only when the attacker
- * can hit them) within the radius that the chain has not reached; the nearest, the earlier created on a tie.
+ * The next enemy a damage chain jumps to from `at` (职业-11): a selectable enemy within the radius that the chain has
+ * not reached — 迷彩 or not (INF-0290), not while 隐匿 is in effect, flying ones only when the attacker can hit them;
+ * the nearest, the earlier created on a tie.
  * @param {World} w @param {Unit} at @param {Chain} ch @param {Set<number>} seen @param {boolean} antiAir @returns {Unit | null}
  */
 function nextFoe(w, at, ch, seen, antiAir) {
   let best = null, bestD = Infinity;
-  const sel = { canHitFly: antiAir };
+  const sel = { canHitFly: antiAir, ignoreCamou: true };
   for (const u of w.units) {
     if (!hostile(u) || u.hp <= 0 || seen.has(u.id)) continue;
     const d = dist2(at, u);

@@ -12,7 +12,7 @@ import { dealDamage, heal } from './damage.js';
 import { inflict } from './status.js';
 import { tileOf } from './body.js';
 import { tileAt } from './level.js';
-import { hostile } from './targeting.js';
+import { hostile, stealthed } from './targeting.js';
 import { traitOf, traitOfDef } from './traits.js';
 import { targetsOf } from './combat.js';
 import { rotateOffset } from './dir.js';
@@ -49,20 +49,25 @@ export function moreDeploy(w, c, op) {
   if (t.deployBlast) deployBlast(w, c, op, t.deployBlast);
 }
 
-/** A stun on deployment (职业-31: 灰烬). @param {World} w @param {Content} c @param {Unit} op @param {{ seconds: number, radius: number }} x */
+/** A stun on deployment (职业-31: 灰烬). The locked target is stunned while 隐匿; others are not when it is in effect (索敌-2). 迷彩 is not checked. @param {World} w @param {Content} c @param {Unit} op @param {{ seconds: number, radius: number }} x */
 function deployStun(w, c, op, x) {
   const first = targetsOf(w, c, op)[0];
   if (!first) return;
   for (const e of foes(w)) {
+    if (e !== first && stealthed(e)) continue;
     const dx = e.x - first.x, dy = e.y - first.y;
     if (dx * dx + dy * dy <= x.radius * x.radius) inflict(w, e, 'stun', { seconds: x.seconds, src: op });
   }
 }
 
-/** A blast on deployment (职业-31: 耀骑士临光). @param {World} w @param {Content} c @param {Unit} op @param {{ scale: number, stun: number, again: string }} x */
+/** A blast on deployment (职业-31: 耀骑士临光). 隐匿 in effect is left out, on the operator's tile too (索敌-2). 迷彩 is not checked. @param {World} w @param {Content} c @param {Unit} op @param {{ scale: number, stun: number, again: string }} x */
 function deployBlast(w, c, op, x) {
   const [r, col] = tileOf(op), last = w.players[op.owner]?.last, twice = !!last && (c.operators[last]?.powers ?? []).includes(x.again);
-  const near = foes(w).filter((e) => { const [er, ec] = tileOf(e); return Math.abs(er - r) + Math.abs(ec - col) <= 1; });
+  const near = foes(w).filter((e) => {
+    if (stealthed(e)) return false;
+    const [er, ec] = tileOf(e);
+    return Math.abs(er - r) + Math.abs(ec - col) <= 1;
+  });
   for (const e of near) {
     for (let k = 0; k < (twice ? 2 : 1); k++) dealDamage(w, op, e, { type: 'true', amount: x.scale * statsOf(op).atk }, c);
     if (e.hp > 0) inflict(w, e, 'stun', { seconds: x.stun, src: op });

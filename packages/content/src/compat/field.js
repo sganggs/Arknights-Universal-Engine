@@ -2,7 +2,7 @@
 // the enemies on tiles or within a radius that an ability may select (索敌-2), the unit on a tile, the enemies a unit
 // blocks; damage (伤害-7, 元素-2), healing (伤害-11), 生命流失 (伤害-10), retreat (撤退-1) and 移动 (部署-9). The battle's methods
 // (battle.js) call these; units are the kits' (unit.js).
-import { KIND, attrs, body, constants, damage, traits, elements, deck, blocking, routes, paths, sp, moveOperator, canMoveTo } from '@aue/sim';
+import { KIND, attrs, body, constants, damage, traits, elements, deck, blocking, routes, paths, sp, targeting, moveOperator, canMoveTo } from '@aue/sim';
 import { canTargetEnemy } from './sh/targeting.js';
 import { localOrder } from './sh/dir.js';
 import { ELEMENT } from './mods.js';
@@ -49,9 +49,12 @@ export function enemiesInRadius(b, x, y, r, centre = false) {
   return b.enemies.filter((e) => e.alive && !e.hidden && (e.hitArea && !centre ? body.bodyInRadius(e, x, y, r) : (e.x - x) * (e.x - x) + (e.y - y) * (e.y - y) <= r2));
 }
 
-/** Those of them an ability may select: not 无法选中, not 隐匿. @param {ShBattle} b @param {number} x @param {number} y @param {number} r @param {boolean} [centre] */
+/** Those of them an ability may select: not 无法选中, not 隐匿 in effect (索敌-2). @param {ShBattle} b @param {number} x @param {number} y @param {number} r @param {boolean} [centre] */
 export function foesInRadius(b, x, y, r, centre = false) {
-  return enemiesInRadius(b, x, y, r, centre).filter((e) => { const f = attrs.statsOf(/** @type {Unit} */ (e.u)).flags; return !f.untargetable && !f.stealth; });
+  return enemiesInRadius(b, x, y, r, centre).filter((e) => {
+    const u = /** @type {Unit} */ (e.u);
+    return !attrs.statsOf(u).flags.untargetable && !targeting.stealthed(u);
+  });
 }
 
 /**
