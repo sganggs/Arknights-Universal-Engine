@@ -39,7 +39,30 @@ export function skillDefOf(id, level) {
     duration: level.duration, ammo: level.durationType === 'AMMO', bb,
     stoppable: level.stoppable ?? CLOSABLE.test(level.description ?? ''), ...rangeOf(level), ...extraOf(level, ownMods(level, bb, allies.keys)),
     ...foreverOf(level), ...spendOf(level, bb), ...(allies.def ? { allies: allies.def } : {}), ...alchemyOf(level, bb),
+    ...dollSwitchOf(level),
   };
+}
+
+/** A description that keeps the `<替身>` token and drops every other tag (职业-15). The data may write line breaks as \n. @param {SkillLevel} level */
+const dollText = (level) => (level.description ?? '').replace(/<(?!\/?替身>)[^>]*>/g, '').replace(/\\n/g, '\n');
+
+/** A sentence that switches to the 替身 as the skill starts (职业-15). 「切换为<替身>作战时」 is an effect of a switch, not this. */
+const DOLL_START = /(?:立即|并)切换为<替身>/u;
+/** A sentence that switches as the skill ends (职业-15): knocked out as it ends, or the text already says it switches then. */
+const DOLL_END = /技能结束后视为被击倒|技能结束后(?:立刻|立即)切换为<替身>/u;
+
+/**
+ * When a skill switches a 傀儡师 to its 替身 (职业-15): at its start for 「立即切换为<替身>」 or 「并切换为<替身>」, at its
+ * end for 「技能结束后视为被击倒」 or 「技能结束后立刻切换为<替身>」. A sentence about what happens once the switch has
+ * started (「切换为<替身>作战时」), or about summoning a 替身, is not this.
+ * @param {SkillLevel} level @returns {{ doll?: 'start' | 'end' }}
+ */
+function dollSwitchOf(level) {
+  const parts = dollText(level).split(/[，。；\n]/u);
+  // End first: 「技能结束后立即切换为<替身>」 also contains 「立即切换为<替身>」, and 结束后 is the moment.
+  if (parts.some((s) => DOLL_END.test(s))) return { doll: 'end' };
+  if (parts.some((s) => DOLL_START.test(s))) return { doll: 'start' };
+  return {};
 }
 
 /**

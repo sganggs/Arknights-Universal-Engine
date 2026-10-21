@@ -22,7 +22,9 @@
 | 下次攻击 | 没有持续时间，blackboard 有攻击类的键（技能-5） |
 | 立即 | 其余 |
 
-- 来源：数据：skill_table[].levels[]（skillType、spData、duration、durationType、blackboard）；[PRTS「技能」oldid=420458](https://prts.wiki/index.php?title=%E6%8A%80%E8%83%BD&oldid=420458)「触发条件」：自动触发、手动触发、被动；种类的划分为推断 INF-0031
+开启时切换到替身、持续时间不大于 0 的，按立即，不当作下次攻击（职业-15）。
+
+- 来源：数据：skill_table[].levels[]（skillType、spData、duration、durationType、blackboard）；[PRTS「技能」oldid=420458](https://prts.wiki/index.php?title=%E6%8A%80%E8%83%BD&oldid=420458)「触发条件」：自动触发、手动触发、被动；种类的划分为推断 INF-0031；开启时切换的例外见职业-15，为推断 INF-0303
 
 ### 技能-2 技力
 

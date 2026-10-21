@@ -134,6 +134,7 @@
  *   much (技能-10)
  * @property {SkillAllies} [allies] what it gives the friendly units in its attack range while it runs (技能-11)
  * @property {AlchemyDef} [alchemy] the 炼金单元 it throws as it starts; it is then an instant skill (技能-13)
+ * @property {'start' | 'end'} [doll] the skill switches a 傀儡师 to its 替身 as it starts, or after it ends on its own (职业-15)
  */
 /**
  * What a skill's 炼金单元 does (技能-13). `at`: thrown at the enemies (the operator's target, else the farthest tile ahead in
@@ -797,6 +798,7 @@
  * @property {number} ammo shots left of an ammo skill
  * @property {number} at the frame it started
  * @property {number} [spend] the deployment cost it takes to start (技能-10)
+ * @property {boolean} [dollPending] set until this frame's flush when the skill has asked to switch to the 替身 (职业-15); absent otherwise, so a snapshot of a skill that never asked stays the same
  */
 
 /**

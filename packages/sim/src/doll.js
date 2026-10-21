@@ -2,7 +2,8 @@
 // buffs cleared, its HP set to its maximum, undying, invincible, 阻回, 禁疗, 孤立, no attacks, immune to 晕眩, 冻结 and
 // 沉睡 — brings out its 替身, which fights for the trait's time holding 阻回 and blocking nothing (and falls at 0 HP) —
 // not attacking when its talent says so, its aura's hits each second —; then a switch back brings its own form again.
-// The phase is a buff, so snapshots keep it.
+// A skill whose text says so starts the same switch, as it starts or after it ends (职业-15). The phase is a buff, so
+// snapshots keep it.
 import { FPS, secondsToFrames } from '@aue/math';
 import { KIND } from '@aue/schema';
 import { statsOf } from './attrs.js';
@@ -24,12 +25,21 @@ const SWITCHING = Object.freeze({
 });
 
 /**
- * A switch clears a 傀儡师's buffs (职业-15): its running skill ends, and every buff goes but its phase and its own
- * lasting ones (its trait's, its talents' and passive skill's, which have no end).
+ * Whether the running skill is one that switches as it starts (职业-15). While it still runs, a phase's clear does not
+ * end it: 双月's 「持续时间内」 outlasts the switch, and its skill buff is its own lasting one, so the clear keeps it.
+ * @param {Content} c @param {Unit} u
+ */
+function skillKeeps(c, u) {
+  return !!u.skill?.active && c.operators[u.key]?.skill?.doll === 'start';
+}
+
+/**
+ * A switch clears a 傀儡师's buffs (职业-15): its running skill ends — not one that switches as it starts and is still
+ * running —, and every buff goes but its phase and its own lasting ones (its trait's, its talents' and that skill's).
  * @param {World} w @param {Content} c @param {Unit} u
  */
 function clearBuffs(w, c, u) {
-  if (u.skill?.active) endSkill(w, c, u, 'switch');
+  if (u.skill?.active && !skillKeeps(c, u)) endSkill(w, c, u, 'switch');
   for (const b of [...u.buffs]) if (b.key !== DOLL && !(b.src === u.id && b.left < 0)) removeBuff(u, b);
 }
 
@@ -74,6 +84,34 @@ export function dollFatal(w, c, u) {
   if (u.kind !== KIND.OPERATOR || !traitOf(c, u).doll || dollPhase(u) !== 0) return false;
   enterPhase(w, c, u, DOLL_PHASE.IN);
   return true;
+}
+
+/**
+ * A skill starts the switch to the 替身 (职业-15). Only a living 傀儡师 still in its own form. Already switching, or
+ * already the 替身, nothing changes — not its phase, the time it has left, or its HP. Not a hit: HP is not brought to 0,
+ * so 不死 and the other stays at 0 HP never see it.
+ * @param {World} w @param {Content} c @param {Unit} u @returns {boolean}
+ */
+function dollFromSkill(w, c, u) {
+  if (u.kind !== KIND.OPERATOR || u.hp <= 0 || !w.units.includes(u)) return false;
+  if (!traitOf(c, u).doll || dollPhase(u) !== 0) return false;
+  enterPhase(w, c, u, DOLL_PHASE.IN);
+  return true;
+}
+
+/**
+ * Starts the switches skills asked for (职业-15). The request is dropped either way: a snapshot taken after this matches
+ * one of a skill that never asked. Called twice a frame — after buffs, and after operators act — because a skill can ask
+ * at its start (a command, before buffs tick) or at its end (in the operator's turn).
+ * @param {World} w @param {Content} c
+ */
+export function flushSkillDolls(w, c) {
+  for (const u of w.units) {
+    const st = u.skill;
+    if (!st?.dollPending) continue;
+    delete st.dollPending;
+    dollFromSkill(w, c, u);
+  }
 }
 
 /**

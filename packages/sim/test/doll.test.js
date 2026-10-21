@@ -18,17 +18,42 @@ import { readView } from '@aue/schema';
 
 /**
  * The tiny level without spawns, the guard (on (1, 1) facing right) a 傀儡师: 1 s switches, a 2 s 替身 with attack +15 %
- * and HP +20 %, and `more` (职业-16).
- * @param {Record<string, unknown>} [more]
+ * and HP +20 %, and `more` (职业-16). `skill`, when given, is her MANUAL skill, SP full, so a skill command starts it.
+ * @param {Record<string, unknown>} [more] @param {Record<string, unknown> | null} [skill]
  */
-function arena(more = {}) {
+function arena(more = {}, skill = null) {
   const c = tinyContent();
   c.level.waves = [];
   c.operators.guard.trait = { doll: { duration: 2, switch: 1, atk: 0.15, maxHp: 0.2, ...more } };
+  if (skill) c.operators.guard.skill = { id: 'sk-doll', type: 'MANUAL', sp: 'time', cost: 5, init: 5, charges: 1, duration: 0, ammo: false, bb: {}, stoppable: false, ...skill };
   const w = createWorld(c, { seed: 1, players: 1 });
   step(w, c, [[0, { type: 'deploy', op: 'guard', row: 1, col: 1, dir: 0 }]]);
   const guard = /** @type {Unit} */ (w.units[0]);
   return { w, c, guard };
+}
+/** Starts the guard's skill. @param {World} w @param {any} c @param {Unit} u */
+const cast = (w, c, u) => step(w, c, [[0, { type: 'skill', unit: u.id }]]);
+/** Frames left of the phase buff, −1 when she has none. @param {Unit} u */
+const dollLeft = (u) => u.buffs.find((b) => b.key === 'doll')?.left ?? -1;
+/**
+ * From the frame a switch to the 替身 has begun: still switching for the rest of its second, the 替身 for its 2 s, the
+ * switch back, then her own form (职业-15). The phase buff is not counted on the frame it appears.
+ * @param {World} w @param {any} c @param {Unit} guard
+ */
+function phases(w, c, guard) {
+  assert.equal(dollLeft(guard), 30);
+  run(w, c, 29);
+  assert.equal(dollPhase(guard), DOLL_PHASE.IN);
+  step(w, c);
+  assert.deepEqual([dollPhase(guard), dollLeft(guard)], [DOLL_PHASE.DOLL, 60]);
+  run(w, c, 59);
+  assert.equal(dollPhase(guard), DOLL_PHASE.DOLL);
+  step(w, c);
+  assert.deepEqual([dollPhase(guard), dollLeft(guard)], [DOLL_PHASE.OUT, 30]);
+  run(w, c, 29);
+  assert.equal(dollPhase(guard), DOLL_PHASE.OUT);
+  step(w, c);
+  assert.equal(dollPhase(guard), 0);
 }
 /** @param {World} w @param {any} c @param {number} n */
 const run = (w, c, n) => { for (let i = 0; i < n; i++) step(w, c); };
@@ -160,6 +185,93 @@ test('[职业-16] a 替身 whose attacks deal arts damage and that takes less ph
   const hp = guard.hp;
   dealDamage(w, e, guard, { type: 'phys', amount: 100 + statsOf(guard).def }, c);
   assert.equal(hp - guard.hp, 60);
+});
+
+test('[职业-15] a skill that switches as it starts begins that frame: other buffs go, its own skill stays, then the phases run', () => {
+  const { w, c, guard } = arena({}, { doll: 'start', duration: 5, bb: { attack_speed: 30 } });
+  addBuff(guard, makeBuff({ key: 'mine', src: guard.id, mods: { defFlat: 5 } }));
+  addBuff(guard, makeBuff({ key: 'theirs', src: 99, left: 900, mods: { atkPct: 0.5 } }));
+  setHp(guard, 400);
+  cast(w, c, guard);
+  assert.deepEqual([dollPhase(guard), guard.hp, guard.skill?.active, guard.skill?.dollPending], [DOLL_PHASE.IN, 1000, true, undefined]);
+  assert.deepEqual(guard.buffs.map((b) => b.key).filter((k) => k !== 'doll').sort(), ['mine', 'skill']);
+  phases(w, c, guard);
+  assert.deepEqual([guard.skill?.active, statsOf(guard).aspd, guard.buffs.some((b) => b.key === 'theirs')], [true, 130, false], '5 s outlasts the 4 s of switches and 替身');
+});
+
+test('[职业-15] [技能-1] a start-switch skill with no duration is instant, even with attack keys, and the phases still run', () => {
+  const { w, c, guard } = arena({}, { doll: 'start', bb: { 'attack@atk_scale': 2.8 } });
+  setHp(guard, 400);
+  cast(w, c, guard);
+  assert.deepEqual([dollPhase(guard), guard.hp, guard.skill?.active, guard.buffs.some((b) => b.key === 'skill')], [DOLL_PHASE.IN, 1000, false, false]);
+  phases(w, c, guard);
+});
+
+test('[职业-15] a skill that switches as it ends stays in its own form until it ends, then the phases run; 不死 does not stop it', () => {
+  const { w, c, guard } = arena({}, { doll: 'end', duration: 1, bb: { atk: 0.5 } });
+  setHp(guard, 400);
+  cast(w, c, guard);
+  assert.deepEqual([dollPhase(guard), guard.hp, guard.skill?.active], [0, 400, true]);
+  run(w, c, 29);
+  assert.equal(dollPhase(guard), 0);
+  step(w, c);
+  assert.deepEqual([dollPhase(guard), guard.hp, guard.skill?.active, guard.buffs.some((b) => b.key === 'skill')], [DOLL_PHASE.IN, 1000, false, false]);
+  phases(w, c, guard);
+  const held = arena({}, { doll: 'end', duration: 1 });
+  addBuff(held.guard, makeBuff({ key: 'held', flags: { undying: true } }));
+  cast(held.w, held.c, held.guard);
+  run(held.w, held.c, 30);
+  assert.deepEqual([dollPhase(held.guard), held.guard.hp], [DOLL_PHASE.IN, 1000], 'not a hit: 不死 never sees it');
+});
+
+test('[职业-15] a skill-forced switch while switching or already the 替身 changes nothing', () => {
+  const into = arena({}, { doll: 'start', duration: 8 });
+  setHp(into.guard, 0);
+  step(into.w, into.c);
+  setHp(into.guard, 100);
+  const leftIn = dollLeft(into.guard);
+  cast(into.w, into.c, into.guard);
+  assert.deepEqual([dollPhase(into.guard), into.guard.hp, dollLeft(into.guard), into.guard.skill?.active], [DOLL_PHASE.IN, 100, leftIn - 1, true]);
+  const { w, c, guard } = arena({}, { doll: 'start', duration: 8 });
+  toDoll(w, c, guard);
+  setHp(guard, 500);
+  const left = dollLeft(guard);
+  cast(w, c, guard);
+  assert.deepEqual([dollPhase(guard), guard.hp, dollLeft(guard)], [DOLL_PHASE.DOLL, 500, left - 1]);
+  const end = arena({}, { doll: 'end', duration: 1 });
+  toDoll(end.w, end.c, end.guard);
+  const stay = dollLeft(end.guard);
+  cast(end.w, end.c, end.guard);
+  run(end.w, end.c, 30);
+  assert.deepEqual([dollPhase(end.guard), end.guard.skill?.active, dollLeft(end.guard)], [DOLL_PHASE.DOLL, false, stay - 31]);
+});
+
+test('[职业-15] a snapshot during a skill-forced switch restores the phase and the skill that is still running', () => {
+  const { w, c, guard } = arena({}, { doll: 'start', duration: 8, bb: { attack_speed: 40 } });
+  cast(w, c, guard);
+  run(w, c, 10);
+  assert.deepEqual([dollPhase(guard), guard.skill?.active, guard.skill?.dollPending], [DOLL_PHASE.IN, true, undefined]);
+  const again = restoreSnapshot(takeSnapshot(w));
+  run(w, c, 20);
+  run(again, c, 20);
+  assert.equal(stateHash(again), stateHash(w));
+  const back = /** @type {Unit} */ (again.units[0]);
+  assert.deepEqual([dollPhase(guard), dollPhase(back), back.skill?.active, statsOf(back).aspd], [DOLL_PHASE.DOLL, DOLL_PHASE.DOLL, true, 140]);
+});
+
+test('[职业-15] a fatal switch still ends a running skill; one that would switch at its end does not ask again', () => {
+  const plain = arena({}, { duration: 10, bb: { attack_speed: 30 } });
+  cast(plain.w, plain.c, plain.guard);
+  setHp(plain.guard, 0);
+  step(plain.w, plain.c);
+  assert.deepEqual([dollPhase(plain.guard), plain.guard.skill?.active, plain.guard.buffs.some((b) => b.key === 'skill')], [DOLL_PHASE.IN, false, false]);
+  const { w, c, guard } = arena({}, { doll: 'end', duration: 5 });
+  cast(w, c, guard);
+  setHp(guard, 0);
+  step(w, c);
+  assert.deepEqual([dollPhase(guard), guard.skill?.active, guard.skill?.dollPending, dollLeft(guard)], [DOLL_PHASE.IN, false, undefined, 30]);
+  run(w, c, 30);
+  assert.equal(dollPhase(guard), DOLL_PHASE.DOLL);
 });
 
 test('[职业-15] [渲染-24] the render state shows a 傀儡师\'s form: its own, switching in, the 替身, switching back', () => {
