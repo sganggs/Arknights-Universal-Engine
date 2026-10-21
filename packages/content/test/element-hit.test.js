@@ -210,14 +210,14 @@ test('[敌能-38] [敌能-26] 控潮术师 and 术师快艇: 80% 侵蚀 on the t
 /** The names of these abilities that no behaviour covers yet: another clause may give one (`noFly`, a skill). @param {string[]} names */
 const stillOpen = (names) => names.filter((n) => !Object.hasOwn(foeBehaviors, n));
 
-test('[敌能-38] 骨海漂流体 hits one target; 掠海漂移体 stays refused on Float (and noFly until it has a behaviour); 清扫小队 on what has none', () => {
+test('[敌能-38] 骨海漂流体 hits one target; 掠海漂移体 is complete once Float has a behaviour (敌能-48); 清扫小队 on what has none', () => {
   const fish = enemy({ EpDamage: { [RATIO]: 0.2 } });
   const box = fight('enemy_2021_syfish', fish, { ops: [['guard', 1, 2], ['g2', 1, 3]] });
   const was = elements.epOf(box.ops[1], 'WATER');
   expectEp(box, 'WATER', 0.2, 'phys');
   assert.equal(elements.epOf(box.ops[1], 'WATER'), was, 'no splash');
   const drift = enemy({ EpDamage: { [RATIO]: 0.5 } }, { applyWay: 'ALL', rangeRadius: 2.6 });
-  assert.deepEqual(gaps('enemy_2025_syufo', drift), ['Float', ...stillOpen(['noFly'])]);
+  assert.deepEqual(gaps('enemy_2025_syufo', drift), []);
   assert.deepEqual(withFoeExtras('enemy_2025_syufo', drift).talents?.Float, {});
   expectEp(fight('enemy_2025_syufo', drift, { ops: GUARD }), 'WATER', 0.5, 'phys');
   const crew = enemy({ EpDamage: { [RATIO]: 0.35 } }, {
