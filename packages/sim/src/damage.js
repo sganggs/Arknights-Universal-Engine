@@ -275,26 +275,41 @@ function brokeShield(u, n, c) {
 /**
  * The target's 伤判 effects in turn (伤害-8): what the hit sets off as they begin (judged), a miss by the source's hit
  * rate, then its active buffs by event priority, highest first, then acquisition order. One that cancels the hit or
- * brings it to 0 ends the step; a dodge or a miss is the `dodge` event (钩子-3). `from`: the source, the tags of an enemy
- * source (伤害-12), the content (for the target's talents).
+ * brings it to 0 ends the step; a dodge or a miss is the `dodge` event (钩子-3). `from`: the source the events see, the
+ * source the kill is counted for (`credit`; the events' source when omitted), the tags of an enemy source (伤害-12), the
+ * content (for the target's talents and a buff's `take`).
  * @param {World} w @param {Unit} u @param {number} amount @param {Damage} dmg
- * @param {{ src?: Unit | null, tags?: readonly string[], c?: import('./types.js').Content }} [from]
+ * @param {{ src?: Unit | null, credit?: Unit | null, tags?: readonly string[], c?: import('./types.js').Content }} [from]
  */
 export function takeDamage(w, u, amount, dmg, from = {}) {
-  const src = from.src ?? null, tags = from.tags ?? [];
+  const src = from.src ?? null, tags = from.tags ?? [], credit = from.credit === undefined ? src : from.credit;
   judged(w, u, src, from.c);
   if (misses(w, dmg, src)) { dodged(w, u, src, dmg); return 0; }
   const order = activeBuffs(u.buffs).map((b, i) => ({ b, i })).sort((x, y) => y.b.prio - x.b.prio || x.i - y.i);
   let left = amount;
   for (const { b } of order) {
     const hits = b.shieldHits;
-    left = judge(w, u, b, left, { dmg, src, tags });
+    const hit = { dmg, src, credit, tags, c: from.c };
+    left = judge(w, u, b, left, hit);
     // The layer is already spent, and the buff may already be gone: the object still shows the drop (部署-8).
     if (b.tag === 'shieldBreak' && b.shieldHits < hits) brokeShield(u, b.n, from.c);
+    if (left > 0) left = applyTake(w, u, b, left, hit);
     if (left < 0) dodged(w, u, src, dmg);
     if (!(left > 0)) return 0;
   }
   return left;
+}
+
+/**
+ * A buff behaviour's replacement of the damage this buff has left (伤害-8), after its own dodge, block, multipliers,
+ * shield and barrier. The behaviour is the content's, by `act` or the buff's key. A result that is not a finite number
+ * leaves the damage as it was.
+ * @param {World} w @param {Unit} u @param {Buff} b @param {number} amount
+ * @param {{ dmg: Damage, src: Unit | null, credit: Unit | null, tags: readonly string[], c?: import('./types.js').Content }} hit
+ */
+function applyTake(w, u, b, amount, hit) {
+  const next = hit.c?.behaviors?.buffs?.[b.act || b.key]?.take?.(w, u, b, amount, hit);
+  return typeof next === 'number' && Number.isFinite(next) ? Math.max(0, next) : amount;
 }
 
 /** The source a hit's events show (钩子-3): none for a `sourceless` one (伤害-7). @param {Unit | null} src @param {Damage} dmg */
@@ -449,7 +464,7 @@ export function dealDamage(w, src, target, dmg, c) {
   let amount = mitigate(dmg.amount, dmg.type, statsOf(target), penetration(ss, dmg)) * /** @type {number} */ (dmg.mul);
   amount = floored(c, seen, target, dmg, amount);
   if (ss) amount *= dealtMul(ss, dmg.type) * (c && seen ? worksMul(c, seen, target) : 1);
-  amount = hpDamage(w, src, target, takeDamage(w, target, amount, dmg, { src: seen, tags: tagsOf(c, seen), ...(c ? { c } : {}) }), dmg);
+  amount = hpDamage(w, src, target, takeDamage(w, target, amount, dmg, { src: seen, credit: src, tags: tagsOf(c, seen), ...(c ? { c } : {}) }), dmg);
   return amount > 0 ? loseHp(w, src, target, amount, dmg) : 0;
 }
 

@@ -6,6 +6,7 @@ import { withTrait, withOwnTrait } from './traits.js';
 import { skillDefOf } from './skills.js';
 import { levelAt } from './levels.js';
 import { foeBehaviors, withFoeExtras, withoutIncomplete } from './foes.js';
+import { chaliceBuffs } from './chalice.js';
 import { operatorAt, teamTalentsAt } from './operators.js';
 import { TOKENS, tokenAt } from './tokens.js';
 import { teamFits, predefinedKey } from '@aue/sim';
@@ -18,8 +19,8 @@ import { carriedDef } from './carried.js';
 import { withBuilders } from './fortress.js';
 import { OFFICIAL_SOURCE } from './mods/source.js';
 
-/** The official behaviours: skills (技能-6) and enemy abilities (敌能-2). */
-const BEHAVIORS = Object.freeze({ skills: skillBehaviors, foes: foeBehaviors });
+/** The official behaviours: skills (技能-6), enemy abilities (敌能-2) and the chalice's 伤判 (敌能-41). */
+const BEHAVIORS = Object.freeze({ skills: skillBehaviors, foes: foeBehaviors, buffs: chaliceBuffs });
 
 /**
  * Enemies with their PRTS extras (敌能-5…) and attack timings (攻击-2); an ability that still lacks values its behaviour
@@ -120,7 +121,7 @@ export async function matchContent(match, { source = OFFICIAL_SOURCE, kits = {} 
   withBuilders(lv.level, lv.devices, operators, decks);
   const used = [...new Set(Object.keys(entries).map((k) => k.split('#')[0]))].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
   const kb = used.length ? kitsBehaviors(entries) : null;
-  const behaviors = kb ? { ...BEHAVIORS, world: kb.world, skills: { ...BEHAVIORS.skills, ...kb.skills }, buffs: kb.buffs, traits: kb.traits } : BEHAVIORS;
+  const behaviors = kb ? { ...BEHAVIORS, world: kb.world, skills: { ...BEHAVIORS.skills, ...kb.skills }, buffs: { ...BEHAVIORS.buffs, ...kb.buffs }, traits: kb.traits } : BEHAVIORS;
   const level = limitAdd.some((n) => n !== 0) ? { ...lv.level, options: { ...lv.level.options, characterLimitAdd: limitAdd } } : lv.level;
   return /** @type {any} */ ({ level, enemies: enemiesOf(lv.enemies), devices: lv.devices, operators, decks, behaviors, ...(used.length ? { kits: { sha: KIT_SOURCE.sha, used } } : {}),
     ...(source.mods.length ? { mods: source.mods.map((m) => ({ ...m })) } : {}) });

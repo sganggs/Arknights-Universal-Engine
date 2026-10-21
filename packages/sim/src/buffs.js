@@ -7,8 +7,14 @@ import { statsOf, maxHpOf } from './attrs.js';
 /** @typedef {import('./types.js').Unit} Unit @typedef {import('./types.js').Buff} Buff @typedef {import('./types.js').World} World */
 
 /**
- * What a buff does on its triggers and when it ends, by key.
- * @typedef {{ tick?: (w: World, u: Unit, b: Buff) => void, expire?: (w: World, u: Unit, b: Buff) => void }} Behavior
+ * A hit a buff's 伤判 behaviour sees (伤害-8). `amount` passed beside it is what this buff has left; `dmg.amount` is the
+ * hit's base, before defences and 伤判. `credit` is the source the kill is counted for, also when the events see none.
+ * @typedef {{ dmg: { amount: number, tags?: readonly string[] }, src: Unit | null, credit: Unit | null, tags: readonly string[], c?: import('./types.js').Content }} TakeHit
+ */
+
+/**
+ * What a buff does on its triggers, when it ends, and during its own 伤判 (伤害-8), by key.
+ * @typedef {{ tick?: (w: World, u: Unit, b: Buff) => void, expire?: (w: World, u: Unit, b: Buff) => void, take?: (w: World, u: Unit, b: Buff, amount: number, hit: TakeHit) => number }} Behavior
  */
 
 /** @typedef {Partial<Buff> & { key: string }} BuffInit */

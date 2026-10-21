@@ -79,8 +79,9 @@
 - 护盾、屏障没有指定类型时，吸收所有类型。
 - 一个 Buff 取消伤害，或者把伤害降到 0 时，后面的 Buff 不再处理。
 - 只有护盾和屏障、没有其他修饰器和标记的 Buff，用完就移除。
+- 一个 Buff 可以用行为键 `act`（没有则用它的 key）在内容的 `behaviors.buffs` 里挂上 `take`。轮到这个 Buff，且它自己的闪避、抵挡、倍率、护盾、屏障处理完、伤害仍大于 0 时，`take` 用返回值替换还剩的伤害。返回值不是有限数则不改。降到 0 之后的 Buff 不再处理。
 
-- 来源：[PRTS「伤判效果」oldid=439572](https://prts.wiki/index.php?title=%E4%BC%A4%E5%88%A4%E6%95%88%E6%9E%9C&oldid=439572)：处理顺序「事件优先级＞获取顺序」，取消或降为 0 后跳过后续伤判；[PRTS「术语释义」oldid=440223](https://prts.wiki/index.php?title=%E6%9C%AF%E8%AF%AD%E9%87%8A%E4%B9%89&oldid=440223) 护盾「每层护盾可以抵挡一次伤害」、屏障「可以吸收一定数值的伤害」「若无特殊说明，屏障可吸收全种类伤害」；[PRTS「游戏数据基础」oldid=440563](https://prts.wiki/index.php?title=%E6%B8%B8%E6%88%8F%E6%95%B0%E6%8D%AE%E5%9F%BA%E7%A1%80&oldid=440563)「闪避」：多个闪避相乘合并；一个 Buff 内的顺序、用完移除为推断 INF-0022
+- 来源：[PRTS「伤判效果」oldid=439572](https://prts.wiki/index.php?title=%E4%BC%A4%E5%88%A4%E6%95%88%E6%9E%9C&oldid=439572)：处理顺序「事件优先级＞获取顺序」，取消或降为 0 后跳过后续伤判；[PRTS「术语释义」oldid=440223](https://prts.wiki/index.php?title=%E6%9C%AF%E8%AF%AD%E9%87%8A%E4%B9%89&oldid=440223) 护盾「每层护盾可以抵挡一次伤害」、屏障「可以吸收一定数值的伤害」「若无特殊说明，屏障可吸收全种类伤害」；[PRTS「游戏数据基础」oldid=440563](https://prts.wiki/index.php?title=%E6%B8%B8%E6%88%8F%E6%95%B0%E6%8D%AE%E5%9F%BA%E7%A1%80&oldid=440563)「闪避」：多个闪避相乘合并；一个 Buff 内的顺序、用完移除为推断 INF-0022；伤判中调用 Buff 行为表是设计决定，行为在表里而不在 Buff 上（[ADR 0054](../adr/0054-attributes-and-buffs-as-data.md)）
 
 ### 伤害-12 抵挡与按来源的伤害
 

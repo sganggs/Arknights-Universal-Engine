@@ -225,6 +225,21 @@ test('[伤害-8] content may set what a shield holds: at least 0; a buff that is
   assert.deepEqual(u.buffs.map((b) => b.key), ['m'], 'only a shield, now empty: gone');
 });
 
+test('[伤害-8] a buff behaviour take replaces what that buff left, and priority −3000 runs after a priority-0 modifier', () => {
+  const u = mk(1), w = world();
+  /** @type {any} */
+  const c = { behaviors: { buffs: { cut: { take: (/** @type {unknown} */ _w, /** @type {unknown} */ _u, /** @type {unknown} */ _b, /** @type {number} */ amount) => amount - 30 } } } };
+  u.buffs.push(makeBuff({ key: 'cut', act: 'cut', prio: -3000 }), makeBuff({ key: 'fragile', mods: { dmgTakenMul: 2 } }));
+  assert.equal(takeDamage(w, u, 100, { type: 'true', amount: 100 }, { c }), 170, '脆弱 doubles first, then take subtracts 30');
+  const v = mk(2);
+  let ran = 0;
+  /** @type {any} */
+  const wall = { behaviors: { buffs: { cut: { take: () => { ran += 1; return 1; } } } } };
+  v.buffs.push(makeBuff({ key: 'cut', act: 'cut', prio: -3000 }), makeBuff({ key: 'wall', shield: 1000 }));
+  assert.equal(takeDamage(w, v, 50, { type: 'true', amount: 50 }, { c: wall }), 0);
+  assert.equal(ran, 0, 'a buff that brings the hit to 0 ends the step before a later take');
+});
+
 test('[伤害-9] content sets HP outright: between 0 and the maximum, no event', () => {
   const u = mk(1, { maxHp: 1000 });
   setHp(u, 1500);
