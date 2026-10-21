@@ -36,15 +36,26 @@ const SummonToken = Object.freeze({
 });
 
 /**
- * 畸变恶性瘤 (敌能-23): while it is blocked, the unit blocking it has 攻击速度 × (1 + `attack_speed`) (直接乘算) — one such
- * effect at most, whatever blocks it.
- * @type {FoeBehavior}
+ * 畸变恶性瘤 (敌能-23): no `range_radius` — while it is blocked, the unit blocking it has 攻击速度 × (1 + `attack_speed`)
+ * (直接乘算), one such effect at most. 寒霜 (敌能-35) has `range_radius` (FOE_EXTRAS, the page's 2.5): every one of our
+ * units in that radius gets the same multiplier on its own key, so a blocker of the tumour is not retuned to 寒霜's.
+ * @param {FoeContext} ctx
  */
+function tumorSlow(ctx) {
+  const b = ctx.blocker();
+  if (b) ctx.lend(b, 'atkSpeedDown', { mods: { aspdPct: ctx.bb.attack_speed } });
+}
+
+/** 寒霜 (敌能-35): 攻击速度 × (1 + attack_speed) inside `range_radius`, off while the holder is silenced. @param {FoeContext} ctx */
+function frostAura(ctx) {
+  const rate = ctx.bb.attack_speed;
+  if (typeof rate !== 'number' || ctx.stats(ctx.self).flags.silence) return;
+  for (const u of ctx.foes(ctx.bb.range_radius)) if (u.base.neutral !== true) ctx.lend(u, 'frostAspd', { mods: { aspdPct: rate } });
+}
+
+/** `atkSpeedDown` (敌能-23, 敌能-35): the tumour when the blackboard has no radius, 寒霜 when it does. @type {FoeBehavior} */
 const atkSpeedDown = Object.freeze({
-  tick: (ctx) => {
-    const b = ctx.blocker();
-    if (b) ctx.lend(b, 'atkSpeedDown', { mods: { aspdPct: ctx.bb.attack_speed } });
-  },
+  tick: (ctx) => (typeof ctx.bb.range_radius === 'number' ? frostAura(ctx) : tumorSlow(ctx)),
 });
 
 /** The hologram enemy `e` brought in while it is still on the field (敌能-24). @param {FoeContext} ctx */
