@@ -12,6 +12,7 @@ import { selectable, sortAllies, friendly, evadesGround, stealthed } from './tar
 import { tileOf } from './body.js';
 import { tileAt } from './level.js';
 import { board, alight, detour, wayKeys } from './routes.js';
+import { draw } from './rng.js';
 import { release } from './blocking.js';
 import { spawnDevice } from './devices.js';
 import { keyAt } from './paths.js';
@@ -318,14 +319,18 @@ export function foeAttack(w, c, e, mods) {
 export const carried = (u) => Object.hasOwn(u.ab, '@carrier');
 
 /**
- * A carrier's passengers alight at the centre of its tile (敌能-16): when it says so, or when it leaves the field.
+ * A carrier's passengers alight (敌能-16), when it says so and when it leaves the field: at the centre of its tile,
+ * or, when a `busUnload` buff names a half-width, at a seeded point in that square, on the carrier's remaining route.
  * @param {World} w @param {Content} c @param {Unit} e
  */
 export function releasePassengers(w, c, e) {
+  const half = e.buffs.find((b) => b.key === 'busUnload')?.value ?? 0;
   for (const u of w.units) {
     if (u.ab['@carrier'] !== e.id) continue;
     delete u.ab['@carrier'];
-    alight(c, u, e);
+    if (!(half > 0)) { alight(c, u, e); continue; }
+    const at = { x: e.x + (draw(w) * 2 - 1) * half, y: e.y + (draw(w) * 2 - 1) * half };
+    alight(c, u, at, { exact: true, route: e.route, leg: e.leg });
   }
 }
 

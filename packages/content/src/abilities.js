@@ -189,6 +189,26 @@ const Guide = Object.freeze({
   },
 });
 
+/** How far a carrier looks for a passenger (敌能-16). Not a blackboard key. */
+const BOARD_RADIUS = 0.5;
+
+/** Half the side of talent `bus`'s unload square (0.4, centred on the carrier). Not a blackboard key. */
+const UNLOAD_HALF = 0.2;
+
+/**
+ * While the carrier can act, other ground enemies within 0.5 that are not a leader and not a machine board, up to
+ * `max_cnt` (敌能-16).
+ * @param {FoeContext} ctx
+ */
+function takePassengers(ctx) {
+  const self = ctx.self;
+  if (ctx.stats(self).disabled) return;
+  for (const u of ctx.allies(BOARD_RADIUS)) {
+    if (ctx.passengers() >= ctx.bb.max_cnt) break;
+    if (u !== self && u.base.levelType !== 'BOSS' && !ctx.tagsOf(u).includes('machine') && !ctx.stats(u).flying) ctx.board(u);
+  }
+}
+
 /**
  * 载客 (敌能-16): it takes `max_cnt` of a blocker's 阻挡数; while it can act and has room, each other enemy within 0.5
  * tiles that is on the ground, not a leader and not a machine goes aboard; the first time it stands on a 云梯
@@ -198,19 +218,45 @@ const Guide = Object.freeze({
 const Bus = Object.freeze({
   spawn: (ctx) => { ctx.addBuff(ctx.self, { key: 'bus', mods: { blockCnt: ctx.bb.max_cnt - 1 } }); },
   tick: (ctx) => {
-    const st = ctx.state, self = ctx.self;
+    const st = ctx.state;
     if (st.get('done') === 1) return;
     if (ctx.tileKey() === 'tile_stairs') { ctx.alight(); st.set('done', 1); return; }
-    if (ctx.stats(self).disabled) return;
-    for (const u of ctx.allies(0.5)) {
-      if (ctx.passengers() >= ctx.bb.max_cnt) break;
-      if (u !== self && u.base.levelType !== 'BOSS' && !ctx.tagsOf(u).includes('machine') && !ctx.stats(u).flying) ctx.board(u);
-    }
+    takePassengers(ctx);
+  },
+});
+
+/**
+ * `move_speed` of 移动速度 per passenger, 直接乘算 (敌能-16): the cuts add, and the attribute floor (属性-3) is the only
+ * floor. No passenger, no buff.
+ * @param {FoeContext} ctx
+ */
+function pace(ctx) {
+  const n = ctx.passengers();
+  if (ctx.state.get('n') === n) return;
+  ctx.state.set('n', n);
+  if (n === 0) ctx.removeBuff(ctx.self, 'busSpeed');
+  else ctx.setBuff(ctx.self, 'busSpeed', n, { movePct: n * ctx.bb.move_speed });
+}
+
+/**
+ * 载客 for talent `bus` (敌能-16, 伊利昂的木驮兽 and 铁驮兽): unblockable, slowed by each passenger; its passengers
+ * alight when it leaves the field, scattered in a square on its remaining route. `busUnload`'s value is the square's
+ * half-width, which the sim reads on that unload. `half_cnt` only swaps the model.
+ * @type {FoeBehavior}
+ */
+const bus = Object.freeze({
+  spawn: (ctx) => {
+    ctx.addBuff(ctx.self, { key: 'bus', flags: { unblockable: true } });
+    ctx.addBuff(ctx.self, { key: 'busUnload', value: UNLOAD_HALF });
+  },
+  tick: (ctx) => {
+    takePassengers(ctx);
+    pace(ctx);
   },
 });
 
 /** The behaviours of this file, by talent or skill name. @type {Readonly<Record<string, FoeBehavior>>} */
 export const moreFoeBehaviors = Object.freeze({
   CostMeleeAttack: costHit(false), CostRangedAttack: costHit(true), CostHealHit: costHit(null),
-  blacksteel_energy, over_energy, dec_energy, steal_energy, AddEnergy, InvisibleCombat, Guide, Bus,
+  blacksteel_energy, over_energy, dec_energy, steal_energy, AddEnergy, InvisibleCombat, Guide, Bus, bus,
 });

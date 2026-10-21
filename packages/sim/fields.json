@@ -8,7 +8,9 @@
     "packages/sim/src/move.js"
   ],
   "dir": [],
-  "route": [],
+  "route": [
+    "packages/sim/src/routes.js"
+  ],
   "base": [],
   "born": [
     "packages/sim/src/move.js"

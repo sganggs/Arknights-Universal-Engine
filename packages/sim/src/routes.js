@@ -205,16 +205,21 @@ export function board(u) {
 }
 
 /**
- * A passenger alights (敌能-16): it appears at the centre of its carrier's tile and goes on with its route from there
- * — a wait it was in is skipped.
+ * A passenger alights (敌能-16). It appears at the centre of `at`, unless `how.exact`, and goes on from there.
+ * `how.route` switches it to that route and leg first — the carrier's remaining route. A wait it is then on is skipped.
  * @param {Content} c @param {Unit} u @param {{ x: number, y: number }} at
+ * @param {{ exact?: boolean, route?: number, leg?: number }} [how]
  */
-export function alight(c, u, at) {
-  u.x = Math.round(at.x);
-  u.y = Math.round(at.y);
+export function alight(c, u, at, how) {
+  u.x = how?.exact ? at.x : Math.round(at.x);
+  u.y = how?.exact ? at.y : Math.round(at.y);
   u.hidden = false;
+  if (how?.route !== undefined) {
+    u.route = how.route;
+    u.leg = how.leg ?? u.leg;
+  }
   const legs = legsOf(c.level.routes[u.route]), leg = legs[u.leg];
-  if (leg.t === 'wait' || leg.t === 'until') endLeg(u, legs);
+  if (leg && (leg.t === 'wait' || leg.t === 'until')) endLeg(u, legs);
   u.path = [];
   u.pt = 0;
   u.wait = -1;
