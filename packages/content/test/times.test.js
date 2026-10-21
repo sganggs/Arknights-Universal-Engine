@@ -102,7 +102,7 @@ function spawned(key, bb) {
   return /** @type {{ enemy_key?: string, cnt?: number, fall?: number }} */ (talents.DeadSpawn);
 }
 const BODIES = ['enemy_1196_msfyin', 'enemy_1196_msfyin_2', 'enemy_1198_msfshu', 'enemy_1198_msfshu_2', 'enemy_1200_msfjin', 'enemy_1200_msfjin_2', 'enemy_1202_msfzhi', 'enemy_1202_msfzhi_2'];
-const LEFT_OUT = ['enemy_1203_sfhu', 'enemy_1204_msfhu', 'enemy_1207_sfji', 'enemy_1208_msfji', 'enemy_1209_sfden', 'enemy_1210_msfden'];
+const LEFT_OUT = ['enemy_1207_sfji', 'enemy_1208_msfji', 'enemy_1209_sfden', 'enemy_1210_msfden'];
 /** Deploys a guard on the enemy's tile and returns that frame's events. @param {{ w: World, c: any, e: Unit }} box */
 const guardOn = (box) => step(box.w, box.c, [[0, { type: 'deploy', op: 'guard', row: box.e.y, col: box.e.x, dir: 0 }]]);
 
@@ -221,6 +221,6 @@ test('[敌能-39] 身观\'s taunt is the record; this family adds no taunt talen
   assert.equal(talents && talents.taunt, undefined);
 });
 
-test('[敌能-39] the tea vessels, spearheads and lamp plates are left out', () => {
+test('[敌能-39] the spearheads and lamp plates are left out', () => {
   for (const k of LEFT_OUT) assert.equal(Object.hasOwn(FOE_EXTRAS, k), false, k);
 });

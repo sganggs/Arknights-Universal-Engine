@@ -1,4 +1,4 @@
-// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-42): behaviours by talent and skill name. The
+// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-43): behaviours by talent and skill name. The
 // game data holds only the multipliers; FOE_EXTRAS adds, per enemy, the parameters PRTS gives (radii, delays, bolts …)
 // to the blackboards the behaviours read, or a talent the data does not have. They act only through the context (ADR 0055).
 
@@ -143,6 +143,13 @@ export const FOE_EXTRAS = Object.freeze({
   // 磨砻 / 雅气: 因坠落以外的原因死亡后才召唤 (the data's DeadSpawn has no fall)
   enemy_1195_sfyin: { talents: { DeadSpawn: { fall: 0 } }, source: `${PRTS}%E7%A3%A8%E7%A0%BB&oldid=381889` },
   enemy_1197_sfshu_2: { talents: { DeadSpawn: { fall: 0 } }, source: `${PRTS}%E9%9B%85%E6%B0%94&oldid=381892` },
+  // 烹泉: 半径 1.0 的法术溅射；因坠落以外的原因才召唤；死亡爆炸半径 1.25、延迟 0、不可对空、攻击力 100%
+  enemy_1203_sfhu: { talents: { Splash: { radius: 1 }, DeadSpawn: { fall: 0 }, DeadBoom: { radius: 1.25, delay: 0, air: 0, atk_scale: 1 } }, source: `${PRTS}%E7%83%B9%E6%B3%89&oldid=381901` },
+  // 沏虹: 半径 1；页面没有「因坠落以外」，坠落也召唤；死亡爆炸同烹泉（不可对空为推断 INF-0343）
+  enemy_1203_sfhu_2: { talents: { Splash: { radius: 1 }, DeadBoom: { radius: 1.25, delay: 0, air: 0, atk_scale: 1 } }, source: `${PRTS}%E6%B3%8C%E8%99%B9&oldid=353558` },
+  // 青瓷茶器 / 彩瓷茶器: 只接受法术和真实伤害（数据里没有这项天赋）
+  enemy_1204_msfhu: { talents: { hitCount: { arts: 1, true: 1 } }, source: `${PRTS}%E9%9D%92%E7%93%B7%E8%8C%B6%E5%99%A8&oldid=397896` },
+  enemy_1204_msfhu_2: { talents: { hitCount: { arts: 1, true: 1 } }, source: `${PRTS}%E5%BD%A9%E7%93%B7%E8%8C%B6%E5%99%A8&oldid=365782` },
 });
 
 /**
@@ -325,6 +332,7 @@ export const FOE_COVERED = Object.freeze(['dead', 'Light', 'DmgUp', 'Stronger', 
  */
 export const FOE_NEEDS = Object.freeze({
   boom: Object.freeze(['radius', 'delay']), Boom: Object.freeze(['radius', 'delay']), ranged: Object.freeze(['scale']),
+  DeadBoom: Object.freeze(['radius', 'delay']), Splash: Object.freeze(['radius']),
   CrossAttack: Object.freeze(['bolts', 'hold', 'charge']), Targets: Object.freeze(['n']), 1: Object.freeze(['ammo']),
   // 远眺's death aura needs a radius; the scouts' on-hit Expose has none. 御4 and 寒霜's defup has one; a def-only defup does not (敌能-35).
   Expose: Object.freeze(['range_radius']), defup: Object.freeze(['range_radius']),

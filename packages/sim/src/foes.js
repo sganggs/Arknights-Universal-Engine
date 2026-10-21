@@ -77,7 +77,7 @@ export const BOLT_RADIUS = 0.3;
  * @property {() => number} passengers how many passengers it carries
  * @property {() => void} alight its passengers alight (敌能-16)
  * @property {() => Unit[]} inLine the units in its row or column a 直击 may select, nearest first
- * @property {(b: { x: number, y: number, radius: number, delay: number, air: boolean, sourced: boolean } & Payload) => void} blast
+ * @property {(b: { x: number, y: number, radius: number, delay: number, air: boolean, sourced: boolean, buff?: import('./buffs.js').BuffInit } & Payload) => void} blast
  * @property {(b: { dx: number, dy: number, blast?: number } & Payload) => void} bolt
  * @property {(t: Unit, hp: number) => void} setHp sets a unit's HP outright (伤害-9)
  * @property {() => void} resetSkills its skills' cooldowns back to their first ones (敌能-18)
@@ -187,7 +187,8 @@ function contextOf(w, c, e, of) {
     alight: () => { releasePassengers(w, c, e); },
     drainCost: (t, n) => { const p = t.kind === KIND.OPERATOR ? w.players[t.owner] : undefined; if (p) p.cost = Math.max(0, p.cost - n); },
     inLine: () => inLine(w, e),
-    blast: (b) => { w.blasts.push({ x: b.x, y: b.y, radius: b.radius, left: secondsToFrames(b.delay), air: b.air, src: b.sourced ? e.id : -1, type: b.type, amount: b.amount, status: b.status ?? null }); },
+    // `buff` is omitted when absent: a null field would change the hash of every blast (敌能-43).
+    blast: (b) => { w.blasts.push({ x: b.x, y: b.y, radius: b.radius, left: secondsToFrames(b.delay), air: b.air, src: b.sourced ? e.id : -1, type: b.type, amount: b.amount, status: b.status ?? null, ...(b.buff ? { buff: b.buff } : {}) }); },
     bolt: (b) => {
       w.bolts.push({ src: e.id, x: e.x, y: e.y, dx: b.dx, dy: b.dy, type: b.type, amount: b.amount, status: b.status ?? null, blast: b.blast ?? 0 });
       w.events.push({ type: 'bolt', id: e.id });
@@ -373,11 +374,14 @@ export function foeHit(w, c, e, t, how) {
 
 /**
  * A unit takes a bolt's or an explosion's payload (敌能-3, 敌能-4).
- * @param {World} w @param {Content} c @param {Unit | null} src @param {Unit} t @param {{ type: DamageType, amount: number, status: { key: string, seconds: number } | null }} p
+ * @param {World} w @param {Content} c @param {Unit | null} src @param {Unit} t
+ * @param {{ type: DamageType, amount: number, status: { key: string, seconds: number } | null, buff?: import('./buffs.js').BuffInit }} p
  */
 function take(w, c, src, t, p) {
   dealDamage(w, src, t, { type: p.type, amount: p.amount }, c);
-  if (p.status && t.hp > 0) inflict(w, t, /** @type {any} */ (p.status.key), { seconds: p.status.seconds, src });
+  if (t.hp <= 0) return;
+  if (p.status) inflict(w, t, /** @type {any} */ (p.status.key), { seconds: p.status.seconds, src });
+  if (p.buff) addBuff(t, makeBuff({ src: src ? src.id : -1, ...p.buff }));
 }
 
 /**

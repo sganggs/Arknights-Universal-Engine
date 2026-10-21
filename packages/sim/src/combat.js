@@ -252,6 +252,7 @@ const loadOf = (a, mods) => ({
   ep: (mods.ep ?? 0) + (mods.epScale ? statsOf(a).atk * mods.epScale : 0),
   ...(mods.hitStatus ? { hitStatus: mods.hitStatus } : {}), ...(mods.hitDebuff ? { hitDebuff: mods.hitDebuff } : {}), ...(mods.displace ? { displace: mods.displace } : {}), ...(mods.skill ? { skill: true } : {}), ...(mods.mark ? { mark: mods.mark } : {}),
   ...(mods.frozen ? { frozen: mods.frozen } : {}), ...(mods.ignoreDef ? { ignoreDef: mods.ignoreDef } : {}),
+  ...(mods.splash ? { splash: mods.splash } : {}),
 });
 
 /**
@@ -298,13 +299,19 @@ export function traitScale(w, c, a, t) {
 }
 
 /**
- * The enemies a splash around a target reaches (职业-8): every other enemy on the field within the radius of it —
+ * Which side a splash hits (职业-8, 敌能-43): enemies, unless it names friendlies — operators, neutral units and our
+ * devices (an enemy's). @param {Unit} u @param {import('./types.js').Splash} s
+ */
+const splashSide = (u, s) => (s.side === 'friendly' ? friendly(u) : hostile(u));
+
+/**
+ * The units a splash around a target reaches (职业-8, 敌能-43): every other unit of its side within the radius of it —
  * hidden ones not, 隐匿 ones not while it is in effect (索敌-2), 迷彩 ones still; flying ones only when the splash is
  * not ground-only.
  * @param {World} w @param {Unit} t @param {import('./types.js').Splash} s @returns {Unit[]}
  */
 function splashOf(w, t, s) {
-  return w.units.filter((u) => u !== t && hostile(u) && u.hp > 0 && !u.hidden && !stealthed(u)
+  return w.units.filter((u) => u !== t && splashSide(u, s) && u.hp > 0 && !u.hidden && !stealthed(u)
     && !(s.ground && statsOf(u).flying) && (u.x - t.x) * (u.x - t.x) + (u.y - t.y) * (u.y - t.y) <= s.radius * s.radius);
 }
 
@@ -666,8 +673,10 @@ export function enemyTargets(w, e) {
   const blocker = e.blockedBy >= 0 ? w.units.find((u) => u.id === e.blockedBy) ?? null : null;
   if (e.base.applyWay === 'MELEE' || !(e.base.rangeRadius > 0)) return blocker ? [blocker] : [];
   const reach = e.base.rangeRadius + ALLY_COLLIDER_RADIUS, r2 = reach * reach;
+  // 烹泉 / 沏虹 (敌能-43) select through 迷彩. Other enemies keep the default, so the argument stays absent.
+  const see = statsOf(e).flags.seeCamou ? { ignoreCamou: true } : undefined;
   const out = w.units.filter((u) => u !== e && friendly(u) && u.hp > 0 && (u.x - e.x) * (u.x - e.x) + (u.y - e.y) * (u.y - e.y) <= r2
-    && (u === blocker || selectable(u)) && !evadesGround(e, u));
+    && (u === blocker || selectable(u, see)) && !evadesGround(e, u));
   if (blocker && !out.includes(blocker)) out.push(blocker);
   return out;
 }

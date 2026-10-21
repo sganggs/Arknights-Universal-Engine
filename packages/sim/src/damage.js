@@ -316,10 +316,26 @@ function applyTake(w, u, b, amount, hit) {
 const seenOf = (src, dmg) => (dmg.sourceless ? null : src);
 
 /**
+ * HP a 特殊生命值 hit removes (敌能-39, 敌能-43): 1, or 0 when a type filter rejects the hit. No filter accepts every
+ * type. 生命流失 is the whole amount. The event and the return stay `amount` either way.
+ * @param {Record<string, boolean>} flags @param {Damage} dmg @param {number} amount
+ */
+function countedLoss(flags, dmg, amount) {
+  if (dmg.hpLoss || !flags.hitCount) return amount;
+  const typed = flags.hitPhys || flags.hitArts || flags.hitTrue || flags.hitElement;
+  if (!typed) return 1;
+  if (dmg.type === 'phys') return flags.hitPhys ? 1 : 0;
+  if (dmg.type === 'arts') return flags.hitArts ? 1 : 0;
+  if (dmg.type === 'true') return flags.hitTrue ? 1 : 0;
+  if (dmg.type === 'elemental') return flags.hitElement ? 1 : 0;
+  return 0;
+}
+
+/**
  * Takes HP (伤害-9): never below 1 for an undying unit (不死; its maximum when below 1); at 0 or below the unit is at 0
  * and leaves the field at the end of the frame (帧-1) — unless a `fatal` handler prevents it (钩子-3): then it keeps 1 HP
- * (its maximum when below 1). A 特殊生命值 unit (敌能-39) loses 1 instead of `amount`, except for 生命流失; the event and
- * the return stay `amount`. Then the `damaged` event. The
+ * (its maximum when below 1). A 特殊生命值 unit (敌能-39) loses 1 instead of `amount`, or 0 when its type filter rejects
+ * the hit (敌能-43), except for 生命流失; the event and the return stay `amount`. Then the `damaged` event. The
  * hit counts as its source's (the kill's), also when the events see none.
  * @param {World} w @param {Unit | null} src @param {Unit} t @param {number} amount @param {Damage} dmg
  */
@@ -327,8 +343,7 @@ function loseHp(w, src, t, amount, dmg) {
   const seen = seenOf(src, dmg), s = statsOf(t);
   const hurt = !dmg.hpLoss && amount > 0 ? tracker(t, 'lastHurt') : undefined;
   if (hurt) stamp(hurt, w.frame);
-  // 特殊生命值 (敌能-39): the calculated damage stays the event and the return; only the HP change is 1. 生命流失 is not a successful hit.
-  t.hp -= !dmg.hpLoss && s.flags.hitCount ? 1 : amount;
+  t.hp -= countedLoss(s.flags, dmg, amount);
   if (t.hp <= 0 && s.flags.undying) t.hp = Math.min(1, s.maxHp);
   if (t.hp <= 0) {
     t.hp = 0;

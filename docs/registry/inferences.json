@@ -2364,5 +2364,33 @@
     "statement": "能力栏「失衡移动时正比于距离损失生命」不另加按距离的一项；结算按天赋的固定伤害和间隔，速度为零的失衡也跳。",
     "basis": "天赋句和 enemy_database 的 unbalanced_bleed.damage、interval 给出固定的 400 点与 0.066 秒，没有距离系数。能力栏的句子与天赋不一致，以天赋和数据为准。",
     "status": "待查证"
+  },
+  {
+    "id": "INF-0341",
+    "clause": "敌能-43",
+    "statement": "烹泉和沏虹的死亡爆炸延迟是 0，从单位当前位置发出。页面和 enemy_database 都没有延迟，也没有攻击弹道发出点；没有发出点时游戏数据基础写的是原地。离场晚于本帧爆炸阶段，所以延迟 0 的爆炸在下一帧的爆炸阶段结算，伤害数值是入队时的攻击力。",
+    "basis": "PRTS「烹泉」oldid=381901、「沏虹」oldid=353558 的死亡爆炸只写了半径 1.25 和攻击力 100%，没有延迟和发出点。PRTS「游戏数据基础」oldid=405837 写没有发出点就在原地，并写了延时爆炸弹道，但没有给这两名的延迟。enemy_database（17759cc8）的 DeadBoom 只有 duration、interval、attack_speed、attack_speed_add。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-0342",
+    "clause": "敌能-43",
+    "statement": "烹泉和沏虹普通攻击的半径溅射跟着这次远程普通攻击的投射物，在投射物命中时结算，不是敌能-26 的格子溅射，也不在攻击开始时结算。",
+    "basis": "PRTS 写的是目标周围的半径，不是格子。enemy_database 的 applyWay 是 RANGED、rangeRadius 是 2.0，没有格子判定。远程普通攻击按攻击-3 发射投射物。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-0343",
+    "clause": "敌能-43",
+    "statement": "沏虹的页面没有写普通攻击无视迷彩、不可对空，也没有写死亡爆炸不可对空。按同条机制的烹泉实现这两项。死亡爆炸无视迷彩已是敌能-3，不在这项里。",
+    "basis": "PRTS「沏虹」oldid=353558 的天赋句没有这些限制。PRTS「烹泉」oldid=381901 对普通攻击和死亡爆炸都写了无视迷彩、不可对空。两名的攻击方式都是远程，DeadBoom 的字段相同。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-0344",
+    "clause": "敌能-43",
+    "statement": "沏虹的页面没有写可叠加，也没有【烹泉减益】这个名字。两名共用 DeadBoom，可抵抗状态把两者死亡后的攻击速度降低列为同一种，所以沏虹用同一条可叠加、可抵抗的减益。",
+    "basis": "PRTS「沏虹」oldid=353558 只写攻击速度减少 50、持续 15 秒、可被抵抗。enemy_database 的 DeadBoom 对两名都有 duration 15、interval 3、attack_speed_add 0。PRTS「可抵抗状态」oldid=389222 列出「烹泉与沏虹死亡后造成的攻击速度降低Buff」。",
+    "status": "待查证"
   }
 ]

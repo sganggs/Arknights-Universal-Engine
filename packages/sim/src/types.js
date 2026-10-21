@@ -539,8 +539,9 @@
  */
 /**
  * A splash (职业-8): every other enemy within `radius` tiles of the target (only those on the ground when `ground`)
- * takes the hit at `scale` of its amount.
- * @typedef {{ radius: number, scale: number, ground: boolean }} Splash
+ * takes the hit at `scale` of its amount. `side` `friendly` (an enemy's, 敌能-43) hits operators, neutral units and our
+ * devices instead.
+ * @typedef {{ radius: number, scale: number, ground: boolean, side?: 'friendly' }} Splash
  */
 /**
  * An operator: `branch` is its profession branch (subProfessionId), `trait` the branch's trait (职业-1), `respawnTime`
@@ -772,9 +773,10 @@
  */
 /**
  * A delayed explosion (敌能-3): where, how far it reaches, frames left, whether it reaches flying units, its source's id
- * (−1 for none), what it does.
+ * (−1 for none), what it does. `buff`, when set, is given to each unit the explosion hits that is still on the field
+ * (敌能-43). Left out otherwise: a null field would change the hash of every blast that has none.
  * @typedef {{ x: number, y: number, radius: number, left: number, air: boolean, src: number, type: DamageType, amount: number,
- *   status: { key: string, seconds: number } | null }} Blast
+ *   status: { key: string, seconds: number } | null, buff?: import('./buffs.js').BuffInit }} Blast
  */
 /**
  * A 直击 bolt in flight (敌能-4): its source's id, where it is, its direction, what it does — or the radius of the

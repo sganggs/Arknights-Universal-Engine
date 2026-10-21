@@ -33,7 +33,7 @@ import { openSkillText, closeSkillText, healSkillAllies } from './skilltext.js';
  *   type?: import('./types.js').DamageType, cross?: boolean, atkPct?: number, channel?: { hits: number, duration: number, after: number }, heal?: boolean, square?: boolean, blocked?: boolean, more?: number,
  *   hitStatus?: { key: import('./status.js').StatusKey, seconds: number, prob?: number }, mark?: number, splashScale?: number, direct?: boolean, frozen?: number,
  *   hitDebuff?: { seconds: number, mods: Record<string, number> }, selfHeal?: number, epScale?: number,
- *   displace?: { pull: boolean, force: number, along?: boolean }, ignoreDef?: number }} AttackMods
+ *   displace?: { pull: boolean, force: number, along?: boolean }, ignoreDef?: number, splash?: import('./types.js').Splash }} AttackMods
  */
 
 /**
