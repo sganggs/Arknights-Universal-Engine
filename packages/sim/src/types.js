@@ -210,7 +210,7 @@
  * @property {{ cells: Cell[], scale: number, outside: boolean } | null} zone its attack's (or heal's) 倍率 × scale for a target
  *   inside these tiles around it, turned with it — or, `outside`, for one outside them (职业-11)
  * @property {Chain | null} chain its attack or heal jumps on from its first target (职业-11)
- * @property {number} healOnHit a hit of its attack that deals damage heals the most wounded operator in its range by this share of it (职业-11)
+ * @property {number} healOnHit damage it deals an enemy heals one operator by this share of that damage (职业-11)
  * @property {boolean} attackInSkill it makes normal attacks only while its skill runs (职业-12)
  * @property {Record<string, number>} idleMods modifiers while its skill does not run (职业-12)
  * @property {Record<string, boolean>} idleFlags flags while its skill does not run (职业-12)

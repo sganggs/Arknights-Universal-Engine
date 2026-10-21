@@ -1,6 +1,6 @@
 // Chains and zones (docs/spec/traits.md 职业-11): an attack or heal that jumps on from its first target, each jump at a
 // share of the one before; the 倍率 a trait gives targets inside (or outside) a set of tiles near the operator; the heal
-// an operator gives for the damage its attack deals.
+// an operator gives for damage it deals an enemy.
 import { KIND } from '@aue/schema';
 import { statsOf } from './attrs.js';
 import { DEFAULT_DIR } from './dir.js';

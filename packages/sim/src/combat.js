@@ -12,7 +12,7 @@ import { emit, hasHook } from './bus.js';
 import { pathDistance } from './routes.js';
 import { enforceCapacity } from './blocking.js';
 import { blockingImmunity } from './upkeep.js';
-import { zoneScale, chainOf, woundedInRange } from './chain.js';
+import { zoneScale, chainOf } from './chain.js';
 import { vsDamage, vsHeal, vsEp, tagsOf } from './vs.js';
 import { traitWhiles } from './whiles.js';
 import { afterOwnHit, attacked, hitSp, caughtSp } from './riders.js';
@@ -231,22 +231,11 @@ function debuffOnHit(t, d, src) {
 }
 
 /**
- * What a hit that dealt damage sets off (职业-11, 敌能-2): an operator's heal for it, an enemy's abilities' hit.
+ * What an enemy's hit that dealt damage sets off (敌能-2). An operator's heal for damage it dealt is traitDealt (职业-11).
  * @param {World} w @param {Content} c @param {{ src: Unit | null, t: Unit, dealt: number, ranged: boolean }} h
  */
 function afterDamage(w, c, h) {
-  if (h.src && h.src.kind === KIND.OPERATOR) healForDamage(w, c, h.src, h.dealt);
-  else if (h.src && h.src.kind === KIND.ENEMY) foeHit(w, c, h.src, h.t, { dealt: h.dealt, ranged: h.ranged });
-}
-
-/**
- * An operator's heal for the damage a hit of its dealt (职业-11): its trait's share of it to the most wounded operator
- * in its range, when there is one.
- * @param {World} w @param {Content} c @param {Unit} op @param {number} dealt
- */
-function healForDamage(w, c, op, dealt) {
-  const share = traitOf(c, op).healOnHit, to = share > 0 ? woundedInRange(w, c, op) : null;
-  if (to) w.events.push({ type: 'heal', id: op.id, target: to.id, amount: heal(w, op, to, dealt * share * vsHeal(w, c, op, to)) });
+  if (h.src && h.src.kind === KIND.ENEMY) foeHit(w, c, h.src, h.t, { dealt: h.dealt, ranged: h.ranged });
 }
 
 /** The attack of an attacker, with an attack bonus for this attack only (敌能-11). @param {Unit} a @param {number} [pct] */

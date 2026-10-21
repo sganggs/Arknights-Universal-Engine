@@ -17,6 +17,7 @@ import { lifeDeploy } from './talentlife.js';
 import { dealtSp } from './talentmore.js';
 import { fightKill, comboHit, afterNonLethal } from './talentfight.js';
 import { rangeKeys, inKeys } from './targeting.js';
+import { woundedInRange } from './chain.js';
 
 /** @typedef {import('./types.js').World} World @typedef {import('./types.js').Unit} Unit @typedef {import('./types.js').Content} Content */
 /** @typedef {import('./types.js').TraitDef} TraitDef @typedef {import('./types.js').OperatorDef} OperatorDef */
@@ -324,16 +325,30 @@ export function creditedDamage(w, c, op, target, dmg) {
 }
 
 /**
- * An operator's heal for a hit it dealt (职业-9): a trait that heals itself for every hit (`selfHealOn` 'damage', 武者)
- * restores its `selfHeal` once for each hit of its that took HP from an enemy — any hit with it as the source, an
- * attack's or not; 生命流失 and a sourceless hit (伤害-7) aside. Such a hit is also a step of its talents' damage stacks
- * (职业-25) and gives their SP for damage (职业-31); a run of hits counts it, a blow that may not kill leaves 重伤 (职业-34).
+ * Heals one operator for a share of damage this operator just dealt an enemy (职业-11): the most wounded one in attack
+ * range; no such operator, no heal. The share is of the damage already determined (`taken`), including what the
+ * enemy's remaining HP could not absorb.
+ * @param {World} w @param {Content} c @param {Unit} op @param {number} taken @param {number} share
+ */
+function healOnDamage(w, c, op, taken, share) {
+  const to = woundedInRange(w, c, op);
+  if (to) w.events.push({ type: 'heal', id: op.id, target: to.id, amount: heal(w, op, to, taken * share * vsHeal(w, c, op, to)) });
+}
+
+/**
+ * What a hit this operator dealt an enemy sets off (职业-9, 职业-11). A trait that heals itself for every hit
+ * (`selfHealOn` 'damage', 武者) restores its `selfHeal` once for each hit of its that took HP from an enemy — any hit
+ * with it as the source, an attack's or not. One that heals for the damage (`healOnHit`, 咒愈师) restores one operator
+ * by that share of it. 生命流失 and a sourceless hit (伤害-7) aside, and so is a hit on anyone but an enemy. Such a hit
+ * is also a step of its talents' damage stacks (职业-25) and gives their SP for damage (职业-31); a run of hits counts
+ * it, a blow that may not kill leaves 重伤 (职业-34).
  * @param {World} w @param {Content} c @param {Unit} op @param {Unit} target @param {{ dmg: import('./damage.js').Damage, taken: number }} hit the hit and the HP it took
  */
 export function traitDealt(w, c, op, target, hit) {
   if (!(hit.taken > 0) || hit.dmg.hpLoss || hit.dmg.sourceless || target.kind !== KIND.ENEMY || op.hp <= 0) return;
   const t = traitOf(c, op);
   if (t.selfHealOn === 'damage' && t.selfHeal > 0) w.events.push({ type: 'heal', id: op.id, target: op.id, amount: heal(w, op, op, t.selfHeal, { trait: true }) });
+  if (t.healOnHit > 0) healOnDamage(w, c, op, hit.taken, t.healOnHit);
   if (t.stacks.length) talentDealt(c, op, hit.dmg);
   if (t.talentSp.length) dealtSp(w, c, op);
   comboHit(w, c, op);

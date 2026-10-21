@@ -6,6 +6,8 @@ import { createWorld, step } from '../src/index.js';
 import { makeEnemy } from '../src/units.js';
 import { applyStatus } from '../src/status.js';
 import { statsOf } from '../src/attrs.js';
+import { creditedDamage } from '../src/traits.js';
+import { dealEp } from '../src/elements.js';
 
 /** @typedef {import('../src/types.js').Unit} Unit */
 
@@ -90,4 +92,38 @@ test('[职业-11] a heal for damage: the most wounded operator in range takes th
   assert.deepEqual(ev.filter((e) => e.type === 'heal').map((e) => [e.id, e.target, e.amount]), [[guard.id, mate.id, 25]]);
   mate.hp = 1000;
   assert.equal(run(40).filter((e) => e.type === 'heal').length, 0);
+});
+
+/** Heal events after `n`, as [healer, target, amount]. @param {import('../src/types.js').World} w @param {number} n */
+const healsSince = (w, n) => w.events.slice(n).filter((e) => e.type === 'heal').map((e) => [e.id, e.target, e.amount]);
+
+test('[职业-11] damage other than an attack heals by its share; a gauge fill, 生命流失 and a sourceless hit do not', () => {
+  const { w, c, foe, put } = arena((cc) => { cc.operators.guard.trait = { healOnHit: 0.5 }; });
+  const guard = put('guard', 1, 1), mate = put('g2', 1, 2);
+  mate.hp = 400;
+  const e = foe(1, 2);
+  let n = w.events.length;
+  creditedDamage(w, c, guard, e, { type: 'true', amount: 80 });
+  assert.deepEqual(healsSince(w, n), [[guard.id, mate.id, 40]], '80 × 0.5');
+  e.hp = 30;
+  n = w.events.length;
+  creditedDamage(w, c, guard, e, { type: 'true', amount: 100 });
+  assert.equal(e.hp, 0);
+  assert.deepEqual(healsSince(w, n), [[guard.id, mate.id, 50]], 'the share of the damage determined, not the HP left');
+  const e2 = foe(1, 2);
+  n = w.events.length;
+  dealEp(w, e2, 'FIRE', 10, guard);
+  creditedDamage(w, c, guard, e2, { type: 'true', amount: 40, hpLoss: true });
+  creditedDamage(w, c, guard, e2, { type: 'true', amount: 40, sourceless: true });
+  assert.deepEqual(healsSince(w, n), []);
+  n = w.events.length;
+  creditedDamage(w, c, guard, e2, { type: 'elemental', amount: 40 });
+  assert.deepEqual(healsSince(w, n), [[guard.id, mate.id, 20]], 'elemental HP damage still counts');
+  mate.hp = mate.maxHp;
+  const out = put('g3', 1, 3);
+  out.hp = 200;
+  n = w.events.length;
+  creditedDamage(w, c, guard, e2, { type: 'true', amount: 40 });
+  assert.deepEqual(healsSince(w, n), [], 'the only wounded ally is outside the attack range');
+  assert.equal(out.hp, 200);
 });
