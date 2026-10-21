@@ -681,11 +681,19 @@ export function enemyTargets(w, e) {
   return out;
 }
 
+/** A hit asked for its next attack at once (敌能-44, `attackAgain`): its cooldown is cleared. @param {Unit} e */
+function takeAgain(e) {
+  if (e.ab['@again'] !== 1) return;
+  delete e.ab['@again'];
+  setAtkCd(e, 0);
+}
+
 /**
  * An enemy's attack this frame (敌人攻击-1, 攻击-2): like an operator's — a swing under way goes on; the cooldown counts
  * down while it can act; when it is out and there is a target, the first in the official order (索敌-5) — as many as
  * its abilities' mods say (敌能-2), one by default — are locked and a swing starts — not while it is blocked under 战栗 (状态-5; a swing under way goes on). One that cannot act, has no
- * attack or has disappeared loses its swing. Returns whether it is attacking this frame (it does not walk).
+ * attack or has disappeared loses its swing. A hit that asked for its next attack at once (敌能-44) clears the cooldown
+ * before it is counted. Returns whether it is attacking this frame (it does not walk).
  * @param {World} w @param {Content} c @param {Unit} e
  */
 export function enemyAttack(w, c, e) {
@@ -694,6 +702,7 @@ export function enemyAttack(w, c, e) {
   if (s.disabled || s.atk <= 0 || e.hidden || s.flags.noAttack || s.flags.fear) { e.swing = null; return false; }
   const swinging = e.swing !== null;
   if (e.swing) advanceSwing(w, c, e);
+  takeAgain(e);
   if (e.atkCd > 0) { e.atkCd--; return swinging; }
   if (e.swing) return true;
   if (s.flags.disarmedCombat && e.blockedBy >= 0) return false;

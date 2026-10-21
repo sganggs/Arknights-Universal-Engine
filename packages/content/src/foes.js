@@ -1,4 +1,4 @@
-// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-43): behaviours by talent and skill name. The
+// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-44): behaviours by talent and skill name. The
 // game data holds only the multipliers; FOE_EXTRAS adds, per enemy, the parameters PRTS gives (radii, delays, bolts …)
 // to the blackboards the behaviours read, or a talent the data does not have. They act only through the context (ADR 0055).
 
@@ -150,6 +150,16 @@ export const FOE_EXTRAS = Object.freeze({
   // 青瓷茶器 / 彩瓷茶器: 只接受法术和真实伤害（数据里没有这项天赋）
   enemy_1204_msfhu: { talents: { hitCount: { arts: 1, true: 1 } }, source: `${PRTS}%E9%9D%92%E7%93%B7%E8%8C%B6%E5%99%A8&oldid=397896` },
   enemy_1204_msfhu_2: { talents: { hitCount: { arts: 1, true: 1 } }, source: `${PRTS}%E5%BD%A9%E7%93%B7%E8%8C%B6%E5%99%A8&oldid=365782` },
+  // 新硎: 因坠落以外的原因. 沉沙's page says 死亡后, so a fall still spawns (敌能-44).
+  enemy_1207_sfji_2: { talents: { DeadSpawn: { fall: 0 } }, source: `${PRTS}%E6%96%B0%E7%A1%8E&oldid=381907` },
+  // 矛头 / 灯盘: 无法被阻挡，不进行普通攻击，具有特殊生命值机制 (the data has no talent for it)
+  enemy_1208_msfji: { talents: { hitCount: {} }, source: `${PRTS}%E9%93%9C%E7%9F%9B%E5%A4%B4&oldid=365776` },
+  enemy_1208_msfji_2: { talents: { hitCount: {} }, source: `${PRTS}%E9%93%81%E7%9F%9B%E5%A4%B4&oldid=365775` },
+  enemy_1210_msfden: { talents: { hitCount: {} }, source: `${PRTS}%E9%93%9C%E7%81%AF%E7%9B%98&oldid=414298` },
+  enemy_1210_msfden_2: { talents: { hitCount: {} }, source: `${PRTS}%E9%93%81%E7%81%AF%E7%9B%98&oldid=365778` },
+  // 清明 / 堂皇: a fall does not spawn, and only the skill (not the talent of the same name) runs 范围隐匿.
+  enemy_1209_sfden: { talents: { DeadSpawn: { fall: 0 } }, skills: { InvisibleShield: { cast: 1 } }, source: `${PRTS}%E6%B8%85%E6%98%8E&oldid=376397` },
+  enemy_1209_sfden_2: { talents: { DeadSpawn: { fall: 0 } }, skills: { InvisibleShield: { cast: 1 } }, source: `${PRTS}%E5%A0%82%E7%9A%87&oldid=389600` },
 });
 
 /**
