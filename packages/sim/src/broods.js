@@ -11,8 +11,10 @@ import { spawnEnemy } from './spawn.js';
 
 /**
  * How an enemy brings others in (敌能-22): how many, after how many seconds, from the centre of the nearest passable
- * ground tile (`tile`) or its own position, each moved by up to `bound` along x and along y.
- * @typedef {{ cnt?: number, delay?: number, bound?: number, tile?: boolean }} BringIn
+ * ground tile (`tile`) or its own position, each moved by up to `bound` along x and along y. `dx` and `dy` are a fixed
+ * offset applied before that jitter (default 0). 枯朽召唤 is the caller that sets them (敌能-64); everyone else leaves
+ * them unset, so a summon without them is unchanged.
+ * @typedef {{ cnt?: number, delay?: number, bound?: number, tile?: boolean, dx?: number, dy?: number }} BringIn
  */
 
 /**
@@ -48,7 +50,7 @@ export function bringIn(w, c, e, key, o) {
   /** @type {Unit[]} */
   const now = [];
   for (let i = 0; i < (o.cnt ?? 1); i++) {
-    const x = from.x + jitter(w, o.bound ?? 0), y = from.y + jitter(w, o.bound ?? 0);
+    const x = from.x + (o.dx ?? 0) + jitter(w, o.bound ?? 0), y = from.y + (o.dy ?? 0) + jitter(w, o.bound ?? 0);
     const b = { key, x, y, route: e.route, leg: e.leg, frag: e.frag, left: secondsToFrames(o.delay ?? 0) };
     if (b.left > 0) (w.broods ??= []).push(b);
     else now.push(appear(w, c, b));

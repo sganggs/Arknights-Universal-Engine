@@ -1,4 +1,4 @@
-// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-63): behaviours by talent and skill name. The
+// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-64): behaviours by talent and skill name. The
 // game data holds only the multipliers; FOE_EXTRAS adds, per enemy, the parameters PRTS gives (radii, delays, bolts …)
 // to the blackboards the behaviours read, or a talent the data does not have. They act only through the context (ADR 0055).
 
@@ -37,13 +37,16 @@ import { bombardBehaviors } from './bombard.js';
 import { templarBehaviors } from './templar.js';
 import { wineBehaviors, wineOwns } from './wine.js';
 import { whipBehaviors, whipOwns } from './whip.js';
+import { seedBehaviors, bornBugsOwns } from './seeds.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').EnemyDef} EnemyDef */
 
 const PRTS = 'https://prts.wiki/index.php?title=';
 /**
  * Per enemy, what to add to a talent's or skill's blackboard, with the PRTS revision that gives it.
- * @type {Readonly<Record<string, { talents?: Record<string, Record<string, number>>, skills?: Record<string, Record<string, number>>, source: string }>>}
+ * A value may be text: `enemy_key` is a name, as the data's own blackboards already store it (敌能-64). `FoeSkill.bb` is
+ * typed as numbers; the string survives the merge below and BornBugs reads it with String.
+ * @type {Readonly<Record<string, { talents?: Record<string, Record<string, number | string>>, skills?: Record<string, Record<string, number | string>>, source: string }>>}
  */
 export const FOE_EXTRAS = Object.freeze({
   // 高能源石虫: 死亡爆炸（爆炸半径1.25，延迟1秒，爆炸时来源无效，造成攻击力400%的无途径物理溅射伤害，无视迷彩，不可对空）
@@ -231,6 +234,12 @@ export const FOE_EXTRAS = Object.freeze({
   // 咸鳞汁推荐者 / 朗姆酒推荐者: carry is the page's 酒桶; radius 2 is only on the page (敌能-62). 假酒海盗 is not here.
   enemy_10044_wintun: { talents: { 1: { carry: 1 } }, skills: { BlockedBoom: { radius: 2 } }, source: `${PRTS}%E5%92%B8%E9%B3%9E%E6%B1%81%E6%8E%A8%E8%8D%90%E8%80%85&oldid=362308` },
   enemy_10044_wintun_2: { talents: { 1: { carry: 1 } }, skills: { BlockedBoom: { radius: 2 } }, source: `${PRTS}%E6%9C%97%E5%A7%86%E9%85%92%E6%8E%A8%E8%8D%90%E8%80%85&oldid=362309` },
+  // 枯朽萃聚使徒 / 腐败萃聚使徒 (敌能-64): 0.7s later, one seed on itself and one a tile to either side; it does not attack.
+  enemy_1321_wdarft: { talents: { NoAttack: {} }, skills: { BornBugs: { delay: 0.7, left: 1, right: 1, enemy_key: 'enemy_1269_nhfly' } }, source: `${PRTS}%E6%9E%AF%E6%9C%BD%E8%90%83%E8%81%9A%E4%BD%BF%E5%BE%92&oldid=353783` },
+  enemy_1321_wdarft_2: { talents: { NoAttack: {} }, skills: { BornBugs: { delay: 0.7, left: 1, right: 1, enemy_key: 'enemy_1269_nhfly_2' } }, source: `${PRTS}%E8%85%90%E8%B4%A5%E8%90%83%E8%81%9A%E4%BD%BF%E5%BE%92&oldid=353784` },
+  // 枯朽之种 / 腐败之种: 静态刚体 is 敌能-37's Static. SelfDown is the knock-down after the hit. The data has neither.
+  enemy_1269_nhfly: { talents: { Static: {}, SelfDown: {} }, source: `${PRTS}%E6%9E%AF%E6%9C%BD%E4%B9%8B%E7%A7%8D&oldid=373372` },
+  enemy_1269_nhfly_2: { talents: { Static: {}, SelfDown: {} }, source: `${PRTS}%E8%85%90%E8%B4%A5%E4%B9%8B%E7%A7%8D&oldid=373373` },
 });
 
 /**
@@ -241,8 +250,8 @@ export function withFoeExtras(key, def) {
   const x = FOE_EXTRAS[key];
   if (!x) return def;
   const talents = { ...def.talents };
-  for (const [t, bb] of Object.entries(x.talents ?? {})) talents[t] = { ...talents[t], ...bb };
-  const skills = (def.skills ?? []).map((s) => ({ ...s, bb: { ...s.bb, ...x.skills?.[s.key] } }));
+  for (const [t, bb] of Object.entries(x.talents ?? {})) talents[t] = { ...talents[t], .../** @type {Record<string, number>} */ (bb) };
+  const skills = (def.skills ?? []).map((s) => ({ ...s, bb: { ...s.bb, .../** @type {Record<string, number>} */ (x.skills?.[s.key] ?? {}) } }));
   return { ...def, talents, ...(def.skills ? { skills } : {}) };
 }
 
@@ -427,6 +436,7 @@ export const foeBehaviors = Object.freeze({
   ...templarBehaviors,
   ...wineBehaviors,
   ...whipBehaviors,
+  ...seedBehaviors,
 });
 
 /**
@@ -497,7 +507,8 @@ const healBoom = (k, bb) => k === 'Boom' && typeof bb.heal_scale === 'number';
  * marker (敌能-58).
  * @param {string} k @param {Record<string, unknown>} bb
  */
-const complete = (k, bb) => elementHitOwns(k, bb) && takeOffOwns(k, bb) && wineOwns(k, bb) && whipOwns(k, bb) && (k !== 'aura' || stackCapped(bb))
+const complete = (k, bb) => elementHitOwns(k, bb) && takeOffOwns(k, bb) && wineOwns(k, bb) && whipOwns(k, bb) && bornBugsOwns(k, bb)
+  && (k !== 'aura' || stackCapped(bb))
   && (nestPulseOwns(k, bb) || (healBoom(k, bb) ? typeof bb.page === 'number' : (FOE_NEEDS[/** @type {keyof typeof FOE_NEEDS} */ (k)] ?? []).every((n) => typeof bb[n] === 'number')));
 
 /**
