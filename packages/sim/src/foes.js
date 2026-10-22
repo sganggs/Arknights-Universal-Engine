@@ -23,6 +23,7 @@ import { blightContext, tickBlight } from './blight.js';
 import { atPoint } from './tactical.js';
 import { on } from './bus.js';
 import { placeTasting, tickTastings } from './tasting.js';
+import { readDeparted } from './exits.js';
 
 /** @typedef {import('./types.js').World} World @typedef {import('./types.js').Content} Content @typedef {import('./types.js').Unit} Unit */
 /** @typedef {import('./types.js').EnemyDef} EnemyDef @typedef {import('./types.js').Blast} Blast @typedef {import('./types.js').Bolt} Bolt */
@@ -123,6 +124,8 @@ export const BOLT_RADIUS = 0.3;
  * @property {() => void} holdAttack this frame's attack, if one can start, waits out the current interval first (敌能-62)
  * @property {(t: Unit, o: { radius: number, seconds: number, aspd: number, dodge: number }) => void} pour places a 【免费品尝】
  *   area at the centre of the target's tile (敌能-62)
+ * @property {() => { id: number, x: number, y: number, kind: number }[]} departed enemies and operators that left since
+ *   this ability last asked (敌能-63); the first call only arms the log
  */
 
 /**
@@ -243,6 +246,7 @@ function contextOf(w, c, e, of) {
     ...blightContext(w, c, e),
     ground: () => { becomeGround(e); },
     defaultAlly: (u) => defaultAlly(c, u),
+    departed: () => readDeparted(w, ab, name),
     ...barrelContext(w, ab),
     ...lateContext(w, c, e, ab),
   };

@@ -11,6 +11,7 @@ import { emit } from './bus.js';
 import { summonLeft, dismissSummons } from './summons.js';
 import { facilitySum, respawnFactor } from './facilities.js';
 import { foeLeave } from './talentfoe.js';
+import { noteExit } from './exits.js';
 import { shareLeave } from './talentaround.js';
 import { firstBlockLeave } from './talentfight.js';
 
@@ -209,6 +210,7 @@ function retreatGains(w, c, u, t) {
  * @param {World} w @param {Content} c @param {Unit} u
  */
 export function withdraw(w, c, u) {
+  noteExit(w, u);
   w.units.splice(w.units.indexOf(u), 1);
   releaseAll(w, u.id);
   leaveField(w, c, u, true);

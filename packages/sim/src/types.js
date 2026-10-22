@@ -897,6 +897,7 @@
  * @property {Shot[]} shots projectiles in flight, in launch order (攻击-3)
  * @property {Alchemy[]} [alchemy] the 炼金单元 on the field (技能-13), once there has been one
  * @property {Tasting[]} [tastings] free-tasting areas (敌能-62), once one has been placed
+ * @property {{ id: number, x: number, y: number, kind: number }[]} [exits] enemies and operators that left, once an ability asked (敌能-63)
  * @property {Record<string, string | number>[]} events this frame's presentation events (not part of the state)
  * @property {import('./bus.js').Bus} [bus] the hook bus and timers (钩子-1, 钩子-2; not part of the state)
  */

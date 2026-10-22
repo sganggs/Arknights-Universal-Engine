@@ -16,6 +16,7 @@ import { emit } from './bus.js';
 import { summonForm } from './tactical.js';
 import { draw } from './rng.js';
 import { makeBuff, addBuff } from './buffs.js';
+import { noteExit } from './exits.js';
 
 /** @typedef {import('./types.js').World} World @typedef {import('./types.js').Content} Content @typedef {import('./types.js').Unit} Unit */
 /** @typedef {import('./types.js').Player} Player @typedef {import('./types.js').SummonCard} SummonCard @typedef {import('./types.js').OperatorDef} OperatorDef */
@@ -224,6 +225,7 @@ function retreatSummons(w, c, gone, recover = false) {
   if (gone.length === 0) return;
   w.units = w.units.filter((u) => !gone.includes(u));
   for (const u of gone) {
+    noteExit(w, u);
     releaseAll(w, u.id);
     summonLeft(w, c, u);
     const s = c.operators[u.key].summon, p = w.players[u.owner], card = summonCardOf(p, u.key);
