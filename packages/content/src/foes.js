@@ -1,4 +1,4 @@
-// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-58): behaviours by talent and skill name. The
+// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-59): behaviours by talent and skill name. The
 // game data holds only the multipliers; FOE_EXTRAS adds, per enemy, the parameters PRTS gives (radii, delays, bolts …)
 // to the blackboards the behaviours read, or a talent the data does not have. They act only through the context (ADR 0055).
 
@@ -32,6 +32,7 @@ import { mirrorBehaviors } from './mirror.js';
 import { lancerBehaviors } from './lancer.js';
 import { tyrantBehaviors } from './tyrant.js';
 import { pengBehaviors } from './peng.js';
+import { bombardBehaviors } from './bombard.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').EnemyDef} EnemyDef */
 
@@ -213,6 +214,9 @@ export const FOE_EXTRAS = Object.freeze({
   // 新手祭司学徒: 倒下后为附近的一个喷泉水池补充水量，并治疗周围敌人. `page` is only the coverage marker (敌能-58): the
   // unread twin 见习祭司学徒 has the same blackboard and stays uncovered until its own page is read (关卡-2).
   enemy_10156_mncrer: { talents: { Boom: { page: 1 } }, source: `${PRTS}%E6%96%B0%E6%89%8B%E7%A5%AD%E5%8F%B8%E5%AD%A6%E5%BE%92&oldid=379778` },
+  // 伦蒂尼姆城防自行炮/高准度伦蒂尼姆城防自行炮: 轰炸持续 6 秒、每 0.5 秒、最多 10 次（页面；数据只有 atk_scale）
+  enemy_1273_stmgun: { skills: { Cannon: { duration: 6, interval: 0.5, times: 10 } }, source: `${PRTS}%E4%BC%A6%E8%92%82%E5%B0%BC%E5%A7%86%E5%9F%8E%E9%98%B2%E8%87%AA%E8%A1%8C%E7%82%AE&oldid=353692` },
+  enemy_1273_stmgun_2: { skills: { Cannon: { duration: 6, interval: 0.5, times: 10 } }, source: `${PRTS}%E9%AB%98%E5%87%86%E5%BA%A6%E4%BC%A6%E8%92%82%E5%B0%BC%E5%A7%86%E5%9F%8E%E9%98%B2%E8%87%AA%E8%A1%8C%E7%82%AE&oldid=353693` },
 });
 
 /**
@@ -404,6 +408,7 @@ export const foeBehaviors = Object.freeze({
   ...tyrantBehaviors,
   ...bombdBehaviors,
   ...pengBehaviors,
+  ...bombardBehaviors,
 });
 
 /**
@@ -445,6 +450,7 @@ export const FOE_NEEDS = Object.freeze({
   boomb: Object.freeze(['move_speed']),
   // `egg` is the page marker for the two read 羽兽; `move_speed` is the shape 斐迪庇第斯 does not have (敌能-57, 关卡-2).
   switch: Object.freeze(['egg']), speed: Object.freeze(['move_speed']),
+  Cannon: Object.freeze(['duration', 'interval', 'times']),
 });
 
 /**
