@@ -7,6 +7,7 @@ import { statsOf } from './attrs.js';
 import { addBuff, removeBuff, makeBuff, retune, setLeft, setBaseMaxHp, removeTagged } from './buffs.js';
 import { setAmmo } from './skills.js';
 import { inflict } from './status.js';
+import { launch } from './swing.js';
 import { dealDamage, heal, setHp, knockDown } from './damage.js';
 import { dealEp } from './elements.js';
 import { selectable, sortAllies, friendly, evadesGround, stealthed } from './targeting.js';
@@ -139,6 +140,9 @@ export const BOLT_RADIUS = 0.3;
  * @property {(branchId: string) => Unit | null} summonNext the next plain SPAWN individual of a level branch, at that
  *   entry's own route start (敌能-79); null when the branch has none left. A missing enemy key is skipped
  * @property {(key: string, n: number) => void} grantLoot each allied seat's 待部署区 gains n of the device card `key` (敌能-80)
+ * @property {(t: Unit, p: Payload) => void} hurl throws a homing skill projectile (敌能-83). Its speed is an enemy
+ *   projectile's (攻击-3). `amount` is frozen as given. Arrival deals that as a skill hit, not an attack, then `status`
+ *   when the target is still up
  */
 
 /**
@@ -273,7 +277,7 @@ function contextOf(w, c, e, of) {
  * @param {World} w @param {Content} c @param {Unit} e @param {Record<string, number>} ab
  * @returns {Pick<FoeContext, 'setHp' | 'resetSkills' | 'onWay' | 'detour' | 'release' | 'placeDevice' | 'summon' | 'draw' | 'remove'
  *   | 'devour' | 'lend' | 'around' | 'enemies' | 'fly' | 'attackAgain' | 'ammoOf' | 'spendAmmo' | 'renew' | 'ours' | 'place'
- *   | 'course' | 'open' | 'planted' | 'summonNext' | 'grantLoot'>}
+ *   | 'course' | 'open' | 'planted' | 'summonNext' | 'grantLoot' | 'hurl'>}
  */
 function lateContext(w, c, e, ab) {
   return {
@@ -331,11 +335,12 @@ function openAt(c, e, x, y) {
  * The context members that place an enemy or ask where it is going (敌能-44, 敌能-73). Kept out of contextOf so that
  * function stays within the line limit.
  * @param {World} w @param {Content} c @param {Unit} e @param {Record<string, number>} ab
- * @returns {Pick<FoeContext, 'attackAgain' | 'grantLoot' | 'summonNext' | 'planted' | 'place' | 'course' | 'open'>}
+ * @returns {Pick<FoeContext, 'attackAgain' | 'hurl' | 'grantLoot' | 'summonNext' | 'planted' | 'place' | 'course' | 'open'>}
  */
 function moveMembers(w, c, e, ab) {
   return {
     attackAgain: () => { ab['@again'] = 1; },
+    hurl: (t, p) => { hurlAt(w, e, t, p); },
     grantLoot: (key, n) => { grantLootCards(w, c, key, n); },
     summonNext: (branchId) => takeBranch(w, c, branchId),
     planted: (key) => w.units.filter((u) => u.buffs.some((b) => b.key === key && b.src === e.id)),
@@ -358,6 +363,18 @@ function barrelContext(w, ab) {
       placeTasting(w, { x: col, y: row, radius: o.radius, remain: secondsToFrames(o.seconds), aspd: o.aspd, dodge: o.dodge });
     },
   };
+}
+
+/**
+ * A homing skill projectile (敌能-83). `skillHit` is omitted on every other shot, so their hashes stay as they are.
+ * The status field is omitted the same way when this throw carries none (敌能-43).
+ * @param {World} w @param {Unit} e @param {Unit} t @param {Payload} p
+ */
+function hurlAt(w, e, t, p) {
+  launch(w, e, t, {
+    type: p.type, amount: p.amount, times: 1, element: '', ep: 0, skill: true, skillHit: 1,
+    ...(p.status ? { hitStatus: { key: /** @type {import('./status.js').StatusKey} */ (p.status.key), seconds: p.status.seconds } } : {}),
+  });
 }
 
 /**

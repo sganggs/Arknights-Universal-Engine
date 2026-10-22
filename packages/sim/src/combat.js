@@ -658,14 +658,35 @@ export function operatorsAttack(w, c) {
  * @param {World} w @param {Content} c
  */
 export function shotsFly(w, c) {
-  flyShots(w, (s, t) => {
-    const src = w.units.find((u) => u.id === s.src && u.hp > 0) ?? null;
-    impact(w, c, src, t, { ...s, ranged: true });
-    return !!(s.back && src && hasHook(w, 'boomerangHit') && emit(w, 'boomerangHit', { unit: src, target: t, x: s.sx, y: s.sy, isSkill: !!s.skill, shot: s, hold: false }).hold);
-  }, (s, thrower) => {
+  flyShots(w, (s, t) => shotArrived(w, c, s, t), (s, thrower) => {
     caughtSp(c, thrower);
     emit(w, 'boomerangCaught', { unit: thrower, x: s.sx, y: s.sy, isSkill: !!s.skill });
   });
+}
+
+/**
+ * A skill projectile reaching its target (敌能-83). `impact` would mark the hit an attack (攻击-3); this one is a skill
+ * hit of the amount frozen at the throw, then its status when the target is still up. A hit that drops it to 0 HP
+ * applies no status.
+ * @param {World} w @param {Content} c @param {Unit | null} src @param {Unit} t @param {import('./types.js').Shot} s
+ */
+function landSkillShot(w, c, src, t, s) {
+  if (t.hp <= 0) return;
+  dealDamage(w, src, t, { type: s.type, amount: s.amount, isAttack: false, isSkill: true, isProjectile: true }, c);
+  const st = s.hitStatus;
+  if (t.hp > 0 && st) inflict(w, t, st.key, { seconds: st.seconds, src });
+}
+
+/**
+ * A projectile reaching its target (攻击-3, 职业-12, 敌能-83). A skill projectile lands as a skill hit. Anything else
+ * hits as an attack, and a boomerang may then be held (`hold`). Whether content holds it.
+ * @param {World} w @param {Content} c @param {import('./types.js').Shot} s @param {Unit} t
+ */
+function shotArrived(w, c, s, t) {
+  const src = w.units.find((u) => u.id === s.src && u.hp > 0) ?? null;
+  if (s.skillHit) { landSkillShot(w, c, src, t, s); return false; }
+  impact(w, c, src, t, { ...s, ranged: true });
+  return !!(s.back && src && hasHook(w, 'boomerangHit') && emit(w, 'boomerangHit', { unit: src, target: t, x: s.sx, y: s.sy, isSkill: !!s.skill, shot: s, hold: false }).hold);
 }
 
 /**
