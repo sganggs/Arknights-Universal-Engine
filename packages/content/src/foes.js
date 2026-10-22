@@ -1,4 +1,4 @@
-// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-81): behaviours by talent and skill name. The
+// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-82): behaviours by talent and skill name. The
 // game data holds only the multipliers; FOE_EXTRAS adds, per enemy, the parameters PRTS gives (radii, delays, bolts …)
 // to the blackboards the behaviours read, or a talent the data does not have. They act only through the context (ADR 0055).
 
@@ -55,6 +55,7 @@ import { helmKnightBehaviors, rebornOwns } from './helmknights.js';
 import { faustBehaviors, faustOwns } from './faust.js';
 import { shotbuffBehaviors, shotbuffOwns } from './pathshot.js';
 import { lootBehaviors } from './loot.js';
+import { candycarBehaviors, cartShape, bornCarOwns, cartTick, cartAttack } from './candycar.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').EnemyDef} EnemyDef */
 
@@ -319,10 +320,11 @@ export const FOE_EXTRAS = Object.freeze({
   enemy_1216_cansld_2: { talents: { shotbuff: { page: 1, ammo: 2, see: 1 } }, source: `${PRTS}%E5%AF%BB%E8%B7%AF%E8%80%85%E9%98%B5%E5%9C%B0%E6%92%95%E8%A3%82%E8%80%85&oldid=381108` },
   enemy_1219_mtrbty: { talents: { shotbuff: { page: 1, ammo: 1 } }, source: `${PRTS}%E5%AF%BB%E8%B7%AF%E8%80%85%E4%BF%A1%E4%BD%BF&oldid=355327` },
   enemy_1219_mtrbty_2: { talents: { shotbuff: { page: 1, ammo: 1 } }, source: `${PRTS}%E4%B8%87%E5%9B%BD%E4%BF%A1%E4%BD%BF%EF%BC%8C%E5%A5%A5%E4%BC%A6&oldid=287583` },
-  enemy_1217_rescar: { talents: { shotbuff: { page: 1 } }, source: `${PRTS}%E5%AF%BB%E8%B7%AF%E8%80%85%E7%94%9C%E5%93%81%E5%95%86&oldid=366372` },
-  enemy_1217_rescar_2: { talents: { shotbuff: { page: 1, melee: 1 } }, source: `${PRTS}%E5%AF%BB%E8%B7%AF%E8%80%85%E7%9F%A5%E5%90%8D%E7%94%9C%E5%93%81%E5%95%86&oldid=381093` },
   // 赞助无人机: 静态刚体，不进行普通攻击. Static is 敌能-37; NoAttack is 敌能-64's marker for 不进行普通攻击.
   enemy_1105_tyokai: { talents: { Static: {}, NoAttack: {} }, source: `${PRTS}%E8%B5%9E%E5%8A%A9%E6%97%A0%E4%BA%BA%E6%9C%BA&oldid=379221` },
+  // 寻路者甜品商 / 知名甜品商 also call a candy cart: BornCar's ammunition cap 3 (技力槽 3/3) and 甜品商's 0.1s (敌能-82).
+  enemy_1217_rescar: { talents: { shotbuff: { page: 1 } }, skills: { BornCar: { max: 3, delay: 0.1 } }, source: `${PRTS}%E5%AF%BB%E8%B7%AF%E8%80%85%E7%94%9C%E5%93%81%E5%95%86&oldid=366372` },
+  enemy_1217_rescar_2: { talents: { shotbuff: { page: 1, melee: 1 } }, skills: { BornCar: { max: 3 } }, source: `${PRTS}%E5%AF%BB%E8%B7%AF%E8%80%85%E7%9F%A5%E5%90%8D%E7%94%9C%E5%93%81%E5%95%86&oldid=381093` },
 });
 
 /**
@@ -353,8 +355,16 @@ const deathBlast = (ctx) => {
   if (typeof bb.add_count === 'number') for (const u of ctx.allies(Infinity)) if (u !== ctx.self) addEnergy(ctx, u, bb.add_count);
 };
 
-/** 冰爆源石虫 (敌能-5). @type {FoeBehavior} */
-const boom = Object.freeze({ death: deathBlast });
+/**
+ * 冰爆源石虫's death blast (敌能-5), and the candy cart's blocked explosion (敌能-82). The cart's three
+ * `attack@s2mode_*` numbers never take the death blast; a death blast's tick and attack do nothing.
+ * @type {FoeBehavior}
+ */
+const boom = Object.freeze({
+  death: (ctx) => { if (!cartShape(ctx.bb)) deathBlast(ctx); },
+  tick: (ctx) => { if (cartShape(ctx.bb)) cartTick(ctx); },
+  attack: (ctx, mods) => (cartShape(ctx.bb) ? cartAttack(ctx, mods) : mods),
+});
 
 /**
  * 新手祭司学徒 (敌能-58): a `Boom` blackboard with `heal_scale` heals other enemies where it fell, on that frame.
@@ -537,6 +547,7 @@ export const foeBehaviors = Object.freeze({
   ...faustBehaviors,
   ...shotbuffBehaviors,
   ...lootBehaviors,
+  ...candycarBehaviors,
 });
 
 /**
@@ -624,22 +635,25 @@ const abilitiesOf = (e) => [...Object.entries(e.talents ?? {}), ...(e.skills ?? 
  */
 const healBoom = (k, bb) => k === 'Boom' && typeof bb.heal_scale === 'number';
 
+/** The candy cart's `boom` shape (敌能-82). @param {string} k @param {Record<string, unknown>} bb */
+const cartBoom = (k, bb) => k === 'boom' && cartShape(bb);
+
 /**
  * The shape checks of the shared names (关卡-2): each says whether a blackboard of its names is the shape its behaviour
  * understands, and passes every other name. In a list, so that each family adds one entry, not one more `&&`.
  */
-const SHAPE_OWNERS = Object.freeze([elementHitOwns, takeOffOwns, wineOwns, whipOwns, bornBugsOwns, radioOwns, shieldOwns, punchOwns, passiveOwns, defdownOwns, knightOwns, blinkOwns, healAuraOwns, vampireOwns, chargeAttackOwns, rebornOwns, faustOwns, shotbuffOwns]);
+const SHAPE_OWNERS = Object.freeze([elementHitOwns, takeOffOwns, wineOwns, whipOwns, bornBugsOwns, radioOwns, shieldOwns, punchOwns, passiveOwns, defdownOwns, knightOwns, blinkOwns, healAuraOwns, vampireOwns, chargeAttackOwns, rebornOwns, faustOwns, shotbuffOwns, bornCarOwns]);
 
 /**
  * Whether an ability has what its behaviour needs (关卡-2). A shared talent name only counts when its blackboard is the
- * shape that behaviour understands (敌能-38, 敌能-47, 敌能-63, 敌能-65, 敌能-66, 敌能-67, 敌能-68, 敌能-70, 敌能-71, 敌能-73, 敌能-74, 敌能-75, 敌能-77, 敌能-78, 敌能-79, 敌能-81) — an `aura` only with 敌能-28's stack cap (敌能-45); anything else
+ * shape that behaviour understands (敌能-38, 敌能-47, 敌能-63, 敌能-65, 敌能-66, 敌能-67, 敌能-68, 敌能-70, 敌能-71, 敌能-73, 敌能-74, 敌能-75, 敌能-77, 敌能-78, 敌能-79, 敌能-81, 敌能-82) — an `aura` only with 敌能-28's stack cap (敌能-45); anything else
  * stays incomplete. The nest pulse does not need `el`: the page names 神经损伤. A `Boom` with `heal_scale` needs its page
- * marker (敌能-58).
+ * marker (敌能-58). The candy cart's `boom` needs no death-blast radius or delay (敌能-82).
  * @param {string} k @param {Record<string, unknown>} bb
  */
 const complete = (k, bb) => SHAPE_OWNERS.every((own) => own(k, bb))
   && (k !== 'aura' || stackCapped(bb))
-  && (nestPulseOwns(k, bb) || (healBoom(k, bb) ? typeof bb.page === 'number' : (FOE_NEEDS[/** @type {keyof typeof FOE_NEEDS} */ (k)] ?? []).every((n) => typeof bb[n] === 'number')));
+  && (nestPulseOwns(k, bb) || cartBoom(k, bb) || (healBoom(k, bb) ? typeof bb.page === 'number' : (FOE_NEEDS[/** @type {keyof typeof FOE_NEEDS} */ (k)] ?? []).every((n) => typeof bb[n] === 'number')));
 
 /**
  * The abilities (talents and skills) of the given enemies — their extras merged — that have no behaviour and are not

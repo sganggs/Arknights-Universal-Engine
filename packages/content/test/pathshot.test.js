@@ -342,7 +342,7 @@ test('[敌能-81] 知名甜品商: blocked melee at 250%; unblocked ranged at 10
   assert.equal(shotCount(none, held.e.id), 0);
 });
 
-test('[敌能-81] unread shotbuff users stay uncovered; act1multi_07 loses shotbuff and still names BornCar', () => {
+test('[敌能-81] [敌能-82] unread shotbuff users stay uncovered; act1multi_07 loses shotbuff and BornCar', () => {
   const sniper = { 'attack@headshot_atk_scale': 2, 'attack@headshot_sp': -1 };
   const caster = { 'attack@headshot_ep_damage_ratio': 1.5, 'attack@headshot_sp': -1 };
   const duel = { 'attack@headshot_atk_scale': 1.5, 'attack@headshot_disarmed_duration': 15, 'attack@headshot_sp': -1, 'attack@headshot_trapdamage': 5000 };
@@ -362,12 +362,13 @@ test('[敌能-81] unread shotbuff users stay uncovered; act1multi_07 loses shotb
   assert.equal(extra('enemy_1219_mtrbty_2', oren()).ammo, 1);
   assert.equal(extra('enemy_1217_rescar').ammo, undefined);
   assert.equal(extra('enemy_1217_rescar_2').melee, 1);
-  assert.deepEqual(cartBb('enemy_1217_rescar'), {});
-  assert.equal(Object.hasOwn(foeBehaviors, 'BornCar'), false);
-  assert.ok(gap('enemy_1217_rescar', foe('enemy_1217_rescar')).includes('BornCar'));
+  // 敌能-82 covers the dealers' BornCar.
+  assert.deepEqual(cartBb('enemy_1217_rescar'), { max: 3, delay: 0.1 });
+  assert.equal(Object.hasOwn(foeBehaviors, 'BornCar'), true);
+  assert.equal(gap('enemy_1217_rescar', foe('enemy_1217_rescar')).includes('BornCar'), false);
   assert.throws(() => levelAt('act1multi_07', 'NORMAL', () => ({}), { act1multi_07: act }), (err) => {
     assert.ok(err instanceof RangeError);
-    assert.match(err.message, /BornCar/);
+    assert.doesNotMatch(err.message, /BornCar/);
     assert.doesNotMatch(err.message, /shotbuff/);
     return true;
   });
