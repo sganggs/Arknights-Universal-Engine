@@ -40,6 +40,7 @@ import { stealthed, liftoffRefused } from './targeting.js';
  * @property {boolean} [throughSleep] 沉睡's invincibility does not stop it (伤害-7: a skill that damages the enemies it puts
  *   to sleep; 职业-28: an operator that can attack sleeping enemies); 无敌 still does, and so does 沉睡 on a unit also
  *   隐匿 or 无法选中
+ * @property {boolean} [ignoreSelect] a ground enemy's hit still lands on a unit that took off (起飞, 敌能-55); 无敌 still stops it
  * @property {import('./types.js').VsScale[]} [foe] the target 倍率 that held before the hit, for after it (职业-28)
  */
 
@@ -384,11 +385,12 @@ function untouchable(target, dmg) {
  * Whether a hit stops before the defences (伤害-7, 阻挡-2): the target is invincible or gone, or a ground enemy or
  * hostile device is hitting a unit that took off. 起飞 is judged once here, before `hit`, so that event does not see a
  * refused hit and a handler that lifts the target does not cancel this one. A sourceless hit has no selecting source.
+ * A hit marked `ignoreSelect` is not refused for 起飞 (敌能-55); 无敌 still stops it.
  * @param {World} w @param {Unit | null} src @param {Unit} target @param {Damage} dmg
  */
 function hitStops(w, src, target, dmg) {
   if (untouchable(target, dmg) || target.hidden) return true;
-  if (liftoffRefused(dmg.sourceless ? null : src, target)) return true;
+  if (!dmg.ignoreSelect && liftoffRefused(dmg.sourceless ? null : src, target)) return true;
   return !hitGoesOn(w, src, target, dmg);
 }
 
