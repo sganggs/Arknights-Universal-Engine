@@ -13,7 +13,7 @@ import { newStageState, tickStage, stageCount } from './stage.js';
 import { releaseAll } from './blocking.js';
 import { operatorsAttack, shotsFly } from './combat.js';
 import { tickAlchemy } from './alchemy.js';
-import { foeEffects, foeDeath, foeFatal, releasePassengers } from './foes.js';
+import { foeEffects, foeDeath, foeFatal, releasePassengers, foeHooks } from './foes.js';
 import { applyCommand } from './commands.js';
 import { leaveField, startCost, costRate } from './deck.js';
 import { coolSummons, dismissSummons, expireSummons } from './summons.js';
@@ -169,6 +169,7 @@ export function step(w, level, commands = []) {
   fortressHooks(w, level);
   elementHooks(w, level);
   healHooks(w, level);
+  foeHooks(w, c);
   w.events = [];
   w.bornThisFrame = 0;
   for (const [seat, cmd] of commands) applyCommand(w, c, seat, cmd);

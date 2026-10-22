@@ -20,6 +20,7 @@ import { keyAt } from './paths.js';
 import { bringIn, hatch } from './broods.js';
 import { devour } from './deck.js';
 import { blightContext, tickBlight } from './blight.js';
+import { on } from './bus.js';
 
 /** @typedef {import('./types.js').World} World @typedef {import('./types.js').Content} Content @typedef {import('./types.js').Unit} Unit */
 /** @typedef {import('./types.js').EnemyDef} EnemyDef @typedef {import('./types.js').Blast} Blast @typedef {import('./types.js').Bolt} Bolt */
@@ -134,6 +135,8 @@ export const BOLT_RADIUS = 0.3;
  * @property {(ctx: FoeContext) => boolean} [fatal] its HP ran out: true when the ability keeps it on the field, its HP
  *   above 0
  * @property {(ctx: FoeContext) => void} [unbalanceEnd] 失衡 ended this turn, after the slide settled (敌能-2)
+ * @property {(ctx: FoeContext, hit: FoeHpDamage) => void} [hpDamage] a hit on it came through 伤判 with damage left,
+ *   before its HP drops (敌能-2; the bus's `hpDamage`, 钩子-3). The amount of this hit is already fixed
  */
 
 /** The squared distance between two points. @param {{ x: number, y: number }} a @param {{ x: number, y: number }} b */
@@ -456,6 +459,29 @@ export function foeHit(w, c, e, t, how) {
  */
 export function foeLanded(w, c, e, t, how) {
   each(w, c, e, 'landed', (b, ctx) => b.landed?.(ctx, t, how));
+}
+
+/**
+ * The hit a foe `hpDamage` hook sees (敌能-2): the bus event's `source` (none for a sourceless hit), `credit` (who it
+ * is credited to), `amount` (the damage left after 伤判) and `dmg` (钩子-3).
+ * @typedef {{ source: Unit | null, credit: Unit | null, amount: number, dmg: import('./damage.js').Damage }} FoeHpDamage
+ */
+
+/** The owner of the bus handler below (钩子-1). */
+const HP_DAMAGE = 'foeHpDamage';
+
+/**
+ * The foe `hpDamage` hook (敌能-2) on the bus's `hpDamage` (钩子-3): once per world, and only when a foe behaviour of the
+ * content has one. Every hit on an enemy with damage left after 伤判 calls it once, before the HP drops.
+ * @param {World} w @param {Content} c
+ */
+export function foeHooks(w, c) {
+  if (!Object.values(c.behaviors?.foes ?? {}).some((b) => b.hpDamage) || w.bus?.hooks.get('hpDamage')?.some((h) => h.owner === HP_DAMAGE)) return;
+  on(w, 'hpDamage', (ctx) => {
+    if (ctx.target.kind !== KIND.ENEMY) return;
+    const hit = { source: ctx.source, credit: ctx.credit, amount: ctx.amount, dmg: ctx.dmg };
+    each(w, c, ctx.target, 'hpDamage', (b, x) => b.hpDamage?.(x, hit));
+  }, { owner: HP_DAMAGE });
 }
 
 /**
