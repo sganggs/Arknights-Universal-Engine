@@ -3,7 +3,7 @@
 // builds those records with the same blackboards.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createWorld, step, attrs, status, KIND } from '@aue/sim';
+import { createWorld, step, attrs, status, KIND, damage, buffs, elements } from '@aue/sim';
 import { tinyContent, oneWave, spawnAt } from '@aue/testkit';
 import { skeletonContent } from '../src/index.js';
 import { uncoveredAbilities, withFoeExtras } from '../src/foes.js';
@@ -81,6 +81,23 @@ const S = attrs.statsOf;
 const buff = (u, key) => u.buffs.find((b) => b.key === key);
 /** @param {Unit} u @param {number} x */
 const put = (u, x) => { u.x = x; };
+/** The 脆弱 this expose applies (敌能-54, 敌能-35). @param {Unit} u */
+const exposed = (u) => u.buffs.filter((b) => b.key === 'fragile');
+/** Stops an operator attacking while a test steps; the hits are dealt directly. @param {Unit} u */
+const hold = (u) => { buffs.addBuff(u, buffs.makeBuff({ key: 'hold', flags: { noAttack: true } })); };
+
+/**
+ * One scout and the operators named, held so stepping does not add hits.
+ * @param {[string, number, number][]} [ops]
+ */
+function scouts(ops = [['guard', 1, 2]]) {
+  const a = arena([['enemy_scout', 1, 1]], { ops });
+  for (const u of a.ops) hold(u);
+  return a;
+}
+
+/** @param {World} w @param {any} c @param {Unit | null} src @param {Unit} t @param {{ type: 'phys' | 'arts' | 'true' | 'elemental', amount: number, sourceless?: boolean, hpLoss?: boolean, isSplash?: boolean }} [dmg] */
+const hit = (w, c, src, t, dmg = { type: 'true', amount: 10 }) => damage.dealDamage(w, src, t, dmg, c);
 
 test('[敌能-35] 御4: 防御力 +300 inside 2.5, not outside, not itself, not a neutral; it does not attack', () => {
   const { c, w, es: [drone, inside, outside, neutral] } = arena([
@@ -229,9 +246,9 @@ test('[敌能-35] 远眺: two deaths stay one 20% 脆弱; a stronger one stays; 
   assert.equal(quiet.ops[0].buffs.some((b) => b.key === 'fragile'), false);
 });
 
-test('[敌能-35] a radius-less Expose and a def-only defup stay uncovered and do nothing', () => {
+test('[敌能-35] [敌能-54] a def-only defup stays uncovered; radius-less Expose is covered and a death alone exposes nobody', () => {
   const bare = (/** @type {Record<string, Record<string, number>>} */ talents) => uncoveredAbilities([/** @type {any} */ ({ talents })]);
-  assert.deepEqual(bare({ Expose: { 'weak[limit]': 5, damage_scale: 1.2 } }), ['Expose']);
+  assert.deepEqual(bare({ Expose: { 'weak[limit]': 5, damage_scale: 1.2 } }), []);
   assert.deepEqual(bare({ defup: { def: 3000 } }), ['defup']);
   assert.deepEqual(bare({
     Expose: { 'weak[limit]': 8, range_radius: 1.7, damage_scale: 1.2 },
@@ -245,5 +262,138 @@ test('[敌能-35] a radius-less Expose and a def-only defup stay uncovered and d
   assert.equal(S(mouse).flags.noAttack, undefined);
   scout.hp = 0;
   run(w, c, 1);
-  assert.equal(g.buffs.some((b) => b.key === 'fragile'), false);
+  assert.equal(exposed(g).length, 0);
+});
+
+test('[敌能-54] an operator hit exposes it for 5s at ×1.2; that hit is not amplified', () => {
+  const { c, w, es: [scout], ops: [g] } = scouts();
+  const before = scout.hp;
+  assert.equal(hit(w, c, g, scout, { type: 'true', amount: 100 }), 100);
+  assert.equal(before - scout.hp, 100);
+  const fr = exposed(g);
+  assert.equal(fr.length, 1);
+  assert.equal(fr[0].value, 1.2 - 1);
+  assert.equal(fr[0].mods.dmgTakenMul, 1.2);
+  assert.equal(fr[0].left, 150);
+  const gp = g.hp;
+  assert.equal(hit(w, c, scout, g, { type: 'true', amount: 100 }), 120);
+  assert.equal(gp - g.hp, 120);
+});
+
+test('[敌能-54] a device, a sourceless hit, silence, another enemy, and a dead operator do not expose', () => {
+  const device = scouts();
+  device.ops[0].kind = KIND.DEVICE;
+  hit(device.w, device.c, device.ops[0], device.es[0]);
+  assert.equal(exposed(device.ops[0]).length, 0);
+  const none = scouts();
+  hit(none.w, none.c, none.ops[0], none.es[0], { type: 'true', amount: 10, sourceless: true });
+  assert.equal(exposed(none.ops[0]).length, 0);
+  const quiet = scouts();
+  status.applyStatus(quiet.es[0], 'silence', {});
+  hit(quiet.w, quiet.c, quiet.ops[0], quiet.es[0]);
+  assert.equal(exposed(quiet.ops[0]).length, 0);
+  const { c, w, es: [scout, wolfU], ops: [g] } = arena([
+    ['enemy_scout', 1, 1], ['enemy_1087_ltwolf', 1, 2],
+  ], { ops: [['guard', 1, 3]] });
+  hold(g);
+  hit(w, c, wolfU, scout);
+  assert.equal(exposed(wolfU).length, 0);
+  assert.equal(exposed(g).length, 0);
+  g.hp = 0;
+  hit(w, c, g, scout);
+  assert.equal(exposed(g).length, 0);
+});
+
+test('[敌能-54] re-applying keeps two 脆弱 buffs at ×1.2; the later one waits, then lasts', () => {
+  const { c, w, es: [scout], ops: [g] } = scouts();
+  hit(w, c, g, scout);
+  assert.equal(exposed(g)[0].left, 150);
+  run(w, c, 100);
+  assert.equal(exposed(g)[0].left, 50);
+  hit(w, c, g, scout);
+  assert.equal(exposed(g).length, 2);
+  assert.equal(attrs.activeBuffs(g.buffs).find((b) => b.key === 'fragile')?.value, 1.2 - 1);
+  const gp = g.hp;
+  hit(w, c, scout, g, { type: 'true', amount: 100 });
+  assert.equal(gp - g.hp, 120);
+  run(w, c, 50);
+  assert.equal(exposed(g).length, 1);
+  assert.equal(exposed(g)[0].value, 1.2 - 1);
+  const later = g.hp;
+  hit(w, c, scout, g, { type: 'true', amount: 100 });
+  assert.equal(later - g.hp, 120);
+});
+
+test('[敌能-54] splash, arts, true and elemental HP damage expose; element injury, 生命流失, a shield and a zero hit do not', () => {
+  const splash = scouts();
+  hit(splash.w, splash.c, splash.ops[0], splash.es[0], { type: 'true', amount: 10, isSplash: true });
+  assert.equal(exposed(splash.ops[0]).length, 1);
+  const arts = scouts();
+  hit(arts.w, arts.c, arts.ops[0], arts.es[0], { type: 'arts', amount: 100 });
+  assert.equal(exposed(arts.ops[0]).length, 1);
+  const el = scouts();
+  const [eg, es] = [el.ops[0], el.es[0]];
+  hit(el.w, el.c, eg, es, { type: 'elemental', amount: 100 });
+  assert.equal(exposed(eg).length, 1);
+  const ep = eg.hp;
+  hit(el.w, el.c, es, eg, { type: 'elemental', amount: 100 });
+  assert.equal(ep - eg.hp, 100);
+  const gauge = scouts();
+  elements.dealEp(gauge.w, gauge.es[0], 'FIRE', 100, gauge.ops[0]);
+  assert.equal(exposed(gauge.ops[0]).length, 0);
+  const loss = scouts();
+  hit(loss.w, loss.c, loss.ops[0], loss.es[0], { type: 'phys', amount: 40, hpLoss: true });
+  assert.equal(exposed(loss.ops[0]).length, 0);
+  const pad = scouts();
+  buffs.addBuff(pad.es[0], buffs.makeBuff({ key: 'pad', shieldHits: 1 }));
+  assert.equal(hit(pad.w, pad.c, pad.ops[0], pad.es[0], { type: 'true', amount: 50 }), 0);
+  assert.equal(exposed(pad.ops[0]).length, 0);
+  const zero = scouts();
+  assert.equal(hit(zero.w, zero.c, zero.ops[0], zero.es[0], { type: 'true', amount: 0 }), 0);
+  assert.equal(exposed(zero.ops[0]).length, 0);
+});
+
+test('[敌能-54] a summon is exposed, a device summon and a tactical point are not; 隐匿 does not stop it; the killing hit does', () => {
+  const owned = scouts([['guard', 1, 2], ['sniper', 0, 3]]);
+  const [owner, summon] = owned.ops;
+  summon.summoner = owner.id;
+  owned.c.operators.sniper.summon = { deployLimit: 1, holdLimit: 1, supply: 0, occupy: 0, respawn: 'default' };
+  hit(owned.w, owned.c, summon, owned.es[0]);
+  assert.equal(exposed(summon).length, 1);
+  assert.equal(exposed(owner).length, 0);
+  const dev = scouts([['sniper', 0, 3]]);
+  dev.c.operators.sniper.summon = { deployLimit: 1, holdLimit: 1, supply: 0, occupy: 0, respawn: 'default', device: true };
+  hit(dev.w, dev.c, dev.ops[0], dev.es[0]);
+  assert.equal(exposed(dev.ops[0]).length, 0);
+  const point = scouts();
+  buffs.addBuff(point.ops[0], buffs.makeBuff({ key: 'tactical', left: 90 }));
+  hit(point.w, point.c, point.ops[0], point.es[0]);
+  assert.equal(exposed(point.ops[0]).length, 0);
+  const form = scouts();
+  buffs.addBuff(form.ops[0], buffs.makeBuff({ key: 'tactical' }));
+  hit(form.w, form.c, form.ops[0], form.es[0]);
+  assert.equal(exposed(form.ops[0]).length, 1);
+  const hidden = scouts();
+  buffs.addBuff(hidden.es[0], buffs.makeBuff({ key: 'hide', flags: { stealth: true } }));
+  buffs.addBuff(hidden.ops[0], buffs.makeBuff({ key: 'hide', flags: { stealth: true } }));
+  hit(hidden.w, hidden.c, hidden.ops[0], hidden.es[0]);
+  assert.equal(exposed(hidden.ops[0]).length, 1);
+  const kill = scouts();
+  assert.equal(hit(kill.w, kill.c, kill.ops[0], kill.es[0], { type: 'true', amount: 100 }), 100);
+  assert.equal(kill.es[0].hp, 0);
+  run(kill.w, kill.c, 1);
+  assert.equal(exposed(kill.ops[0]).length, 1);
+  assert.equal(exposed(kill.ops[0])[0].value, 1.2 - 1);
+});
+
+test('[敌能-35] [敌能-54] a hit on 远眺 does not expose; the death aura is unchanged', () => {
+  const { c, w, es: [bird], ops: [g] } = arena([['enemy_1407_hummbd', 1, 1]], { ops: [['guard', 1, 2]] });
+  hold(g);
+  hit(w, c, g, bird, { type: 'true', amount: 10 });
+  assert.equal(exposed(g).length, 0);
+  bird.hp = 0;
+  run(w, c, 1);
+  assert.equal(exposed(g).length, 1);
+  assert.equal(exposed(g)[0].value, 1.2 - 1);
+  assert.equal(exposed(g)[0].left, 240);
 });

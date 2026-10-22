@@ -569,10 +569,11 @@
  * whether it takes a place in the deploy limit (部署占用数), its 再部署策略, whether it stays when its owner leaves (召唤-5),
  * whether it may only stand in its owner's attack range, the copies its owner's skill gives at its start or end (召唤-8),
  * the seconds it stays (召唤-9), what its owner's skill's end does to it (召唤-10), and for a tactical point the seconds
- * of its point form and its block bonus in its summon form (召唤-11).
+ * of its point form and its block bonus in its summon form (召唤-11). `device` is set only when the page's 实体类型 is
+ * 装置 (敌能-54); a summon that is merely unattacked does not have it.
  * @typedef {{ deployLimit: number, holdLimit: number, supply: number, occupy: number, respawn: 'default' | 'unique' | 'queue', stays?: boolean,
  *   ownerRange?: boolean, grant?: { n: number, at: 'start' | 'end' }, life?: number, skillEnd?: { recover: boolean, below?: number },
- *   tactical?: { every: number, block: number } }} SummonDef
+ *   tactical?: { every: number, block: number }, device?: boolean }} SummonDef
  */
 /**
  * A deployment talent (部署-8): SP between `sp[0]` and below `sp[1]`, a heal of every operator (`value` HP or `scale` × the
