@@ -1,4 +1,4 @@
-// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-74): behaviours by talent and skill name. The
+// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-75): behaviours by talent and skill name. The
 // game data holds only the multipliers; FOE_EXTRAS adds, per enemy, the parameters PRTS gives (radii, delays, bolts …)
 // to the blackboards the behaviours read, or a talent the data does not have. They act only through the context (ADR 0055).
 
@@ -48,6 +48,7 @@ import { knightBehaviors, knightOwns } from './knights.js';
 import { lassoBehaviors } from './lasso.js';
 import { blinkBehaviors, blinkOwns } from './blink.js';
 import { fieldAuraBehaviors, healAuraOwns } from './fieldaura.js';
+import { vampireBehaviors, vampireOwns } from './vampire.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').EnemyDef} EnemyDef */
 
@@ -283,6 +284,14 @@ export const FOE_EXTRAS = Object.freeze({
   enemy_1322_wdgyht_2: { talents: { ShiftImmune: {} }, source: `${PRTS}%E2%80%9C%E8%A7%81%E4%B9%A0%E7%81%B0%E7%A4%BC%E5%B8%BD%E2%80%9D&oldid=355350` },
   // 梅菲斯特: 在场时令所有敌方单位的生命回复速度+100%. `field` marks this page; the other `healaura` blackboards are not it (敌能-74).
   enemy_1507_mephi: { talents: { healaura: { field: 1 } }, source: `${PRTS}%E6%A2%85%E8%8F%B2%E6%96%AF%E7%89%B9&oldid=371401` },
+  // 吸血 (敌能-75). `page` marks a page that was read; 虹吸巨刃 has the same numbers and stays uncovered (关卡-2).
+  // 萨卡兹宿主百夫长 / 卫巢百夫长: 最多同时攻击3个目标，不会攻击飞行单位；成功造成伤害后治疗伤害量的 150%。
+  enemy_1114_rgrdmn: { talents: { vampire: { page: 1 }, noFly: {} }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E5%AE%BF%E4%B8%BB%E7%99%BE%E5%A4%AB%E9%95%BF&oldid=365976` },
+  enemy_1114_rgrdmn_2: { talents: { vampire: { page: 1 }, noFly: {} }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E5%AE%BF%E4%B8%BB%E5%8D%AB%E5%B7%A2%E7%99%BE%E5%A4%AB%E9%95%BF&oldid=365977` },
+  // 新生血裔 / 渴血的子裔 / 饱腹的子裔: 成功造成伤害后治疗伤害量的 220%。页面没有「不会攻击飞行单位」。
+  enemy_1360_dfello: { talents: { vampire: { page: 1 } }, source: `${PRTS}%E6%96%B0%E7%94%9F%E8%A1%80%E8%A3%94&oldid=365296` },
+  enemy_1228_dslime: { talents: { vampire: { page: 1 } }, source: `${PRTS}%E6%B8%B4%E8%A1%80%E7%9A%84%E5%AD%90%E8%A3%94&oldid=353607` },
+  enemy_1228_dslime_2: { talents: { vampire: { page: 1 } }, source: `${PRTS}%E9%A5%B1%E8%85%B9%E7%9A%84%E5%AD%90%E8%A3%94&oldid=353608` },
 });
 
 /**
@@ -490,6 +499,7 @@ export const foeBehaviors = Object.freeze({
   ...lassoBehaviors,
   ...blinkBehaviors,
   ...fieldAuraBehaviors,
+  ...vampireBehaviors,
 });
 
 /**
@@ -551,6 +561,8 @@ export const FOE_NEEDS = Object.freeze({
   lasso: Object.freeze(['page']),
   // 梅菲斯特's page marker. 荷谟伊英雄 and 歌者 share the talent name and do not have it (敌能-74).
   healaura: Object.freeze(['field']),
+  // 吸血 needs the page marker (敌能-75). The heal ratio is already in the enemy data; 虹吸巨刃 has it and no marker.
+  vampire: Object.freeze(['page']),
 });
 
 /**
@@ -569,11 +581,11 @@ const healBoom = (k, bb) => k === 'Boom' && typeof bb.heal_scale === 'number';
  * The shape checks of the shared names (关卡-2): each says whether a blackboard of its names is the shape its behaviour
  * understands, and passes every other name. In a list, so that each family adds one entry, not one more `&&`.
  */
-const SHAPE_OWNERS = Object.freeze([elementHitOwns, takeOffOwns, wineOwns, whipOwns, bornBugsOwns, radioOwns, shieldOwns, punchOwns, passiveOwns, defdownOwns, knightOwns, blinkOwns, healAuraOwns]);
+const SHAPE_OWNERS = Object.freeze([elementHitOwns, takeOffOwns, wineOwns, whipOwns, bornBugsOwns, radioOwns, shieldOwns, punchOwns, passiveOwns, defdownOwns, knightOwns, blinkOwns, healAuraOwns, vampireOwns]);
 
 /**
  * Whether an ability has what its behaviour needs (关卡-2). A shared talent name only counts when its blackboard is the
- * shape that behaviour understands (敌能-38, 敌能-47, 敌能-63, 敌能-65, 敌能-66, 敌能-67, 敌能-68, 敌能-70, 敌能-71, 敌能-73, 敌能-74) — an `aura` only with 敌能-28's stack cap (敌能-45); anything else
+ * shape that behaviour understands (敌能-38, 敌能-47, 敌能-63, 敌能-65, 敌能-66, 敌能-67, 敌能-68, 敌能-70, 敌能-71, 敌能-73, 敌能-74, 敌能-75) — an `aura` only with 敌能-28's stack cap (敌能-45); anything else
  * stays incomplete. The nest pulse does not need `el`: the page names 神经损伤. A `Boom` with `heal_scale` needs its page
  * marker (敌能-58).
  * @param {string} k @param {Record<string, unknown>} bb
