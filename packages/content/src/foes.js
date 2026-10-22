@@ -1,4 +1,4 @@
-// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-75): behaviours by talent and skill name. The
+// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-76): behaviours by talent and skill name. The
 // game data holds only the multipliers; FOE_EXTRAS adds, per enemy, the parameters PRTS gives (radii, delays, bolts …)
 // to the blackboards the behaviours read, or a talent the data does not have. They act only through the context (ADR 0055).
 
@@ -49,6 +49,7 @@ import { lassoBehaviors } from './lasso.js';
 import { blinkBehaviors, blinkOwns } from './blink.js';
 import { fieldAuraBehaviors, healAuraOwns } from './fieldaura.js';
 import { vampireBehaviors, vampireOwns } from './vampire.js';
+import { c4Behaviors } from './c4.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').EnemyDef} EnemyDef */
 
@@ -292,6 +293,8 @@ export const FOE_EXTRAS = Object.freeze({
   enemy_1360_dfello: { talents: { vampire: { page: 1 } }, source: `${PRTS}%E6%96%B0%E7%94%9F%E8%A1%80%E8%A3%94&oldid=365296` },
   enemy_1228_dslime: { talents: { vampire: { page: 1 } }, source: `${PRTS}%E6%B8%B4%E8%A1%80%E7%9A%84%E5%AD%90%E8%A3%94&oldid=353607` },
   enemy_1228_dslime_2: { talents: { vampire: { page: 1 } }, source: `${PRTS}%E9%A5%B1%E8%85%B9%E7%9A%84%E5%AD%90%E8%A3%94&oldid=353608` },
+  // W: the cast is 3.2 s (the page; the data has no duration). noFly is the page's normal attack. The half-HP reset is the skill, not a talent (敌能-76).
+  enemy_1504_cqbw: { talents: { noFly: {} }, skills: { C4: { cast: 3.2 } }, source: `${PRTS}W(%E6%95%8C%E6%96%B9)&oldid=378514` },
 });
 
 /**
@@ -481,6 +484,7 @@ export const foeBehaviors = Object.freeze({
   ...mirrorBehaviors,
   ...lancerBehaviors,
   ...tyrantBehaviors,
+  ...c4Behaviors,
   ...bombdBehaviors,
   ...pengBehaviors,
   ...bombardBehaviors,
@@ -563,6 +567,8 @@ export const FOE_NEEDS = Object.freeze({
   healaura: Object.freeze(['field']),
   // 吸血 needs the page marker (敌能-75). The heal ratio is already in the enemy data; 虹吸巨刃 has it and no marker.
   vampire: Object.freeze(['page']),
+  // The 3.2 s cast is the page's, not the enemy data (敌能-76). Without it the skill stays uncovered.
+  C4: Object.freeze(['atk_scale', 'range_radius', 'cast']),
 });
 
 /**

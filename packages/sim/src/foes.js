@@ -133,6 +133,7 @@ export const BOLT_RADIUS = 0.3;
  *   this frame (路线-5, 敌能-73)
  * @property {() => { x: number, y: number } | null} course where the move it is on is heading, or null when it is not on one (敌能-73)
  * @property {(x: number, y: number) => boolean} open whether the tile of a point is one this enemy may stand on (体积-1, 路线-2, 地图-4)
+ * @property {(key: string) => Unit[]} planted units still on the field that carry a buff of `key` this enemy gave, selectable or not (敌能-76)
  */
 
 /**
@@ -267,7 +268,7 @@ function contextOf(w, c, e, of) {
  * @param {World} w @param {Content} c @param {Unit} e @param {Record<string, number>} ab
  * @returns {Pick<FoeContext, 'setHp' | 'resetSkills' | 'onWay' | 'detour' | 'release' | 'placeDevice' | 'summon' | 'draw' | 'remove'
  *   | 'devour' | 'lend' | 'around' | 'enemies' | 'fly' | 'attackAgain' | 'ammoOf' | 'spendAmmo' | 'renew' | 'ours' | 'place'
- *   | 'course' | 'open'>}
+ *   | 'course' | 'open' | 'planted'>}
  */
 function lateContext(w, c, e, ab) {
   return {
@@ -325,11 +326,12 @@ function openAt(c, e, x, y) {
  * The context members that place an enemy or ask where it is going (敌能-44, 敌能-73). Kept out of contextOf so that
  * function stays within the line limit.
  * @param {World} w @param {Content} c @param {Unit} e @param {Record<string, number>} ab
- * @returns {Pick<FoeContext, 'attackAgain' | 'place' | 'course' | 'open'>}
+ * @returns {Pick<FoeContext, 'attackAgain' | 'planted' | 'place' | 'course' | 'open'>}
  */
 function moveMembers(w, c, e, ab) {
   return {
     attackAgain: () => { ab['@again'] = 1; },
+    planted: (key) => w.units.filter((u) => u.buffs.some((b) => b.key === key && b.src === e.id)),
     place: (x, y) => { displace(e, x, y); ab['@held'] = w.frame; },
     course: () => courseOf(c, e),
     open: (x, y) => openAt(c, e, x, y),

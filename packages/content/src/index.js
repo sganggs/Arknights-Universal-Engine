@@ -8,6 +8,7 @@ import { levelAt } from './levels.js';
 import { foeBehaviors, withFoeExtras, withoutIncomplete } from './foes.js';
 import { chaliceBuffs } from './chalice.js';
 import { mudShieldBuffs } from './mudshield.js';
+import { c4Buffs } from './c4.js';
 import { operatorAt, teamTalentsAt } from './operators.js';
 import { TOKENS, tokenAt } from './tokens.js';
 import { teamFits, predefinedKey } from '@aue/sim';
@@ -20,8 +21,8 @@ import { carriedDef } from './carried.js';
 import { withBuilders } from './fortress.js';
 import { OFFICIAL_SOURCE } from './mods/source.js';
 
-/** The official behaviours: skills (技能-6), enemy abilities (敌能-2), the chalice's 伤判 (敌能-41) and the mudshield barrier (敌能-66). */
-const BEHAVIORS = Object.freeze({ skills: skillBehaviors, foes: foeBehaviors, buffs: { ...chaliceBuffs, ...mudShieldBuffs } });
+/** The official behaviours: skills (技能-6), enemy abilities (敌能-2), the chalice's 伤判 (敌能-41), the mudshield barrier (敌能-66) and W's planted C4 (敌能-76). */
+const BEHAVIORS = Object.freeze({ skills: skillBehaviors, foes: foeBehaviors, buffs: { ...chaliceBuffs, ...mudShieldBuffs, ...c4Buffs } });
 
 /**
  * Enemies with their PRTS extras (敌能-5…) and attack timings (攻击-2); an ability that still lacks values its behaviour
