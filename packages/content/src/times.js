@@ -1,4 +1,4 @@
-// 岁兽残响 (docs/spec/foes.md 敌能-39, 敌能-43, 敌能-44): bodies that lose one HP per successful hit, the parents that
+// 岁兽残响 (docs/spec/foes.md 敌能-39, 敌能-43, 敌能-44) and the splash shape 热情丰碑 adds (敌能-69): bodies that lose one HP per successful hit, the parents that
 // leave them on their own route — 沉沙 / 新硎 with their 断刃 among them —, 烹泉 / 沏虹's radius splash, death blast and
 // ASPD debuff, and 清明 / 堂皇's 范围隐匿. They act only through the context (ADR 0055).
 
@@ -105,15 +105,20 @@ const DeadBoom = Object.freeze({
 });
 
 /**
- * The normal attack's radius splash (敌能-43): arts, the target and every other ground friendly unit within `radius`
- * at the full amount, camouflage ignored (the flag). It rides the projectile (攻击-3). An enemy selects nothing in the
- * air or evading the ground already (索敌-2, 阻挡-2).
+ * The normal attack's radius splash (敌能-43, 敌能-69): arts, full amount, on the projectile (攻击-3). `air` 1 is
+ * 热情丰碑: the page does not say 无视迷彩, and the header tooltip says an attack may hit the air, so no seeCamou and
+ * not ground-only. 烹泉 / 沏虹 have no `air`, so they still ignore camouflage and stay ground-only. An enemy selects
+ * nothing in the air already (索敌-2).
  * @type {FoeBehavior}
  */
 const Splash = Object.freeze({
-  spawn: (ctx) => { ctx.addBuff(ctx.self, { key: 'seeCamou', flags: { seeCamou: true } }); },
-  attack: (ctx, mods) => (typeof ctx.bb.radius !== 'number' ? mods
-    : { ...mods, type: 'arts', splash: { radius: ctx.bb.radius, scale: 1, ground: true, side: 'friendly' } }),
+  spawn: (ctx) => {
+    if (ctx.bb.air === 1) return;
+    ctx.addBuff(ctx.self, { key: 'seeCamou', flags: { seeCamou: true } });
+  },
+  attack: (ctx, mods) => (typeof ctx.bb.radius !== 'number' ? mods : {
+    ...mods, type: 'arts', splash: { radius: ctx.bb.radius, scale: 1, ground: ctx.bb.air !== 1, side: 'friendly' },
+  }),
 });
 
 /** 范围隐匿's radius, the page's 2.0 (敌能-44). */

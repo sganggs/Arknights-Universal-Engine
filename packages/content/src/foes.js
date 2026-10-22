@@ -1,4 +1,4 @@
-// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-68): behaviours by talent and skill name. The
+// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-69): behaviours by talent and skill name. The
 // game data holds only the multipliers; FOE_EXTRAS adds, per enemy, the parameters PRTS gives (radii, delays, bolts …)
 // to the blackboards the behaviours read, or a talent the data does not have. They act only through the context (ADR 0055).
 
@@ -42,6 +42,7 @@ import { seedBehaviors, bornBugsOwns } from './seeds.js';
 import { mudShieldBehaviors, shieldOwns } from './mudshield.js';
 import { punchBehaviors, punchOwns } from './punch.js';
 import { passiveBehaviors, passiveOwns } from './passive.js';
+import { monumentBehaviors } from './monuments.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').EnemyDef} EnemyDef */
 
@@ -254,6 +255,10 @@ export const FOE_EXTRAS = Object.freeze({
   // R-11 / R-11a: 未被阻挡时远程攻击最多同时攻击4个目标. The 4 is not in the data (敌能-68). R-11a also 不会攻击飞行单位.
   enemy_1256_lyacpa: { talents: { Passive: { targets: 4 } }, source: `${PRTS}R-11%E7%AA%81%E5%87%BB%E5%8A%A8%E5%8A%9B%E8%A3%85%E7%94%B2&oldid=325101` },
   enemy_1256_lyacpa_2: { talents: { Passive: { targets: 4 }, noFly: {} }, source: `${PRTS}R-11a%E7%AA%81%E5%87%BB%E5%8A%A8%E5%8A%9B%E8%A3%85%E7%94%B2&oldid=365927` },
+  // 热情丰碑: 攻击具有1.8的溅射半径. `air` 1 separates it from 烹泉's Splash (敌能-69, 敌能-43).
+  enemy_4038_mufbsd: { talents: { Splash: { radius: 1.8, air: 1 } }, source: `${PRTS}%E7%83%AD%E6%83%85%E4%B8%B0%E7%A2%91&oldid=364868` },
+  // 狂奔丰碑: 无法被阻挡. The data has no talent for it; not noAttack (敌能-69).
+  enemy_4039_mufbse: { talents: { unblockable: {} }, source: `${PRTS}%E7%8B%82%E5%A5%94%E4%B8%B0%E7%A2%91&oldid=364869` },
 });
 
 /**
@@ -455,6 +460,7 @@ export const foeBehaviors = Object.freeze({
   ...mudShieldBehaviors,
   ...punchBehaviors,
   ...passiveBehaviors,
+  ...monumentBehaviors,
 });
 
 /**
