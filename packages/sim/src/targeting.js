@@ -52,6 +52,7 @@ export function inKeys(u, keys, grid, byTile = false) {
  * @typedef {object} Selector what an attack can select
  * @property {boolean} [canHitFly] it can select flying units
  * @property {boolean} [ignoreCamou] it ignores 迷彩
+ * @property {boolean} [ignoreUntargetable] it can select 无法选择 units (敌能-85); omitted, they stay unselectable (索敌-2)
  * @property {boolean} [canHitSleep] it can select sleeping units (职业-28)
  * @property {boolean} [canHitStealth] it can select 隐匿 units (职业-31)
  */
@@ -88,7 +89,7 @@ export function stealthed(u) {
 export function selectable(u, sel = {}) {
   if (u.hp <= 0 || u.hidden) return false;
   const s = statsOf(u), f = s.flags;
-  if (f.untargetable || (stealthed(u) && !sel.canHitStealth) || (f.sleep && !sel.canHitSleep) || f.sidelined) return false;
+  if ((f.untargetable && !sel.ignoreUntargetable) || (stealthed(u) && !sel.canHitStealth) || (f.sleep && !sel.canHitSleep) || f.sidelined) return false;
   if (f.camou && !f.uncamou && !sel.ignoreCamou) return false;
   return !s.flying || !!sel.canHitFly;
 }

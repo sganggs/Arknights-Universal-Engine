@@ -1,4 +1,4 @@
-// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-84): behaviours by talent and skill name. The
+// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-85): behaviours by talent and skill name. The
 // game data holds only the multipliers; FOE_EXTRAS adds, per enemy, the parameters PRTS gives (radii, delays, bolts …)
 // to the blackboards the behaviours read, or a talent the data does not have. They act only through the context (ADR 0055).
 
@@ -152,6 +152,9 @@ export const FOE_EXTRAS = Object.freeze({
   enemy_1103_wdkght: { talents: { enhance: { page: 1 } }, source: `${PRTS}%E6%B2%B8%E8%A1%80%E9%AA%91%E5%A3%AB%E5%9B%A2%E5%AD%A6%E5%BE%92&oldid=359963` },
   enemy_1103_wdkght_2: { talents: { enhance: { page: 1 } }, source: `${PRTS}%E6%B2%B8%E8%A1%80%E9%AA%91%E5%A3%AB%E5%9B%A2%E7%B2%BE%E9%94%90&oldid=391189` },
   enemy_1103_wdkght_3: { talents: { enhance: { page: 1 } }, source: `${PRTS}%E2%80%9C%E9%94%88%E9%93%9C%E2%80%9D%E5%A5%A5%E5%B0%94%E9%BB%98%C2%B7%E8%8B%B1%E6%A0%BC%E6%8B%89&oldid=353356` },
+  // 斗志昂扬无人机 (敌能-85): `zeal` marks this page's buff. `page` stays the howling armour, so the two shapes do not
+  // cover each other (关卡-2). `Static` is 敌能-37; the buff behaviour sets noAttack for this shape.
+  enemy_1106_byokai: { talents: { buff: { zeal: 1 }, Static: {} }, source: `${PRTS}%E6%96%97%E5%BF%97%E6%98%82%E6%89%AC%E6%97%A0%E4%BA%BA%E6%9C%BA&oldid=379223` },
   // 寒霜: 使2.5半径范围内的所有我方单位攻击速度-50%. The data keeps 2.5 on defup; the aura reads atkSpeedDown (敌能-35).
   enemy_1042_frostd: { talents: { atkSpeedDown: { range_radius: 2.5 }, Static: {} }, source: `${PRTS}%E5%AF%92%E9%9C%9C&oldid=371399` },
   // 澪: 普通攻击为2连击, and 寒晖 is those same two hits at 150% (talents [], PowerAttack has only atk_scale)
@@ -609,8 +612,6 @@ export const FOE_NEEDS = Object.freeze({
   Punch: Object.freeze(['radius']),
   // 碎骨's grenade. A flat `def` (−10 / −15) has none of these, so those enemies stay uncovered (敌能-70).
   defdown: Object.freeze(['scale', 'duration', 'square']),
-  // 呼啸、沸血骑士团只覆盖读过页面的六名（敌能-71）。
-  buff: Object.freeze(['page']), enhance: Object.freeze(['page']),
   // 枷锁 is read only where the page was read. The same three numbers on 萨卡兹业余术师 have no `page` (敌能-72, 关卡-2).
   lasso: Object.freeze(['page']),
   // 梅菲斯特's page marker. 荷谟伊英雄 and 歌者 share the talent name and do not have it (敌能-74).
@@ -629,6 +630,8 @@ export const FOE_NEEDS = Object.freeze({
   shotbuff: Object.freeze(['page']),
   // 眩晕击 (敌能-83). The data already has atk_scale and stun; `page` marks this page. 配重投石机 has no page, so no marker.
   StunAttack: Object.freeze(['page']),
+  // 沸血的标记在这里（敌能-71）。`buff` 的两种形状各带自己的标记，由 knightOwns 认（敌能-71 的 page、敌能-85 的 zeal）。
+  enhance: Object.freeze(['page']),
 });
 
 /**
@@ -654,7 +657,7 @@ const SHAPE_OWNERS = Object.freeze([elementHitOwns, takeOffOwns, wineOwns, whipO
 
 /**
  * Whether an ability has what its behaviour needs (关卡-2). A shared talent name only counts when its blackboard is the
- * shape that behaviour understands (敌能-38, 敌能-47, 敌能-63, 敌能-65, 敌能-66, 敌能-67, 敌能-68, 敌能-70, 敌能-71, 敌能-73, 敌能-74, 敌能-75, 敌能-77, 敌能-78, 敌能-79, 敌能-81, 敌能-82, 敌能-83) — an `aura` only with 敌能-28's stack cap (敌能-45); anything else
+ * shape that behaviour understands (敌能-38, 敌能-47, 敌能-63, 敌能-65, 敌能-66, 敌能-67, 敌能-68, 敌能-70, 敌能-71, 敌能-73, 敌能-74, 敌能-75, 敌能-77, 敌能-78, 敌能-79, 敌能-81, 敌能-82, 敌能-83, 敌能-85) — an `aura` only with 敌能-28's stack cap (敌能-45); anything else
  * stays incomplete. The nest pulse does not need `el`: the page names 神经损伤. A `Boom` with `heal_scale` needs its page
  * marker (敌能-58). The candy cart's `boom` needs no death-blast radius or delay (敌能-82).
  * @param {string} k @param {Record<string, unknown>} bb
