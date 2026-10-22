@@ -108,8 +108,8 @@ export const BOLT_RADIUS = 0.3;
  * @property {(u: Unit | null) => boolean} defaultAlly the unit is still on the field and is a 默认类 ally (敌能-54)
  * @property {() => void} fly its own motion becomes flying and the move it is on is planned again (路线-2, 敌能-34)
  * @property {() => void} attackAgain its next attack may start at once: the attack cooldown is cleared (敌能-44, 攻击-2)
- * @property {(o: { x: number, y: number, radius: number, life: number, low: number, high: number, air?: boolean, open?: boolean, wide?: boolean }) => void} zone
- *   places a 污染秽蚀 zone (敌能-46)
+ * @property {(o: { x: number, y: number, radius: number, life: number, low: number, high: number, air?: boolean, open?: boolean, wide?: boolean, arts?: number, pad?: number }) => void} zone
+ *   places a zone (污染秽蚀 敌能-46; a 燃烧区域 when `arts` is set, 敌能-60)
  * @property {(t: Unit, damage: number, seconds: number) => void} bleed gives or refreshes 逐腐 bleed (敌能-46)
  * @property {(u: Unit) => boolean} onLow whether a unit's tile is 低地 (敌能-46)
  * @property {() => void} ground a flying unit's own motion becomes ground (`WALK`) and the move it is on drops its plan
@@ -182,6 +182,15 @@ function defaultAlly(c, u) {
 }
 
 /**
+ * The context's `bolt` (敌能-4): a direct bolt from the enemy, and its event. Kept out of contextOf for its line budget.
+ * @param {World} w @param {Unit} e @param {Parameters<FoeContext['bolt']>[0]} b
+ */
+function fireBolt(w, e, b) {
+  w.bolts.push({ src: e.id, x: e.x, y: e.y, dx: b.dx, dy: b.dy, type: b.type, amount: b.amount, status: b.status ?? null, blast: b.blast ?? 0 });
+  w.events.push({ type: 'bolt', id: e.id });
+}
+
+/**
  * An ability's context (敌能-2): `of` is the ability — its name, blackboard and skill (null for a talent).
  * @param {World} w @param {Content} c @param {Unit} e
  * @param {{ name: string, bb: Record<string, number>, skill: import('./types.js').FoeSkill | null }} of @returns {FoeContext}
@@ -225,10 +234,7 @@ function contextOf(w, c, e, of) {
     inLine: () => inLine(w, e),
     // `buff` is omitted when absent: a null field would change the hash of every blast (敌能-43).
     blast: (b) => { w.blasts.push({ x: b.x, y: b.y, radius: b.radius, left: secondsToFrames(b.delay), air: b.air, src: b.sourced ? e.id : -1, type: b.type, amount: b.amount, status: b.status ?? null, ...(b.buff ? { buff: b.buff } : {}) }); },
-    bolt: (b) => {
-      w.bolts.push({ src: e.id, x: e.x, y: e.y, dx: b.dx, dy: b.dy, type: b.type, amount: b.amount, status: b.status ?? null, blast: b.blast ?? 0 });
-      w.events.push({ type: 'bolt', id: e.id });
-    },
+    bolt: (b) => { fireBolt(w, e, b); },
     setBaseMaxHp: (hp) => { setBaseMaxHp(e, hp); },
     ...blightContext(w, c, e),
     ground: () => { becomeGround(e); },
