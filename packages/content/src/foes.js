@@ -1,4 +1,4 @@
-// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-52): behaviours by talent and skill name. The
+// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-53): behaviours by talent and skill name. The
 // game data holds only the multipliers; FOE_EXTRAS adds, per enemy, the parameters PRTS gives (radii, delays, bolts …)
 // to the blackboards the behaviours read, or a talent the data does not have. They act only through the context (ADR 0055).
 
@@ -28,6 +28,7 @@ import { sanktaBehaviors } from './sankta.js';
 import { periodicBehaviors } from './periodic.js';
 import { blockDamageBehaviors } from './blockdamage.js';
 import { mirrorBehaviors } from './mirror.js';
+import { lancerBehaviors } from './lancer.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').EnemyDef} EnemyDef */
 
@@ -194,6 +195,9 @@ export const FOE_EXTRAS = Object.freeze({
   enemy_1329_cbshld: { talents: { def_reduce: { gate: 2 } }, source: `${PRTS}%E5%BC%A7%E5%85%89%E9%95%9C%E5%8D%AB&oldid=382112` },
   // 弧光镜卫长: the same talent and keys; its older page predates the ≥2 wording (敌能-52, INF-0403). 15/60 are visual only.
   enemy_1329_cbshld_2: { talents: { def_reduce: { gate: 2 } }, source: `${PRTS}%E5%BC%A7%E5%85%89%E9%95%9C%E5%8D%AB%E9%95%BF&oldid=353797` },
+  // 萨卡兹穿刺手/组长 (敌能-53): `paged` is only on the two pages that were read, so the same keys on unread enemies stay uncovered
+  enemy_1072_dlancer: { talents: { rush: { paged: 1 }, firstattack: { paged: 1 } }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E7%A9%BF%E5%88%BA%E6%89%8B&oldid=369390` },
+  enemy_1072_dlancer_2: { talents: { rush: { paged: 1 }, firstattack: { paged: 1 } }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E7%A9%BF%E5%88%BA%E6%89%8B%E7%BB%84%E9%95%BF&oldid=369391` },
 });
 
 /**
@@ -369,14 +373,16 @@ export const foeBehaviors = Object.freeze({
   ...periodicBehaviors,
   ...blockDamageBehaviors,
   ...mirrorBehaviors,
+  ...lancerBehaviors,
 });
 
 /**
  * Talents with no behaviour of their own that are still covered (关卡-2): `dead` is the data's 生命 loss of a neutral
  * unit (合作-9), `Light` is read by `Bomb`, `DmgUp` acts only on devices the engine does not have (敌能-11), `Stronger` is
- * read by `Devour` (敌能-30), `storm` acts only in a 沙尘暴 the engine's levels do not have (敌能-24).
+ * read by `Devour` (敌能-30), `storm` acts only in a 沙尘暴 the engine's levels do not have (敌能-24), `firstattack` is read by
+ * 萨卡兹穿刺手's `rush` (敌能-53).
  */
-export const FOE_COVERED = Object.freeze(['dead', 'Light', 'DmgUp', 'Stronger', 'storm']);
+export const FOE_COVERED = Object.freeze(['dead', 'Light', 'DmgUp', 'Stronger', 'storm', 'firstattack']);
 
 /**
  * The blackboard keys an ability's behaviour needs that the data tables do not carry (FOE_EXTRAS gives them, from PRTS,
@@ -403,6 +409,8 @@ export const FOE_NEEDS = Object.freeze({
   periodic_damage: Object.freeze(['self']),
   Shield: Object.freeze(['max_block_damage_cnt', 'block_damage_cnt']),
   def_reduce: Object.freeze(['gate']),
+  rush: Object.freeze(['dlancer_t[trigger].move_speed', 'dlancer_t[trigger].interval', 'dlancer_t[trigger].trig_cnt', 'paged']),
+  firstattack: Object.freeze(['atk_scale', 'paged']),
 });
 
 /**
