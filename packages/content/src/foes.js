@@ -1,4 +1,4 @@
-// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-76): behaviours by talent and skill name. The
+// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-77): behaviours by talent and skill name. The
 // game data holds only the multipliers; FOE_EXTRAS adds, per enemy, the parameters PRTS gives (radii, delays, bolts …)
 // to the blackboards the behaviours read, or a talent the data does not have. They act only through the context (ADR 0055).
 
@@ -50,6 +50,7 @@ import { blinkBehaviors, blinkOwns } from './blink.js';
 import { fieldAuraBehaviors, healAuraOwns } from './fieldaura.js';
 import { vampireBehaviors, vampireOwns } from './vampire.js';
 import { c4Behaviors } from './c4.js';
+import { glowBehaviors, chargeAttackOwns } from './glow.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').EnemyDef} EnemyDef */
 
@@ -295,6 +296,11 @@ export const FOE_EXTRAS = Object.freeze({
   enemy_1228_dslime_2: { talents: { vampire: { page: 1 } }, source: `${PRTS}%E9%A5%B1%E8%85%B9%E7%9A%84%E5%AD%90%E8%A3%94&oldid=353608` },
   // W: the cast is 3.2 s (the page; the data has no duration). noFly is the page's normal attack. The half-HP reset is the skill, not a talent (敌能-76).
   enemy_1504_cqbw: { talents: { noFly: {} }, skills: { C4: { cast: 3.2 } }, source: `${PRTS}W(%E6%95%8C%E6%96%B9)&oldid=378514` },
+  // 微光之触. `page` marks the three pages that were read (关卡-2). `ground` is the pages that refuse a flying lock.
+  // noFly is 「普通攻击不会攻击飞行单位」 (敌能-33); 精锐's page does not say it.
+  enemy_1184_cadkgt: { talents: { noFly: {} }, skills: { ChargeAttack: { page: 1, ground: 1 } }, source: `${PRTS}%E6%95%A3%E5%8D%8E%E9%AA%91%E5%A3%AB%E5%9B%A2%E5%AD%A6%E5%BE%92&oldid=367691` },
+  enemy_1184_cadkgt_2: { skills: { ChargeAttack: { page: 1 } }, source: `${PRTS}%E6%95%A3%E5%8D%8E%E9%AA%91%E5%A3%AB%E5%9B%A2%E7%B2%BE%E9%94%90&oldid=287514` },
+  enemy_1184_cadkgt_3: { talents: { noFly: {} }, skills: { ChargeAttack: { page: 1, ground: 1 } }, source: `${PRTS}%E7%83%9B%E9%AA%91%E5%A3%AB%E8%96%87%E8%96%87%E5%AE%89%E5%A8%9C&oldid=367693` },
 });
 
 /**
@@ -485,6 +491,7 @@ export const foeBehaviors = Object.freeze({
   ...lancerBehaviors,
   ...tyrantBehaviors,
   ...c4Behaviors,
+  ...glowBehaviors,
   ...bombdBehaviors,
   ...pengBehaviors,
   ...bombardBehaviors,
@@ -569,6 +576,8 @@ export const FOE_NEEDS = Object.freeze({
   vampire: Object.freeze(['page']),
   // The 3.2 s cast is the page's, not the enemy data (敌能-76). Without it the skill stays uncovered.
   C4: Object.freeze(['atk_scale', 'range_radius', 'cast']),
+  // 点灯骑士 has the same three numbers and no saved page (敌能-77).
+  ChargeAttack: Object.freeze(['page']),
 });
 
 /**
@@ -587,11 +596,11 @@ const healBoom = (k, bb) => k === 'Boom' && typeof bb.heal_scale === 'number';
  * The shape checks of the shared names (关卡-2): each says whether a blackboard of its names is the shape its behaviour
  * understands, and passes every other name. In a list, so that each family adds one entry, not one more `&&`.
  */
-const SHAPE_OWNERS = Object.freeze([elementHitOwns, takeOffOwns, wineOwns, whipOwns, bornBugsOwns, radioOwns, shieldOwns, punchOwns, passiveOwns, defdownOwns, knightOwns, blinkOwns, healAuraOwns, vampireOwns]);
+const SHAPE_OWNERS = Object.freeze([elementHitOwns, takeOffOwns, wineOwns, whipOwns, bornBugsOwns, radioOwns, shieldOwns, punchOwns, passiveOwns, defdownOwns, knightOwns, blinkOwns, healAuraOwns, vampireOwns, chargeAttackOwns]);
 
 /**
  * Whether an ability has what its behaviour needs (关卡-2). A shared talent name only counts when its blackboard is the
- * shape that behaviour understands (敌能-38, 敌能-47, 敌能-63, 敌能-65, 敌能-66, 敌能-67, 敌能-68, 敌能-70, 敌能-71, 敌能-73, 敌能-74, 敌能-75) — an `aura` only with 敌能-28's stack cap (敌能-45); anything else
+ * shape that behaviour understands (敌能-38, 敌能-47, 敌能-63, 敌能-65, 敌能-66, 敌能-67, 敌能-68, 敌能-70, 敌能-71, 敌能-73, 敌能-74, 敌能-75, 敌能-77) — an `aura` only with 敌能-28's stack cap (敌能-45); anything else
  * stays incomplete. The nest pulse does not need `el`: the page names 神经损伤. A `Boom` with `heal_scale` needs its page
  * marker (敌能-58).
  * @param {string} k @param {Record<string, unknown>} bb

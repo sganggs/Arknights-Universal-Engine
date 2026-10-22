@@ -89,7 +89,7 @@ export function selectable(u, sel = {}) {
   if (u.hp <= 0 || u.hidden) return false;
   const s = statsOf(u), f = s.flags;
   if (f.untargetable || (stealthed(u) && !sel.canHitStealth) || (f.sleep && !sel.canHitSleep) || f.sidelined) return false;
-  if (f.camou && !sel.ignoreCamou) return false;
+  if (f.camou && !f.uncamou && !sel.ignoreCamou) return false;
   return !s.flying || !!sel.canHitFly;
 }
 
