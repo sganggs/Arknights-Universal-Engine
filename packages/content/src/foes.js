@@ -1,4 +1,4 @@
-// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-60): behaviours by talent and skill name. The
+// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-61): behaviours by talent and skill name. The
 // game data holds only the multipliers; FOE_EXTRAS adds, per enemy, the parameters PRTS gives (radii, delays, bolts …)
 // to the blackboards the behaviours read, or a talent the data does not have. They act only through the context (ADR 0055).
 
@@ -34,6 +34,7 @@ import { lancerBehaviors } from './lancer.js';
 import { tyrantBehaviors } from './tyrant.js';
 import { pengBehaviors } from './peng.js';
 import { bombardBehaviors } from './bombard.js';
+import { templarBehaviors } from './templar.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').EnemyDef} EnemyDef */
 
@@ -221,6 +222,10 @@ export const FOE_EXTRAS = Object.freeze({
   // 集团军轻型/重型火炮: 燃烧区域半径 1.5 只在页面上。数据的 projectile_range 1 是溅射半径 (敌能-60)
   enemy_10122_uacann: { talents: { ProjectileBoomRange: { zone: 1.5 } }, source: `${PRTS}%E9%9B%86%E5%9B%A2%E5%86%9B%E8%BD%BB%E5%9E%8B%E7%81%AB%E7%82%AE&oldid=369386` },
   enemy_10122_uacann_2: { talents: { ProjectileBoomRange: { zone: 1.5 } }, source: `${PRTS}%E9%9B%86%E5%9B%A2%E5%86%9B%E9%87%8D%E5%9E%8B%E7%81%AB%E7%82%AE&oldid=377750` },
+  // 圣堂剑士 / 精锐圣堂剑士: 技力槽 5/5 and 7/7 are the ammo (弹药上限：5 / 7). The level data carries no spData, so the
+  // page's number goes on the skill (敌能-61); the database's maxSp and initSp are the same.
+  enemy_10087_hlchgr: { skills: { ForeverEnhance: { ammo: 5 } }, source: `${PRTS}%E5%9C%A3%E5%A0%82%E5%89%91%E5%A3%AB&oldid=375658` },
+  enemy_10087_hlchgr_2: { skills: { ForeverEnhance: { ammo: 7 } }, source: `${PRTS}%E7%B2%BE%E9%94%90%E5%9C%A3%E5%A0%82%E5%89%91%E5%A3%AB&oldid=375659` },
 });
 
 /**
@@ -414,15 +419,17 @@ export const foeBehaviors = Object.freeze({
   ...pengBehaviors,
   ...bombardBehaviors,
   ...cannonBehaviors,
+  ...templarBehaviors,
 });
 
 /**
  * Talents with no behaviour of their own that are still covered (关卡-2): `dead` is the data's 生命 loss of a neutral
  * unit (合作-9), `Light` is read by `Bomb`, `DmgUp` acts only on devices the engine does not have (敌能-11), `Stronger` is
  * read by `Devour` (敌能-30), `storm` acts only in a 沙尘暴 the engine's levels do not have (敌能-24), `firstattack` is read by
- * 萨卡兹穿刺手's `rush` (敌能-53).
+ * 萨卡兹穿刺手's `rush` (敌能-53), `AttributeStorage` and `SkillTrigger` are read by `ForeverEnhance` (敌能-61; the excerpt
+ * lists no other user).
  */
-export const FOE_COVERED = Object.freeze(['dead', 'Light', 'DmgUp', 'Stronger', 'storm', 'firstattack']);
+export const FOE_COVERED = Object.freeze(['dead', 'Light', 'DmgUp', 'Stronger', 'storm', 'firstattack', 'AttributeStorage', 'SkillTrigger']);
 
 /**
  * The blackboard keys an ability's behaviour needs that the data tables do not carry (FOE_EXTRAS gives them, from PRTS,
@@ -459,6 +466,7 @@ export const FOE_NEEDS = Object.freeze({
   // `zone` is the page's burn radius. The data's projectile_range is the splash, so a same-shape enemy without the
   // page stays uncovered (关卡-2).
   ProjectileBoomRange: Object.freeze(['attack@projectile_range', 'attack@projectile_life_time', 'attack@value', 'zone']),
+  ForeverEnhance: Object.freeze(['ammo']),
 });
 
 /**
