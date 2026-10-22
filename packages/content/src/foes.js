@@ -1,4 +1,4 @@
-// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-66): behaviours by talent and skill name. The
+// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-67): behaviours by talent and skill name. The
 // game data holds only the multipliers; FOE_EXTRAS adds, per enemy, the parameters PRTS gives (radii, delays, bolts …)
 // to the blackboards the behaviours read, or a talent the data does not have. They act only through the context (ADR 0055).
 
@@ -40,6 +40,7 @@ import { wineBehaviors, wineOwns } from './wine.js';
 import { whipBehaviors, whipOwns } from './whip.js';
 import { seedBehaviors, bornBugsOwns } from './seeds.js';
 import { mudShieldBehaviors, shieldOwns } from './mudshield.js';
+import { punchBehaviors, punchOwns } from './punch.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').EnemyDef} EnemyDef */
 
@@ -246,6 +247,9 @@ export const FOE_EXTRAS = Object.freeze({
   // `page` marks the two pages that were read (敌能-66). The same blackboard without it stays uncovered (关卡-2).
   enemy_1091_mdhmmr: { talents: { shield: { page: 1 } }, source: `${PRTS}%E6%B3%A5%E5%B2%A9%E5%B0%8F%E9%98%9F%E8%B7%B5%E8%A1%8C%E8%80%85&oldid=361721` },
   enemy_1091_mdhmmr_2: { talents: { shield: { page: 1 } }, source: `${PRTS}%E6%B3%A5%E5%B2%A9%E5%B0%8F%E9%98%9F%E8%B7%B5%E8%A1%8C%E8%80%85%E7%BB%84%E9%95%BF&oldid=361722` },
+  // R-31 / R-31a: 半径 0.8 is on the page, not in the blackboard (敌能-67). 神拳机甲 shares the shape and gets no marker.
+  enemy_1255_lybgpa: { skills: { Punch: { radius: 0.8 } }, source: `${PRTS}R-31%E9%87%8D%E5%9E%8B%E5%8A%A8%E5%8A%9B%E8%A3%85%E7%94%B2&oldid=380911` },
+  enemy_1255_lybgpa_2: { skills: { Punch: { radius: 0.8 } }, source: `${PRTS}R-31a%E9%87%8D%E5%9E%8B%E5%8A%A8%E5%8A%9B%E8%A3%85%E7%94%B2&oldid=391946` },
 });
 
 /**
@@ -445,6 +449,7 @@ export const foeBehaviors = Object.freeze({
   ...seedBehaviors,
   ...radioBehaviors,
   ...mudShieldBehaviors,
+  ...punchBehaviors,
 });
 
 /**
@@ -496,6 +501,8 @@ export const FOE_NEEDS = Object.freeze({
   ForeverEnhance: Object.freeze(['ammo']),
   // 泥岩小队践行者的法术屏障只覆盖读过页面的两名（敌能-66）。同形的覆面大锤客、泥岩没有这个标记。
   shield: Object.freeze(['page']),
+  // The 0.8 is on the two read pages only. 神拳机甲's Punch has the same data keys and stays incomplete (敌能-67).
+  Punch: Object.freeze(['radius']),
 });
 
 /**
@@ -512,12 +519,12 @@ const healBoom = (k, bb) => k === 'Boom' && typeof bb.heal_scale === 'number';
 
 /**
  * Whether an ability has what its behaviour needs (关卡-2). A shared talent name only counts when its blackboard is the
- * shape that behaviour understands (敌能-38, 敌能-47, 敌能-63, 敌能-65, 敌能-66) — an `aura` only with 敌能-28's stack cap (敌能-45); anything else
+ * shape that behaviour understands (敌能-38, 敌能-47, 敌能-63, 敌能-65, 敌能-66, 敌能-67) — an `aura` only with 敌能-28's stack cap (敌能-45); anything else
  * stays incomplete. The nest pulse does not need `el`: the page names 神经损伤. A `Boom` with `heal_scale` needs its page
  * marker (敌能-58).
  * @param {string} k @param {Record<string, unknown>} bb
  */
-const complete = (k, bb) => elementHitOwns(k, bb) && takeOffOwns(k, bb) && wineOwns(k, bb) && whipOwns(k, bb) && bornBugsOwns(k, bb) && radioOwns(k, bb) && shieldOwns(k, bb)
+const complete = (k, bb) => elementHitOwns(k, bb) && takeOffOwns(k, bb) && wineOwns(k, bb) && whipOwns(k, bb) && bornBugsOwns(k, bb) && radioOwns(k, bb) && shieldOwns(k, bb) && punchOwns(k, bb)
   && (k !== 'aura' || stackCapped(bb))
   && (nestPulseOwns(k, bb) || (healBoom(k, bb) ? typeof bb.page === 'number' : (FOE_NEEDS[/** @type {keyof typeof FOE_NEEDS} */ (k)] ?? []).every((n) => typeof bb[n] === 'number')));
 

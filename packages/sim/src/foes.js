@@ -78,6 +78,8 @@ export const BOLT_RADIUS = 0.3;
  *   without an end, or retunes the one it has (属性-4)
  * @property {(t: Unit, n: number) => void} drainCost an operator's player loses n cost, down to 0 (费用-1)
  * @property {() => Unit | null} blocker the unit blocking it, or null
+ * @property {(id: number) => Unit | null} unit the unit of that id still in the list, or null: hidden, unselectable and
+ *   already at 0 HP all still count; one that has left the list does not (敌能-67)
  * @property {(u: Unit) => string[]} tagsOf an enemy's tags (关卡-1)
  * @property {() => string} tileKey the key of the tile it stands on ('' off the map)
  * @property {(u: Unit) => void} board takes an enemy aboard as a passenger (敌能-16)
@@ -232,6 +234,7 @@ function contextOf(w, c, e, of) {
     buffValue: (u, key) => u.buffs.find((b) => b.key === key)?.value ?? null,
     setBuff: (u, key, value, mods) => { setBuffOf(e, u, key, value, mods); },
     blocker: () => (e.blockedBy >= 0 ? w.units.find((u) => u.id === e.blockedBy) ?? null : null),
+    unit: (id) => w.units.find((u) => u.id === id) ?? null,
     tagsOf: (u) => (u.kind === KIND.ENEMY ? defOf(c, u).tags ?? [] : []),
     tileKey: () => { const [r, col] = tileOf(e); return tileAt(c.level, r, col)?.key ?? ''; },
     board: (u) => { if (u !== e && u.kind === KIND.ENEMY && !u.hidden && !carried(u)) { board(u); u.ab['@carrier'] = e.id; } },
