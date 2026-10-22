@@ -28,6 +28,12 @@ const Devour = Object.freeze({
 });
 
 /**
+ * Whether talent `1` is the spy's (敌能-31): `ammo` is a number (other keys may be there). The same name with another
+ * shape is another enemy's (敌能-62), and the spy leaves it alone. @param {Record<string, unknown>} bb
+ */
+export const spyShape = (bb) => typeof bb.ammo === 'number';
+
+/**
  * 悖谬谍报官 (敌能-31): it comes in with `ammo` rounds. With a round left its attack is a ranged one and spends
  * −`attack@sp` of them, and the next time its attack deals damage to an operator that operator's player loses
  * −`attack@cost` cost for each such attack since (down to 0); with none left it attacks only the unit blocking it, without
@@ -35,13 +41,14 @@ const Devour = Object.freeze({
  * @type {FoeBehavior}
  */
 const spy = Object.freeze({
-  spawn: (ctx) => { ctx.state.set('ammo', ctx.bb.ammo); },
+  spawn: (ctx) => { if (spyShape(ctx.bb)) ctx.state.set('ammo', ctx.bb.ammo); },
   targets: (ctx, cands) => {
-    if (ctx.state.get('ammo') >= 1) return cands;
+    if (!spyShape(ctx.bb) || ctx.state.get('ammo') >= 1) return cands;
     const b = ctx.blocker();
     return cands.filter((u) => u === b);
   },
   attack: (ctx, mods) => {
+    if (!spyShape(ctx.bb)) return mods;
     const st = ctx.state, ammo = st.get('ammo');
     if (ammo < 1) return { ...mods, direct: true };
     st.set('ammo', ammo + ctx.bb['attack@sp']);
@@ -50,7 +57,7 @@ const spy = Object.freeze({
   },
   hit: (ctx, t) => {
     const owed = ctx.state.get('owed');
-    if (owed <= 0 || t.kind !== KIND.OPERATOR) return;
+    if (!spyShape(ctx.bb) || owed <= 0 || t.kind !== KIND.OPERATOR) return;
     ctx.drainCost(t, owed);
     ctx.state.set('owed', 0);
   },

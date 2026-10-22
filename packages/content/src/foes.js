@@ -1,4 +1,4 @@
-// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-61): behaviours by talent and skill name. The
+// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-62): behaviours by talent and skill name. The
 // game data holds only the multipliers; FOE_EXTRAS adds, per enemy, the parameters PRTS gives (radii, delays, bolts …)
 // to the blackboards the behaviours read, or a talent the data does not have. They act only through the context (ADR 0055).
 
@@ -35,6 +35,7 @@ import { tyrantBehaviors } from './tyrant.js';
 import { pengBehaviors } from './peng.js';
 import { bombardBehaviors } from './bombard.js';
 import { templarBehaviors } from './templar.js';
+import { wineBehaviors, wineOwns } from './wine.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').EnemyDef} EnemyDef */
 
@@ -226,6 +227,9 @@ export const FOE_EXTRAS = Object.freeze({
   // page's number goes on the skill (敌能-61); the database's maxSp and initSp are the same.
   enemy_10087_hlchgr: { skills: { ForeverEnhance: { ammo: 5 } }, source: `${PRTS}%E5%9C%A3%E5%A0%82%E5%89%91%E5%A3%AB&oldid=375658` },
   enemy_10087_hlchgr_2: { skills: { ForeverEnhance: { ammo: 7 } }, source: `${PRTS}%E7%B2%BE%E9%94%90%E5%9C%A3%E5%A0%82%E5%89%91%E5%A3%AB&oldid=375659` },
+  // 咸鳞汁推荐者 / 朗姆酒推荐者: carry is the page's 酒桶; radius 2 is only on the page (敌能-62). 假酒海盗 is not here.
+  enemy_10044_wintun: { talents: { 1: { carry: 1 } }, skills: { BlockedBoom: { radius: 2 } }, source: `${PRTS}%E5%92%B8%E9%B3%9E%E6%B1%81%E6%8E%A8%E8%8D%90%E8%80%85&oldid=362308` },
+  enemy_10044_wintun_2: { talents: { 1: { carry: 1 } }, skills: { BlockedBoom: { radius: 2 } }, source: `${PRTS}%E6%9C%97%E5%A7%86%E9%85%92%E6%8E%A8%E8%8D%90%E8%80%85&oldid=362309` },
 });
 
 /**
@@ -420,6 +424,7 @@ export const foeBehaviors = Object.freeze({
   ...bombardBehaviors,
   ...cannonBehaviors,
   ...templarBehaviors,
+  ...wineBehaviors,
 });
 
 /**
@@ -438,9 +443,11 @@ export const FOE_COVERED = Object.freeze(['dead', 'Light', 'DmgUp', 'Stronger', 
 export const FOE_NEEDS = Object.freeze({
   boom: Object.freeze(['radius', 'delay']), Boom: Object.freeze(['radius', 'delay']), ranged: Object.freeze(['scale']),
   DeadBoom: Object.freeze(['radius', 'delay']), Splash: Object.freeze(['radius']),
-  CrossAttack: Object.freeze(['bolts', 'hold', 'charge']), Targets: Object.freeze(['n']), 1: Object.freeze(['ammo']),
   // Expose is complete either way: a radius is 远眺's death aura, none is the scouts (敌能-54). A def-only defup is not 御4 (敌能-35).
   defup: Object.freeze(['range_radius']),
+  CrossAttack: Object.freeze(['bolts', 'hold', 'charge']), Targets: Object.freeze(['n']),
+  // 尝尝这个！'s radius is only on the page (敌能-62). Talent `1`'s shape is wineOwns, not a key list: ammo and carry differ.
+  BlockedBoom: Object.freeze(['radius']),
   // The element is not in the enemy data (敌能-38). A ratio without `el` stays incomplete instead of guessing 凋亡.
   epdamage: Object.freeze(['el']), empty: Object.freeze(['el']), EpDamage: Object.freeze(['el']),
   combat: Object.freeze(['el']), attack: Object.freeze(['el']),
@@ -488,7 +495,7 @@ const healBoom = (k, bb) => k === 'Boom' && typeof bb.heal_scale === 'number';
  * marker (敌能-58).
  * @param {string} k @param {Record<string, unknown>} bb
  */
-const complete = (k, bb) => elementHitOwns(k, bb) && takeOffOwns(k, bb) && (k !== 'aura' || stackCapped(bb))
+const complete = (k, bb) => elementHitOwns(k, bb) && takeOffOwns(k, bb) && wineOwns(k, bb) && (k !== 'aura' || stackCapped(bb))
   && (nestPulseOwns(k, bb) || (healBoom(k, bb) ? typeof bb.page === 'number' : (FOE_NEEDS[/** @type {keyof typeof FOE_NEEDS} */ (k)] ?? []).every((n) => typeof bb[n] === 'number')));
 
 /**

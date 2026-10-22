@@ -22,6 +22,7 @@ import { devour } from './deck.js';
 import { blightContext, tickBlight } from './blight.js';
 import { atPoint } from './tactical.js';
 import { on } from './bus.js';
+import { placeTasting, tickTastings } from './tasting.js';
 
 /** @typedef {import('./types.js').World} World @typedef {import('./types.js').Content} Content @typedef {import('./types.js').Unit} Unit */
 /** @typedef {import('./types.js').EnemyDef} EnemyDef @typedef {import('./types.js').Blast} Blast @typedef {import('./types.js').Bolt} Bolt */
@@ -119,6 +120,9 @@ export const BOLT_RADIUS = 0.3;
  * @property {(u: Unit, key: string, frames: number, mods: Record<string, number>) => void} renew sets that buff's frames
  *   left and replaces its modifiers; adds it when the unit has none (敌能-49)
  * @property {() => Unit[]} ours operators and our devices still on the field (敌能-49)
+ * @property {() => void} holdAttack this frame's attack, if one can start, waits out the current interval first (敌能-62)
+ * @property {(t: Unit, o: { radius: number, seconds: number, aspd: number, dodge: number }) => void} pour places a 【免费品尝】
+ *   area at the centre of the target's tile (敌能-62)
  */
 
 /**
@@ -239,6 +243,7 @@ function contextOf(w, c, e, of) {
     ...blightContext(w, c, e),
     ground: () => { becomeGround(e); },
     defaultAlly: (u) => defaultAlly(c, u),
+    ...barrelContext(w, ab),
     ...lateContext(w, c, e, ab),
   };
 }
@@ -270,6 +275,21 @@ function lateContext(w, c, e, ab) {
     spendAmmo: (u, n) => { const st = u.skill; if (st && ammoLeft(c, u) > 0) setAmmo(st, st.ammo - n); },
     renew: (u, key, frames, mods) => { renewBuff(e, u, key, frames, mods); },
     ours: () => w.units.filter(ourUnit),
+  };
+}
+
+/**
+ * The context members of 敌能-62, kept out of `contextOf` for its line limit: the attack interval a skill takes, and the
+ * 【免费品尝】 area. @param {World} w @param {Record<string, number>} ab
+ * @returns {Pick<FoeContext, 'holdAttack' | 'pour'>}
+ */
+function barrelContext(w, ab) {
+  return {
+    holdAttack: () => { ab['@holdAtk'] = 1; },
+    pour: (t, o) => {
+      const [row, col] = tileOf(t);
+      placeTasting(w, { x: col, y: row, radius: o.radius, remain: secondsToFrames(o.seconds), aspd: o.aspd, dodge: o.dodge });
+    },
   };
 }
 
@@ -575,10 +595,11 @@ function blow(w, c) {
   w.blasts = keep;
 }
 
-/** The bolts, the explosions due this frame, the enemies brought in due now, then 污染秽蚀 (帧-1, 敌能-3, 敌能-4, 敌能-22, 敌能-46). @param {World} w @param {Content} c */
+/** The bolts, the explosions due this frame, the enemies brought in due now, then 污染秽蚀 and 【免费品尝】 (帧-1, 敌能-3, 敌能-4, 敌能-22, 敌能-46, 敌能-62). @param {World} w @param {Content} c */
 export function foeEffects(w, c) {
   flyBolts(w, c);
   blow(w, c);
   hatch(w, c);
   tickBlight(w, c);
+  tickTastings(w);
 }

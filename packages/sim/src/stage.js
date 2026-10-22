@@ -62,7 +62,7 @@ export function stageCount(w, c, u, arrived) {
 }
 
 /**
- * The intermission after a stage passed (合作-8): enemies, those to be brought in (敌能-22), projectiles and 炼金单元 (技能-13) are gone, every operator retreats with its
+ * The intermission after a stage passed (合作-8): enemies, those to be brought in (敌能-22), projectiles, 炼金单元 (技能-13) and 【免费品尝】 areas (敌能-62) are gone, every operator retreats with its
  * redeployment time cleared, lives are full and the fallen come back, and the current wave stops acting.
  * @param {World} w @param {Content} c
  */
@@ -71,6 +71,7 @@ function intermission(w, c) {
   w.shots = [];
   if (w.broods) w.broods = [];
   if (w.alchemy) w.alchemy = [];
+  if (w.tastings) w.tastings = [];
   for (const u of w.units.filter((x) => x.kind === KIND.OPERATOR)) {
     w.units = w.units.filter((x) => x !== u);
     releaseAll(w, u.id);

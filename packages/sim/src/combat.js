@@ -702,6 +702,18 @@ function takeAgain(e) {
 }
 
 /**
+ * A skill asked to occupy this attack's interval (敌能-62, `holdAttack`). The cooldown becomes that interval and then
+ * counts down this same frame, so the next swing is one interval later. Called only once `noAttack` has already let go.
+ * @param {Unit} e
+ */
+function takeHold(e) {
+  if (e.ab['@holdAtk'] !== 1) return;
+  delete e.ab['@holdAtk'];
+  const s = statsOf(e);
+  setAtkCd(e, intervalFrames(s.bat, s.aspd));
+}
+
+/**
  * An enemy's attack this frame (敌人攻击-1, 攻击-2): like an operator's — a swing under way goes on; the cooldown counts
  * down while it can act; when it is out and there is a target, the first in the official order (索敌-5) — as many as
  * its abilities' mods say (敌能-2), one by default — are locked and a swing starts — not while it is blocked under 战栗 (状态-5; a swing under way goes on). One that cannot act, has no
@@ -716,6 +728,7 @@ export function enemyAttack(w, c, e) {
   const swinging = e.swing !== null;
   if (e.swing) advanceSwing(w, c, e);
   takeAgain(e);
+  takeHold(e);
   if (e.atkCd > 0) { e.atkCd--; return swinging; }
   if (e.swing) return true;
   if (s.flags.disarmedCombat && e.blockedBy >= 0) return false;

@@ -167,6 +167,11 @@
  *   vx?: number, vy?: number, until?: number }} Alchemy
  */
 /**
+ * A 【免费品尝】 area (敌能-62): the centre of a tile (`x` the column, `y` the row), its radius, the frames it still has
+ * (`remain`, counted down at the frame's end), and the attack speed and physical dodge it gives.
+ * @typedef {{ x: number, y: number, radius: number, remain: number, aspd: number, dodge: number }} Tasting
+ */
+/**
  * What a skill gives the friendly units (summons too) in its operator's attack range while it runs (技能-11): its
  * operator too unless `others`; modifiers; 鼓舞, a share of the operator's attack, defence or maximum HP for each
  * attribute (最终加算; never to a unit with `noInspire`).
@@ -891,6 +896,7 @@
  * @property {FortressState} [fortress] 堡垒守御's progress (守御-1), only in its levels
  * @property {Shot[]} shots projectiles in flight, in launch order (攻击-3)
  * @property {Alchemy[]} [alchemy] the 炼金单元 on the field (技能-13), once there has been one
+ * @property {Tasting[]} [tastings] free-tasting areas (敌能-62), once one has been placed
  * @property {Record<string, string | number>[]} events this frame's presentation events (not part of the state)
  * @property {import('./bus.js').Bus} [bus] the hook bus and timers (钩子-1, 钩子-2; not part of the state)
  */

@@ -108,7 +108,7 @@ test('[合作-7] 突击: the leaders\' HP lost against the fraction of hp_max; a
   assert.deepEqual(settle((w, c) => { leaders([1000])(w, c); w.stage.died = true; }, { goal: 0.5, advanced: 1 }), [2], 'a leader down: all of it');
 });
 
-test('[合作-8] [敌能-22] the intermission: enemies, those to be brought in and projectiles gone, operators retreat ready at once, lives full, the fallen back, the wave cut', () => {
+test('[合作-8] [敌能-22] [敌能-62] the intermission: enemies, those to be brought in, projectiles and 【免费品尝】 areas gone, operators retreat ready at once, lives full, the fallen back, the wave cut', () => {
   const c = level([stage('c#1', { objective: 'survive', goal: 10 }), stage('c#2', { rest: 3 })], [spawnAt(0, 'slime'), spawnAt(20, 'slime')], []);
   const w = createWorld(c, { seed: 1, players: 2 });
   run(w, c, 1, (x) => { step(x, c, [[0, { type: 'deploy', op: 'guard', row: 1, col: 1, dir: 0 }], [1, { type: 'deploy', op: 'sniper', row: 0, col: 2, dir: 0 }]]); });
@@ -116,12 +116,13 @@ test('[合作-8] [敌能-22] the intermission: enemies, those to be brought in a
   w.players[1].life = 1; w.players[1].revive = 50; w.players[0].life = 2;
   w.shots.push({ src: 1, target: 3, sx: 0, sy: 0, speed: 1, type: 'phys', amount: 1, times: 1, element: '', ep: 0 });
   w.broods = [{ key: 'slime', x: 1, y: 1, route: 0, leg: 0, frag: 0, left: 1000 }];
+  w.tastings = [{ x: 1, y: 1, radius: 2, remain: 1000, aspd: 100, dodge: 0.8 }];
   const cost = w.players.map((p) => p.cost);
   const ev = run(w, c, 220);
   const at = of(ev, 'stage').find((e) => e.on === 0)?.f;
   assert.equal(at, 300);
   assert.deepEqual(w.units.filter((u) => u.kind !== KIND.OPERATOR).length, 0, 'no enemies');
-  assert.deepEqual([w.units.length, w.shots.length, w.broods.length], [0, 0, 0]);
+  assert.deepEqual([w.units.length, w.shots.length, w.broods.length, w.tastings.length], [0, 0, 0, 0]);
   assert.equal(of(ev, 'retreat').length, 2);
   assert.deepEqual(w.players.map((p) => p.cards[p === w.players[0] ? 'guard' : 'sniper'].ready), [300, 300], 'redeploy time cleared');
   assert.ok(w.players.every((p, i) => p.cost > cost[i]), 'refunds as a retreat');
