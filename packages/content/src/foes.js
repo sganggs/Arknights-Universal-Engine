@@ -1,4 +1,4 @@
-// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-54): behaviours by talent and skill name. The
+// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-55): behaviours by talent and skill name. The
 // game data holds only the multipliers; FOE_EXTRAS adds, per enemy, the parameters PRTS gives (radii, delays, bolts …)
 // to the blackboards the behaviours read, or a talent the data does not have. They act only through the context (ADR 0055).
 
@@ -29,6 +29,7 @@ import { periodicBehaviors } from './periodic.js';
 import { blockDamageBehaviors } from './blockdamage.js';
 import { mirrorBehaviors } from './mirror.js';
 import { lancerBehaviors } from './lancer.js';
+import { tyrantBehaviors } from './tyrant.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').EnemyDef} EnemyDef */
 
@@ -198,6 +199,9 @@ export const FOE_EXTRAS = Object.freeze({
   // 萨卡兹穿刺手/组长 (敌能-53): `paged` is only on the two pages that were read, so the same keys on unread enemies stay uncovered
   enemy_1072_dlancer: { talents: { rush: { paged: 1 }, firstattack: { paged: 1 } }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E7%A9%BF%E5%88%BA%E6%89%8B&oldid=369390` },
   enemy_1072_dlancer_2: { talents: { rush: { paged: 1 }, firstattack: { paged: 1 } }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E7%A9%BF%E5%88%BA%E6%89%8B%E7%BB%84%E9%95%BF&oldid=369391` },
+  // 萨卡兹悖谬暴虐兵/兵长: 占用3个阻挡数；首次攻击对目标和周围4格造成攻击力150%（只能一次）。`once` 把同名的另外三种技能留在未覆盖。
+  enemy_1320_wdrrl: { talents: { AOEAttack: { block: 3, once: 1 } }, skills: { AOEAttack: { once: 1 } }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E6%82%96%E8%B0%AC%E6%9A%B4%E8%99%90%E5%85%B5&oldid=363187` },
+  enemy_1320_wdrrl_2: { talents: { AOEAttack: { block: 3, once: 1 } }, skills: { AOEAttack: { once: 1 } }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E6%82%96%E8%B0%AC%E6%9A%B4%E8%99%90%E5%85%B5%E9%95%BF&oldid=389613` },
 });
 
 /**
@@ -374,6 +378,7 @@ export const foeBehaviors = Object.freeze({
   ...blockDamageBehaviors,
   ...mirrorBehaviors,
   ...lancerBehaviors,
+  ...tyrantBehaviors,
 });
 
 /**
@@ -411,6 +416,7 @@ export const FOE_NEEDS = Object.freeze({
   def_reduce: Object.freeze(['gate']),
   rush: Object.freeze(['dlancer_t[trigger].move_speed', 'dlancer_t[trigger].interval', 'dlancer_t[trigger].trig_cnt', 'paged']),
   firstattack: Object.freeze(['atk_scale', 'paged']),
+  AOEAttack: Object.freeze(['once']),
 });
 
 /**

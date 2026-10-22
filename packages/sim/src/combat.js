@@ -111,7 +111,7 @@ export const pickTarget = (w, c, op) => targetsOf(w, c, op)[0] ?? null;
  * @typedef {{ type: import('./types.js').DamageType, amount: number, times: number, element: string, ep: number, splash?: import('./types.js').Splash | null,
  *   aftershock?: number, chain?: import('./types.js').Chain | null, ranged?: boolean, hitStatus?: { key: import('./status.js').StatusKey, seconds: number, value?: number, prob?: number } | null,
  *   hitDebuff?: { seconds: number, mods: Record<string, number> }, displace?: { pull: boolean, force: number, along?: boolean },
- *   skill?: boolean, hit?: 'splash' | 'chain' | 'aftershock', mark?: number, frozen?: number, packed?: { cnt: number, atk: number }, aftershocks?: number, ignoreDef?: number }} Load
+ *   skill?: boolean, hit?: 'splash' | 'chain' | 'aftershock', mark?: number, frozen?: number, packed?: { cnt: number, atk: number }, aftershocks?: number, ignoreDef?: number, ignoreSelect?: boolean }} Load
  */
 
 /**
@@ -123,7 +123,7 @@ export const pickTarget = (w, c, op) => targetsOf(w, c, op)[0] ?? null;
 function damageOf(load, t) {
   const amount = load.frozen && statsOf(t).flags.freeze ? load.amount * load.frozen : load.amount;
   const how = load.hit, d = /** @type {import('./damage.js').Damage} */ ({ type: load.type, amount, isAttack: how !== 'aftershock', isSkill: !!load.skill, isProjectile: !!load.ranged,
-    ...(load.ignoreDef ? { defIgnorePct: load.ignoreDef } : {}) });
+    ...(load.ignoreDef ? { defIgnorePct: load.ignoreDef } : {}), ...(load.ignoreSelect ? { ignoreSelect: true } : {}) });
   if (how === 'splash' || how === 'aftershock') d.isSplash = true;
   if (how === 'chain' || how === 'aftershock') d.tags = [how];
   return d;
@@ -265,19 +265,20 @@ const loadOf = (a, mods) => ({
   ...(mods.hitStatus ? { hitStatus: mods.hitStatus } : {}), ...(mods.hitDebuff ? { hitDebuff: mods.hitDebuff } : {}), ...(mods.displace ? { displace: mods.displace } : {}), ...(mods.skill ? { skill: true } : {}), ...(mods.mark ? { mark: mods.mark } : {}),
   ...(mods.frozen ? { frozen: mods.frozen } : {}), ...(mods.ignoreDef ? { ignoreDef: mods.ignoreDef } : {}),
   ...(mods.splash ? { splash: mods.splash } : {}),
+  ...(mods.ignoreSelect ? { ignoreSelect: true } : {}),
 });
 
 /**
  * The units an enemy's tile splash reaches (敌能-7, 敌能-8): those it may attack on the target's tile and the four tiles
  * next to it (a cross), or the eight around it (a square). The locked target is included while 隐匿; the others are not
- * when 隐匿 is in effect (索敌-2). 迷彩 does not leave one out.
- * @param {World} w @param {Unit} a @param {Unit} t @param {'cross' | 'square'} area @returns {Unit[]}
+ * when 隐匿 is in effect (索敌-2). 迷彩 does not leave one out. `through` also keeps 隐匿 and 起飞 (敌能-55).
+ * @param {World} w @param {Unit} a @param {Unit} t @param {'cross' | 'square'} area @param {boolean} [through] @returns {Unit[]}
  */
-function areaOf(w, a, t, area) {
+function areaOf(w, a, t, area, through = false) {
   const [r, col] = tileOf(t);
   return w.units.filter((u) => {
-    if (u.hp <= 0 || u.hidden || !isFoeOf(u, a) || evadesGround(a, u)) return false;
-    if (u !== t && stealthed(u)) return false;
+    if (u.hp <= 0 || u.hidden || !isFoeOf(u, a)) return false;
+    if (!through && (evadesGround(a, u) || (u !== t && stealthed(u)))) return false;
     const [ur, uc] = tileOf(u), dr = Math.abs(ur - r), dc = Math.abs(uc - col);
     return area === 'square' ? Math.max(dr, dc) <= 1 : dr + dc <= 1;
   });
@@ -385,10 +386,10 @@ function heals(w, c, a, t, how) {
  */
 function deliverAll(w, c, a, sw, heals) {
   const load = loadOf(a, sw.mods), area = sw.mods.square ? 'square' : sw.mods.cross ? 'cross' : null, reached = [];
-  const share = sw.mods.splashScale ?? 1, direct = !!sw.mods.direct;
+  const share = sw.mods.splashScale ?? 1, direct = !!sw.mods.direct, through = !!sw.mods.ignoreSelect;
   for (const id of sw.targets) {
     const t = w.units.find((u) => u.id === id);
-    if (t && t.hp > 0 && !t.hidden) { deliver(w, c, a, t, { load, heals, area, share, direct }); reached.push(t); }
+    if (t && t.hp > 0 && !t.hidden) { deliver(w, c, a, t, { load, heals, area, share, direct, through }); reached.push(t); }
   }
   return reached;
 }
@@ -447,12 +448,12 @@ function selfHeal(w, c, a, reached) {
  * around it (the others at the splash's share, 敌能-26), a ranged attacker's projectile — not for an attack that hits
  * directly (敌能-27) —, or the hits.
  * @param {World} w @param {Content} c @param {Unit} a @param {Unit} t
- * @param {{ load: Load, heals: boolean, area: 'cross' | 'square' | null, share: number, direct: boolean }} how
+ * @param {{ load: Load, heals: boolean, area: 'cross' | 'square' | null, share: number, direct: boolean, through: boolean }} how
  */
 function deliver(w, c, a, t, how) {
   const far = how.heals ? null : fortressSplash(c, a, t), load = far ? { ...loadFor(w, c, a, t, how.load), splash: far } : loadFor(w, c, a, t, how.load);
   if (how.heals) heals(w, c, a, t, { load, jumps: load.chain ? chainOf(w, c, t, load.chain, { heals: true, antiAir: true }) : [] });
-  else if (how.area) for (const u of areaOf(w, a, t, how.area)) hitTarget(w, c, a, u, u === t ? load : { ...load, amount: load.amount * how.share, hit: 'splash' });
+  else if (how.area) for (const u of areaOf(w, a, t, how.area, how.through)) hitTarget(w, c, a, u, u === t ? load : { ...load, amount: load.amount * how.share, hit: 'splash' });
   else if (far || (shoots(c, a, how.heals) && !how.direct)) launch(w, a, t, a.kind === KIND.OPERATOR ? { ...load, boomerang: traitOf(c, a).boomerang } : load);
   else impact(w, c, a, t, load);
 }
