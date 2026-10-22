@@ -786,11 +786,12 @@
  *   blast: number }} Bolt
  */
 /**
- * A 污染秽蚀 zone (敌能-46): where its centre is, how far it reaches, the true damage on 低地 and on 高地, whether it
- * reaches flying units, ignores 无法选择 and 迷彩, and includes our devices; its source's id, the frame it was placed,
- * frames until the next tick, frames of life left.
+ * A zone that ticks once a second (污染秽蚀, 敌能-46; a 燃烧区域, 敌能-60): where its centre is, how far it reaches, the
+ * true damage on 低地 and on 高地, whether it reaches flying units, ignores 无法选择 and 迷彩, and includes our devices.
+ * A burn zone sets `arts` (flat arts each tick) and `pad` (added to the radius for the ally collider); 污染秽蚀 leaves
+ * both off. Its source's id, the frame it was placed, frames until the next tick, frames of life left.
  * @typedef {{ x: number, y: number, radius: number, low: number, high: number, air: boolean, open: boolean, wide: boolean,
- *   src: number, placed: number, next: number, life: number }} Zone
+ *   src: number, placed: number, next: number, life: number, arts?: number, pad?: number }} Zone
  */
 /**
  * An enemy another brings in after a delay (敌能-22): its key, where it appears, the route and leg it goes on with, the
@@ -884,7 +885,7 @@
  * @property {StageState} stage the co-op stages (合作-6)
  * @property {Blast[]} blasts delayed explosions (敌能-3)
  * @property {Bolt[]} bolts 直击 bolts in flight (敌能-4)
- * @property {Zone[]} [zones] 污染秽蚀 areas (敌能-46), once there has been one
+ * @property {Zone[]} [zones] areas that tick once a second (污染秽蚀 敌能-46, 燃烧区域 敌能-60), once there has been one
  * @property {Brood[]} [broods] enemies brought in that appear later (敌能-22), once there has been one
  * @property {number} bornThisFrame units created so far in this frame
  * @property {FortressState} [fortress] 堡垒守御's progress (守御-1), only in its levels

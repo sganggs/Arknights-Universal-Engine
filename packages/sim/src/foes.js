@@ -108,8 +108,8 @@ export const BOLT_RADIUS = 0.3;
  * @property {(u: Unit | null) => boolean} defaultAlly the unit is still on the field and is a 默认类 ally (敌能-54)
  * @property {() => void} fly its own motion becomes flying and the move it is on is planned again (路线-2, 敌能-34)
  * @property {() => void} attackAgain its next attack may start at once: the attack cooldown is cleared (敌能-44, 攻击-2)
- * @property {(o: { x: number, y: number, radius: number, life: number, low: number, high: number, air?: boolean, open?: boolean, wide?: boolean }) => void} zone
- *   places a 污染秽蚀 zone (敌能-46)
+ * @property {(o: { x: number, y: number, radius: number, life: number, low: number, high: number, air?: boolean, open?: boolean, wide?: boolean, arts?: number, pad?: number }) => void} zone
+ *   places a zone (污染秽蚀 敌能-46; a 燃烧区域 when `arts` is set, 敌能-60)
  * @property {(t: Unit, damage: number, seconds: number) => void} bleed gives or refreshes 逐腐 bleed (敌能-46)
  * @property {(u: Unit) => boolean} onLow whether a unit's tile is 低地 (敌能-46)
  * @property {() => void} ground a flying unit's own motion becomes ground (`WALK`) and the move it is on drops its plan

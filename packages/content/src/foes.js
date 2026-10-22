@@ -15,6 +15,7 @@ import { devourerBehaviors } from './devourers.js';
 import { emberBehaviors } from './embers.js';
 import { blightBehaviors } from './blight.js';
 import { bombdBehaviors } from './bombd.js';
+import { cannonBehaviors } from './cannon.js';
 import { refractBehaviors } from './refract.js';
 import { statueBehaviors } from './statue.js';
 import { auraBehaviors } from './auras.js';
@@ -222,6 +223,9 @@ export const FOE_EXTRAS = Object.freeze({
   // page's number goes on the skill (敌能-61); the database's maxSp and initSp are the same.
   enemy_10087_hlchgr: { skills: { ForeverEnhance: { ammo: 5 } }, source: `${PRTS}%E5%9C%A3%E5%A0%82%E5%89%91%E5%A3%AB&oldid=375658` },
   enemy_10087_hlchgr_2: { skills: { ForeverEnhance: { ammo: 7 } }, source: `${PRTS}%E7%B2%BE%E9%94%90%E5%9C%A3%E5%A0%82%E5%89%91%E5%A3%AB&oldid=375659` },
+  // 集团军轻型/重型火炮: 燃烧区域半径 1.5 只在页面上。数据的 projectile_range 1 是溅射半径 (敌能-60)
+  enemy_10122_uacann: { talents: { ProjectileBoomRange: { zone: 1.5 } }, source: `${PRTS}%E9%9B%86%E5%9B%A2%E5%86%9B%E8%BD%BB%E5%9E%8B%E7%81%AB%E7%82%AE&oldid=369386` },
+  enemy_10122_uacann_2: { talents: { ProjectileBoomRange: { zone: 1.5 } }, source: `${PRTS}%E9%9B%86%E5%9B%A2%E5%86%9B%E9%87%8D%E5%9E%8B%E7%81%AB%E7%82%AE&oldid=377750` },
 });
 
 /**
@@ -412,6 +416,7 @@ export const foeBehaviors = Object.freeze({
   ...pengBehaviors,
   ...bombardBehaviors,
   ...templarBehaviors,
+  ...cannonBehaviors,
 });
 
 /**
@@ -456,6 +461,9 @@ export const FOE_NEEDS = Object.freeze({
   switch: Object.freeze(['egg']), speed: Object.freeze(['move_speed']),
   Cannon: Object.freeze(['duration', 'interval', 'times']),
   ForeverEnhance: Object.freeze(['ammo']),
+  // `zone` is the page's burn radius. The data's projectile_range is the splash, so a same-shape enemy without the
+  // page stays uncovered (关卡-2).
+  ProjectileBoomRange: Object.freeze(['attack@projectile_range', 'attack@projectile_life_time', 'attack@value', 'zone']),
 });
 
 /**

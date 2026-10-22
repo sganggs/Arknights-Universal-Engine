@@ -218,3 +218,33 @@ test('[敌能-46] a heal that restores HP ends bleed; a heal of 0, 禁疗 and a 
   none.low.hp += 5;
   assert.equal(none.low.buffs.some((b) => b.key === BLEED), true);
 });
+
+test('[敌能-60] a burn adds the collider and stacks with another burn and with 污染秽蚀', () => {
+  const { c, w, low, edge, high } = field();
+  edge.x = 3.75;
+  edge.y = 1;
+  high.x = 3.875;
+  high.y = 1;
+  const born = w.frame;
+  placeZone(w, -1, { x: 2, y: 1, radius: 2, life: 8, low: 50, high: 25 });
+  placeZone(w, -1, { x: 2, y: 1, radius: 1.5, life: 3, low: 0, high: 0, arts: 100, pad: 0.25 });
+  placeZone(w, -1, { x: 2, y: 1, radius: 1.5, life: 3, low: 0, high: 0, arts: 40, pad: 0.25 });
+  const snap = /** @type {{ zones: Record<string, unknown>[] }} */ (takeSnapshot(w).data);
+  assert.equal(Object.hasOwn(snap.zones[0], 'arts'), false, 'a 污染秽蚀 zone gains no burn fields');
+  assert.equal(Object.hasOwn(snap.zones[0], 'pad'), false);
+  assert.equal(snap.zones[1].arts, 100);
+  /** @type {{ f: number, ev: { target?: number, damage?: number }[] } | null} */
+  let got = null;
+  for (let i = 0; i < 40 && !got; i++) {
+    const f = w.frame;
+    const ev = step(w, c).filter((e) => e.type === 'hit');
+    if (ev.length) got = { f, ev };
+  }
+  assert.ok(got);
+  assert.equal(got.f, born + 30);
+  /** @param {number} id */
+  const of = (id) => got.ev.filter((e) => e.target === id).map((e) => e.damage);
+  assert.deepEqual(of(low.id), [50, 100, 40]);
+  assert.deepEqual(of(edge.id), [50, 100, 40], '1.75 is the radius plus the collider');
+  assert.deepEqual(of(high.id), [50], '1.875 is inside the blight and outside the burn');
+});

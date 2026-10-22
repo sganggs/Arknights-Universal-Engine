@@ -1,4 +1,5 @@
-// 污染秽蚀 and 逐腐 bleed (docs/spec/foes.md 敌能-46). A zone stays where it was placed and ticks once a second.
+// 污染秽蚀 and 逐腐 bleed (docs/spec/foes.md 敌能-46), and a 燃烧区域 on the same list (敌能-60). A zone stays where it
+// was placed and ticks once a second.
 // Overlapping zones of this name share one tick per unit per second. Bleed is a buff the engine owns: content kits
 // replace the buff table, so the tick cannot live only in content.
 import { FPS, secondsToFrames } from '@aue/math';
@@ -25,7 +26,7 @@ const dist2 = (a, b) => (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y);
 /**
  * Places a 污染秽蚀 zone (敌能-46). The first tick is a full second later: a skill places the zone before this frame's
  * effect pass, a death places it after, and skipping the birth frame makes both wait the same 30 frames.
- * @param {World} w @param {number} src the placer's id @param {{ x: number, y: number, radius: number, life: number, low: number, high: number, air?: boolean, open?: boolean, wide?: boolean }} o
+ * @param {World} w @param {number} src the placer's id @param {{ x: number, y: number, radius: number, life: number, low: number, high: number, air?: boolean, open?: boolean, wide?: boolean, arts?: number, pad?: number }} o
  */
 export function placeZone(w, src, o) {
   /** @type {Zone} */
@@ -34,6 +35,9 @@ export function placeZone(w, src, o) {
     air: o.air === true, open: o.open === true, wide: o.wide === true,
     src, placed: w.frame, next: FPS, life: secondsToFrames(o.life),
   };
+  // A 燃烧区域 (敌能-60). Left off a 污染秽蚀 zone so its snapshot stays the same.
+  if (typeof o.arts === 'number') z.arts = o.arts;
+  if (typeof o.pad === 'number') z.pad = o.pad;
   if (w.zones) w.zones.push(z);
   else w.zones = [z];
 }
@@ -67,11 +71,10 @@ function heightDamage(c, u, z) {
 const due = (u, frame) => { const last = u.ab[STAMP]; return last === undefined || frame - last >= FPS; };
 
 /**
- * One zone's tick (敌能-46): each unit in range takes the earlier zone's numbers, at most once this second.
- * @param {World} w @param {Content} c @param {Zone} z
+ * One 污染秽蚀 tick (敌能-46): each unit in range takes the earlier zone's numbers, at most once this second.
+ * @param {World} w @param {Content} c @param {Zone} z @param {Unit | null} src
  */
-function pulse(w, c, z) {
-  const src = w.units.find((u) => u.id === z.src && u.hp > 0) ?? null;
+function pollute(w, c, z, src) {
   for (const u of [...w.units]) {
     if (!accepts(u, z) || dist2(u, z) > z.radius * z.radius) continue;
     const amount = heightDamage(c, u, z);
@@ -79,6 +82,27 @@ function pulse(w, c, z) {
     u.ab[STAMP] = w.frame;
     dealDamage(w, src, u, { type: 'true', amount }, c);
   }
+}
+
+/**
+ * One 燃烧区域 tick (敌能-60): flat arts, the radius plus the ally collider, every overlapping zone. No shared stamp.
+ * @param {World} w @param {Content} c @param {Zone} z @param {Unit | null} src
+ */
+function burn(w, c, z, src) {
+  const reach = z.radius + (z.pad ?? 0), amount = z.arts ?? 0;
+  if (!(amount > 0)) return;
+  const r2 = reach * reach;
+  for (const u of [...w.units]) {
+    if (!accepts(u, z) || dist2(u, z) > r2) continue;
+    dealDamage(w, src, u, { type: 'arts', amount }, c);
+  }
+}
+
+/** One zone's tick. A burn zone does not take the 污染秽蚀 stamp, and a blight zone does not deal arts. @param {World} w @param {Content} c @param {Zone} z */
+function pulse(w, c, z) {
+  const src = w.units.find((u) => u.id === z.src && u.hp > 0) ?? null;
+  if (typeof z.arts === 'number') burn(w, c, z, src);
+  else pollute(w, c, z, src);
 }
 
 /**
@@ -97,7 +121,7 @@ function tickOne(w, c, z) {
   return z.life > 0;
 }
 
-/** Every 污染秽蚀 zone this frame (敌能-46). An empty list is dropped so it stays out of the state hash. @param {World} w @param {Content} c */
+/** Every zone this frame (敌能-46, 敌能-60). An empty list is dropped so it stays out of the state hash. @param {World} w @param {Content} c */
 export function tickBlight(w, c) {
   const zones = w.zones;
   if (!zones) return;
@@ -136,7 +160,7 @@ export const onLow = (c, u) => { const [r, col] = tileOf(u); return tileAt(c.lev
  */
 export function blightContext(w, c, e) {
   return {
-    zone: (/** @type {{ x: number, y: number, radius: number, life: number, low: number, high: number, air?: boolean, open?: boolean, wide?: boolean }} */ o) => { placeZone(w, e.id, o); },
+    zone: (/** @type {{ x: number, y: number, radius: number, life: number, low: number, high: number, air?: boolean, open?: boolean, wide?: boolean, arts?: number, pad?: number }} */ o) => { placeZone(w, e.id, o); },
     bleed: (/** @type {Unit} */ t, /** @type {number} */ damage, /** @type {number} */ seconds) => { giveBleed(t, damage, seconds); },
     onLow: (/** @type {Unit} */ u) => onLow(c, u),
   };
