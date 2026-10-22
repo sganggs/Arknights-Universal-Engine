@@ -134,6 +134,19 @@ test('[伤害-8] 伤判 in acquisition order: a barrier before 脆弱 absorbs fi
   assert.equal(takeDamage(world(), c, 300, { type: 'phys', amount: 300 }), (300 - 100) * 1.5, 'a higher event priority goes first');
 });
 
+test('[伤害-8] a type joined with + absorbs only those types (敌能-51)', () => {
+  const w = world(), joined = mk(2), arts = mk(3);
+  joined.buffs.push(makeBuff({ key: 'pa', shieldHits: 1, shieldType: 'phys+arts' }));
+  assert.equal(takeDamage(w, joined, 10, { type: 'true', amount: 10 }), 10);
+  assert.equal(takeDamage(w, joined, 10, { type: 'elemental', amount: 10 }), 10);
+  assert.equal(joined.buffs[0].shieldHits, 1);
+  assert.equal(takeDamage(w, joined, 10, { type: 'phys', amount: 10 }), 0);
+  assert.equal(joined.buffs.length, 0);
+  arts.buffs.push(makeBuff({ key: 'pa', shieldHits: 1, shieldType: 'phys+arts' }));
+  assert.equal(takeDamage(w, arts, 10, { type: 'arts', amount: 10 }), 0);
+  assert.equal(arts.buffs.length, 0);
+});
+
 test('[伤害-8] shields: a layer stops a whole hit; barriers absorb; types; a stop ends the step', () => {
   const u = mk(1), w = world();
   u.buffs.push(makeBuff({ key: 'shield', shieldHits: 2, shieldType: 'arts' }), makeBuff({ key: 'barrier', shield: 50, mods: { defFlat: 0 } }));

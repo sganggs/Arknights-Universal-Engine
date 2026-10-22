@@ -97,8 +97,11 @@ export function takenMul(b, type) {
  */
 const blockedMul = (u, b, src) => (b.mods.blockedTakenMul !== undefined && src && src.blockedBy === u.id ? powi(b.mods.blockedTakenMul, b.stacks) : 1);
 
-/** Whether a shield or barrier of the buff absorbs this type. @param {Buff} b @param {DamageType} type */
-const absorbs = (b, type) => b.shieldType === '' || b.shieldType === type;
+/**
+ * Whether a shield or barrier of the buff absorbs this type (伤害-8): no type named is every type; `a+b` is just those.
+ * @param {Buff} b @param {DamageType} type
+ */
+const absorbs = (b, type) => b.shieldType === '' || b.shieldType === type || (b.shieldType.includes('+') && b.shieldType.split('+').includes(type));
 
 /** A buff that is only a shield goes once it is used up. @param {Unit} u @param {Buff} b */
 function dropIfSpent(u, b) {

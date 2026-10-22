@@ -1,4 +1,4 @@
-// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-50): behaviours by talent and skill name. The
+// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-51): behaviours by talent and skill name. The
 // game data holds only the multipliers; FOE_EXTRAS adds, per enemy, the parameters PRTS gives (radii, delays, bolts …)
 // to the blackboards the behaviours read, or a talent the data does not have. They act only through the context (ADR 0055).
 
@@ -26,6 +26,7 @@ import { unbalanceBehaviors } from './unbalance.js';
 import { floatBehaviors, takeOffOwns } from './float.js';
 import { sanktaBehaviors } from './sankta.js';
 import { periodicBehaviors } from './periodic.js';
+import { blockDamageBehaviors } from './blockdamage.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').EnemyDef} EnemyDef */
 
@@ -361,6 +362,7 @@ export const foeBehaviors = Object.freeze({
   ...floatBehaviors,
   ...sanktaBehaviors,
   ...periodicBehaviors,
+  ...blockDamageBehaviors,
 });
 
 /**
@@ -393,6 +395,7 @@ export const FOE_NEEDS = Object.freeze({
   TakeOff: Object.freeze(['duration', 'balloon_s[fly].move_speed']),
   SelfFear: Object.freeze(['hp_ratio', 'speed_final']), DamageOrBullet: Object.freeze(['steal']), Roar: Object.freeze(['air', 'camou']),
   periodic_damage: Object.freeze(['self']),
+  Shield: Object.freeze(['max_block_damage_cnt', 'block_damage_cnt']),
 });
 
 /**
