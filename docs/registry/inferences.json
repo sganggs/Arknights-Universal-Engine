@@ -3673,5 +3673,47 @@
     "statement": "页面的失衡免疫在数据里没有天赋。内容补 ShiftImmune，出场起永久 noDisplace，沉默不停掉它。②的 2 秒失衡免疫是同一个标记；没有这份天赋时，滑行的这两秒也有。",
     "basis": "两页天赋栏写「失衡免疫」。enemy_database（17759cc8）这两名的 talentBlackboard 为空。页面没有写这个能力可被沉默。失衡免疫用已有的位移免疫标记 noDisplace（位移-2）。",
     "status": "待查证"
+  },
+  {
+    "id": "INF-0528",
+    "clause": "敌能-74",
+    "statement": "「所有敌方单位」是敌能-25 的 enemies()：非中立且生命大于 0 的敌人，包括持有者自己、无法选中的、隐匿的和消失的。中立单位不算。",
+    "basis": "术师囚犯、危险术师囚犯、梅菲斯特的能力栏都写所有敌方单位，没有写不含自身、无视其可选性或中立。敌能-25 的全场光环用 enemies()。中立不是敌方。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-0529",
+    "clause": "敌能-74",
+    "statement": "攻击速度的「不可叠加」是同一个借出键 atkspeedup。场上 attack_speed 不同时，只由当前最高的持有者给出；较低的不改写这一份。较高的离场后，较低的改写同一键。",
+    "basis": "页面写不可叠加，没有写取最高。敌能-25 的一个键只约定了数值相同的几份算一份。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-0530",
+    "clause": "敌能-74",
+    "statement": "攻击速度+30 和 +50 没有百分号，是直接加算，键 aspd，数值等于 blackboard 的 attack_speed。",
+    "basis": "页面写攻击速度+30、攻击速度+50。天赋栏标题的提示把直接加算写成固定值、直接乘算写成 ±Y%，例子是攻击力和防御力，没有点名攻击速度。属性-2 的攻击速度直接加算键是 aspd。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-0531",
+    "clause": "敌能-74",
+    "statement": "「生命回复速度+100%」乘的是属性 hpRecoveryPerSec。blackboard 的 hp_recovery_per_sec 为 1，作为直接乘算 hpRegenPct，属性变为原来的 2 倍。基础为 0 且没有直接加算时仍是 0。",
+    "basis": "页面写 +100%，生命回复速度链到数值范围。数据把 1 写在 hp_recovery_per_sec。属性-2 的生命回复速度直接乘算键是 hpRegenPct。属性-6 的 hpRegenRatio 是按最大生命值的另一项。敌能-17 的解放把同名键加成直接加算，那是另一条天赋。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-0532",
+    "clause": "敌能-74",
+    "statement": "梅菲斯特的页面没有写不可叠加。沿用借出 Buff 的一个键 healaura，多名同时在场仍是一份，生命回复速度仍是 2 倍。",
+    "basis": "页面没有写叠加，也没有写不可叠加。敌能-25 的借出 Buff 同一键不叠加。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-0533",
+    "clause": "敌能-74",
+    "statement": "内容给梅菲斯特的 healaura 加上 field 1，只表示这份天赋是他这一页的在场光环。页面和数据都没有这个键。荷谟伊英雄和歌者的同名天赋没有它，不在本条。",
+    "basis": "enemy_database 里三名都叫 healaura，blackboard 只有 hp_recovery_per_sec，数值分别是 1、100、0。只读了梅菲斯特的页面。",
+    "status": "待查证"
   }
 ]

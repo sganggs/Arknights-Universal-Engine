@@ -1,4 +1,4 @@
-// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-73): behaviours by talent and skill name. The
+// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-74): behaviours by talent and skill name. The
 // game data holds only the multipliers; FOE_EXTRAS adds, per enemy, the parameters PRTS gives (radii, delays, bolts …)
 // to the blackboards the behaviours read, or a talent the data does not have. They act only through the context (ADR 0055).
 
@@ -47,6 +47,7 @@ import { defdownBehaviors, defdownOwns } from './defdown.js';
 import { knightBehaviors, knightOwns } from './knights.js';
 import { lassoBehaviors } from './lasso.js';
 import { blinkBehaviors, blinkOwns } from './blink.js';
+import { fieldAuraBehaviors, healAuraOwns } from './fieldaura.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').EnemyDef} EnemyDef */
 
@@ -280,6 +281,8 @@ export const FOE_EXTRAS = Object.freeze({
   // “灰礼帽” / “见习灰礼帽”: 失衡免疫 (the data has no talent for it; 敌能-73). The skill's numbers are already in the data.
   enemy_1322_wdgyht: { talents: { ShiftImmune: {} }, source: `${PRTS}%E2%80%9C%E7%81%B0%E7%A4%BC%E5%B8%BD%E2%80%9D&oldid=355349` },
   enemy_1322_wdgyht_2: { talents: { ShiftImmune: {} }, source: `${PRTS}%E2%80%9C%E8%A7%81%E4%B9%A0%E7%81%B0%E7%A4%BC%E5%B8%BD%E2%80%9D&oldid=355350` },
+  // 梅菲斯特: 在场时令所有敌方单位的生命回复速度+100%. `field` marks this page; the other `healaura` blackboards are not it (敌能-74).
+  enemy_1507_mephi: { talents: { healaura: { field: 1 } }, source: `${PRTS}%E6%A2%85%E8%8F%B2%E6%96%AF%E7%89%B9&oldid=371401` },
 });
 
 /**
@@ -486,6 +489,7 @@ export const foeBehaviors = Object.freeze({
   ...knightBehaviors,
   ...lassoBehaviors,
   ...blinkBehaviors,
+  ...fieldAuraBehaviors,
 });
 
 /**
@@ -545,6 +549,8 @@ export const FOE_NEEDS = Object.freeze({
   buff: Object.freeze(['page']), enhance: Object.freeze(['page']),
   // 枷锁 is read only where the page was read. The same three numbers on 萨卡兹业余术师 have no `page` (敌能-72, 关卡-2).
   lasso: Object.freeze(['page']),
+  // 梅菲斯特's page marker. 荷谟伊英雄 and 歌者 share the talent name and do not have it (敌能-74).
+  healaura: Object.freeze(['field']),
 });
 
 /**
@@ -563,11 +569,11 @@ const healBoom = (k, bb) => k === 'Boom' && typeof bb.heal_scale === 'number';
  * The shape checks of the shared names (关卡-2): each says whether a blackboard of its names is the shape its behaviour
  * understands, and passes every other name. In a list, so that each family adds one entry, not one more `&&`.
  */
-const SHAPE_OWNERS = Object.freeze([elementHitOwns, takeOffOwns, wineOwns, whipOwns, bornBugsOwns, radioOwns, shieldOwns, punchOwns, passiveOwns, defdownOwns, knightOwns, blinkOwns]);
+const SHAPE_OWNERS = Object.freeze([elementHitOwns, takeOffOwns, wineOwns, whipOwns, bornBugsOwns, radioOwns, shieldOwns, punchOwns, passiveOwns, defdownOwns, knightOwns, blinkOwns, healAuraOwns]);
 
 /**
  * Whether an ability has what its behaviour needs (关卡-2). A shared talent name only counts when its blackboard is the
- * shape that behaviour understands (敌能-38, 敌能-47, 敌能-63, 敌能-65, 敌能-66, 敌能-67, 敌能-68, 敌能-70, 敌能-71, 敌能-73) — an `aura` only with 敌能-28's stack cap (敌能-45); anything else
+ * shape that behaviour understands (敌能-38, 敌能-47, 敌能-63, 敌能-65, 敌能-66, 敌能-67, 敌能-68, 敌能-70, 敌能-71, 敌能-73, 敌能-74) — an `aura` only with 敌能-28's stack cap (敌能-45); anything else
  * stays incomplete. The nest pulse does not need `el`: the page names 神经损伤. A `Boom` with `heal_scale` needs its page
  * marker (敌能-58).
  * @param {string} k @param {Record<string, unknown>} bb
