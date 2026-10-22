@@ -20,6 +20,7 @@ import { keyAt } from './paths.js';
 import { bringIn, hatch } from './broods.js';
 import { devour } from './deck.js';
 import { blightContext, tickBlight } from './blight.js';
+import { atPoint } from './tactical.js';
 import { on } from './bus.js';
 
 /** @typedef {import('./types.js').World} World @typedef {import('./types.js').Content} Content @typedef {import('./types.js').Unit} Unit */
@@ -104,6 +105,7 @@ export const BOLT_RADIUS = 0.3;
  * @property {(t: Unit, area: 'cross' | 'square') => Unit[]} around the units it may attack on a unit's tile and the four
  *   tiles next to it (a cross) or the eight around it (a square), in creation order (敌能-29)
  * @property {() => Unit[]} enemies every enemy on the field that is not neutral, selectable or not (敌能-25)
+ * @property {(u: Unit | null) => boolean} defaultAlly the unit is still on the field and is a 默认类 ally (敌能-54)
  * @property {() => void} fly its own motion becomes flying and the move it is on is planned again (路线-2, 敌能-34)
  * @property {() => void} attackAgain its next attack may start at once: the attack cooldown is cleared (敌能-44, 攻击-2)
  * @property {(o: { x: number, y: number, radius: number, life: number, low: number, high: number, air?: boolean, open?: boolean, wide?: boolean }) => void} zone
@@ -182,6 +184,16 @@ const familyContext = (e, ab) => ({
 });
 
 /**
+ * A 默认类 ally still on the field (敌能-54): an operator, not a 装置类 summon and not in 战术点 form. A level device is
+ * not an operator. A summon form keeps the `tactical` key with no end; only the point form (a remaining time) is excluded.
+ * @param {Content} c @param {Unit | null} u
+ */
+function defaultAlly(c, u) {
+  if (!u || u.kind !== KIND.OPERATOR || !(u.hp > 0) || atPoint(u)) return false;
+  return c.operators[u.key]?.summon?.device !== true;
+}
+
+/**
  * An ability's context (敌能-2): `of` is the ability — its name, blackboard and skill (null for a talent).
  * @param {World} w @param {Content} c @param {Unit} e
  * @param {{ name: string, bb: Record<string, number>, skill: import('./types.js').FoeSkill | null }} of @returns {FoeContext}
@@ -238,7 +250,7 @@ function contextOf(w, c, e, of) {
 /**
  * The rest of an ability's context (敌能-2, 敌能-49). Split so `contextOf` stays within the line limit.
  * @param {World} w @param {Content} c @param {Unit} e @param {Record<string, number>} ab
- * @returns {Pick<FoeContext, 'setHp' | 'resetSkills' | 'onWay' | 'detour' | 'release' | 'placeDevice' | 'summon' | 'draw' | 'remove' | 'devour' | 'lend' | 'around' | 'enemies' | 'ammoOf' | 'spendAmmo' | 'renew' | 'ours'>}
+ * @returns {Pick<FoeContext, 'setHp' | 'resetSkills' | 'onWay' | 'detour' | 'release' | 'placeDevice' | 'summon' | 'draw' | 'remove' | 'devour' | 'lend' | 'around' | 'enemies' | 'ammoOf' | 'spendAmmo' | 'renew' | 'ours' | 'defaultAlly'>}
  */
 function lateContext(w, c, e, ab) {
   return {
@@ -259,6 +271,7 @@ function lateContext(w, c, e, ab) {
     spendAmmo: (u, n) => { const st = u.skill; if (st && ammoLeft(c, u) > 0) setAmmo(st, st.ammo - n); },
     renew: (u, key, frames, mods) => { renewBuff(e, u, key, frames, mods); },
     ours: () => w.units.filter(ourUnit),
+    defaultAlly: (u) => defaultAlly(c, u),
   };
 }
 

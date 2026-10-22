@@ -130,11 +130,14 @@ function withEffects(rec, page) {
  */
 export const grantAt = (owner, b, id, name) => grantText(owner, b, id, name, TOKENS);
 
+/** `device: true` when the page's 实体类型 is 装置 (敌能-54); absent for a 默认 summon, so its record is unchanged. @param {SummonPage | null} page */
+const deviceOf = (page) => (page?.device === true ? { device: true } : {});
+
 /**
  * A summon at its owner's training as @aue/sim reads it (召唤-2…召唤-4, 召唤-7…召唤-11): its record, with its PRTS
  * position and effects, and `summon` — its limits, what the owner's deployment adds to its card, what its skill gives and
  * when, how long it stays and what its owner's skill's end does to it, 部署占用数, 再部署策略, whether it stays when the
- * owner leaves, a tactical point's forms.
+ * owner leaves, a tactical point's forms, and whether it is a 装置.
  * @param {Training} token @param {string} id @param {Training} owner @param {Build} b @returns {import('@aue/sim').OperatorDef}
  */
 export function tokenAt(token, id, owner, b) {
@@ -143,7 +146,7 @@ export function tokenAt(token, id, owner, b) {
     ...withEffects(rec, page), ...(page?.position ? { position: /** @type {'MELEE' | 'RANGED'} */ (page.position) } : {}),
     summon: { ...limitsAt(token, tb, mod), ...cardOf(token, id, owner, b), ...leavingOf(token, id, owner, b), occupy: page?.occupy ?? 0,
       respawn: page?.respawn ?? 'default', ...(page?.stays ? { stays: true } : {}), ...(page?.ownerRange ? { ownerRange: true } : {}),
-      ...(page?.tactical ? { tactical: tacticalAt(token, tb, rec.blockCnt) } : {}) },
+      ...(page?.tactical ? { tactical: tacticalAt(token, tb, rec.blockCnt) } : {}), ...deviceOf(page) },
   };
 }
 
