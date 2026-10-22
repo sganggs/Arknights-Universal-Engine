@@ -637,3 +637,17 @@ IG-S-2 中关卡把 `invincible` 改为 20，把 `AtkUp` 的 `damage_resistance`
 - **同名的其他敌人**：`switch` 还在另外 12 个敌人上，blackboard 同样是空的；`speed` 在斐迪庇第斯上是另一套键（`interval`、`enemy_mnzeno_speed_up.move_speed`、`enemy_mnzeno_speed_down.move_speed`、`value`）。内容只给读过的两只补上技能标记 `egg` = 1。`switch` 缺 `egg`、`speed` 缺 `move_speed` 的仍未覆盖（关卡-2）。
 
 - 来源：[PRTS「抱蛋羽兽」oldid=374461](https://prts.wiki/index.php?title=%E6%8A%B1%E8%9B%8B%E7%BE%BD%E5%85%BD&oldid=374461)「·失衡移动后失去蛋，移动速度提升并变为不可阻挡」「失衡移动后，移动速度提升并变为不可阻挡」「停止强制触发此技能的尝试」「切换为失去蛋的模式：不进行普通攻击，不可阻挡，移动速度最终提升至200%」「不会攻击飞行单位」「失衡移动结束后，每0.1秒尝试强制触发技能【失去蛋】」；[PRTS「拥霜羽兽」oldid=374462](https://prts.wiki/index.php?title=%E6%8B%A5%E9%9C%9C%E7%BE%BD%E5%85%BD&oldid=374462) 同六句；[PRTS「特殊机制」oldid=374633](https://prts.wiki/index.php?title=%E7%89%B9%E6%AE%8A%E6%9C%BA%E5%88%B6&oldid=374633)「中止当前攻击/技能，无视技能冷却/技力和沉默/缴械效果，触发指定技能。」「触发技能时，如自身状态机不处于Attack/Combat，则切换状态机至Attack，此时将直接打断失衡状态（但无法打断眩晕/冻结/浮空状态）。」；数据：enemy_database 的 enemy_10141_xdpeng、enemy_10141_xdpeng_2（applyWay RANGED、rangeRadius 1.5、speed.move_speed 2、switch 的 blackboard 为空、cooldown 与 initCooldown 为 0）。失衡移动结束后用已有的 unbalanceEnd 为推断 INF-0430；结束当帧就尝试、冷却为 0 也不在出场发动、下一次失衡在还没切换时重计间隔为推断 INF-0431；没被点名的不能行动状态不让尝试失败、生命为 0 不切换为推断 INF-0432；200% 取天赋 move_speed 作最终乘算为推断 INF-0433；模式永久、再次失衡不叠加为推断 INF-0434；不会攻击飞行单位从出场起生效为推断 INF-0435
+
+### 敌能-58 死亡治疗
+
+天赋 `Boom` 带 `heal_scale` 时（新手祭司学徒）不是敌能-5 的伤害爆炸。被击倒且没被沉默时，在倒下的这一帧治疗范围内的敌人：不排延时爆炸（敌能-3）。走到终点离场不治疗。坠落使生命归 0，同样走这次 `death`。
+
+- **半径**：`projectile_range`（数据为 1.2）。与敌人中心的距离不大于半径算在内。
+- **对象**：范围内其他还活着的、非中立的敌人，飞行单位和隐匿生效的也在内。不包括自己、我方单位、中立单位，以及已经不在场上的（`hidden`）。
+- **治疗量**：倒下时的攻击力 × `heal_scale`（5 即自身攻击力 500%），攻击力含当时的加成。再按伤害-11：禁疗时为 0，乘治疗倍率与受到治疗倍率，不超过最大生命；已经满生命就不再增加。「无论其生命值是否已满」只指喷泉水池。
+- **沉默**：这项死亡爆炸可被沉默。
+- **没读到的页**：见习祭司学徒（`enemy_10156_mncrer_2`）黑板相同，页面没有取到。内容只给新手祭司学徒的 `Boom` 补 `page`；有 `heal_scale` 时这项能力要求这个数。见习的 `Boom` 因此还没有行为（关卡-2）。
+- **FillWater**：治疗范围内仇恨最高的 1 个喷泉水池 3000 生命，不论是否已满。引擎没有喷泉水池，不实现，也不另造装置。天赋留在敌人身上、不起作用；带着它的关卡拒绝组装（关卡-2）。
+- 不带 `heal_scale` 的 `Boom`（"喷射罐"、辐能源石虫等）仍按敌能-5 爆炸，数值和时机不变。
+
+- 来源：[PRTS「新手祭司学徒」oldid=379778](https://prts.wiki/index.php?title=%E6%96%B0%E6%89%8B%E7%A5%AD%E5%8F%B8%E5%AD%A6%E5%BE%92&oldid=379778)「死亡爆炸（爆炸半径1.2，治疗范围内的所有敌方单位相当于自身攻击力500%的生命值，同时治疗范围内仇恨最高的1个喷泉水池3000生命值，无论其生命值是否已满）」；「倒下后为附近的一个喷泉水池补充水量，并治疗周围敌人」；[PRTS「特殊机制」oldid=374633](https://prts.wiki/index.php?title=%E7%89%B9%E6%AE%8A%E6%9C%BA%E5%88%B6&oldid=374633)「此能力可沉默」；「当该敌人坠落/死亡时，若不处于沉默状态」；数据：enemy_database（17759cc8）enemy_10156_mncrer 与 enemy_10156_mncrer_2 的 Boom.projectile_range 1.2、Boom.heal_scale 5、FillWater.projectile_range 1.2、FillWater.dynamic 3000。不另设延迟、走到终点不治疗为推断 INF-0436；半径用 projectile_range、圆心距离不大于半径为推断 INF-0437；治疗哪些单位为推断 INF-0438；攻击力取倒下当时、禁疗与上限、满生命那句只指喷泉水池为推断 INF-0439

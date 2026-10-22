@@ -1,4 +1,4 @@
-// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-57): behaviours by talent and skill name. The
+// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-58): behaviours by talent and skill name. The
 // game data holds only the multipliers; FOE_EXTRAS adds, per enemy, the parameters PRTS gives (radii, delays, bolts …)
 // to the blackboards the behaviours read, or a talent the data does not have. They act only through the context (ADR 0055).
 
@@ -210,6 +210,9 @@ export const FOE_EXTRAS = Object.freeze({
   // 抱蛋羽兽/拥霜羽兽: 不会攻击飞行单位；失衡移动结束后每 0.1 秒尝试强制触发【失去蛋】。`egg` marks the pages read.
   enemy_10141_xdpeng: { talents: { speed: { every: 0.1 }, noFly: {} }, skills: { switch: { egg: 1 } }, source: `${PRTS}%E6%8A%B1%E8%9B%8B%E7%BE%BD%E5%85%BD&oldid=374461` },
   enemy_10141_xdpeng_2: { talents: { speed: { every: 0.1 }, noFly: {} }, skills: { switch: { egg: 1 } }, source: `${PRTS}%E6%8B%A5%E9%9C%9C%E7%BE%BD%E5%85%BD&oldid=374462` },
+  // 新手祭司学徒: 倒下后为附近的一个喷泉水池补充水量，并治疗周围敌人. `page` is only the coverage marker (敌能-58): the
+  // unread twin 见习祭司学徒 has the same blackboard and stays uncovered until its own page is read (关卡-2).
+  enemy_10156_mncrer: { talents: { Boom: { page: 1 } }, source: `${PRTS}%E6%96%B0%E6%89%8B%E7%A5%AD%E5%8F%B8%E5%AD%A6%E5%BE%92&oldid=379778` },
 });
 
 /**
@@ -244,12 +247,24 @@ const deathBlast = (ctx) => {
 const boom = Object.freeze({ death: deathBlast });
 
 /**
- * "喷射罐", 辐能源石虫 (敌能-5, 敌能-6): the explosion; with `attack@times` (喷射罐's), its attack a channel of hits over
- * seconds, then a cooldown — without, its ordinary attack.
+ * 新手祭司学徒 (敌能-58): a `Boom` blackboard with `heal_scale` heals other enemies where it fell, on that frame.
+ * The page gives no delay, and 敌能-3's blast would damage 我方, so this is `heal`, not `blast`. FillWater is another talent.
+ * @type {FoeBehavior['death']}
+ */
+const deathHeal = (ctx) => {
+  const s = ctx.stats(ctx.self);
+  if (s.flags.silence) return;
+  const r = ctx.bb.projectile_range, amt = s.atk * ctx.bb.heal_scale;
+  for (const u of ctx.allies(r)) if (u !== ctx.self) ctx.heal(u, amt);
+};
+
+/**
+ * "喷射罐", 辐能源石虫 (敌能-5, 敌能-6), and 新手祭司学徒 (敌能-58): `heal_scale` is the death heal; every other shape
+ * keeps the explosion. With `attack@times` (喷射罐's), its attack is a channel of hits over seconds, then a cooldown.
  * @type {FoeBehavior}
  */
 const Boom = Object.freeze({
-  death: deathBlast,
+  death: (ctx) => (typeof ctx.bb.heal_scale === 'number' ? deathHeal(ctx) : deathBlast(ctx)),
   attack: (ctx, mods) => (typeof ctx.bb['attack@times'] !== 'number' ? mods
     : { ...mods, type: 'arts', scale: ctx.bb.atk_scale, channel: { hits: ctx.bb['attack@times'], duration: ctx.bb['attack@cooldown'], after: ctx.bb['attack@attack_cd'] } }),
 });
@@ -439,13 +454,20 @@ export const FOE_NEEDS = Object.freeze({
 const abilitiesOf = (e) => [...Object.entries(e.talents ?? {}), ...(e.skills ?? []).map((s) => /** @type {[string, Record<string, number | string>]} */ ([s.key, s.bb ?? {}]))];
 
 /**
+ * A `Boom` with `heal_scale` is 新手祭司学徒's death heal (敌能-58): it needs the page marker `page`, not the blast's
+ * radius and delay. @param {string} k @param {Record<string, unknown>} bb
+ */
+const healBoom = (k, bb) => k === 'Boom' && typeof bb.heal_scale === 'number';
+
+/**
  * Whether an ability has what its behaviour needs (关卡-2). A shared talent name only counts when its blackboard is the
  * shape that behaviour understands (敌能-38, 敌能-47) — an `aura` only with 敌能-28's stack cap (敌能-45); anything else
- * stays incomplete. The nest pulse does not need `el`: the page names 神经损伤.
+ * stays incomplete. The nest pulse does not need `el`: the page names 神经损伤. A `Boom` with `heal_scale` needs its page
+ * marker (敌能-58).
  * @param {string} k @param {Record<string, unknown>} bb
  */
 const complete = (k, bb) => elementHitOwns(k, bb) && takeOffOwns(k, bb) && (k !== 'aura' || stackCapped(bb))
-  && (nestPulseOwns(k, bb) || (FOE_NEEDS[/** @type {keyof typeof FOE_NEEDS} */ (k)] ?? []).every((n) => typeof bb[n] === 'number'));
+  && (nestPulseOwns(k, bb) || (healBoom(k, bb) ? typeof bb.page === 'number' : (FOE_NEEDS[/** @type {keyof typeof FOE_NEEDS} */ (k)] ?? []).every((n) => typeof bb[n] === 'number')));
 
 /**
  * The abilities (talents and skills) of the given enemies — their extras merged — that have no behaviour and are not
