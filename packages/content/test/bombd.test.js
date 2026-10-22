@@ -1,5 +1,5 @@
 // 暴鸰 / 暴鸰·G (docs/spec/foes.md 敌能-56, 敌能-37): one bomb on the target's 3×3, then move speed ×2 for good.
-// The sports-mode boomb (atk_scale, projectile_life_time, projectile_range) stays uncovered (关卡-2).
+// The sports-mode blackboard without the page marker stays uncovered (关卡-2). The marked carts are 敌能-86.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createWorld, step, attrs, status, buffs, bus } from '@aue/sim';

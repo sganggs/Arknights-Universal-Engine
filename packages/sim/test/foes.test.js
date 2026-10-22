@@ -222,3 +222,43 @@ test('[敌能-2] [敌能-16] more of the context: allies, order, talents and buf
   run(w, c, 1);
   assert.equal(b.hidden, false, 'its carrier left: it alights');
 });
+
+test('[敌能-3] a blast without all still skips an enemy in the radius', () => {
+  const { c, w } = arena({}, {
+    blow: { death: (/** @type {any} */ ctx) => ctx.blast({ x: ctx.self.x, y: ctx.self.y, radius: 2, delay: 0, air: true, sourced: false, type: 'true', amount: 10 }) },
+  });
+  c.enemies.foe.talents = { blow: {} };
+  c.enemies.other = { name: 'o', maxHp: 100, atk: 0, def: 80, res: 50, moveSpeed: 0 };
+  c.operators.guard = { ...c.operators.guard, atk: 0 };
+  const e = foe(w, c, 1, 2);
+  const other = makeEnemy(w, c, { key: 'other', route: 0 });
+  other.x = 2; other.y = 1; w.units.push(other);
+  const g = op(w, c, 'guard', 1, 2);
+  e.hp = 0;
+  run(w, c, 2);
+  assert.equal(other.hp, 100);
+  assert.equal(g.hp, 990);
+});
+
+test('[敌能-86] a blast with all hits every unit in the radius, enemies included, for the full true amount', () => {
+  const { c, w } = arena({}, {
+    blow: {
+      tick: (/** @type {any} */ ctx) => {
+        if (ctx.state.get('d')) return;
+        ctx.state.set('d', 1);
+        ctx.blast({ x: 2, y: 1, radius: 1, delay: 0, air: true, sourced: true, all: true, type: 'true', amount: 10 });
+      },
+    },
+  });
+  c.enemies.foe.talents = { blow: {} };
+  c.enemies.other = { name: 'o', maxHp: 100, atk: 0, def: 80, res: 50, moveSpeed: 0 };
+  const e = foe(w, c, 1, 2);
+  const near = makeEnemy(w, c, { key: 'other', route: 0 });
+  near.x = 2; near.y = 1; w.units.push(near);
+  const far = makeEnemy(w, c, { key: 'other', route: 0 });
+  far.x = 4; far.y = 1; w.units.push(far);
+  run(w, c, 1);
+  assert.equal(near.hp, 90);
+  assert.equal(far.hp, 100);
+  assert.equal(e.hp, 990);
+});

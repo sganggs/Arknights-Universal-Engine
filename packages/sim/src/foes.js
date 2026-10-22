@@ -90,7 +90,7 @@ export const BOLT_RADIUS = 0.3;
  * @property {() => number} passengers how many passengers it carries
  * @property {() => void} alight its passengers alight (敌能-16)
  * @property {() => Unit[]} inLine the units in its row or column a 直击 may select, nearest first
- * @property {(b: { x: number, y: number, radius: number, delay: number, air: boolean, sourced: boolean, buff?: import('./buffs.js').BuffInit } & Payload) => void} blast
+ * @property {(b: { x: number, y: number, radius: number, delay: number, air: boolean, sourced: boolean, all?: boolean, buff?: import('./buffs.js').BuffInit } & Payload) => void} blast
  * @property {(b: { dx: number, dy: number, blast?: number } & Payload) => void} bolt
  * @property {(t: Unit, hp: number) => void} setHp sets a unit's HP outright (伤害-9)
  * @property {(hp: number) => void} setBaseMaxHp sets this enemy's base maximum HP and the cached maximum, without
@@ -259,8 +259,8 @@ function contextOf(w, c, e, of) {
     alight: () => { releasePassengers(w, c, e); },
     drainCost: (t, n) => { const p = t.kind === KIND.OPERATOR ? w.players[t.owner] : undefined; if (p) p.cost = Math.max(0, p.cost - n); },
     inLine: () => inLine(w, e),
-    // `buff` is omitted when absent: a null field would change the hash of every blast (敌能-43).
-    blast: (b) => { w.blasts.push({ x: b.x, y: b.y, radius: b.radius, left: secondsToFrames(b.delay), air: b.air, src: b.sourced ? e.id : -1, type: b.type, amount: b.amount, status: b.status ?? null, ...(b.buff ? { buff: b.buff } : {}) }); },
+    // `buff` and `all` are omitted when absent: a null field would change the hash of every blast (敌能-43, 敌能-86).
+    blast: (b) => { w.blasts.push({ x: b.x, y: b.y, radius: b.radius, left: secondsToFrames(b.delay), air: b.air, src: b.sourced ? e.id : -1, type: b.type, amount: b.amount, status: b.status ?? null, ...(b.buff ? { buff: b.buff } : {}), ...(b.all ? { all: true } : {}) }); },
     bolt: (b) => { fireBolt(w, e, b); },
     setBaseMaxHp: (hp) => { setBaseMaxHp(e, hp); },
     ...blightContext(w, c, e),
@@ -671,8 +671,20 @@ function flyBolts(w, c) {
 }
 
 /**
- * One frame of the delayed explosions (敌能-3): each counts down; at 0 every unit an enemy may attack within its radius
- * — flying ones only if it reaches the air — takes it, camouflage or not. 隐匿 in effect leaves a unit out (索敌-2).
+ * Whether this explosion reaches the unit (敌能-3). Without `all`, only a unit an enemy may attack. With `all`, every
+ * unit on the field, enemies and the source included (敌能-86). 隐匿 in effect stays out; camouflage does not.
+ * @param {Unit} u @param {Blast} b
+ */
+function inBlast(u, b) {
+  if (u.hp <= 0 || u.hidden || stealthed(u)) return false;
+  if (!b.all && !friendly(u)) return false;
+  if (statsOf(u).flying && !b.air) return false;
+  return dist2(u, b) <= b.radius * b.radius;
+}
+
+/**
+ * One frame of the delayed explosions (敌能-3): each counts down; at 0 every unit it reaches within its radius takes
+ * it — flying ones only if it reaches the air. `all` widens that to every unit (敌能-86).
  * @param {World} w @param {Content} c
  */
 function blow(w, c) {
@@ -682,11 +694,7 @@ function blow(w, c) {
     if (b.left - 1 > 0) { keep.push({ ...b, left: b.left - 1 }); continue; }
     const src = b.src >= 0 ? w.units.find((u) => u.id === b.src) ?? null : null;
     w.events.push({ type: 'blast', x: b.x, y: b.y });
-    for (const u of [...w.units]) {
-      if (u.hp <= 0 || u.hidden || !friendly(u) || stealthed(u)) continue;
-      if (statsOf(u).flying && !b.air) continue;
-      if (dist2(u, b) <= b.radius * b.radius) take(w, c, src, u, b);
-    }
+    for (const u of [...w.units]) if (inBlast(u, b)) take(w, c, src, u, b);
   }
   w.blasts = keep;
 }

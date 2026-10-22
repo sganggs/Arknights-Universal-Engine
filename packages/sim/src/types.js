@@ -782,9 +782,10 @@
 /**
  * A delayed explosion (敌能-3): where, how far it reaches, frames left, whether it reaches flying units, its source's id
  * (−1 for none), what it does. `buff`, when set, is given to each unit the explosion hits that is still on the field
- * (敌能-43). Left out otherwise: a null field would change the hash of every blast that has none.
+ * (敌能-43). `all`, when set, reaches every unit on the field, enemies included (敌能-86). Either is left out otherwise:
+ * a null field would change the hash of every blast that has none.
  * @typedef {{ x: number, y: number, radius: number, left: number, air: boolean, src: number, type: DamageType, amount: number,
- *   status: { key: string, seconds: number } | null, buff?: import('./buffs.js').BuffInit }} Blast
+ *   status: { key: string, seconds: number } | null, buff?: import('./buffs.js').BuffInit, all?: boolean }} Blast
  */
 /**
  * A 直击 bolt in flight (敌能-4): its source's id, where it is, its direction, what it does — or the radius of the
