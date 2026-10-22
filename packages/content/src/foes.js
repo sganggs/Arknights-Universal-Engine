@@ -547,13 +547,19 @@ const abilitiesOf = (e) => [...Object.entries(e.talents ?? {}), ...(e.skills ?? 
 const healBoom = (k, bb) => k === 'Boom' && typeof bb.heal_scale === 'number';
 
 /**
+ * The shape checks of the shared names (关卡-2): each says whether a blackboard of its names is the shape its behaviour
+ * understands, and passes every other name. In a list, so that each family adds one entry, not one more `&&`.
+ */
+const SHAPE_OWNERS = Object.freeze([elementHitOwns, takeOffOwns, wineOwns, whipOwns, bornBugsOwns, radioOwns, shieldOwns, punchOwns, passiveOwns, defdownOwns, knightOwns]);
+
+/**
  * Whether an ability has what its behaviour needs (关卡-2). A shared talent name only counts when its blackboard is the
  * shape that behaviour understands (敌能-38, 敌能-47, 敌能-63, 敌能-65, 敌能-66, 敌能-67, 敌能-68, 敌能-70, 敌能-71) — an `aura` only with 敌能-28's stack cap (敌能-45); anything else
  * stays incomplete. The nest pulse does not need `el`: the page names 神经损伤. A `Boom` with `heal_scale` needs its page
  * marker (敌能-58).
  * @param {string} k @param {Record<string, unknown>} bb
  */
-const complete = (k, bb) => elementHitOwns(k, bb) && takeOffOwns(k, bb) && wineOwns(k, bb) && whipOwns(k, bb) && bornBugsOwns(k, bb) && radioOwns(k, bb) && shieldOwns(k, bb) && punchOwns(k, bb) && passiveOwns(k, bb) && defdownOwns(k, bb) && knightOwns(k, bb)
+const complete = (k, bb) => SHAPE_OWNERS.every((own) => own(k, bb))
   && (k !== 'aura' || stackCapped(bb))
   && (nestPulseOwns(k, bb) || (healBoom(k, bb) ? typeof bb.page === 'number' : (FOE_NEEDS[/** @type {keyof typeof FOE_NEEDS} */ (k)] ?? []).every((n) => typeof bb[n] === 'number')));
 
