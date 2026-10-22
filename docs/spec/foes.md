@@ -610,3 +610,15 @@ IG-S-2 中关卡把 `invincible` 改为 20，把 `AtkUp` 的 `damage_resistance`
 - **静态刚体**：页面能力栏写了。内容按敌能-37 加上天赋 `Static`。
 
 - 来源：[PRTS「暴鸰」oldid=381146](https://prts.wiki/index.php?title=%E6%9A%B4%E9%B8%9E&oldid=381146)「仅攻击范围内存在我方单位时可触发：对目标及其周围八格的我方单位造成100%物理伤害」「※对主目标造成物理普通伤害，对溅射目标造成物理溅射伤害，伤害无视迷彩」「技能结束后移速最终提升至200%」「※此技能仅触发一次，无法被沉默」能力栏「静态刚体，不进行普通攻击」，[PRTS「暴鸰·G」oldid=381145](https://prts.wiki/index.php?title=%E6%9A%B4%E9%B8%9E%C2%B7G&oldid=381145)「仅攻击范围内存在我方单位时可触发：对目标及其周围八格的我方单位造成100%物理伤害」「※对主目标造成物理普通伤害，对溅射目标造成物理溅射伤害，伤害无视迷彩」「技能结束后移速最终提升至200%」「※此技能仅触发一次，无法被沉默」能力栏「静态刚体，不进行普通攻击」；数据：enemy_database 的 enemy_1040_bombd、enemy_1040_bombd_2（motion FLY、applyWay RANGED、rangeRadius 2、atk 800 与 1500、baseAttackTime 5、moveSpeed 0.6、skills boomb 的 initCooldown 1、cooldown 1、blackboard 只有 move_speed 2；赛场补给车等的 boomb 是 atk_scale、projectile_life_time、projectile_range）。主目标按普通攻击在攻击范围内的选法、飞行可当主目标、迷彩不能当主目标、范围外的阻挡者不算、我方单位含中立单位和我方装置为推断 INF-0425；九宫格用 around、主目标与溅射的伤害旗标、当帧结算不设弹道、溅射不受攻击半径限制为推断 INF-0426；没有持续时间所以技能在触发那一帧结束，然后永久最终乘算为推断 INF-0427；只触发一次用能力状态、沉默不阻止、不能行动不消耗、恐惧不阻止为推断 INF-0428；不进行普通攻击用已有的 noAttack、不等基础攻击间隔、这两只按敌能-37 加 Static 为推断 INF-0429
+
+### 敌能-57 失衡后失去蛋
+
+抱蛋羽兽（`enemy_10141_xdpeng`）、拥霜羽兽（`enemy_10141_xdpeng_2`）。远程，攻击半径 1.5。天赋 `speed` 给出 `move_speed`，技能 `switch`（失去蛋）的 blackboard 是空的，冷却格是 `/`。
+
+- **不攻击飞行单位**：天赋栏单独的一句。内容补上天赋 `noFly`，复用敌能-33 的行为，从出场起生效。起飞的干员不是飞行单位。
+- **何时尝试**：`speed` 从失衡结束（`unbalanceEnd`，敌能-2，含被浮空把滑行结束）的那一帧起强制触发 `switch`。这一帧试一次。没成功则每 `every` 秒再试，`every` 由内容按页面补成 0.1（时间-2，3 帧）。滑行途中不试。`every` 不是正数时，结束那一帧的一次照样试，之后不再按间隔重试。生命已经为 0 时不试、不切换。数据里冷却和初始冷却是 0，出场时不因此发动。还没切换时再一次失衡，结束的那一帧再试一次，间隔从这次结束重新计。
+- **一次怎样才失败**：这次是强制触发，所以沉默和缴械不让它失败。眩晕、冻结、浮空让它失败；失败之后按间隔继续试，直到成功才停。沉睡和其他没有被点名的不能行动状态不让它失败。
+- **失去蛋**：`switch` 只在这次强制触发成功时切换，而且只切换一次。不进行普通攻击，不可阻挡（已经挡住它的干员在这一帧放开），移动速度的最终乘算乘上 `speed` 的 `move_speed`（2，基础 0.7 成为 1.4）。永久，不叠第二份。成功之后停止强制触发的尝试。再一次失衡不重新切换，速度也不再乘。
+- **同名的其他敌人**：`switch` 还在另外 12 个敌人上，blackboard 同样是空的；`speed` 在斐迪庇第斯上是另一套键（`interval`、`enemy_mnzeno_speed_up.move_speed`、`enemy_mnzeno_speed_down.move_speed`、`value`）。内容只给读过的两只补上技能标记 `egg` = 1。`switch` 缺 `egg`、`speed` 缺 `move_speed` 的仍未覆盖（关卡-2）。
+
+- 来源：[PRTS「抱蛋羽兽」oldid=374461](https://prts.wiki/index.php?title=%E6%8A%B1%E8%9B%8B%E7%BE%BD%E5%85%BD&oldid=374461)「·失衡移动后失去蛋，移动速度提升并变为不可阻挡」「失衡移动后，移动速度提升并变为不可阻挡」「停止强制触发此技能的尝试」「切换为失去蛋的模式：不进行普通攻击，不可阻挡，移动速度最终提升至200%」「不会攻击飞行单位」「失衡移动结束后，每0.1秒尝试强制触发技能【失去蛋】」；[PRTS「拥霜羽兽」oldid=374462](https://prts.wiki/index.php?title=%E6%8B%A5%E9%9C%9C%E7%BE%BD%E5%85%BD&oldid=374462) 同六句；[PRTS「特殊机制」oldid=374633](https://prts.wiki/index.php?title=%E7%89%B9%E6%AE%8A%E6%9C%BA%E5%88%B6&oldid=374633)「中止当前攻击/技能，无视技能冷却/技力和沉默/缴械效果，触发指定技能。」「触发技能时，如自身状态机不处于Attack/Combat，则切换状态机至Attack，此时将直接打断失衡状态（但无法打断眩晕/冻结/浮空状态）。」；数据：enemy_database 的 enemy_10141_xdpeng、enemy_10141_xdpeng_2（applyWay RANGED、rangeRadius 1.5、speed.move_speed 2、switch 的 blackboard 为空、cooldown 与 initCooldown 为 0）。失衡移动结束后用已有的 unbalanceEnd 为推断 INF-0430；结束当帧就尝试、冷却为 0 也不在出场发动、下一次失衡在还没切换时重计间隔为推断 INF-0431；没被点名的不能行动状态不让尝试失败、生命为 0 不切换为推断 INF-0432；200% 取天赋 move_speed 作最终乘算为推断 INF-0433；模式永久、再次失衡不叠加为推断 INF-0434；不会攻击飞行单位从出场起生效为推断 INF-0435
