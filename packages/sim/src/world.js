@@ -13,7 +13,7 @@ import { newStageState, tickStage, stageCount } from './stage.js';
 import { releaseAll } from './blocking.js';
 import { operatorsAttack, shotsFly } from './combat.js';
 import { tickAlchemy } from './alchemy.js';
-import { foeEffects, foeDeath, foeFatal, releasePassengers, foeHooks } from './foes.js';
+import { foeEffects, foeDeath, foeFatal, releasePassengers, foeHooks, foeDown } from './foes.js';
 import { noteExit } from './exits.js';
 import { applyCommand } from './commands.js';
 import { leaveField, startCost, costRate } from './deck.js';
@@ -85,7 +85,7 @@ function gainCost(w, c) {
 }
 
 /**
- * Removes units with no HP left (伤害-9): enemies killed by attacks die — unless an ability keeps them (敌能-2) —, the
+ * Removes units with no HP left (伤害-9): enemies killed by attacks die — unless an ability keeps them (敌能-2) —, the other enemies' `down` hears it, the
  * talents that see one fall give their SP (职业-25), enemies at the goal leave quietly; an operator that falls releases what it blocks (阻挡-3) and leaves the field without a
  * refund (部署-3), its summons with it (召唤-5) — but a tactical summon in its summon form turns into its point (召唤-11).
  * @param {World} w @param {Content} c
@@ -100,7 +100,10 @@ function removeDead(w, c) {
     u.anim = ANIM.DIE;
     if (!reachedGoal.has(u.id)) w.events.push({ type: 'death', id: u.id });
     if (!reachedGoal.has(u.id) && u.kind === KIND.ENEMY && u.base.neutral === true) neutralDown(w, c, u);
-    if (!reachedGoal.has(u.id) && u.kind === KIND.ENEMY) foeDeath(w, c, u);
+    if (!reachedGoal.has(u.id) && u.kind === KIND.ENEMY) {
+      foeDeath(w, c, u);
+      foeDown(w, c, u);
+    }
     if (u.kind === KIND.ENEMY) releasePassengers(w, c, u);
     stageCount(w, c, u, reachedGoal.has(u.id));
     releaseAll(w, u.id);

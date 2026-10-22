@@ -149,6 +149,8 @@ export const BOLT_RADIUS = 0.3;
  * @property {(ctx: FoeContext) => void} [unbalanceEnd] 失衡 ended this turn, after the slide settled (敌能-2)
  * @property {(ctx: FoeContext, hit: FoeHpDamage) => void} [hpDamage] a hit on it came through 伤判 with damage left,
  *   before its HP drops (敌能-2; the bus's `hpDamage`, 钩子-3). The amount of this hit is already fixed
+ * @property {(ctx: FoeContext, dead: Unit) => void} [down] another enemy on the field was knocked down this frame, after its
+ *   own death hooks (敌能-2)
  */
 
 /** The squared distance between two points. @param {{ x: number, y: number }} a @param {{ x: number, y: number }} b */
@@ -489,6 +491,18 @@ export function releasePassengers(w, c, e) {
 /** An enemy knocked down (敌能-2). @param {World} w @param {Content} c @param {Unit} e */
 export function foeDeath(w, c, e) {
   each(w, c, e, 'death', (b, ctx) => b.death?.(ctx));
+}
+
+/**
+ * Another enemy was knocked down this frame (敌能-2): the `down` of every other enemy still on the field, in field
+ * order. Nothing runs when no foe behaviour of the content has one.
+ * @param {World} w @param {Content} c @param {Unit} dead
+ */
+export function foeDown(w, c, dead) {
+  if (!Object.values(c.behaviors?.foes ?? {}).some((b) => b.down)) return;
+  for (const e of w.units) {
+    if (e !== dead && e.hp > 0 && e.kind === KIND.ENEMY) each(w, c, e, 'down', (b, ctx) => b.down?.(ctx, dead));
+  }
 }
 
 /**

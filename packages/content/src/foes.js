@@ -1,4 +1,4 @@
-// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-70): behaviours by talent and skill name. The
+// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-71): behaviours by talent and skill name. The
 // game data holds only the multipliers; FOE_EXTRAS adds, per enemy, the parameters PRTS gives (radii, delays, bolts …)
 // to the blackboards the behaviours read, or a talent the data does not have. They act only through the context (ADR 0055).
 
@@ -44,6 +44,7 @@ import { punchBehaviors, punchOwns } from './punch.js';
 import { passiveBehaviors, passiveOwns } from './passive.js';
 import { monumentBehaviors } from './monuments.js';
 import { defdownBehaviors, defdownOwns } from './defdown.js';
+import { knightBehaviors, knightOwns } from './knights.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').EnemyDef} EnemyDef */
 
@@ -131,6 +132,14 @@ export const FOE_EXTRAS = Object.freeze({
   // 深池暗影术师/深池暗影术师队长: 不会攻击飞行单位 — its own talent, not part of 折射
   enemy_1168_dumage: { talents: { noFly: {} }, source: `${PRTS}%E6%B7%B1%E6%B1%A0%E6%9A%97%E5%BD%B1%E6%9C%AF%E5%B8%88&oldid=367785` },
   enemy_1168_dumage_2: { talents: { noFly: {} }, source: `${PRTS}%E6%B7%B1%E6%B1%A0%E6%9A%97%E5%BD%B1%E6%9C%AF%E5%B8%88%E9%98%9F%E9%95%BF&oldid=367786` },
+  // 呼啸骑士团 / 沸血骑士团 (敌能-71): `page` marks the six pages read — 保鲜膜骑士 and 劈柴骑士 have the same blackboards and
+  // stay uncovered (关卡-2). 呼啸 also 不会攻击飞行单位.
+  enemy_1101_plkght: { talents: { buff: { page: 1 }, noFly: {} }, source: `${PRTS}%E5%91%BC%E5%95%B8%E9%AA%91%E5%A3%AB%E5%9B%A2%E5%AD%A6%E5%BE%92&oldid=367224` },
+  enemy_1101_plkght_2: { talents: { buff: { page: 1 }, noFly: {} }, source: `${PRTS}%E5%91%BC%E5%95%B8%E9%AA%91%E5%A3%AB%E5%9B%A2%E7%B2%BE%E9%94%90&oldid=367225` },
+  enemy_1101_plkght_3: { talents: { buff: { page: 1 }, noFly: {} }, source: `${PRTS}%E2%80%9C%E5%A1%91%E6%96%99%E2%80%9D%E7%91%9F%E5%A5%87%E4%BA%9A%E5%85%8B&oldid=367227` },
+  enemy_1103_wdkght: { talents: { enhance: { page: 1 } }, source: `${PRTS}%E6%B2%B8%E8%A1%80%E9%AA%91%E5%A3%AB%E5%9B%A2%E5%AD%A6%E5%BE%92&oldid=359963` },
+  enemy_1103_wdkght_2: { talents: { enhance: { page: 1 } }, source: `${PRTS}%E6%B2%B8%E8%A1%80%E9%AA%91%E5%A3%AB%E5%9B%A2%E7%B2%BE%E9%94%90&oldid=391189` },
+  enemy_1103_wdkght_3: { talents: { enhance: { page: 1 } }, source: `${PRTS}%E2%80%9C%E9%94%88%E9%93%9C%E2%80%9D%E5%A5%A5%E5%B0%94%E9%BB%98%C2%B7%E8%8B%B1%E6%A0%BC%E6%8B%89&oldid=353356` },
   // 寒霜: 使2.5半径范围内的所有我方单位攻击速度-50%. The data keeps 2.5 on defup; the aura reads atkSpeedDown (敌能-35).
   enemy_1042_frostd: { talents: { atkSpeedDown: { range_radius: 2.5 }, Static: {} }, source: `${PRTS}%E5%AF%92%E9%9C%9C&oldid=371399` },
   // 澪: 普通攻击为2连击, and 寒晖 is those same two hits at 150% (talents [], PowerAttack has only atk_scale)
@@ -465,6 +474,7 @@ export const foeBehaviors = Object.freeze({
   ...passiveBehaviors,
   ...monumentBehaviors,
   ...defdownBehaviors,
+  ...knightBehaviors,
 });
 
 /**
@@ -520,6 +530,8 @@ export const FOE_NEEDS = Object.freeze({
   Punch: Object.freeze(['radius']),
   // 碎骨's grenade. A flat `def` (−10 / −15) has none of these, so those enemies stay uncovered (敌能-70).
   defdown: Object.freeze(['scale', 'duration', 'square']),
+  // 呼啸、沸血骑士团只覆盖读过页面的六名（敌能-71）。
+  buff: Object.freeze(['page']), enhance: Object.freeze(['page']),
 });
 
 /**
@@ -536,12 +548,12 @@ const healBoom = (k, bb) => k === 'Boom' && typeof bb.heal_scale === 'number';
 
 /**
  * Whether an ability has what its behaviour needs (关卡-2). A shared talent name only counts when its blackboard is the
- * shape that behaviour understands (敌能-38, 敌能-47, 敌能-63, 敌能-65, 敌能-66, 敌能-67, 敌能-68, 敌能-70) — an `aura` only with 敌能-28's stack cap (敌能-45); anything else
+ * shape that behaviour understands (敌能-38, 敌能-47, 敌能-63, 敌能-65, 敌能-66, 敌能-67, 敌能-68, 敌能-70, 敌能-71) — an `aura` only with 敌能-28's stack cap (敌能-45); anything else
  * stays incomplete. The nest pulse does not need `el`: the page names 神经损伤. A `Boom` with `heal_scale` needs its page
  * marker (敌能-58).
  * @param {string} k @param {Record<string, unknown>} bb
  */
-const complete = (k, bb) => elementHitOwns(k, bb) && takeOffOwns(k, bb) && wineOwns(k, bb) && whipOwns(k, bb) && bornBugsOwns(k, bb) && radioOwns(k, bb) && shieldOwns(k, bb) && punchOwns(k, bb) && passiveOwns(k, bb) && defdownOwns(k, bb)
+const complete = (k, bb) => elementHitOwns(k, bb) && takeOffOwns(k, bb) && wineOwns(k, bb) && whipOwns(k, bb) && bornBugsOwns(k, bb) && radioOwns(k, bb) && shieldOwns(k, bb) && punchOwns(k, bb) && passiveOwns(k, bb) && defdownOwns(k, bb) && knightOwns(k, bb)
   && (k !== 'aura' || stackCapped(bb))
   && (nestPulseOwns(k, bb) || (healBoom(k, bb) ? typeof bb.page === 'number' : (FOE_NEEDS[/** @type {keyof typeof FOE_NEEDS} */ (k)] ?? []).every((n) => typeof bb[n] === 'number')));
 
