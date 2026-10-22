@@ -18,7 +18,7 @@ import { traitWhiles } from './whiles.js';
 import { afterOwnHit, attacked, hitSp, caughtSp } from './riders.js';
 import { reachKeys } from './reach.js';
 import { ALLY_COLLIDER_RADIUS } from './constants.js';
-import { foeTargets, foeAttack, foeHit, isFoeOf } from './foes.js';
+import { foeTargets, foeAttack, foeHit, foeLanded, isFoeOf } from './foes.js';
 import { makeBuff, addBuff, removeBuff } from './buffs.js';
 import { tileOf } from './body.js';
 import { tickSkill, beforeAttack, attackMods, afterAttack } from './skills.js';
@@ -193,6 +193,16 @@ function ridesOn(w, c, h, dmg, dealt) {
 }
 
 /**
+ * 敌能-46: bleed applies when a normal attack connects, including a hit that took no HP. Splash is not that attack.
+ * @param {World} w @param {Content} c @param {{ src: Unit | null, t: Unit, load: Load, dealt: number }} hit
+ */
+function foeConnect(w, c, hit) {
+  const { src, t, load, dealt } = hit;
+  if (!src || src.kind !== KIND.ENEMY || (load.hit ?? 'main') !== 'main') return;
+  foeLanded(w, c, src, t, { dealt, ranged: !!load.ranged, skill: !!load.skill });
+}
+
+/**
  * One hit of an attack on a target (伤害-7, 元素-2, 职业-5, 职业-17, 职业-20): the damage, what it sets off, a kill
  * credited, the 元素损伤 it carries, the status it gives, the trait's hit, what rides on it. Returns the HP taken.
  * @param {World} w @param {Content} c @param {Unit | null} src @param {Unit} t @param {Load} load
@@ -200,6 +210,7 @@ function ridesOn(w, c, h, dmg, dealt) {
 function oneHit(w, c, src, t, load) {
   const el = /** @type {import('./elements.js').Element | ''} */ (load.element), op = src && src.kind === KIND.OPERATOR ? src : null;
   const alive = t.hp > 0, dmg = hitDamage(w, c, op, t, load), dealt = dealDamage(w, src, t, dmg, c);
+  foeConnect(w, c, { src, t, load, dealt });
   if (op) traitDealt(w, c, op, t, { dmg, taken: dealt });
   if (dealt > 0) afterDamage(w, c, { src, t, dealt, ranged: !!load.ranged });
   if (op && alive && t.hp <= 0) traitKill(w, c, op, t);

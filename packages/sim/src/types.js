@@ -785,6 +785,13 @@
  *   blast: number }} Bolt
  */
 /**
+ * A 污染秽蚀 zone (敌能-46): where its centre is, how far it reaches, the true damage on 低地 and on 高地, whether it
+ * reaches flying units, ignores 无法选择 and 迷彩, and includes our devices; its source's id, the frame it was placed,
+ * frames until the next tick, frames of life left.
+ * @typedef {{ x: number, y: number, radius: number, low: number, high: number, air: boolean, open: boolean, wide: boolean,
+ *   src: number, placed: number, next: number, life: number }} Zone
+ */
+/**
  * An enemy another brings in after a delay (敌能-22): its key, where it appears, the route and leg it goes on with, the
  * frame its fragment began, the frames left.
  * @typedef {{ key: string, x: number, y: number, route: number, leg: number, frag: number, left: number }} Brood
@@ -876,6 +883,7 @@
  * @property {StageState} stage the co-op stages (合作-6)
  * @property {Blast[]} blasts delayed explosions (敌能-3)
  * @property {Bolt[]} bolts 直击 bolts in flight (敌能-4)
+ * @property {Zone[]} [zones] 污染秽蚀 areas (敌能-46), once there has been one
  * @property {Brood[]} [broods] enemies brought in that appear later (敌能-22), once there has been one
  * @property {number} bornThisFrame units created so far in this frame
  * @property {FortressState} [fortress] 堡垒守御's progress (守御-1), only in its levels
