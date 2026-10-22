@@ -3,7 +3,8 @@
 // blocks; damage (伤害-7, 元素-2), healing (伤害-11), 生命流失 (伤害-10), retreat (撤退-1) and 移动 (部署-9). The battle's methods
 // (battle.js) call these; units are the kits' (unit.js).
 import { KIND, attrs, body, constants, damage, traits, elements, deck, blocking, routes, paths, sp, targeting, moveOperator, canMoveTo } from '@aue/sim';
-import { canTargetEnemy } from './sh/targeting.js';
+import { absoluteRangeKeys, canTargetEnemy } from './sh/targeting.js';
+import { bodyInKeys, bodyInRange } from './sh/body.js';
 import { localOrder } from './sh/dir.js';
 import { ELEMENT } from './mods.js';
 
@@ -18,25 +19,44 @@ const gridOf = (b) => ({ rows: b.c.level.height, cols: b.c.level.width });
  * data). @param {ShBattle} b @param {ShUnit | null} attacker
  */
 const searchesByTile = (b, attacker) => {
+  if (attacker?.profile?.rangeTiles === true) return true;
   const u = attacker?.u;
   return !!u && u.kind === KIND.OPERATOR && traits.traitOf(b.c, u).rangeTiles === true;
 };
 
 /**
- * The enemies in the range of the tile keys, in the keys' order, that `attacker` may select with `profile` (索敌-2): a
- * regular enemy by the tiles its collider overlaps (体积-5) — by its own tile for an attacker that searches by tile —, a
- * huge one by its rectangle's; one on several tiles once.
- * @param {ShBattle} b @param {Iterable<number> | null | undefined} keys @param {ShUnit | null} attacker @param {Record<string, any>} [profile]
- * @returns {ShUnit[]}
+ * Targetable enemies on the given tiles, in the keys' order, each once (索敌-2). `byTile`: the tile it occupies
+ * (体积-1, a huge one's rectangle 体积-2). Otherwise the tiles its collider overlaps (体积-5).
+ * @param {ShBattle} b @param {Iterable<number> | null | undefined} keys @param {ShUnit | null} attacker
+ * @param {Record<string, any> | undefined} profile @param {boolean} byTile @returns {ShUnit[]}
  */
-export function enemiesInKeys(b, keys, attacker, profile) {
+function enemiesOn(b, keys, attacker, profile, byTile) {
   if (!keys) return [];
-  const g = gridOf(b), byTile = searchesByTile(b, attacker), out = /** @type {ShUnit[]} */ ([]);
+  const g = gridOf(b), out = /** @type {ShUnit[]} */ ([]);
   const list = b.enemies.map((e) => ({ e, at: byTile ? body.bodyKeys(e, g) : body.colliderKeys(e, g, constants.ENEMY_COLLIDER_RADIUS) }));
   for (const k of keys) {
     for (const { e, at } of list) if (at.includes(k) && !out.includes(e) && canTargetEnemy(attacker, e, profile)) out.push(e);
   }
   return out;
+}
+
+/**
+ * The enemies in the range of the tile keys that `attacker` may select with `profile` (索敌-2): by collider (体积-5),
+ * or by the occupied tile when the attacker searches by tile (谬因, `profile.rangeTiles`).
+ * @param {ShBattle} b @param {Iterable<number> | null | undefined} keys @param {ShUnit | null} attacker @param {Record<string, any>} [profile]
+ * @returns {ShUnit[]}
+ */
+export function enemiesInKeys(b, keys, attacker, profile) {
+  return enemiesOn(b, keys, attacker, profile, searchesByTile(b, attacker));
+}
+
+/**
+ * The enemies standing on the tile keys (格子判定): the occupied tile, a huge one's rectangle, not the collider.
+ * @param {ShBattle} b @param {Iterable<number> | null | undefined} keys @param {ShUnit | null} [attacker] @param {Record<string, any>} [profile]
+ * @returns {ShUnit[]}
+ */
+export function enemiesOnTiles(b, keys, attacker = null, profile) {
+  return enemiesOn(b, keys, attacker, profile, true);
 }
 
 /**
@@ -55,6 +75,15 @@ export function foesInRadius(b, x, y, r, centre = false) {
     const u = /** @type {Unit} */ (e.u);
     return !attrs.statsOf(u).flags.untargetable && !targeting.stealthed(u);
   });
+}
+
+/**
+ * foesInRadius by the enemies' colliders (体积-5, 常量-6): a regular enemy whose centre is within `r` plus the collider
+ * radius, a huge one whose rectangle is within `r` (体积-3).
+ * @param {ShBattle} b @param {number} x @param {number} y @param {number} r @returns {ShUnit[]}
+ */
+export function foesInColliderRadius(b, x, y, r) {
+  return foesInRadius(b, x, y, r + constants.ENEMY_COLLIDER_RADIUS).filter((e) => !e.hitArea || body.bodyInRadius(e, x, y, r));
 }
 
 /**
@@ -99,6 +128,30 @@ export function injuredAlliesInKeys(b, keys, healer, element = false) {
 /** Whether a tile takes no unit placed by content: off the map, or a unit on it. @param {ShBattle} b @param {number} r @param {number} c */
 export function isReservedTile(b, r, c) {
   return !b.grid.inBounds(r, c) || b.w.units.some((u) => u.hp > 0 && u.kind === KIND.OPERATOR && body.tileOf(u)[0] === r && body.tileOf(u)[1] === c);
+}
+
+/**
+ * Whether (r, c) is a board tile (兼容-4, INF-0352): in bounds and a melee or ranged operator can stand there. Not
+ * whether a unit already occupies it (that is isReservedTile). AUE levels have no hand rows.
+ * @param {ShBattle} b @param {number} r @param {number} c
+ */
+export function onFieldBoard(b, r, c) {
+  return b.grid.inBounds(r, c) && (b.grid.canStand(r, c) || b.grid.canStand(r, c, { ranged: true }));
+}
+
+/**
+ * Units of `side` (default the opposite of `unit`) inside `grid` offsets from the unit's tile (体积-1). An attacker
+ * with `rangeTiles` uses the occupied tile (bodyInKeys); otherwise a range (bodyInRange, 体积-5).
+ * @param {ShBattle} b @param {ShUnit} unit @param {readonly number[][] | null | undefined} grid
+ * @param {{ side?: string | null, extend?: number }} [o] @returns {ShUnit[]}
+ */
+export function unitsInGrid(b, unit, grid, o = {}) {
+  if (!unit) return [];
+  const side = o.side ?? (unit.side === 'ally' ? 'enemy' : 'ally');
+  const keys = new Set(absoluteRangeKeys(grid || unit.rangeGrid || [[0, 0]], unit.tileR, unit.tileC, unit.dir, o.extend || 0));
+  const tiles = unit.profile?.rangeTiles === true;
+  const list = side === 'enemy' ? b.enemies : b.allyUnits;
+  return list.filter((x) => x.alive && !x.hidden && (tiles ? bodyInKeys(x, keys) : bodyInRange(x, keys)));
 }
 
 /** What is left of an enemy's route, in tiles (索敌-6). @param {ShBattle} b @param {ShUnit} e */

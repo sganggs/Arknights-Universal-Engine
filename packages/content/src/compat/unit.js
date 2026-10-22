@@ -187,7 +187,8 @@ export class ShUnit {
   get profile() {
     if (!this.u || this.u.kind !== KIND.OPERATOR) return {};
     const t = traits.traitOf(this.b.c, this.u);
-    return { canHitFly: t.antiAir, heal: t.heal, dmgType: this.u.base.dmgType, ...(t.funnel ? { funnel: { ...t.funnel } } : {}) };
+    const tiles = t.rangeTiles === true || this.kit?.trait?.rangeTiles === true;
+    return { canHitFly: t.antiAir, heal: t.heal, dmgType: this.u.base.dmgType, ...(t.funnel ? { funnel: { ...t.funnel } } : {}), ...(tiles ? { rangeTiles: true } : {}) };
   }
   get sp() { return this.skill?.sp ?? 0; }
   get spMax() { return this.skill?.spCost ?? 0; }

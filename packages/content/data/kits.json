@@ -2,8 +2,8 @@
   "$comment": "ADR 0058: the operator kits of the pinned Stronghold Protocol that run in matches. source is the commit (the oracle's, testkit STRONGHOLD); files each kit's file by character id; enabled the ones that passed the checks; differences, for a kit that passes but for registered differences (docs/registry/known-differences.json), each skill's expected differential lines and the differences behind them (兼容-6).",
   "source": {
     "repo": "https://github.com/sganggs/Stronghold-Protocol.git",
-    "tag": "v0.2.4",
-    "sha": "bc50cac01ff447eff3ab6c35f69d934bbc23b48f"
+    "tag": "v0.3.1",
+    "sha": "b3deebdae4a92642c007d217a1a4573e5d3612c5"
   },
   "files": {
     "char_003_kalts": "server/sim/content/kits/ops/op-kalts.js",
@@ -228,6 +228,22 @@
       "skills": {
         "S2": [
           "hits 120,240,360,1440,1598.4,1756.8,2563.2,6264 ≠ 120,240.1,360.1,1440,1598.4,1756.8,1915.2,2073.6"
+        ]
+      }
+    },
+    "char_377_gdglow": {
+      "because": [
+        "DIF-0037"
+      ],
+      "skills": {
+        "S1": [
+          "hits 76.6,101.1,134,176.9,191.5,249,252.8,306.4 ≠ 76.6,101.1,134.1,176.9,191.5,248.9,252.8,306.4"
+        ],
+        "S2": [
+          "hits 76.6,134,191.5,249,306.4,363.9,383,421.3 ≠ 76.6,134.1,191.5,248.9,306.4,363.9,421.3,459.6"
+        ],
+        "S3": [
+          "hits 76.6,118.7,134,191.5,207.8,249,296.8,306.4 ≠ 76.6,118.8,134.1,191.5,207.8,248.9,296.8,306.4"
         ]
       }
     }

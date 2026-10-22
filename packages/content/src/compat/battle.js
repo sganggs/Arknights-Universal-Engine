@@ -233,10 +233,14 @@ export class ShBattle {
 
   /** @param {Iterable<number> | null | undefined} keys @param {ShUnit | null} attacker @param {Record<string, any>} [profile] */
   enemiesInKeys(keys, attacker, profile) { return field.enemiesInKeys(this, keys, attacker, profile); }
+  /** Enemies on the occupied tiles (格子判定), not the collider. @param {Iterable<number> | null | undefined} keys @param {ShUnit | null} [attacker] @param {Record<string, any>} [profile] */
+  enemiesOnTiles(keys, attacker = null, profile) { return field.enemiesOnTiles(this, keys, attacker, profile); }
   /** @param {number} x @param {number} y @param {number} r @param {boolean} [centre] */
   enemiesInRadius(x, y, r, centre = false) { return field.enemiesInRadius(this, x, y, r, centre); }
   /** @param {number} x @param {number} y @param {number} r @param {boolean} [centre] */
   foesInRadius(x, y, r, centre = false) { return field.foesInRadius(this, x, y, r, centre); }
+  /** Centre distance `r` plus the collider radius; a huge enemy by its rectangle (体积-5). @param {number} x @param {number} y @param {number} r */
+  foesInColliderRadius(x, y, r) { return field.foesInColliderRadius(this, x, y, r); }
   /** @param {number} r @param {number} c */
   unitAt(r, c) { return field.unitAt(this, r, c); }
   /** @param {number} x @param {number} y @param {number} r @param {number | null} [ownerId] @param {{ includeDevices?: boolean }} [o] */
@@ -247,6 +251,13 @@ export class ShBattle {
   injuredAlliesInKeys(keys, healer, element = false) { return field.injuredAlliesInKeys(this, keys, healer, element); }
   /** @param {number} r @param {number} c */
   isReservedTile(r, c) { return field.isReservedTile(this, r, c); }
+  /** In bounds and standable, melee or ranged (INF-0352). Not occupancy. @param {number} r @param {number} c */
+  onFieldBoard(r, c) { return field.onFieldBoard(this, r, c); }
+  /**
+   * Units inside a facing-right offset grid from `unit` (体积-1, 体积-5). `rangeTiles` uses the occupied tile.
+   * @param {ShUnit} unit @param {readonly number[][] | null | undefined} grid @param {{ side?: string | null, extend?: number }} [o]
+   */
+  unitsInGrid(unit, grid, o = {}) { return field.unitsInGrid(this, unit, grid, o); }
   /** @param {ShUnit} e */
   remainingDistance(e) { return field.remainingDistance(this, e); }
   /** @param {ShUnit} u */

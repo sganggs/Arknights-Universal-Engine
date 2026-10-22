@@ -19,9 +19,9 @@
     "id": "DIF-0003",
     "clause": "体积-1",
     "ours": "点单位所在的格按四舍六入五成双取整：正好在两格中间（坐标小数部分为 0.5）时取偶数格，如 2.5 → 2。",
-    "stronghold": "server/sim/body.js 用 Math.round，正好在中间时取较大的格，如 2.5 → 3。",
-    "reason": "PRTS「作战机制」oldid=433935：「受击方坐标经round函数取整(四舍六入五成双)得到其所属格坐标」。只影响坐标正好落在 .5 的时刻。",
-    "status": "有效"
+    "stronghold": "钉到 v0.3.1（b3deebda）后，server/sim/body.js 的 posKey 用 detmath.roundHalfEven，与这边相同。v0.2.4 用 Math.round，正好在中间时取较大的格，如 2.5 → 3。",
+    "reason": "PRTS「作战机制」oldid=433935：「受击方坐标经round函数取整(四舍六入五成双)得到其所属格坐标」。v0.3.1 已改成同一取整，这条差异不再存在。",
+    "status": "已消除"
   },
   {
     "id": "DIF-0004",
@@ -285,6 +285,14 @@
     "ours": "解放者的蓄力是部署时获得的 Buff，每 30 帧触发一次（状态-4：部署那一帧已计入第一个间隔），技能结束时回到 0 级。",
     "stronghold": "server/sim/professions.js installLibrator：battle.every(1) 定时器，部署后整 1 秒起每秒升一级。两边的升级相差 1 帧，技能恰好在这 1 帧里开始时，带入技能的级数差一级（司霆惊蛰 S3）。",
     "reason": "PRTS「分支特性信息/data」oldid=427899 解放者只写「攻击力加成效果每1秒更新一次」，没有写起点；引擎让特性的周期效果与其他 Buff 的周期触发同一套规则。",
+    "status": "有效"
+  },
+  {
+    "id": "DIF-0037",
+    "clause": "职业-12",
+    "ours": "浮游单元是这一下攻击的倍率：从 init 起，同一目标每次加 delta，不超过 max，乘在这一下上。不再另打一记不受这个倍率的本体伤害。",
+    "stronghold": "钉到 v0.3.1 后，server/sim/ai.js 在 profile 有 funnelMul 且 funnelBodyHits 不是 0 时，先打默认 1 记本体（攻击力 × 技能倍率，不乘浮游倍率），再打一记带 funnel 标签的追加，金额再乘 funnelMul。v0.2.4 的 professions.js 把同一条斜坡放在 dmgMul 上，整下攻击乘这条倍率，没有另加的本体。驭械术师的职业档案省略 funnelBodyHits，因此取默认 1。",
+    "reason": "职业-12 引 PRTS「分支特性信息/data」oldid=427899：「浮游单元初始造成相当于干员攻击力20%的法术伤害，每次对上次攻击的同一目标进行攻击时该数值增加15，上限110%」。条文把这写成这一下攻击的倍率。v0.3.1 把浮游伤害写成本体之外的追加，并在注释里标了 [ASSUMED]。对照从 v0.2.4 换到 v0.3.1 之后，澄闪技能未挡住普通攻击的那几下多出一记约 100% 攻击力的命中（套件差分里的 383）。",
     "status": "有效"
   }
 ]

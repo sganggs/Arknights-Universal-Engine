@@ -65,6 +65,5 @@ export { reserveIds } from './units.js';
 /** @typedef {import('./types.js').SummonDef} SummonDef @typedef {import('./types.js').SummonCard} SummonCard */
 /** @typedef {import('./types.js').EnemyDef} EnemyDef */
 /** @typedef {import('./foes.js').FoeBehavior} FoeBehavior @typedef {import('./foes.js').FoeContext} FoeContext */
-/** @typedef {import('./foes.js').FoeHpDamage} FoeHpDamage */
 /** @typedef {import('./traits.js').TraitBehavior} TraitBehavior */
 /** @typedef {import('@aue/schema').Command} Command */

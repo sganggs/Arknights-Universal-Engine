@@ -53,16 +53,6 @@ export function refreshHp(u) {
   u.maxHp = max;
 }
 
-/**
- * Sets a unit's base maximum HP and the cached maximum, without rescaling current HP (敌能-45). The cache has to move
- * with the base: the next buff refresh would otherwise scale a still-positive HP by the new maximum over the old one.
- * @param {Unit} u @param {number} hp
- */
-export function setBaseMaxHp(u, hp) {
-  u.base.maxHp = hp;
-  u.maxHp = maxHpOf(u);
-}
-
 /** The longer of two remaining times, −1 (no end) being the longest. @param {number} a @param {number} b */
 const longer = (a, b) => (a < 0 || b < 0 ? -1 : Math.max(a, b));
 

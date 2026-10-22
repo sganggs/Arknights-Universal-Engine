@@ -36,11 +36,9 @@ import { stealthed, liftoffRefused } from './targeting.js';
  * @property {boolean} [hpLoss]
  * @property {boolean} [sourceless] 无来源 though credited to its source: the events see no source, the kill is its source's,
  *   without the source's penetration and multiplier (伤害-7)
- * @property {number} [stopAt] this hit does not take the target below this HP (敌能-46: 无法致死 stops at 1)
  * @property {boolean} [throughSleep] 沉睡's invincibility does not stop it (伤害-7: a skill that damages the enemies it puts
  *   to sleep; 职业-28: an operator that can attack sleeping enemies); 无敌 still does, and so does 沉睡 on a unit also
  *   隐匿 or 无法选中
- * @property {boolean} [ignoreSelect] a ground enemy's hit still lands on a unit that took off (起飞, 敌能-55); 无敌 still stops it
  * @property {import('./types.js').VsScale[]} [foe] the target 倍率 that held before the hit, for after it (职业-28)
  */
 
@@ -98,11 +96,8 @@ export function takenMul(b, type) {
  */
 const blockedMul = (u, b, src) => (b.mods.blockedTakenMul !== undefined && src && src.blockedBy === u.id ? powi(b.mods.blockedTakenMul, b.stacks) : 1);
 
-/**
- * Whether a shield or barrier of the buff absorbs this type (伤害-8): no type named is every type; `a+b` is just those.
- * @param {Buff} b @param {DamageType} type
- */
-const absorbs = (b, type) => b.shieldType === '' || b.shieldType === type || (b.shieldType.includes('+') && b.shieldType.split('+').includes(type));
+/** Whether a shield or barrier of the buff absorbs this type. @param {Buff} b @param {DamageType} type */
+const absorbs = (b, type) => b.shieldType === '' || b.shieldType === type;
 
 /** A buff that is only a shield goes once it is used up. @param {Unit} u @param {Buff} b */
 function dropIfSpent(u, b) {
@@ -385,12 +380,11 @@ function untouchable(target, dmg) {
  * Whether a hit stops before the defences (伤害-7, 阻挡-2): the target is invincible or gone, or a ground enemy or
  * hostile device is hitting a unit that took off. 起飞 is judged once here, before `hit`, so that event does not see a
  * refused hit and a handler that lifts the target does not cancel this one. A sourceless hit has no selecting source.
- * A hit marked `ignoreSelect` is not refused for 起飞 (敌能-55); 无敌 still stops it.
  * @param {World} w @param {Unit | null} src @param {Unit} target @param {Damage} dmg
  */
 function hitStops(w, src, target, dmg) {
   if (untouchable(target, dmg) || target.hidden) return true;
-  if (!dmg.ignoreSelect && liftoffRefused(dmg.sourceless ? null : src, target)) return true;
+  if (liftoffRefused(dmg.sourceless ? null : src, target)) return true;
   return !hitGoesOn(w, src, target, dmg);
 }
 
@@ -462,15 +456,6 @@ function tallyTaken(target) {
 }
 
 /**
- * A hit that must not take the target below `stopAt` HP (敌能-46: 无法致死 stops at 1). No floor when unset.
- * @param {number} amount @param {number} hp @param {number | undefined} stopAt
- */
-function heldAbove(amount, hp, stopAt) {
-  if (stopAt === undefined || stopAt <= 0) return amount;
-  return Math.min(amount, Math.max(0, hp - stopAt));
-}
-
-/**
  * Deals a hit (伤害-7): nothing to a unit already at 0 HP; 生命流失 goes straight to the HP; nothing to an invincible
  * unit (无敌, 沉睡, disappeared: 路线-4); nothing from a ground enemy or a hostile device onto a unit that took off
  * (起飞, 阻挡-2) — judged once, before `hit`, so a handler that lifts the target does not cancel this hit; otherwise the
@@ -495,7 +480,6 @@ export function dealDamage(w, src, target, dmg, c) {
   amount = floored(c, seen, target, dmg, amount);
   if (ss) amount *= dealtMul(ss, dmg.type) * (c && seen ? worksMul(c, seen, target) : 1);
   amount = hpDamage(w, src, target, takeDamage(w, target, amount, dmg, { src: seen, credit: src, tags: tagsOf(c, seen), ...(c ? { c } : {}) }), dmg);
-  amount = heldAbove(amount, target.hp, dmg.stopAt);
   return amount > 0 ? loseHp(w, src, target, amount, dmg) : 0;
 }
 
@@ -537,7 +521,5 @@ export function heal(w, src, target, amount, how = {}) {
   }
   const actual = Math.max(0, Math.min(amt, ts.maxHp - target.hp));
   target.hp = Math.min(ts.maxHp, target.hp + actual);
-  // 逐腐 bleed ends when a heal restores HP (敌能-46). The key is the sim buff; naming it here avoids a cycle.
-  if (actual > 0) removeBuff(target, 'bleed');
   return actual;
 }

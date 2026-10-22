@@ -6,11 +6,11 @@ import { dirname, join, resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-/** The pinned oracle: Stronghold Protocol v0.2.4. Moving it is a decision (ADR 0058), not a bot update. */
+/** The pinned oracle: Stronghold Protocol v0.3.1. Moving it is a decision (ADR 0058), not a bot update. */
 export const STRONGHOLD = Object.freeze({
   repo: 'https://github.com/sganggs/Stronghold-Protocol.git',
-  tag: 'v0.2.4',
-  sha: 'bc50cac01ff447eff3ab6c35f69d934bbc23b48f',
+  tag: 'v0.3.1',
+  sha: 'b3deebdae4a92642c007d217a1a4573e5d3612c5',
 });
 
 /** The engine repository: the nearest directory above this file with a pnpm-workspace.yaml. */

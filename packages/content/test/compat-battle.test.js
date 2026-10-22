@@ -9,7 +9,8 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { oracleDir, tinyContent } from '@aue/testkit';
 import { createWorld, step, stateHash, bus } from '@aue/sim';
-import { loadUnderGrid } from '../src/compat/grid.js';
+import { loadUnderGrid, withGrid } from '../src/compat/grid.js';
+import { bodyInRange, bodyInRangeTile } from '../src/compat/sh/body.js';
 import { defOf } from '../src/compat/records.js';
 import { kitsWorld } from '../src/compat/kits.js';
 import { loadTraining, operatorAt } from '../src/operators.js';
@@ -213,6 +214,45 @@ test('[兼容-4] [体积-5] the enemies in range of tiles: by the tiles their co
   c.operators.sniper = { ...c.operators.sniper, trait: { ...c.operators.sniper.trait, rangeTiles: true } };
   assert.deepEqual([at(3), at(4)], [[], ['slime']], 'by its tile');
   assert.deepEqual(b.enemiesInKeys([1 * 6 + 3], null).map((x) => x.defId), ['slime'], 'no attacker: by its collider');
+});
+
+test('[兼容-4] [体积-5] tile buckets, a collider radius, the board, and a kit profile that searches by tile', () => {
+  const { c, w, b } = match({}, ['sniper']);
+  step(w, c, [DEPLOY.sniper]);
+  while (!unit(w, 'slime')) step(w, c);
+  const s = b.unitOf(unit(w, 'sniper')), e = unit(w, 'slime'), foe = b.unitOf(e);
+  const tile = (/** @type {number} */ col) => 1 * 6 + col;
+  e.x = 3.5625; e.y = 1;
+  assert.deepEqual(b.enemiesOnTiles([tile(3)]).map((x) => x.defId), [], 'its tile is column 4');
+  assert.deepEqual(b.enemiesInKeys([tile(3)], s).map((x) => x.defId), ['slime'], 'its collider crosses into column 3');
+  assert.equal(withGrid(c.level, () => bodyInRangeTile(foe, 1, 3)), true);
+  e.x = 3.15;
+  assert.deepEqual(b.foesInRadius(3, 1, 0.05).map((x) => x.defId), []);
+  assert.deepEqual(b.foesInColliderRadius(3, 1, 0.05).map((x) => x.defId), ['slime'], 'centre within r + 0.1');
+  e.x = 3.2;
+  assert.deepEqual(b.foesInColliderRadius(3, 1, 0.05).map((x) => x.defId), []);
+  e.base.hitArea = { w: 1, h: 1, dx: 0, dy: 0 };
+  e.x = 5; e.y = 1;
+  assert.deepEqual(b.foesInColliderRadius(4.3, 1, 0.15).map((x) => x.defId), [], 'a huge one: its rectangle, not r + 0.1');
+  assert.deepEqual(b.foesInColliderRadius(4.3, 1, 0.25).map((x) => x.defId), ['slime']);
+  assert.equal(b.onFieldBoard(1, 1), true, 'low ground a melee operator can stand on');
+  assert.equal(b.onFieldBoard(0, 2), true, 'high ground a ranged operator can stand on');
+  assert.equal(b.isReservedTile(0, 2), true, 'occupied, which the board test does not ask');
+  assert.equal(b.onFieldBoard(0, 0), false, 'nothing stands on a floor tile');
+  assert.equal(b.onFieldBoard(-1, 0), false, 'off the map');
+  e.base.hitArea = null;
+  e.x = 3.5625; e.y = 1;
+  s.kit = { trait: { rangeTiles: true } };
+  assert.equal(s.profile.rangeTiles, true);
+  assert.deepEqual(b.enemiesInKeys([tile(3)], s).map((x) => x.defId), []);
+  assert.deepEqual(withGrid(c.level, () => b.unitsInGrid(s, [[1, 1]], { side: 'enemy' }).map((x) => x.defId)), []);
+  s.kit = null;
+  assert.deepEqual(withGrid(c.level, () => b.unitsInGrid(s, [[1, 1]], { side: 'enemy' }).map((x) => x.defId)), ['slime']);
+  const placed = s.u;
+  if (!placed) throw new Error('the sniper is not on the field');
+  placed.x = 2.4375;
+  assert.equal(withGrid(c.level, () => bodyInRange(s, [2])), true, 'an ally is the tile it occupies');
+  assert.equal(withGrid(c.level, () => bodyInRange(s, [3])), false, 'not the next tile its collider would cross');
 });
 
 test('[兼容-4] attacks, skills and statuses as a kit sees them: targets it may change in place, why a skill starts, seconds', () => {

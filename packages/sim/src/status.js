@@ -44,8 +44,7 @@ export const STATUS = Object.freeze({
   sleep: status({ flags: { sleep: true } }),
   root: status({ flags: { root: true } }),
   dying: status({ flags: { dying: true, unblockable: true, healFree: true }, mods: () => ({ moveMul: 0.2 }) }),
-  // 停顿 has no flag of its own, so a buff flag `immune:sluggish` refuses it (状态-7, 敌能-47).
-  sluggish: status({ mods: () => ({ moveMul: 0.2 }), refuse: (s) => !!s.flags['immune:sluggish'] }),
+  sluggish: status({ mods: () => ({ moveMul: 0.2 }) }),
   fragile: status(valued((v) => ({ dmgTakenMul: 1 + v }))),
   artsFragile: status(valued((v) => ({ artsTakenMul: 1 + v }))),
   elemFragile: status(valued((v) => ({ elementalTakenMul: 1 + v }))),

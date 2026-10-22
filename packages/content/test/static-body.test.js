@@ -43,7 +43,7 @@ test('[敌能-37] [位移-5] 御4 and 寒霜 get 静态刚体 from a content tal
 });
 
 test('[敌能-37] the other enemies whose page names 静态刚体 get the same content talent', () => {
-  for (const key of ['enemy_10083_hlbird', 'enemy_10084_hlegle', 'enemy_10085_hllevi_2', 'enemy_1430_lrrook', 'enemy_1040_bombd', 'enemy_1040_bombd_2']) {
+  for (const key of ['enemy_10083_hlbird', 'enemy_10084_hlegle', 'enemy_10085_hllevi_2', 'enemy_1430_lrrook']) {
     const def = withFoeExtras(key, { name: key, maxHp: 1, atk: 0, def: 0, res: 0, moveSpeed: 1 });
     assert.deepEqual(def.talents?.Static, {}, key);
   }

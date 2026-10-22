@@ -85,21 +85,13 @@ test('[召唤-4] the card: the talent cnt that names the summon, or talent 0\'s 
   assert.equal(supplyAt(ironmn, build({ elite: 1, level: 1, skill: 1 }), 'token_10027_ironmn_pile2'), 3);
   assert.equal(supplyAt(await loadTraining('char_4215_buddy'), build({}), 'token_10063_buddy_bddg'), 0);
   const pile = tokenAt(await loadToken('token_10027_ironmn_pile2'), 'token_10027_ironmn_pile2', ironmn, build({ elite: 1, level: 1, skill: 1 }));
-  assert.deepEqual(pile.summon, { deployLimit: 2, holdLimit: 2, supply: 3, occupy: 0, respawn: 'default', grant: { n: 1, at: 'end' }, device: true });
+  assert.deepEqual(pile.summon, { deployLimit: 2, holdLimit: 2, supply: 3, occupy: 0, respawn: 'default', grant: { n: 1, at: 'end' } });
   const mon3tr = tokenAt(await loadToken('token_10002_kalts_mon3tr'), 'token_10002_kalts_mon3tr', await loadTraining('char_003_kalts'), build({}));
   assert.deepEqual(mon3tr.summon, { deployLimit: 1, holdLimit: 1, supply: 1, occupy: 1, respawn: 'unique' });
   assert.equal(SUMMON_PAGES.token_10070_aphris_pc.respawn, 'queue');
   assert.equal(tokenAt(await loadToken('token_10064_wang_stone1'), 'token_10064_wang_stone1', await loadTraining('char_2027_wang'), build({})).position, 'ALL');
   assert.equal(Object.keys(SUMMON_PAGES).length, 74);
   for (const [id, p] of Object.entries(SUMMON_PAGES)) assert.ok(Object.hasOwn(TOKENS, id) && p.oldid > 0 && [0, 1].includes(p.occupy), id);
-});
-
-test('[敌能-54] a 装置 summon record keeps device; a 默认 summon does not', async () => {
-  const silent = await loadTraining('char_108_silent');
-  const drone = tokenAt(await loadToken('token_10000_silent_healrb'), 'token_10000_silent_healrb', silent, build({ elite: 2, level: 80, skill: 1 }));
-  assert.equal(drone.summon?.device, true);
-  const mon3tr = tokenAt(await loadToken('token_10002_kalts_mon3tr'), 'token_10002_kalts_mon3tr', await loadTraining('char_003_kalts'), build({}));
-  assert.equal(mon3tr.summon?.device, undefined);
 });
 
 test('[召唤-7] a summon holds what its page says: not attacked, 禁疗, 无敌, 孤立, the immunities; devices are not selected by enemies', async () => {

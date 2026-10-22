@@ -37,24 +37,15 @@ const buff_to_blocker = Object.freeze({
 const byEnd = (bb, end) => Object.entries(bb).find(([k]) => k === end || k.endsWith(`.${end}`))?.[1] ?? 0;
 
 /**
- * Whether an `aura` blackboard is 敌能-28's: it has a stack cap (`max_valid_stack_cnt`, or a key ending in it). Another
- * `aura` is a different ability of the same name (敌能-45). @param {Record<string, unknown>} bb
- */
-export const stackCapped = (bb) => Object.keys(bb).some((k) => k === 'max_valid_stack_cnt' || k.endsWith('.max_valid_stack_cnt'));
-
-/**
  * 补给 and 集恨 (敌能-28), by the blackboard. A supply cart (`ep_damage_ratio`), not silenced: every 重生造物 on the field
  * has 攻击力 + `atk` (直接乘算) while it is there — at most `max_valid_stack_cnt` carts of one kind at once — and adds
  * `ep_damage_ratio` of its 攻击力 as 凋亡损伤 to its attacks, once for each kind of cart. A 集恨者: 攻击力 + `atk` for each
- * 重生造物 on the field, at most `max_valid_stack_cnt` of them. A blackboard with no stack cap is another ability of
- * the same name (敌能-45): this tick does nothing, and the ability stays uncovered.
+ * 重生造物 on the field, at most `max_valid_stack_cnt` of them.
  * @type {FoeBehavior}
  */
 const aura = Object.freeze({
   tick: (ctx) => {
-    const bb = ctx.bb;
-    if (!stackCapped(bb)) return;
-    const atk = byEnd(bb, 'atk'), most = byEnd(bb, 'max_valid_stack_cnt');
+    const bb = ctx.bb, atk = byEnd(bb, 'atk'), most = byEnd(bb, 'max_valid_stack_cnt');
     if (bb.ep_damage_ratio === undefined) {
       const n = Math.min(most, ctx.enemies().filter((u) => creation(ctx, u)).length);
       ctx.setBuff(ctx.self, 'aura', n, { atkPct: atk * n });

@@ -1,5 +1,5 @@
 // Bodies (docs/spec/body.md): equal to the pinned Stronghold oracle on its 19 × 21 board for random point and huge
-// units — except a point exactly halfway between tiles, where the official rule rounds half to even (DIF-0003).
+// units. v0.3.1 rounds a point exactly halfway between tiles half to even, the same as 体积-1 (DIF-0003 已消除).
 import { test, before } from 'node:test';
 import assert from 'node:assert/strict';
 import fc from 'fast-check';
@@ -31,11 +31,11 @@ test('[体积-1] [体积-2] occupied tiles: the oracle\'s on its board, for poin
   }), { seed: SEED, numRuns: 4000 });
 });
 
-test('[体积-1] a point exactly halfway rounds half to even (the oracle rounds half up: DIF-0003)', () => {
+test('[体积-1] a point exactly halfway rounds half to even (the v0.3.1 oracle does too: DIF-0003 已消除)', () => {
   const u = { x: 2.5, y: 3.5 };
   assert.deepEqual(body.tileOf(u), [4, 2]);
   assert.deepEqual(body.bodyKeys(u, G), [4 * G.cols + 2]);
-  assert.deepEqual(sh.bodyKeys(u), [4 * G.cols + 3], 'the oracle uses Math.round');
+  assert.deepEqual(sh.bodyKeys(u), [4 * G.cols + 2], 'the oracle uses roundHalfEven');
   assert.deepEqual(body.tileOf({ x: -0.5, y: 0.5 }), [0, 0]);
   assert.equal(Object.is(body.tileOf({ x: -0.4, y: 0 })[1], -0), false, 'no −0');
   assert.equal(body.bodyOnTile({ x: 1.5, y: 0 }, 0, 2), true);

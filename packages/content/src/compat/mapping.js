@@ -19,6 +19,11 @@ export const MAPPING = Object.freeze({
   'server/data.js': './sh/data.js',
   'shared/constants.js': './sh/sharedConstants.js',
   'shared/potential.js': './sh/potential.js',
+  'shared/plugins/steps.js': './sh/plugins/steps.js',
+  'shared/plugins/textNumber.js': './sh/plugins/textNumber.js',
+  'shared/plugins/limits.js': './sh/plugins/limits.js',
+  'shared/plugins/officialBounds.js': './sh/plugins/officialBounds.js',
+  'shared/plugins/rules.js': './sh/plugins/rules.js',
 });
 
 /** The content files of Stronghold: they load as they are. */

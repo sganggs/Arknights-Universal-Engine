@@ -13,7 +13,7 @@ import { newStageState, tickStage, stageCount } from './stage.js';
 import { releaseAll } from './blocking.js';
 import { operatorsAttack, shotsFly } from './combat.js';
 import { tickAlchemy } from './alchemy.js';
-import { foeEffects, foeDeath, foeFatal, releasePassengers, foeHooks } from './foes.js';
+import { foeEffects, foeDeath, foeFatal, releasePassengers } from './foes.js';
 import { applyCommand } from './commands.js';
 import { leaveField, startCost, costRate } from './deck.js';
 import { coolSummons, dismissSummons, expireSummons } from './summons.js';
@@ -42,7 +42,6 @@ import { holds } from './vs.js';
 import { lifeFatal, lifeBehaviors } from './talentlife.js';
 import { newFortress, setUpFortress, fortressHooks, tickFortress } from './fortress.js';
 import { fieldContent } from './facilities.js';
-import { bleedTick } from './blight.js';
 
 /** @typedef {import('./types.js').World} World @typedef {import('./types.js').Content} Content @typedef {import('./types.js').Unit} Unit */
 /** @typedef {import('@aue/schema').Command} Command */
@@ -144,7 +143,7 @@ function announceDeath(w, u, leak) {
 }
 
 /** The engine's own buff behaviours (状态-8, 元素-4, 职业-10, 职业-12, 职业-15, 职业-27…职业-29, 召唤-11, 装置-6); content cannot replace them. @param {Content} c */
-const builtin = (c) => ({ ...STATUS_BEHAVIORS, ...BURST_BEHAVIORS, ...TALENT_BEHAVIORS, ...HEAL_BEHAVIORS, ...SKILL_TEXT_BEHAVIORS, ...FIGHT_BEHAVIORS, ...lifeBehaviors(c), ...foeBehaviors(c, holds), ...elementBehaviors(), ...upkeepBehaviors(c), ...timedBehaviors(c), charge: chargeBehavior(c), ...tacticalBehaviors(c), ...dollBehaviors(c), ...carriedBehaviors(c), bleed: { tick: bleedTick } });
+const builtin = (c) => ({ ...STATUS_BEHAVIORS, ...BURST_BEHAVIORS, ...TALENT_BEHAVIORS, ...HEAL_BEHAVIORS, ...SKILL_TEXT_BEHAVIORS, ...FIGHT_BEHAVIORS, ...lifeBehaviors(c), ...foeBehaviors(c, holds), ...elementBehaviors(), ...upkeepBehaviors(c), ...timedBehaviors(c), charge: chargeBehavior(c), ...tacticalBehaviors(c), ...dollBehaviors(c), ...carriedBehaviors(c) });
 
 /** Each content's buff behaviours, made once (they depend on the content alone), with the content's table they were made from. @type {WeakMap<Content, { from: unknown, table: Record<string, import('./buffs.js').Behavior> }>} */
 const buffTables = new WeakMap();
@@ -169,7 +168,6 @@ export function step(w, level, commands = []) {
   fortressHooks(w, level);
   elementHooks(w, level);
   healHooks(w, level);
-  foeHooks(w, c);
   w.events = [];
   w.bornThisFrame = 0;
   for (const [seat, cmd] of commands) applyCommand(w, c, seat, cmd);
@@ -237,11 +235,11 @@ function pushText(out, tag, s) {
  * The state hash (spec 同步-1): the frame, the random state, the id counter, the waves' progress, the predefined units in
  * effect, the result, the co-op stages, the players, the units, the projectiles, bolts and explosions, 堡垒守御's
  * progress when there is one (守御-1), the enemies brought in to appear later once there have been some (敌能-22), the 炼金单元
- * once there have been some (技能-13), 污染秽蚀 once there has been one (敌能-46), all of their data.
+ * once there have been some (技能-13), all of their data.
  * @param {World} w @returns {number}
  */
 export function stateHash(w) {
   return hashValue(HASH_START, { frame: w.frame, rng: w.rng, nextId: w.nextId, sched: w.sched, predefined: w.predefined, result: w.result, stage: w.stage, players: w.players, units: w.units, shots: w.shots, blasts: w.blasts, bolts: w.bolts,
-    fortress: w.fortress, broods: w.broods, alchemy: w.alchemy, zones: w.zones });
+    fortress: w.fortress, broods: w.broods, alchemy: w.alchemy });
 }
 

@@ -1,4 +1,4 @@
-// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-61): behaviours by talent and skill name. The
+// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-44): behaviours by talent and skill name. The
 // game data holds only the multipliers; FOE_EXTRAS adds, per enemy, the parameters PRTS gives (radii, delays, bolts …)
 // to the blackboards the behaviours read, or a talent the data does not have. They act only through the context (ADR 0055).
 
@@ -8,14 +8,9 @@ import { avengerBehaviors } from './avenger.js';
 import { hoverBehaviors } from './hover.js';
 import { summonerBehaviors } from './summoners.js';
 import { partisanBehaviors } from './partisans.js';
-import { sarkazBehaviors, stackCapped } from './sarkaz.js';
+import { sarkazBehaviors } from './sarkaz.js';
 import { elementHitBehaviors, elementHitOwns } from './elementhit.js';
-import { nestBehaviors, nestPulseOwns } from './nest.js';
 import { devourerBehaviors } from './devourers.js';
-import { emberBehaviors } from './embers.js';
-import { blightBehaviors } from './blight.js';
-import { bombdBehaviors } from './bombd.js';
-import { cannonBehaviors } from './cannon.js';
 import { refractBehaviors } from './refract.js';
 import { statueBehaviors } from './statue.js';
 import { auraBehaviors } from './auras.js';
@@ -25,16 +20,6 @@ import { timeBehaviors } from './times.js';
 import { runnerBehaviors } from './runners.js';
 import { takeDmg } from './chalice.js';
 import { unbalanceBehaviors } from './unbalance.js';
-import { floatBehaviors, takeOffOwns } from './float.js';
-import { sanktaBehaviors } from './sankta.js';
-import { periodicBehaviors } from './periodic.js';
-import { blockDamageBehaviors } from './blockdamage.js';
-import { mirrorBehaviors } from './mirror.js';
-import { lancerBehaviors } from './lancer.js';
-import { tyrantBehaviors } from './tyrant.js';
-import { pengBehaviors } from './peng.js';
-import { bombardBehaviors } from './bombard.js';
-import { templarBehaviors } from './templar.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').EnemyDef} EnemyDef */
 
@@ -104,16 +89,6 @@ export const FOE_EXTRAS = Object.freeze({
   // 萨卡兹悖谬谍报官/谍报长: 初始技力=3, 技力上限=3 (rounds of ammunition)
   enemy_1317_wdexg: { talents: { 1: { ammo: 3 } }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E6%82%96%E8%B0%AC%E8%B0%8D%E6%8A%A5%E5%AE%98&oldid=436389` },
   enemy_1317_wdexg_2: { talents: { 1: { ammo: 3 } }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E6%82%96%E8%B0%AC%E8%B0%8D%E6%8A%A5%E9%95%BF&oldid=436390` },
-  // 萨卡兹枯朽战士/组长: 污染秽蚀可对空，无视无法选择、迷彩 (敌能-46)
-  enemy_1267_nhpbr: { talents: { PollutedDie: { air: 1, open: 1 } }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E6%9E%AF%E6%9C%BD%E6%88%98%E5%A3%AB&oldid=375553` },
-  enemy_1267_nhpbr_2: { talents: { PollutedDie: { air: 1, open: 1 } }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E6%9E%AF%E6%9C%BD%E6%88%98%E5%A3%AB%E7%BB%84%E9%95%BF&oldid=375554` },
-  // 萨卡兹枯朽战车: 只打低地、不打飞行；区域可对空，范围内是我方单位（含装置），不无视无法选择
-  enemy_1272_nhtank: { talents: { Empty: { low: 1 } }, skills: { PollutedRangedAtk: { air: 1, wide: 1 } }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E6%9E%AF%E6%9C%BD%E6%88%98%E8%BD%A6&oldid=367663` },
-  // 尖端萨卡兹枯朽战车: 低地过滤，区域可对空且无视无法选择、迷彩；有低地非飞行单位才触发，丢失目标返还技力
-  enemy_1272_nhtank_2: { talents: { Empty: { low: 1 } }, skills: { PollutedRangedAtk: { air: 1, open: 1, gate: 1, refund: 1 } }, source: `${PRTS}%E5%B0%96%E7%AB%AF%E8%90%A8%E5%8D%A1%E5%85%B9%E6%9E%AF%E6%9C%BD%E6%88%98%E8%BD%A6&oldid=380616` },
-  // 暴鸰/暴鸰·G: 静态刚体 (the data has no talent for it; 敌能-37). 不进行普通攻击 is boomb, not this talent (敌能-56).
-  enemy_1040_bombd: { talents: { Static: {} }, source: `${PRTS}%E6%9A%B4%E9%B8%9E&oldid=381146` },
-  enemy_1040_bombd_2: { talents: { Static: {} }, source: `${PRTS}%E6%9A%B4%E9%B8%9E%C2%B7G&oldid=381145` },
   // 深池方阵战士/深池方阵指挥官: 自身1.5半径内除自身外其它深池方阵战士/深池方阵指挥官防御力增加200（可无限叠加，不可被沉默）
   enemy_1169_duphlx: { talents: { auraDefup: { radius: 1.5 } }, source: `${PRTS}%E6%B7%B1%E6%B1%A0%E6%96%B9%E9%98%B5%E6%88%98%E5%A3%AB&oldid=353488` },
   enemy_1169_duphlx_2: { talents: { auraDefup: { radius: 1.5 } }, source: `${PRTS}%E6%B7%B1%E6%B1%A0%E6%96%B9%E9%98%B5%E6%8C%87%E6%8C%A5%E5%AE%98&oldid=353489` },
@@ -126,12 +101,9 @@ export const FOE_EXTRAS = Object.freeze({
   enemy_10118_ymgprc: { skills: { PowerAttack: { times: 2 } }, source: `${PRTS}%E6%BE%AA&oldid=358826` },
   // 静态刚体, as each page's ability cell says (the data has no talent for it; 敌能-37). Not their other talents — those are other behaviours.
   enemy_1017_defdrn: { talents: { Static: {} }, source: `${PRTS}%E5%BE%A14&oldid=380622` },
-  // 半血恐惧's half and 「最终」 are not in the data (敌能-49). Static stays the 敌能-37 row.
-  enemy_10083_hlbird: { talents: { Static: {}, SelfFear: { hp_ratio: 0.5, speed_final: 1 } }, source: `${PRTS}%E2%80%9C%E8%90%A8%E7%A7%91%E5%A1%94%E4%B9%8B%E7%BF%BC%E2%80%9D&oldid=375648` },
-  // 夺弹's page mark is `steal` (the hit hook is `cancelHit`; the data's own key is `attack@minus_bullet`).
-  enemy_10084_hlegle: { talents: { Static: {}, SelfFear: { hp_ratio: 0.5, speed_final: 1 }, DamageOrBullet: { steal: 1 } }, source: `${PRTS}%E2%80%9C%E8%90%A8%E7%A7%91%E5%A1%94%E4%B9%8B%E7%9C%BC%E2%80%9D&oldid=388054` },
-  // 昂首's 半血恐惧 has no 「最终」 (`speed_final` 0). 祈祷邀约's 不可对空 / 无视迷彩 are `air` 0 and `camou` 1.
-  enemy_10085_hllevi_2: { talents: { Static: {}, SelfFear: { hp_ratio: 0.5, speed_final: 0 } }, skills: { Roar: { air: 0, camou: 1 } }, source: `${PRTS}%E2%80%9C%E8%90%A8%E7%A7%91%E5%A1%94%E6%98%82%E9%A6%96%E2%80%9D&oldid=376212` },
+  enemy_10083_hlbird: { talents: { Static: {} }, source: `${PRTS}%E2%80%9C%E8%90%A8%E7%A7%91%E5%A1%94%E4%B9%8B%E7%BF%BC%E2%80%9D&oldid=375648` },
+  enemy_10084_hlegle: { talents: { Static: {} }, source: `${PRTS}%E2%80%9C%E8%90%A8%E7%A7%91%E5%A1%94%E4%B9%8B%E7%9C%BC%E2%80%9D&oldid=388054` },
+  enemy_10085_hllevi_2: { talents: { Static: {} }, source: `${PRTS}%E2%80%9C%E8%90%A8%E7%A7%91%E5%A1%94%E6%98%82%E9%A6%96%E2%80%9D&oldid=376212` },
   enemy_1430_lrrook: { talents: { Static: {} }, source: `${PRTS}%E6%84%A7%E6%82%94%E9%AD%82%E7%81%B5%E5%9C%A3%E6%9D%AF&oldid=386513` },
   // 元素损伤 on the normal attack (敌能-38). `el` is the 元素-1 id (1 神经, 2 侵蚀, 3 灼燃, 4 凋亡); the data has only the ratio.
   // 底海滑动者/富营养的滑动者: 普通攻击额外造成攻击力15%的神经损伤
@@ -150,7 +122,7 @@ export const FOE_EXTRAS = Object.freeze({
   enemy_1162_magmot: { talents: { EpDamage: { el: 2, cross: 1 } }, source: `${PRTS}%E6%9C%AF%E5%B8%88%E5%BF%AB%E8%89%87&oldid=353469` },
   // 骨海漂流体: 攻击附加相当于攻击力20%的侵蚀损伤
   enemy_2021_syfish: { talents: { EpDamage: { el: 2 } }, source: `${PRTS}%E9%AA%A8%E6%B5%B7%E6%BC%82%E6%B5%81%E4%BD%93&oldid=354187` },
-  // 掠海漂移体: 侵蚀 is 敌能-38; Float's 近地悬浮 is 敌能-48; noFly is 不会攻击飞行单位 (敌能-33).
+  // 掠海漂移体: the erosion is this family; empty `Float` keeps 近地悬浮 uncovered so the enemy stays refused (敌能-38).
   enemy_2025_syufo: { talents: { EpDamage: { el: 2 }, Float: {}, noFly: {} }, source: `${PRTS}%E6%8E%A0%E6%B5%B7%E6%BC%82%E7%A7%BB%E4%BD%93&oldid=379242` },
   // 无胄盟清扫小队: 普通攻击时额外造成攻击力35%的侵蚀损伤 (PowerAttack is another family)
   enemy_1183_mlasrt: { talents: { EpDamage: { el: 2 }, noFly: {} }, source: `${PRTS}%E6%97%A0%E8%83%84%E7%9B%9F%E6%B8%85%E6%89%AB%E5%B0%8F%E9%98%9F&oldid=367257` },
@@ -188,44 +160,6 @@ export const FOE_EXTRAS = Object.freeze({
   // 清明 / 堂皇: a fall does not spawn, and only the skill (not the talent of the same name) runs 范围隐匿.
   enemy_1209_sfden: { talents: { DeadSpawn: { fall: 0 } }, skills: { InvisibleShield: { cast: 1 } }, source: `${PRTS}%E6%B8%85%E6%98%8E&oldid=376397` },
   enemy_1209_sfden_2: { talents: { DeadSpawn: { fall: 0 } }, skills: { InvisibleShield: { cast: 1 } }, source: `${PRTS}%E5%A0%82%E7%9A%87&oldid=389600` },
-  // 深溟巢涌者 (敌能-47): 脉冲对每个目标都带神经损伤，持有抵抗状态（form 1）。黑板与富营养的相同，form 才分开两页。
-  enemy_1234_dsubrl: { talents: { EpDamage: { pulse: 1, form: 1 }, Buff: { form: 1 } }, source: `${PRTS}%E6%B7%B1%E6%BA%9F%E5%B7%A2%E6%B6%8C%E8%80%85&oldid=353623` },
-  // 富营养的巢涌者: 消失时不脉冲，神经损伤只在扣到生命时，倍率不是抵抗状态（form 2）。
-  enemy_1234_dsubrl_2: { talents: { EpDamage: { pulse: 1, form: 2 }, Buff: { form: 2 } }, source: `${PRTS}%E5%AF%8C%E8%90%A5%E5%85%BB%E7%9A%84%E5%B7%A2%E6%B6%8C%E8%80%85&oldid=376164` },
-  // 狂暴宿主 / 冬灵血巫: 自身每秒受到 N 无来源真实伤害. `self` marks the six pages that were read (敌能-50); the same
-  // `{ damage }` shape on unread enemies stays uncovered. The two throwers also refuse flyers (noFly, 敌能-33).
-  enemy_1062_rager: { talents: { periodic_damage: { self: 1 } }, source: `${PRTS}%E7%8B%82%E6%9A%B4%E5%AE%BF%E4%B8%BB%E5%A3%AB%E5%85%B5&oldid=375739` },
-  enemy_1062_rager_2: { talents: { periodic_damage: { self: 1 } }, source: `${PRTS}%E7%8B%82%E6%9A%B4%E5%AE%BF%E4%B8%BB%E7%BB%84%E9%95%BF&oldid=375736` },
-  enemy_1063_rageth: { talents: { periodic_damage: { self: 1 }, noFly: {} }, source: `${PRTS}%E7%8B%82%E6%9A%B4%E5%AE%BF%E4%B8%BB%E6%8A%95%E6%8E%B7%E6%89%8B&oldid=375737` },
-  enemy_1063_rageth_2: { talents: { periodic_damage: { self: 1 }, noFly: {} }, source: `${PRTS}%E7%8B%82%E6%9A%B4%E5%AE%BF%E4%B8%BB%E6%8E%B7%E9%AA%A8%E6%89%8B&oldid=375738` },
-  enemy_1089_ltlntc: { talents: { periodic_damage: { self: 1 } }, source: `${PRTS}%E5%86%AC%E7%81%B5%E8%A1%80%E5%B7%AB&oldid=386577` },
-  enemy_1089_ltlntc_2: { talents: { periodic_damage: { self: 1 } }, source: `${PRTS}%E5%86%AC%E7%81%B5%E8%A1%80%E5%B7%AB%E5%A4%A7%E5%B8%88&oldid=375740` },
-  // 弧光镜卫: 仅在层数≥2层时生效. 15/45 are the page's visual marks, not a rule (敌能-52).
-  enemy_1329_cbshld: { talents: { def_reduce: { gate: 2 } }, source: `${PRTS}%E5%BC%A7%E5%85%89%E9%95%9C%E5%8D%AB&oldid=382112` },
-  // 弧光镜卫长: the same talent and keys; its older page predates the ≥2 wording (敌能-52, INF-0403). 15/60 are visual only.
-  enemy_1329_cbshld_2: { talents: { def_reduce: { gate: 2 } }, source: `${PRTS}%E5%BC%A7%E5%85%89%E9%95%9C%E5%8D%AB%E9%95%BF&oldid=353797` },
-  // 萨卡兹穿刺手/组长 (敌能-53): `paged` is only on the two pages that were read, so the same keys on unread enemies stay uncovered
-  enemy_1072_dlancer: { talents: { rush: { paged: 1 }, firstattack: { paged: 1 } }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E7%A9%BF%E5%88%BA%E6%89%8B&oldid=369390` },
-  enemy_1072_dlancer_2: { talents: { rush: { paged: 1 }, firstattack: { paged: 1 } }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E7%A9%BF%E5%88%BA%E6%89%8B%E7%BB%84%E9%95%BF&oldid=369391` },
-  // 萨卡兹悖谬暴虐兵/兵长: 占用3个阻挡数；首次攻击对目标和周围4格造成攻击力150%（只能一次）。`once` 把同名的另外三种技能留在未覆盖。
-  enemy_1320_wdrrl: { talents: { AOEAttack: { block: 3, once: 1 } }, skills: { AOEAttack: { once: 1 } }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E6%82%96%E8%B0%AC%E6%9A%B4%E8%99%90%E5%85%B5&oldid=363187` },
-  enemy_1320_wdrrl_2: { talents: { AOEAttack: { block: 3, once: 1 } }, skills: { AOEAttack: { once: 1 } }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E6%82%96%E8%B0%AC%E6%9A%B4%E8%99%90%E5%85%B5%E9%95%BF&oldid=389613` },
-  // 抱蛋羽兽/拥霜羽兽: 不会攻击飞行单位；失衡移动结束后每 0.1 秒尝试强制触发【失去蛋】。`egg` marks the pages read.
-  enemy_10141_xdpeng: { talents: { speed: { every: 0.1 }, noFly: {} }, skills: { switch: { egg: 1 } }, source: `${PRTS}%E6%8A%B1%E8%9B%8B%E7%BE%BD%E5%85%BD&oldid=374461` },
-  enemy_10141_xdpeng_2: { talents: { speed: { every: 0.1 }, noFly: {} }, skills: { switch: { egg: 1 } }, source: `${PRTS}%E6%8B%A5%E9%9C%9C%E7%BE%BD%E5%85%BD&oldid=374462` },
-  // 新手祭司学徒: 倒下后为附近的一个喷泉水池补充水量，并治疗周围敌人. `page` is only the coverage marker (敌能-58): the
-  // unread twin 见习祭司学徒 has the same blackboard and stays uncovered until its own page is read (关卡-2).
-  enemy_10156_mncrer: { talents: { Boom: { page: 1 } }, source: `${PRTS}%E6%96%B0%E6%89%8B%E7%A5%AD%E5%8F%B8%E5%AD%A6%E5%BE%92&oldid=379778` },
-  // 伦蒂尼姆城防自行炮/高准度伦蒂尼姆城防自行炮: 轰炸持续 6 秒、每 0.5 秒、最多 10 次（页面；数据只有 atk_scale）
-  enemy_1273_stmgun: { skills: { Cannon: { duration: 6, interval: 0.5, times: 10 } }, source: `${PRTS}%E4%BC%A6%E8%92%82%E5%B0%BC%E5%A7%86%E5%9F%8E%E9%98%B2%E8%87%AA%E8%A1%8C%E7%82%AE&oldid=353692` },
-  enemy_1273_stmgun_2: { skills: { Cannon: { duration: 6, interval: 0.5, times: 10 } }, source: `${PRTS}%E9%AB%98%E5%87%86%E5%BA%A6%E4%BC%A6%E8%92%82%E5%B0%BC%E5%A7%86%E5%9F%8E%E9%98%B2%E8%87%AA%E8%A1%8C%E7%82%AE&oldid=353693` },
-  // 圣堂剑士 / 精锐圣堂剑士: 技力槽 5/5 and 7/7 are the ammo (弹药上限：5 / 7). The level data carries no spData, so the
-  // page's number goes on the skill (敌能-61); the database's maxSp and initSp are the same.
-  enemy_10087_hlchgr: { skills: { ForeverEnhance: { ammo: 5 } }, source: `${PRTS}%E5%9C%A3%E5%A0%82%E5%89%91%E5%A3%AB&oldid=375658` },
-  enemy_10087_hlchgr_2: { skills: { ForeverEnhance: { ammo: 7 } }, source: `${PRTS}%E7%B2%BE%E9%94%90%E5%9C%A3%E5%A0%82%E5%89%91%E5%A3%AB&oldid=375659` },
-  // 集团军轻型/重型火炮: 燃烧区域半径 1.5 只在页面上。数据的 projectile_range 1 是溅射半径 (敌能-60)
-  enemy_10122_uacann: { talents: { ProjectileBoomRange: { zone: 1.5 } }, source: `${PRTS}%E9%9B%86%E5%9B%A2%E5%86%9B%E8%BD%BB%E5%9E%8B%E7%81%AB%E7%82%AE&oldid=369386` },
-  enemy_10122_uacann_2: { talents: { ProjectileBoomRange: { zone: 1.5 } }, source: `${PRTS}%E9%9B%86%E5%9B%A2%E5%86%9B%E9%87%8D%E5%9E%8B%E7%81%AB%E7%82%AE&oldid=377750` },
 });
 
 /**
@@ -260,24 +194,12 @@ const deathBlast = (ctx) => {
 const boom = Object.freeze({ death: deathBlast });
 
 /**
- * 新手祭司学徒 (敌能-58): a `Boom` blackboard with `heal_scale` heals other enemies where it fell, on that frame.
- * The page gives no delay, and 敌能-3's blast would damage 我方, so this is `heal`, not `blast`. FillWater is another talent.
- * @type {FoeBehavior['death']}
- */
-const deathHeal = (ctx) => {
-  const s = ctx.stats(ctx.self);
-  if (s.flags.silence) return;
-  const r = ctx.bb.projectile_range, amt = s.atk * ctx.bb.heal_scale;
-  for (const u of ctx.allies(r)) if (u !== ctx.self) ctx.heal(u, amt);
-};
-
-/**
- * "喷射罐", 辐能源石虫 (敌能-5, 敌能-6), and 新手祭司学徒 (敌能-58): `heal_scale` is the death heal; every other shape
- * keeps the explosion. With `attack@times` (喷射罐's), its attack is a channel of hits over seconds, then a cooldown.
+ * "喷射罐", 辐能源石虫 (敌能-5, 敌能-6): the explosion; with `attack@times` (喷射罐's), its attack a channel of hits over
+ * seconds, then a cooldown — without, its ordinary attack.
  * @type {FoeBehavior}
  */
 const Boom = Object.freeze({
-  death: (ctx) => (typeof ctx.bb.heal_scale === 'number' ? deathHeal(ctx) : deathBlast(ctx)),
+  death: deathBlast,
   attack: (ctx, mods) => (typeof ctx.bb['attack@times'] !== 'number' ? mods
     : { ...mods, type: 'arts', scale: ctx.bb.atk_scale, channel: { hits: ctx.bb['attack@times'], duration: ctx.bb['attack@cooldown'], after: ctx.bb['attack@attack_cd'] } }),
 });
@@ -404,29 +326,15 @@ const PowerHit = Object.freeze({
 /** Behaviours by talent or skill name. @type {Readonly<Record<string, FoeBehavior>>} */
 export const foeBehaviors = Object.freeze({
   boom, Boom, FirstAttack, atkup, ranged, CrossAttack, Bomb, PowerHit, ...moreFoeBehaviors, ...prisonerBehaviors, ...avengerBehaviors, ...hoverBehaviors,
-  ...summonerBehaviors, ...partisanBehaviors, ...sarkazBehaviors, ...elementHitBehaviors, ...nestBehaviors, ...devourerBehaviors, ...blightBehaviors, ...refractBehaviors, ...statueBehaviors, ...auraBehaviors, ...chargedBehaviors, ...staticBehaviors, ...timeBehaviors, ...emberBehaviors, ...runnerBehaviors, takeDmg, ...unbalanceBehaviors,
-  ...floatBehaviors,
-  ...sanktaBehaviors,
-  ...periodicBehaviors,
-  ...blockDamageBehaviors,
-  ...mirrorBehaviors,
-  ...lancerBehaviors,
-  ...tyrantBehaviors,
-  ...bombdBehaviors,
-  ...pengBehaviors,
-  ...bombardBehaviors,
-  ...templarBehaviors,
-  ...cannonBehaviors,
+  ...summonerBehaviors, ...partisanBehaviors, ...sarkazBehaviors, ...elementHitBehaviors, ...devourerBehaviors, ...refractBehaviors, ...statueBehaviors, ...auraBehaviors, ...chargedBehaviors, ...staticBehaviors, ...timeBehaviors, ...runnerBehaviors, takeDmg, ...unbalanceBehaviors,
 });
 
 /**
  * Talents with no behaviour of their own that are still covered (关卡-2): `dead` is the data's 生命 loss of a neutral
  * unit (合作-9), `Light` is read by `Bomb`, `DmgUp` acts only on devices the engine does not have (敌能-11), `Stronger` is
- * read by `Devour` (敌能-30), `storm` acts only in a 沙尘暴 the engine's levels do not have (敌能-24), `firstattack` is read by
- * 萨卡兹穿刺手's `rush` (敌能-53), `AttributeStorage` and `SkillTrigger` are read by `ForeverEnhance` (敌能-61; the excerpt
- * lists no other user).
+ * read by `Devour` (敌能-30), `storm` acts only in a 沙尘暴 the engine's levels do not have (敌能-24).
  */
-export const FOE_COVERED = Object.freeze(['dead', 'Light', 'DmgUp', 'Stronger', 'storm', 'firstattack', 'AttributeStorage', 'SkillTrigger']);
+export const FOE_COVERED = Object.freeze(['dead', 'Light', 'DmgUp', 'Stronger', 'storm']);
 
 /**
  * The blackboard keys an ability's behaviour needs that the data tables do not carry (FOE_EXTRAS gives them, from PRTS,
@@ -436,34 +344,12 @@ export const FOE_NEEDS = Object.freeze({
   boom: Object.freeze(['radius', 'delay']), Boom: Object.freeze(['radius', 'delay']), ranged: Object.freeze(['scale']),
   DeadBoom: Object.freeze(['radius', 'delay']), Splash: Object.freeze(['radius']),
   CrossAttack: Object.freeze(['bolts', 'hold', 'charge']), Targets: Object.freeze(['n']), 1: Object.freeze(['ammo']),
-  // Expose is complete either way: a radius is 远眺's death aura, none is the scouts (敌能-54). A def-only defup is not 御4 (敌能-35).
-  defup: Object.freeze(['range_radius']),
+  // 远眺's death aura needs a radius; the scouts' on-hit Expose has none. 御4 and 寒霜's defup has one; a def-only defup does not (敌能-35).
+  Expose: Object.freeze(['range_radius']), defup: Object.freeze(['range_radius']),
   // The element is not in the enemy data (敌能-38). A ratio without `el` stays incomplete instead of guessing 凋亡.
   epdamage: Object.freeze(['el']), empty: Object.freeze(['el']), EpDamage: Object.freeze(['el']),
   combat: Object.freeze(['el']), attack: Object.freeze(['el']),
   AttackSpeedUp: Object.freeze(['attack_speed', 'duration', 'stack_cnt']),
-  // air/open are the page's 可对空 and 无视无法选择: a warrior without them is not this ability yet. The 战车 skill's
-  // page rules are extras too, but an unread enemy with the same keys (改装排污车) is complete from the data alone.
-  PollutedDie: Object.freeze(['polluted_damage_low', 'polluted_damage_high', 'projectile_life_time', 'projectile_range', 'air', 'open']),
-  PollutedRangedAtk: Object.freeze(['polluted_damage_low', 'polluted_damage_high', 'range_radius', 'projectile_life_time']),
-  Bleeding: Object.freeze(['attack@bleeding_damage', 'attack@duration']),
-  // 喷气人's 升空 (敌能-48). Another TakeOff blackboard stays incomplete (takeOffOwns).
-  TakeOff: Object.freeze(['duration', 'balloon_s[fly].move_speed']),
-  SelfFear: Object.freeze(['hp_ratio', 'speed_final']), DamageOrBullet: Object.freeze(['steal']), Roar: Object.freeze(['air', 'camou']),
-  periodic_damage: Object.freeze(['self']),
-  Shield: Object.freeze(['max_block_damage_cnt', 'block_damage_cnt']),
-  def_reduce: Object.freeze(['gate']),
-  rush: Object.freeze(['dlancer_t[trigger].move_speed', 'dlancer_t[trigger].interval', 'dlancer_t[trigger].trig_cnt', 'paged']),
-  firstattack: Object.freeze(['atk_scale', 'paged']),
-  AOEAttack: Object.freeze(['once']),
-  boomb: Object.freeze(['move_speed']),
-  // `egg` is the page marker for the two read 羽兽; `move_speed` is the shape 斐迪庇第斯 does not have (敌能-57, 关卡-2).
-  switch: Object.freeze(['egg']), speed: Object.freeze(['move_speed']),
-  Cannon: Object.freeze(['duration', 'interval', 'times']),
-  ForeverEnhance: Object.freeze(['ammo']),
-  // `zone` is the page's burn radius. The data's projectile_range is the splash, so a same-shape enemy without the
-  // page stays uncovered (关卡-2).
-  ProjectileBoomRange: Object.freeze(['attack@projectile_range', 'attack@projectile_life_time', 'attack@value', 'zone']),
 });
 
 /**
@@ -473,20 +359,11 @@ export const FOE_NEEDS = Object.freeze({
 const abilitiesOf = (e) => [...Object.entries(e.talents ?? {}), ...(e.skills ?? []).map((s) => /** @type {[string, Record<string, number | string>]} */ ([s.key, s.bb ?? {}]))];
 
 /**
- * A `Boom` with `heal_scale` is 新手祭司学徒's death heal (敌能-58): it needs the page marker `page`, not the blast's
- * radius and delay. @param {string} k @param {Record<string, unknown>} bb
- */
-const healBoom = (k, bb) => k === 'Boom' && typeof bb.heal_scale === 'number';
-
-/**
  * Whether an ability has what its behaviour needs (关卡-2). A shared talent name only counts when its blackboard is the
- * shape that behaviour understands (敌能-38, 敌能-47) — an `aura` only with 敌能-28's stack cap (敌能-45); anything else
- * stays incomplete. The nest pulse does not need `el`: the page names 神经损伤. A `Boom` with `heal_scale` needs its page marker (敌能-58).
+ * shape that behaviour understands (敌能-38); anything else stays incomplete.
  * @param {string} k @param {Record<string, unknown>} bb
  */
-const complete = (k, bb) => elementHitOwns(k, bb) && takeOffOwns(k, bb) && (k !== 'aura' || stackCapped(bb))
-  && (nestPulseOwns(k, bb) || (healBoom(k, bb) ? typeof bb.page === 'number'
-    : (FOE_NEEDS[/** @type {keyof typeof FOE_NEEDS} */ (k)] ?? []).every((n) => typeof bb[n] === 'number')));
+const complete = (k, bb) => elementHitOwns(k, bb) && (FOE_NEEDS[/** @type {keyof typeof FOE_NEEDS} */ (k)] ?? []).every((n) => typeof bb[n] === 'number');
 
 /**
  * The abilities (talents and skills) of the given enemies — their extras merged — that have no behaviour and are not
