@@ -19,6 +19,7 @@ import { KIT_SOURCE } from './compat/kitmod.js';
 import { seatRules, withRunes } from './runes.js';
 import { carriedDef } from './carried.js';
 import { withBuilders } from './fortress.js';
+import { withLootCards } from './loot.js';
 import { OFFICIAL_SOURCE } from './mods/source.js';
 
 /** The official behaviours: skills (技能-6), enemy abilities (敌能-2), the chalice's 伤判 (敌能-41), the mudshield barrier (敌能-66) and W's planted C4 (敌能-76). */
@@ -90,7 +91,7 @@ function withoutTalents({ talentBb, talentMods, talentTrait, fieldTalents, range
  * kitmod.js) fights by its kit: its record without its talents, its team talents not given by the engine, its kit's
  * world setup and skill behaviours; the content names the commit and the kits it uses. A seat's runes (符文-1) change its
  * operators and summons, and its deploy limit (level.options.characterLimitAdd); runes not supported throw. In 堡垒守御
- * every seat's deck has the level's builders too (守御-4). The levels, operators and summons come from the content
+ * every seat's deck has the level's builders too (守御-4), and each token whose device is 轰隆隆先生 (装置-7). The levels, operators and summons come from the content
  * source — the official content, or it with mods (mod-8) —; the content names the mods it is made with.
  * @param {{ level: string, difficulty: 'NORMAL' | 'FOUR_STAR', seed: number, decks: { id: string, build: import('./operators.js').Build }[][], runes?: import('./runes.js').SeatRune[][] }} match
  * @param {{ source?: import('./mods/source.js').ContentSource, kits?: Readonly<Record<string, import('./compat/kitmod.js').KitFactory>> }} [o] the content
@@ -121,6 +122,7 @@ export async function matchContent(match, { source = OFFICIAL_SOURCE, kits = {} 
   await withPredefined(source, operators, lv.level, lv.blockAdd);
   const limitAdd = await withSeatRunes(operators, decks, match.runes ?? []);
   withBuilders(lv.level, lv.devices, operators, decks);
+  withLootCards(lv.level, lv.devices, operators, decks);
   const used = [...new Set(Object.keys(entries).map((k) => k.split('#')[0]))].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
   const kb = used.length ? kitsBehaviors(entries) : null;
   const behaviors = kb ? { ...BEHAVIORS, world: kb.world, skills: { ...BEHAVIORS.skills, ...kb.skills }, buffs: { ...BEHAVIORS.buffs, ...kb.buffs }, traits: kb.traits } : BEHAVIORS;
@@ -231,6 +233,7 @@ export { skillDefOf, skillBehaviors } from './skills.js';
 export { BRANCHES, coveredBranch, withTrait, OPERATOR_TRAITS, withOwnTrait } from './traits.js';
 export { LEVELS, TESTING, levelAt } from './levels.js';
 export { withBuilders } from './fortress.js';
+export { withLootCards } from './loot.js';
 export { foeBehaviors, withFoeExtras, FOE_EXTRAS } from './foes.js';
 export { ROSTER, rosterSource, loadTraining, operatorAt, statsAt } from './operators.js';
 /** @typedef {import('./operators.js').Training} Training @typedef {import('./skills.js').SkillLevel} SkillLevel */

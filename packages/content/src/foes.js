@@ -1,4 +1,4 @@
-// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-79, 敌能-81): behaviours by talent and skill name. The
+// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-81): behaviours by talent and skill name. The
 // game data holds only the multipliers; FOE_EXTRAS adds, per enemy, the parameters PRTS gives (radii, delays, bolts …)
 // to the blackboards the behaviours read, or a talent the data does not have. They act only through the context (ADR 0055).
 
@@ -54,6 +54,7 @@ import { glowBehaviors, chargeAttackOwns } from './glow.js';
 import { helmKnightBehaviors, rebornOwns } from './helmknights.js';
 import { faustBehaviors, faustOwns } from './faust.js';
 import { shotbuffBehaviors, shotbuffOwns } from './pathshot.js';
+import { lootBehaviors } from './loot.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').EnemyDef} EnemyDef */
 
@@ -320,6 +321,8 @@ export const FOE_EXTRAS = Object.freeze({
   enemy_1219_mtrbty_2: { talents: { shotbuff: { page: 1, ammo: 1 } }, source: `${PRTS}%E4%B8%87%E5%9B%BD%E4%BF%A1%E4%BD%BF%EF%BC%8C%E5%A5%A5%E4%BC%A6&oldid=287583` },
   enemy_1217_rescar: { talents: { shotbuff: { page: 1 } }, source: `${PRTS}%E5%AF%BB%E8%B7%AF%E8%80%85%E7%94%9C%E5%93%81%E5%95%86&oldid=366372` },
   enemy_1217_rescar_2: { talents: { shotbuff: { page: 1, melee: 1 } }, source: `${PRTS}%E5%AF%BB%E8%B7%AF%E8%80%85%E7%9F%A5%E5%90%8D%E7%94%9C%E5%93%81%E5%95%86&oldid=381093` },
+  // 赞助无人机: 静态刚体，不进行普通攻击. Static is 敌能-37; NoAttack is 敌能-64's marker for 不进行普通攻击.
+  enemy_1105_tyokai: { talents: { Static: {}, NoAttack: {} }, source: `${PRTS}%E8%B5%9E%E5%8A%A9%E6%97%A0%E4%BA%BA%E6%9C%BA&oldid=379221` },
 });
 
 /**
@@ -533,6 +536,7 @@ export const foeBehaviors = Object.freeze({
   ...vampireBehaviors,
   ...faustBehaviors,
   ...shotbuffBehaviors,
+  ...lootBehaviors,
 });
 
 /**

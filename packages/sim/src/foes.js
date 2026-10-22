@@ -25,6 +25,7 @@ import { atPoint } from './tactical.js';
 import { on } from './bus.js';
 import { placeTasting, tickTastings } from './tasting.js';
 import { readDeparted } from './exits.js';
+import { grantLootCards } from './loot.js';
 
 /** @typedef {import('./types.js').World} World @typedef {import('./types.js').Content} Content @typedef {import('./types.js').Unit} Unit */
 /** @typedef {import('./types.js').EnemyDef} EnemyDef @typedef {import('./types.js').Blast} Blast @typedef {import('./types.js').Bolt} Bolt */
@@ -137,6 +138,7 @@ export const BOLT_RADIUS = 0.3;
  * @property {(key: string) => Unit[]} planted units still on the field that carry a buff of `key` this enemy gave, selectable or not (敌能-76)
  * @property {(branchId: string) => Unit | null} summonNext the next plain SPAWN individual of a level branch, at that
  *   entry's own route start (敌能-79); null when the branch has none left. A missing enemy key is skipped
+ * @property {(key: string, n: number) => void} grantLoot each allied seat's 待部署区 gains n of the device card `key` (敌能-80)
  */
 
 /**
@@ -271,7 +273,7 @@ function contextOf(w, c, e, of) {
  * @param {World} w @param {Content} c @param {Unit} e @param {Record<string, number>} ab
  * @returns {Pick<FoeContext, 'setHp' | 'resetSkills' | 'onWay' | 'detour' | 'release' | 'placeDevice' | 'summon' | 'draw' | 'remove'
  *   | 'devour' | 'lend' | 'around' | 'enemies' | 'fly' | 'attackAgain' | 'ammoOf' | 'spendAmmo' | 'renew' | 'ours' | 'place'
- *   | 'course' | 'open' | 'planted' | 'summonNext'>}
+ *   | 'course' | 'open' | 'planted' | 'summonNext' | 'grantLoot'>}
  */
 function lateContext(w, c, e, ab) {
   return {
@@ -329,11 +331,12 @@ function openAt(c, e, x, y) {
  * The context members that place an enemy or ask where it is going (敌能-44, 敌能-73). Kept out of contextOf so that
  * function stays within the line limit.
  * @param {World} w @param {Content} c @param {Unit} e @param {Record<string, number>} ab
- * @returns {Pick<FoeContext, 'attackAgain' | 'summonNext' | 'planted' | 'place' | 'course' | 'open'>}
+ * @returns {Pick<FoeContext, 'attackAgain' | 'grantLoot' | 'summonNext' | 'planted' | 'place' | 'course' | 'open'>}
  */
 function moveMembers(w, c, e, ab) {
   return {
     attackAgain: () => { ab['@again'] = 1; },
+    grantLoot: (key, n) => { grantLootCards(w, c, key, n); },
     summonNext: (branchId) => takeBranch(w, c, branchId),
     planted: (key) => w.units.filter((u) => u.buffs.some((b) => b.key === key && b.src === e.id)),
     place: (x, y) => { displace(e, x, y); ab['@held'] = w.frame; },

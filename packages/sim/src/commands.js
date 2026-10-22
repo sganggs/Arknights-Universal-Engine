@@ -20,6 +20,7 @@ import { talentDeploy } from './talentfx.js';
 import { moreDeploy, keepsLast } from './talentmore.js';
 import { shareArrive } from './talentaround.js';
 import { spendBoost } from './talentfight.js';
+import { lootHeld, takeLoot } from './loot.js';
 
 /** @typedef {import('./types.js').World} World @typedef {import('./types.js').Content} Content */
 /** @typedef {import('@aue/schema').Command} Command */
@@ -88,8 +89,20 @@ const trapProblem = (w, c, seat, cmd) => (trapRefused(w, c, seat, cmd.op, cmd) ?
 function operatorProblem(w, c, seat, cmd) {
   const p = w.players[seat], d = c.operators[cmd.op];
   if (d.builder) return builderProblem(w, c, seat, cmd);
+  if (d.rumble) return rumbleProblem(w, c, seat, cmd);
   if (p.deployed.includes(cmd.op)) return 'already deployed';
   return limitProblem(w, c, seat, d) ?? (w.frame < cardOf(p, cmd.op).ready ? 'redeploying' : null) ?? (cardLocked(w, cardOf(p, cmd.op)) ? 'devoured' : null) ?? placeProblem(w, c, seat, cmd, deployCost(c, p, cmd.op, w));
+}
+
+/**
+ * 轰隆隆先生 (装置-7): a copy must be held. It takes no deploy slot when its trait is free. The cost is the record's,
+ * not a redeploy penalty, and the tile is a melee one with no operator on it.
+ * @param {World} w @param {Content} c @param {number} seat @param {DeployCommand} cmd
+ */
+function rumbleProblem(w, c, seat, cmd) {
+  if (lootHeld(w, seat, cmd.op) <= 0) return 'no device card left';
+  const d = c.operators[cmd.op];
+  return limitProblem(w, c, seat, d) ?? placeProblem(w, c, seat, cmd, d.cost);
 }
 
 /**
@@ -138,19 +151,22 @@ function deploy(w, c, seat, cmd) {
     deploySummon(w, c, seat, cmd);
     return;
   }
-  const p = w.players[seat], b = c.operators[cmd.op].builder, paid = b ? c.operators[cmd.op].cost : deployCost(c, p, cmd.op, w);
+  const p = w.players[seat], op = c.operators[cmd.op], b = op.builder, paid = b || op.rumble ? op.cost : deployCost(c, p, cmd.op, w);
   const u = makeOperator(w, c, { key: cmd.op, owner: seat, row: cmd.row, col: cmd.col, dir: cmd.dir, paid });
   p.cost -= paid;
-  if (!b) takeCuts(c, p, cmd.op);
+  if (!b && !op.rumble) takeCuts(c, p, cmd.op);
   // 推击手 PUS-X: part of the cost back on a ranged tile (职业-23)
   const back = traitOf(c, u).rangedRefund;
   if (back > 0 && tileAt(c.level, cmd.row, cmd.col)?.buildable === 'RANGED') gainCost(w, c, seat, Math.floor(paid * back));
-  // a builder is one of the seat's cards (守御-4): untargetable, it stays until its work is done
-  if (b) { usePool(w, seat, cmd.op); addBuff(u, makeBuff({ key: 'builder', flags: { untargetable: true, noRetreat: true } })); } else p.deployed.push(cmd.op);
+  // a builder is one of the seat's cards (守御-4): untargetable, it stays until its work is done.
+  // 轰隆隆先生 is a counted card (装置-7): not in `deployed`, so another copy may stand too. Its trait buff is applied in arrive.
+  if (b) { usePool(w, seat, cmd.op); addBuff(u, makeBuff({ key: 'builder', flags: { untargetable: true, noRetreat: true } })); }
+  else if (op.rumble) takeLoot(w, c, seat, cmd.op, u.id);
+  else p.deployed.push(cmd.op);
   w.units.push(u);
   w.events.push({ type: 'deploy', id: u.id, key: u.key, owner: seat });
   arrive(w, c, u);
-  if (!b && keepsLast(c, deckOf(c, seat))) p.last = cmd.op;
+  if (!b && !op.rumble && keepsLast(c, deckOf(c, seat))) p.last = cmd.op;
 }
 
 /**

@@ -16,6 +16,7 @@ test('[关卡-8] [关卡-2] [守御-1] the 堡垒守御 levels and level files b
     for (const d of /** @type {const} */ (['NORMAL', 'FOUR_STAR'])) {
       const lv = levelAt(id, d);
       assert.ok((lv.level.uncovered ?? []).length > 0, `${id} ${d}`);
+      assert.equal((lv.level.uncovered ?? []).includes('loot'), false, `${id} ${d} loot`);
       assert.deepEqual(lv.level.fortress, rules);
       assert.deepEqual(Object.keys(lv.level.branches ?? {}), ['mufrprn_branch']);
     }
@@ -47,9 +48,9 @@ test('[守御-3] [守御-4] [守御-6] the devices of IG-DF-1: five kinds of fac
   assert.deepEqual([devices.trap_203_mufrprn.rubble?.cells.length, devices.trap_203_mufrprn.rubble?.branch], [21, 'mufrprn_branch']);
 });
 
-test('[守御-4] a 堡垒守御 match: every seat\'s deck ends with the level\'s builders, keyed id#seat, free and never attacking', async () => {
+test('[守御-4] [装置-7] a 堡垒守御 match: every seat\'s deck has the builders, then 轰隆隆先生, keyed id#seat', async () => {
   const c = await matchContent({ level: 'act1multi_fortress_rm01', difficulty: 'NORMAL', seed: 1, decks: [[], []] });
-  assert.deepEqual(c.decks, [['trap_166_muwork#0', 'trap_202_muworkg#0'], ['trap_166_muwork#1', 'trap_202_muworkg#1']]);
+  assert.deepEqual(c.decks, [['trap_166_muwork#0', 'trap_202_muworkg#0', 'trap_018_bomb#0'], ['trap_166_muwork#1', 'trap_202_muworkg#1', 'trap_018_bomb#1']]);
   const b = c.operators['trap_202_muworkg#1'];
   assert.deepEqual([b.cost, b.position, b.trait?.free, b.trait?.noAttack, b.builder?.hits], [5, 'ALL', true, true, 18]);
   const plain = await matchContent({ level: 'act1multi_01', difficulty: 'NORMAL', seed: 1, decks: [[], []] });

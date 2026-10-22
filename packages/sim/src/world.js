@@ -44,6 +44,7 @@ import { lifeFatal, lifeBehaviors } from './talentlife.js';
 import { newFortress, setUpFortress, fortressHooks, tickFortress } from './fortress.js';
 import { fieldContent } from './facilities.js';
 import { bleedTick } from './blight.js';
+import { returnLoot, boomLoot, lootForSeat } from './loot.js';
 
 /** @typedef {import('./types.js').World} World @typedef {import('./types.js').Content} Content @typedef {import('./types.js').Unit} Unit */
 /** @typedef {import('@aue/schema').Command} Command */
@@ -60,7 +61,10 @@ export function createWorld(c, o) {
   const w = {
     frame: 0, rng: seedState(o.seed), nextId: 1, sched: newSchedule(), predefined: visiblePredefines(c), result: -1, stage: newStageState(), bornThisFrame: 0, units: [], shots: [], blasts: [], bolts: [],
     events: [],
-    players: Array.from({ length: o.players }, (_, seat) => ({ life: maxLifePoint, cost: startCost(c, seat), costTimer: secondsToFrames(costIncreaseTime), deployed: [], cards: {}, revive: -1, downs: 0, ask: -1, askCd: 0 })),
+    players: Array.from({ length: o.players }, (_, seat) => {
+      const loot = lootForSeat(c, seat);
+      return { life: maxLifePoint, cost: startCost(c, seat), costTimer: secondsToFrames(costIncreaseTime), deployed: [], cards: {}, revive: -1, downs: 0, ask: -1, askCd: 0, ...(loot ? { loot } : {}) };
+    }),
     ...(c.level.fortress ? { fortress: newFortress(c, o.players) } : {}),
   };
   for (const alias of w.predefined) { placeDevice(w, c, alias); placePredefined(w, c, alias); }
@@ -171,6 +175,7 @@ function buffBehaviors(c) {
  */
 export function step(w, level, commands = []) {
   const c = fieldContent(w, level);
+  returnLoot(w);
   fortressHooks(w, level);
   elementHooks(w, level);
   healHooks(w, level);
@@ -189,6 +194,8 @@ export function step(w, level, commands = []) {
   tickWaves(w, c);
   tickFortress(w, c);
   tickBuffs(w, buffBehaviors(c));
+  // 轰隆隆先生 triggers after buffs, so the stun's first frame is this one (装置-7).
+  boomLoot(w, c);
   // A skill that switches to the 替身 as it starts: after buffs tick, before the rest of the frame, so the switch's flags
   // are on before enemies act and the phase buff is not counted down on the frame it appears (职业-15), as a fatal switch is.
   flushSkillDolls(w, c);

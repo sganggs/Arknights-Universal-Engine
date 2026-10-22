@@ -36,8 +36,8 @@ export const DEVICE_PROFILES = Object.freeze({
     profile: () => ({ rubble: { range: 'x-2', cells: cellsOf('x-2'), branch: 'mufrprn_branch', first: 5, every: 2 } }),
     source: `${PRTS}%E5%9D%8D%E5%A1%8C%E7%9A%84%E6%9D%82%E7%89%A9%E5%A0%86&oldid=380508`,
   },
-  // 轰隆隆先生：IG-DF-1 的装置卡里有它，张数 0，没有发放它的机制，场上不会出现
-  trap_018_bomb: { profile: () => ({ inert: true }), source: `${PRTS}%E8%BD%B0%E9%9A%86%E9%9A%86%E5%85%88%E7%94%9F&oldid=417968` },
+  // 轰隆隆先生 (装置-7): 1.5s after deploy, stun the cross and break. Respawn is the page's 5s; the record has cost, not respawnTime.
+  trap_018_bomb: { profile: () => ({ rumble: { delay: 1.5, stun: 12, respawn: 5 } }), source: `${PRTS}%E8%BD%B0%E9%9A%86%E9%9A%86%E5%85%88%E7%94%9F&oldid=358736` },
   // 地形增伤控制: 位于<玉门天灾工事>中的单位对位于普通地块中的非飞行单位，造成伤害提升至130%，受到伤害降低至70%
   trap_103_ymdgct: {
     works: (d) => ({ dealt: d.talentBb['ymdgct_damage_scale[up].damage_scale'], taken: d.talentBb['ymdgct_damage_scale[down].damage_scale'] }),

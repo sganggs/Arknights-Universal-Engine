@@ -33,7 +33,7 @@
  * (装置-3), the statuses it is immune to, and the modifiers it gives every enemy while on the field (装置-4).
  * @typedef {{ name: string, maxHp: number, atk: number, def: number, res: number, blockCnt: number, baseAttackTime: number, aspd: number, tauntLevel: number,
  *   massLevel: number, talentBb: Record<string, number>, side?: 'ENEMY', immune?: string[], enemyMods?: Record<string, number>, talents?: Record<string, number>[],
- *   cost?: number, facility?: FacilityDef, builder?: BuilderDef, rubble?: RubbleDef, inert?: boolean }} DeviceDef
+ *   cost?: number, facility?: FacilityDef, builder?: BuilderDef, rubble?: RubbleDef, rumble?: RumbleDef, inert?: boolean }} DeviceDef
  */
 /**
  * 堡垒守御 (守御-1…守御-6): the level's times in seconds and the life a rest gives; a facility's kind, its modes'
@@ -43,6 +43,8 @@
  * @typedef {{ kind: 'workshop' | 'lounge' | 'platform' | 'roadblock' | 'gym', modes: Record<string, number>[], boom?: number }} FacilityDef
  * @typedef {{ sp: 'sp' | 'sp2', hits: number, life: number }} BuilderDef
  * @typedef {{ range: string, cells: Cell[], branch: string, first: number, every: number }} RubbleDef
+ * 轰隆隆先生 (装置-7): seconds until the stun, the stun's length, the redeploy time, and the copies a seat starts with.
+ * @typedef {{ delay: number, stun: number, respawn: number, start?: number }} RumbleDef
  */
 /**
  * A co-op stage (合作-6, 合作-7): the alias of its controller, its objective, the minimum and advanced targets (for 突击 as
@@ -559,7 +561,7 @@
  * `critTalents` its chances to strike harder (攻击-4), `timedTalents` its talents in time on the field (部署-7),
  * `deployTalents` what its talents do at its deployment (部署-8); from its seat's runes, `runeMods` its always-on buff
  * (符文-3), `probSp` its chances of SP on dealing damage (符文-4), `rangeSp` the SP it gives in its attack range (符文-5); a
- * carried unit's record (符文-6) what its deployment does (`carried`, 装置-6). A summon's record names its owner's key (`summoner`)
+ * carried unit's record (符文-6) what its deployment does (`carried`, 装置-6). A 轰隆隆先生 card carries `rumble` (装置-7). A summon's record names its owner's key (`summoner`)
  * and how its card works (`summon`, 召唤-3, 召唤-4); `position` ALL lets it stand on melee and ranged tiles. An operator a mod
  * adds names the official operator whose figure and voice it has (`look`, mod-11).
  * @typedef {OptionalStats & { name: string, position: string, cost: number, blockCnt: number, baseAttackTime: number, maxHp: number, atk: number, def: number, res: number,
@@ -567,7 +569,7 @@
  *   talentBb?: Record<string, number>, talentMods?: Record<string, number>, talentTrait?: Partial<TraitDef>, fieldTalents?: TeamTalent[], fieldAspd?: { ally: number, enemy: number, cnt: number, allyExtra: number, enemyExtra: number },
  *   powers?: string[], rangeTalents?: RangeTalent[],
  *   critTalents?: CritTalent[], timedTalents?: TimedTalent[], deployTalents?: DeployTalent[], summoner?: string, summon?: SummonDef,
- *   runeMods?: Record<string, number>, probSp?: { prob: number, sp: number }[], rangeSp?: { sp: number, interval: number }, carried?: CarriedEffect, builder?: BuilderDef }} OperatorDef
+ *   runeMods?: Record<string, number>, probSp?: { prob: number, sp: number }[], rangeSp?: { sp: number, interval: number }, carried?: CarriedEffect, builder?: BuilderDef, rumble?: RumbleDef }} OperatorDef
  */
 /**
  * A summon's card rules (召唤-3, 召唤-4): its limits on the field and held, what its owner's deployment adds (0: no card),
@@ -839,6 +841,9 @@
 /**
  * A summon's card in a player's deck (召唤-4): copies held, the frame it may be deployed from, copies cooling (队列).
  * @typedef {{ held: number, ready: number, cooling: number }} SummonCard
+ * One seat's copies of a 轰隆隆先生 card (敌能-80, 装置-7): `held` waiting to deploy, `back` the frames those on the
+ * field return (the redeploy time started at deploy), `live` the ones on the field and the frame they trigger.
+ * @typedef {{ held: number, back: number[], live: { id: number, at: number }[] }} LootPile
  */
 /**
  * A player: life, cost and its timer, the operators on the field, the deck's cards; `revive` is the frames left until a
@@ -846,10 +851,10 @@
  * open cost request (−1 for none), `askCd` the frames until they may ask again (合作-5); its summons' cards, once one
  * has one (召唤-4); once talents give them (部署-10, 职业-30), the cut for its next operator (`cut`), the cuts on cards
  * (`cuts`), the cards whose first skill has started (`once`), its last operator deployed (`last`, 职业-31) and the kinds of
- * enemy each card killed (`slain`, 职业-34).
+ * enemy each card killed (`slain`, 职业-34); `loot`, its 轰隆隆先生 cards, only when the deck has one (装置-7).
  * @typedef {{ life: number, cost: number, costTimer: number, deployed: string[], cards: Record<string, Card>, revive: number, downs: number,
  *   ask: number, askCd: number, summons?: Record<string, SummonCard>, cut?: number, cuts?: Record<string, number>, once?: string[], last?: string,
- *   slain?: Record<string, string[]> }} Player
+ *   slain?: Record<string, string[]>, loot?: Record<string, LootPile> }} Player
  */
 
 /**
