@@ -9,28 +9,42 @@
 const REVIVING = Object.freeze({ invincible: true, untargetable: true, unblockable: true, sidelined: true });
 
 /**
- * 重生 (敌能-18): the first time its HP runs out it stays: its buffs cleared, HP to `hp_ratio` of its maximum, then
- * `duration` seconds of reviving; when they end its skills' cooldowns start over and it is 无敌 for `invincible` seconds.
+ * The first knockdown stays (敌能-18, and 敌能-78 which has no `hp_ratio`): buffs cleared, HP to `ratio` of the
+ * maximum, then `duration` seconds of the reviving flags. A second call does not keep it.
+ * @param {FoeContext} ctx @param {number} ratio @returns {boolean}
+ */
+export function beginRebirth(ctx, ratio) {
+  const self = ctx.self, st = ctx.state;
+  if (st.get('done')) return false;
+  st.set('done', 1);
+  st.set('reviving', 1);
+  for (const key of new Set(self.buffs.map((b) => b.key))) ctx.removeBuff(self, key);
+  ctx.setHp(self, ctx.stats(self).maxHp * ratio);
+  ctx.addBuff(self, { key: 'reborn', flags: { ...REVIVING }, left: ctx.frames(ctx.bb.duration) });
+  return true;
+}
+
+/**
+ * When that buff has ended (敌能-18): skills' cooldowns start over, and `invincible` seconds of 无敌 follow when the
+ * blackboard says so. 锋盔's `reborn` has no `invincible` (敌能-78), so nothing is added then.
+ * @param {FoeContext} ctx
+ */
+export function endRebirth(ctx) {
+  const self = ctx.self, st = ctx.state;
+  if (!st.get('reviving') || self.buffs.some((b) => b.key === 'reborn')) return;
+  st.set('reviving', 0);
+  ctx.resetSkills();
+  if (ctx.bb.invincible > 0) ctx.addBuff(self, { key: 'reborn:invincible', flags: { invincible: true, untargetable: true }, left: ctx.frames(ctx.bb.invincible) });
+}
+
+/**
+ * 重生 (敌能-18): the first time its HP runs out it stays at `hp_ratio` of its maximum for `duration` seconds; when
+ * they end its skills' cooldowns start over and it is 无敌 for `invincible` seconds.
  * @type {FoeBehavior}
  */
 const Reborn = Object.freeze({
-  fatal: (ctx) => {
-    const self = ctx.self, st = ctx.state;
-    if (st.get('done')) return false;
-    st.set('done', 1);
-    st.set('reviving', 1);
-    for (const key of new Set(self.buffs.map((b) => b.key))) ctx.removeBuff(self, key);
-    ctx.setHp(self, ctx.stats(self).maxHp * ctx.bb.hp_ratio);
-    ctx.addBuff(self, { key: 'reborn', flags: { ...REVIVING }, left: ctx.frames(ctx.bb.duration) });
-    return true;
-  },
-  tick: (ctx) => {
-    const self = ctx.self, st = ctx.state;
-    if (!st.get('reviving') || self.buffs.some((b) => b.key === 'reborn')) return;
-    st.set('reviving', 0);
-    ctx.resetSkills();
-    if (ctx.bb.invincible > 0) ctx.addBuff(self, { key: 'reborn:invincible', flags: { invincible: true, untargetable: true }, left: ctx.frames(ctx.bb.invincible) });
-  },
+  fatal: (ctx) => beginRebirth(ctx, ctx.bb.hp_ratio),
+  tick: (ctx) => { endRebirth(ctx); },
 });
 
 /** The squared distance between two units. @param {Unit} a @param {Unit} b */
