@@ -1,4 +1,4 @@
-// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-83): behaviours by talent and skill name. The
+// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-84): behaviours by talent and skill name. The
 // game data holds only the multipliers; FOE_EXTRAS adds, per enemy, the parameters PRTS gives (radii, delays, bolts …)
 // to the blackboards the behaviours read, or a talent the data does not have. They act only through the context (ADR 0055).
 
@@ -328,6 +328,8 @@ export const FOE_EXTRAS = Object.freeze({
   enemy_1217_rescar_2: { talents: { shotbuff: { page: 1, melee: 1 } }, skills: { BornCar: { max: 3 } }, source: `${PRTS}%E5%AF%BB%E8%B7%AF%E8%80%85%E7%9F%A5%E5%90%8D%E7%94%9C%E5%93%81%E5%95%86&oldid=381093` },
   // 迷路的巨像: 眩晕击 throws a stone (敌能-83). `page` marks this page; 配重投石机 has the same data and no page.
   enemy_2003_rockman: { skills: { StunAttack: { page: 1 } }, source: `${PRTS}%E8%BF%B7%E8%B7%AF%E7%9A%84%E5%B7%A8%E5%83%8F&oldid=354366` },
+  // 弑君者: the 0.5s is on the page, not in the blackboard (敌能-84). 卢西恩 shares { dist } and gets no marker.
+  enemy_1502_crowns: { skills: { blink: { glide: 0.5 } }, source: `${PRTS}%E5%BC%91%E5%90%9B%E8%80%85(%E6%95%8C%E6%96%B9)&oldid=361341` },
 });
 
 /**
