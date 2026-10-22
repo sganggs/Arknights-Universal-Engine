@@ -1,4 +1,4 @@
-// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-71): behaviours by talent and skill name. The
+// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-72): behaviours by talent and skill name. The
 // game data holds only the multipliers; FOE_EXTRAS adds, per enemy, the parameters PRTS gives (radii, delays, bolts …)
 // to the blackboards the behaviours read, or a talent the data does not have. They act only through the context (ADR 0055).
 
@@ -45,6 +45,7 @@ import { passiveBehaviors, passiveOwns } from './passive.js';
 import { monumentBehaviors } from './monuments.js';
 import { defdownBehaviors, defdownOwns } from './defdown.js';
 import { knightBehaviors, knightOwns } from './knights.js';
+import { lassoBehaviors } from './lasso.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').EnemyDef} EnemyDef */
 
@@ -271,6 +272,10 @@ export const FOE_EXTRAS = Object.freeze({
   enemy_4039_mufbse: { talents: { unblockable: {} }, source: `${PRTS}%E7%8B%82%E5%A5%94%E4%B8%B0%E7%A2%91&oldid=364869` },
   // 碎骨: 不会攻击飞行单位; 未被阻挡时榴弹（攻击力 26%，目标及周围八格，防御力下降 50% 持续 5 秒）. The flat `defdown` users get none of these.
   enemy_1500_skulsr: { talents: { defdown: { scale: 0.26, duration: 5, square: 1 }, noFly: {} }, source: `${PRTS}%E7%A2%8E%E9%AA%A8&oldid=367689` },
+  // 萨卡兹术师 / 萨卡兹术师组长: 不会攻击飞行单位 (the data has no talent). `page` marks 枷锁 as read (敌能-72); the same
+  // blackboard on 萨卡兹业余术师 has no snapshot, so it stays uncovered (关卡-2).
+  enemy_1022_dmage: { talents: { noFly: {} }, skills: { lasso: { page: 1 } }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E6%9C%AF%E5%B8%88&oldid=380593` },
+  enemy_1022_dmage_2: { talents: { noFly: {} }, skills: { lasso: { page: 1 } }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E6%9C%AF%E5%B8%88%E7%BB%84%E9%95%BF&oldid=413933` },
 });
 
 /**
@@ -475,6 +480,7 @@ export const foeBehaviors = Object.freeze({
   ...monumentBehaviors,
   ...defdownBehaviors,
   ...knightBehaviors,
+  ...lassoBehaviors,
 });
 
 /**
@@ -532,6 +538,8 @@ export const FOE_NEEDS = Object.freeze({
   defdown: Object.freeze(['scale', 'duration', 'square']),
   // 呼啸、沸血骑士团只覆盖读过页面的六名（敌能-71）。
   buff: Object.freeze(['page']), enhance: Object.freeze(['page']),
+  // 枷锁 is read only where the page was read. The same three numbers on 萨卡兹业余术师 have no `page` (敌能-72, 关卡-2).
+  lasso: Object.freeze(['page']),
 });
 
 /**

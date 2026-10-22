@@ -159,6 +159,17 @@ export function removeBuff(u, which) {
 }
 
 /**
+ * Removes buffs of one key that carry `tag` (敌能-72). Other buffs of that key stay. Removal is not expiry.
+ * @param {Unit} u @param {string} key @param {string} tag @returns {number}
+ */
+export function removeTagged(u, key, tag) {
+  const before = u.buffs.length;
+  u.buffs = u.buffs.filter((b) => b.key !== key || b.tag !== tag);
+  if (u.buffs.length !== before) refreshHp(u);
+  return before - u.buffs.length;
+}
+
+/**
  * A buff's decay rate this frame (状态-3): its own multiplier, times the 综合抵抗衰减率 1 / 一减状态抵抗率 for a
  * resistible status.
  * @param {Buff} b @param {number} statusRes the holder's 一减状态抵抗率 (≥ 0.001)

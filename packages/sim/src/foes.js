@@ -4,7 +4,7 @@
 import { secondsToFrames, FPS } from '@aue/math';
 import { KIND } from '@aue/schema';
 import { statsOf } from './attrs.js';
-import { addBuff, removeBuff, makeBuff, retune, setLeft, setBaseMaxHp } from './buffs.js';
+import { addBuff, removeBuff, makeBuff, retune, setLeft, setBaseMaxHp, removeTagged } from './buffs.js';
 import { setAmmo } from './skills.js';
 import { inflict } from './status.js';
 import { dealDamage, heal, setHp, knockDown } from './damage.js';
@@ -50,7 +50,8 @@ export const BOLT_RADIUS = 0.3;
  * @property {number} frame
  * @property {(u: Unit) => import('./attrs.js').Stats} stats
  * @property {(t: Unit, init: import('./buffs.js').BuffInit) => void} addBuff
- * @property {(t: Unit, key: string) => void} removeBuff
+ * @property {(t: Unit, key: string, tag?: string) => void} removeBuff with `tag`, only the buffs of that key that carry it
+ *   (敌能-72)
  * @property {(t: Unit, key: string, o?: object) => void} applyStatus
  * @property {(t: Unit, dmg: import('./damage.js').Damage) => number} dealDamage
  * @property {(t: Unit, el: string, amount: number) => number} dealEp
@@ -212,7 +213,7 @@ function contextOf(w, c, e, of) {
   return {
     self: e, bb, sp: skill?.sp ?? 0, frame: w.frame, stats: statsOf,
     addBuff: (t, init) => { addBuff(t, makeBuff({ src: e.id, ...init })); },
-    removeBuff: (t, key) => { removeBuff(t, key); },
+    removeBuff: (t, key, tag) => { if (tag === undefined) removeBuff(t, key); else removeTagged(t, key, tag); },
     applyStatus: (t, key, o) => { inflict(w, t, /** @type {any} */ (key), { ...o, src: e }); },
     dealDamage: (t, dmg) => dealDamage(w, e, t, dmg, c),
     dealEp: (t, el, amount) => dealEp(w, t, /** @type {any} */ (el), amount, e),
