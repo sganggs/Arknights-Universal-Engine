@@ -3,7 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { extractLevel, difficultyOf, mergeEnemyData } from '../src/index.js';
+import { extractLevel, difficultyOf, mergeEnemyData, enemyOf } from '../src/index.js';
 import { sharedEnemies } from '../src/enemies.js';
 import { extractLevelFromCheckout } from '../src/cli/level.js';
 
@@ -146,4 +146,22 @@ test('[守御-1] [守御-6] 堡垒守御: its global buff\'s times and life as `
   assert.ok(Object.hasOwn(s.enemies, 'e_d'));
   const plain = /** @type {any} */ (extractLevel({ id: 'lv', level: makeLevel(), enemyDb: db(), commit: 'c' }));
   assert.deepEqual([plain.level.fortress, plain.level.branches], [undefined, undefined]);
+});
+
+test('[敌能-45] [敌能-1] Revive[Trigger].prop_max_hp groups under the bracketed talent name, and BornAnim is the skill key', () => {
+  const raw = entry('dusk');
+  const data = raw.Value[0].enemyData;
+  data.talentBlackboard = [
+    { key: 'Revive[Trigger].prop_max_hp', value: 5, valueStr: null },
+    { key: 'Revive[Trigger].interval', value: 10, valueStr: null },
+    { key: 'aura.ep_damage_ratio', value: 1, valueStr: null },
+    { key: 'aura.range_radius', value: 1.5, valueStr: null },
+    { key: 'aura.damage_resistance', value: 0.5, valueStr: null },
+  ];
+  data.skills = [{ prefabKey: 'BornAnim', priority: 0, cooldown: 0, initCooldown: 0, spCost: 0, blackboard: [] }];
+  const e = /** @type {any} */ (enemyOf({ enemies: [raw] }, 'dusk'));
+  assert.deepEqual(e.talents['Revive[Trigger]'], { prop_max_hp: 5, interval: 10 });
+  assert.deepEqual(e.talents.aura, { ep_damage_ratio: 1, range_radius: 1.5, damage_resistance: 0.5 });
+  assert.deepEqual(e.skills.map((/** @type {{ key: string }} */ s) => s.key), ['BornAnim']);
+  assert.deepEqual([e.skills[0].cooldown, e.skills[0].initCooldown, e.skills[0].bb], [0, 0, {}]);
 });
