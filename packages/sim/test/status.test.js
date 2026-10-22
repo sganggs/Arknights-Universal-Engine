@@ -275,6 +275,16 @@ test('[状态-7] immunity: the buff stays, its flag does not take effect; refusa
   assert.equal(e.buffs.length, 1);
 });
 
+test('[状态-7] [敌能-47] 停顿 has no flag: a buff flag immune:sluggish refuses it, and it takes hold again without one', () => {
+  const u = mk(1);
+  addBuff(u, makeBuff({ key: 'unslowed', flags: { 'immune:sluggish': true } }));
+  assert.equal(applyStatus(u, 'sluggish', { frames: 30 }), null);
+  assert.equal(u.buffs.some((b) => b.key === 'sluggish'), false);
+  removeBuff(u, 'unslowed');
+  assert.ok(applyStatus(u, 'sluggish', { frames: 30 }));
+  assert.equal(statsOf(u).moveSpeed, 0.2);
+});
+
 test('[状态-6] [状态-1] freeze from an enemy is the enemy kind; the buff records who gave it', () => {
   const foe = mk(8), op = mk(9, {}, KIND.OPERATOR), u = mk(1, {}, KIND.OPERATOR);
   const b = applyStatus(u, 'freeze', { src: foe, frames: 30 });
