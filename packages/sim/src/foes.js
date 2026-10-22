@@ -266,7 +266,8 @@ function contextOf(w, c, e, of) {
  * The rest of an ability's context (敌能-2, 敌能-49). Split so `contextOf` stays within the line limit.
  * @param {World} w @param {Content} c @param {Unit} e @param {Record<string, number>} ab
  * @returns {Pick<FoeContext, 'setHp' | 'resetSkills' | 'onWay' | 'detour' | 'release' | 'placeDevice' | 'summon' | 'draw' | 'remove'
- *   | 'devour' | 'lend' | 'around' | 'enemies' | 'fly' | 'attackAgain' | 'ammoOf' | 'spendAmmo' | 'renew' | 'ours'>}
+ *   | 'devour' | 'lend' | 'around' | 'enemies' | 'fly' | 'attackAgain' | 'ammoOf' | 'spendAmmo' | 'renew' | 'ours' | 'place'
+ *   | 'course' | 'open'>}
  */
 function lateContext(w, c, e, ab) {
   return {
