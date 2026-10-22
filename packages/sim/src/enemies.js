@@ -26,7 +26,7 @@ function reachGoal(w, c, e) {
 /**
  * One enemy's turn (帧-1): one in 失衡 only slides (位移-3), and when that slide ends its abilities hear it (敌能-2);
  * otherwise it is released if its blocker is gone or cannot block; it may be blocked; it attacks; an enemy that is not
- * blocked and did not attack walks, and may be blocked where it arrives.
+ * blocked and did not attack walks, unless content placed it this turn (路线-5, 敌能-73), and may be blocked where it arrives.
  * @param {World} w @param {Content} c @param {Unit} e
  */
 function enemyTurn(w, c, e) {
@@ -45,6 +45,8 @@ function enemyTurn(w, c, e) {
     return;
   }
   if (attacked) return;
+  // place() this turn is the whole move (路线-5, 敌能-73): do not also fear-walk or follow the route.
+  if (e.ab['@held'] === w.frame) { e.anim = ANIM.MOVE; return; }
   const speed = speedOf(c, e);
   if (speed === 0) { e.anim = ANIM.IDLE; return; }
   const x = e.x, y = e.y;

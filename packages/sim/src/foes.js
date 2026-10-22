@@ -12,11 +12,11 @@ import { dealEp } from './elements.js';
 import { selectable, sortAllies, friendly, evadesGround, stealthed } from './targeting.js';
 import { tileOf } from './body.js';
 import { tileAt } from './level.js';
-import { board, alight, detour, wayKeys, becomeFlyer, becomeGround } from './routes.js';
+import { board, alight, detour, wayKeys, becomeFlyer, becomeGround, displace, legsOf } from './routes.js';
 import { draw } from './rng.js';
 import { release } from './blocking.js';
 import { spawnDevice } from './devices.js';
-import { keyAt } from './paths.js';
+import { keyAt, passable, isHole } from './paths.js';
 import { bringIn, hatch } from './broods.js';
 import { devour } from './deck.js';
 import { blightContext, tickBlight } from './blight.js';
@@ -129,6 +129,10 @@ export const BOLT_RADIUS = 0.3;
  *   area at the centre of the target's tile (敌能-62)
  * @property {() => { id: number, x: number, y: number, kind: number }[]} departed enemies and operators that left since
  *   this ability last asked (敌能-63); the first call only arms the log
+ * @property {(x: number, y: number) => void} place puts this enemy at (x, y); during its own turn that is the whole move
+ *   this frame (路线-5, 敌能-73)
+ * @property {() => { x: number, y: number } | null} course where the move it is on is heading, or null when it is not on one (敌能-73)
+ * @property {(x: number, y: number) => boolean} open whether the tile of a point is one this enemy may stand on (体积-1, 路线-2, 地图-4)
  */
 
 /**
@@ -280,11 +284,54 @@ function lateContext(w, c, e, ab) {
     around: (t, area) => around(w, e, t, area),
     enemies: () => w.units.filter((u) => u.kind === KIND.ENEMY && u.base.neutral !== true && u.hp > 0),
     fly: () => { becomeFlyer(e); },
-    attackAgain: () => { ab['@again'] = 1; },
     ammoOf: (u) => ammoLeft(c, u),
     spendAmmo: (u, n) => { const st = u.skill; if (st && ammoLeft(c, u) > 0) setAmmo(st, st.ammo - n); },
     renew: (u, key, frames, mods) => { renewBuff(e, u, key, frames, mods); },
     ours: () => w.units.filter(ourUnit),
+    ...moveMembers(w, c, e, ab),
+  };
+}
+
+/**
+ * Where the move this enemy is on is heading (敌能-73): a checkpoint's end, or on the last leg the next planned point.
+ * @param {Content} c @param {Unit} e @returns {{ x: number, y: number } | null}
+ */
+function courseOf(c, e) {
+  if (e.route < 0) return null;
+  const route = c.level.routes[e.route];
+  const leg = route ? legsOf(route)[e.leg] : null;
+  if (!leg || leg.t !== 'move') return null;
+  if (!leg.final) return { x: leg.x, y: leg.y };
+  if (e.pt * 2 + 1 < e.path.length) return { x: e.path[e.pt * 2], y: e.path[e.pt * 2 + 1] };
+  return { x: leg.x, y: leg.y };
+}
+
+/**
+ * Whether the tile of (x, y) is one this enemy may stand on (体积-1, 路线-2): on the map, passable for its motion, and
+ * for a ground enemy not a 地穴 (地图-4).
+ * @param {Content} c @param {Unit} e @param {number} x @param {number} y
+ */
+function openAt(c, e, x, y) {
+  const m = c.level, k = keyAt(m, x, y);
+  if (k < 0) return false;
+  const route = e.route >= 0 ? m.routes[e.route] : null;
+  const fly = (route !== null && route.motion === 'FLY') || e.base.motion === 'FLY';
+  const t = m.tiles[Math.floor(k / m.width)][k % m.width];
+  return passable(t, fly) && (fly || !isHole(t));
+}
+
+/**
+ * The context members that place an enemy or ask where it is going (敌能-44, 敌能-73). Kept out of contextOf so that
+ * function stays within the line limit.
+ * @param {World} w @param {Content} c @param {Unit} e @param {Record<string, number>} ab
+ * @returns {Pick<FoeContext, 'attackAgain' | 'place' | 'course' | 'open'>}
+ */
+function moveMembers(w, c, e, ab) {
+  return {
+    attackAgain: () => { ab['@again'] = 1; },
+    place: (x, y) => { displace(e, x, y); ab['@held'] = w.frame; },
+    course: () => courseOf(c, e),
+    open: (x, y) => openAt(c, e, x, y),
   };
 }
 
