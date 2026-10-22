@@ -9,7 +9,7 @@ import { statsOf, maxHpOf } from './attrs.js';
 /**
  * A hit a buff's 伤判 behaviour sees (伤害-8). `amount` passed beside it is what this buff has left; `dmg.amount` is the
  * hit's base, before defences and 伤判. `credit` is the source the kill is counted for, also when the events see none.
- * @typedef {{ dmg: { amount: number, tags?: readonly string[] }, src: Unit | null, credit: Unit | null, tags: readonly string[], c?: import('./types.js').Content }} TakeHit
+ * @typedef {{ dmg: { amount: number, type?: string, tags?: readonly string[] }, src: Unit | null, credit: Unit | null, tags: readonly string[], c?: import('./types.js').Content }} TakeHit
  */
 
 /**

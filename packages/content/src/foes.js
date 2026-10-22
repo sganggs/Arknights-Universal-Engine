@@ -1,4 +1,4 @@
-// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-65): behaviours by talent and skill name. The
+// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-66): behaviours by talent and skill name. The
 // game data holds only the multipliers; FOE_EXTRAS adds, per enemy, the parameters PRTS gives (radii, delays, bolts …)
 // to the blackboards the behaviours read, or a talent the data does not have. They act only through the context (ADR 0055).
 
@@ -39,6 +39,7 @@ import { templarBehaviors } from './templar.js';
 import { wineBehaviors, wineOwns } from './wine.js';
 import { whipBehaviors, whipOwns } from './whip.js';
 import { seedBehaviors, bornBugsOwns } from './seeds.js';
+import { mudShieldBehaviors, shieldOwns } from './mudshield.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').EnemyDef} EnemyDef */
 
@@ -241,6 +242,10 @@ export const FOE_EXTRAS = Object.freeze({
   // 枯朽之种 / 腐败之种: 静态刚体 is 敌能-37's Static. SelfDown is the knock-down after the hit. The data has neither.
   enemy_1269_nhfly: { talents: { Static: {}, SelfDown: {} }, source: `${PRTS}%E6%9E%AF%E6%9C%BD%E4%B9%8B%E7%A7%8D&oldid=373372` },
   enemy_1269_nhfly_2: { talents: { Static: {}, SelfDown: {} }, source: `${PRTS}%E8%85%90%E8%B4%A5%E4%B9%8B%E7%A7%8D&oldid=373373` },
+  // 泥岩小队践行者 / 组长: 出场后获得可吸收法术伤害的屏障；该屏障存在时最大生命值+50%、攻击速度+50.
+  // `page` marks the two pages that were read (敌能-66). The same blackboard without it stays uncovered (关卡-2).
+  enemy_1091_mdhmmr: { talents: { shield: { page: 1 } }, source: `${PRTS}%E6%B3%A5%E5%B2%A9%E5%B0%8F%E9%98%9F%E8%B7%B5%E8%A1%8C%E8%80%85&oldid=361721` },
+  enemy_1091_mdhmmr_2: { talents: { shield: { page: 1 } }, source: `${PRTS}%E6%B3%A5%E5%B2%A9%E5%B0%8F%E9%98%9F%E8%B7%B5%E8%A1%8C%E8%80%85%E7%BB%84%E9%95%BF&oldid=361722` },
 });
 
 /**
@@ -439,6 +444,7 @@ export const foeBehaviors = Object.freeze({
   ...whipBehaviors,
   ...seedBehaviors,
   ...radioBehaviors,
+  ...mudShieldBehaviors,
 });
 
 /**
@@ -488,6 +494,8 @@ export const FOE_NEEDS = Object.freeze({
   // page stays uncovered (关卡-2).
   ProjectileBoomRange: Object.freeze(['attack@projectile_range', 'attack@projectile_life_time', 'attack@value', 'zone']),
   ForeverEnhance: Object.freeze(['ammo']),
+  // 泥岩小队践行者的法术屏障只覆盖读过页面的两名（敌能-66）。同形的覆面大锤客、泥岩没有这个标记。
+  shield: Object.freeze(['page']),
 });
 
 /**
@@ -504,12 +512,12 @@ const healBoom = (k, bb) => k === 'Boom' && typeof bb.heal_scale === 'number';
 
 /**
  * Whether an ability has what its behaviour needs (关卡-2). A shared talent name only counts when its blackboard is the
- * shape that behaviour understands (敌能-38, 敌能-47, 敌能-63, 敌能-65) — an `aura` only with 敌能-28's stack cap (敌能-45); anything else
+ * shape that behaviour understands (敌能-38, 敌能-47, 敌能-63, 敌能-65, 敌能-66) — an `aura` only with 敌能-28's stack cap (敌能-45); anything else
  * stays incomplete. The nest pulse does not need `el`: the page names 神经损伤. A `Boom` with `heal_scale` needs its page
  * marker (敌能-58).
  * @param {string} k @param {Record<string, unknown>} bb
  */
-const complete = (k, bb) => elementHitOwns(k, bb) && takeOffOwns(k, bb) && wineOwns(k, bb) && whipOwns(k, bb) && bornBugsOwns(k, bb) && radioOwns(k, bb)
+const complete = (k, bb) => elementHitOwns(k, bb) && takeOffOwns(k, bb) && wineOwns(k, bb) && whipOwns(k, bb) && bornBugsOwns(k, bb) && radioOwns(k, bb) && shieldOwns(k, bb)
   && (k !== 'aura' || stackCapped(bb))
   && (nestPulseOwns(k, bb) || (healBoom(k, bb) ? typeof bb.page === 'number' : (FOE_NEEDS[/** @type {keyof typeof FOE_NEEDS} */ (k)] ?? []).every((n) => typeof bb[n] === 'number')));
 
