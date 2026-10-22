@@ -1,4 +1,4 @@
-// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-69): behaviours by talent and skill name. The
+// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-70): behaviours by talent and skill name. The
 // game data holds only the multipliers; FOE_EXTRAS adds, per enemy, the parameters PRTS gives (radii, delays, bolts …)
 // to the blackboards the behaviours read, or a talent the data does not have. They act only through the context (ADR 0055).
 
@@ -43,6 +43,7 @@ import { mudShieldBehaviors, shieldOwns } from './mudshield.js';
 import { punchBehaviors, punchOwns } from './punch.js';
 import { passiveBehaviors, passiveOwns } from './passive.js';
 import { monumentBehaviors } from './monuments.js';
+import { defdownBehaviors, defdownOwns } from './defdown.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').EnemyDef} EnemyDef */
 
@@ -259,6 +260,8 @@ export const FOE_EXTRAS = Object.freeze({
   enemy_4038_mufbsd: { talents: { Splash: { radius: 1.8, air: 1 } }, source: `${PRTS}%E7%83%AD%E6%83%85%E4%B8%B0%E7%A2%91&oldid=364868` },
   // 狂奔丰碑: 无法被阻挡. The data has no talent for it; not noAttack (敌能-69).
   enemy_4039_mufbse: { talents: { unblockable: {} }, source: `${PRTS}%E7%8B%82%E5%A5%94%E4%B8%B0%E7%A2%91&oldid=364869` },
+  // 碎骨: 不会攻击飞行单位; 未被阻挡时榴弹（攻击力 26%，目标及周围八格，防御力下降 50% 持续 5 秒）. The flat `defdown` users get none of these.
+  enemy_1500_skulsr: { talents: { defdown: { scale: 0.26, duration: 5, square: 1 }, noFly: {} }, source: `${PRTS}%E7%A2%8E%E9%AA%A8&oldid=367689` },
 });
 
 /**
@@ -461,6 +464,7 @@ export const foeBehaviors = Object.freeze({
   ...punchBehaviors,
   ...passiveBehaviors,
   ...monumentBehaviors,
+  ...defdownBehaviors,
 });
 
 /**
@@ -514,6 +518,8 @@ export const FOE_NEEDS = Object.freeze({
   shield: Object.freeze(['page']),
   // The 0.8 is on the two read pages only. 神拳机甲's Punch has the same data keys and stays incomplete (敌能-67).
   Punch: Object.freeze(['radius']),
+  // 碎骨's grenade. A flat `def` (−10 / −15) has none of these, so those enemies stay uncovered (敌能-70).
+  defdown: Object.freeze(['scale', 'duration', 'square']),
 });
 
 /**
@@ -530,12 +536,12 @@ const healBoom = (k, bb) => k === 'Boom' && typeof bb.heal_scale === 'number';
 
 /**
  * Whether an ability has what its behaviour needs (关卡-2). A shared talent name only counts when its blackboard is the
- * shape that behaviour understands (敌能-38, 敌能-47, 敌能-63, 敌能-65, 敌能-66, 敌能-67, 敌能-68) — an `aura` only with 敌能-28's stack cap (敌能-45); anything else
+ * shape that behaviour understands (敌能-38, 敌能-47, 敌能-63, 敌能-65, 敌能-66, 敌能-67, 敌能-68, 敌能-70) — an `aura` only with 敌能-28's stack cap (敌能-45); anything else
  * stays incomplete. The nest pulse does not need `el`: the page names 神经损伤. A `Boom` with `heal_scale` needs its page
  * marker (敌能-58).
  * @param {string} k @param {Record<string, unknown>} bb
  */
-const complete = (k, bb) => elementHitOwns(k, bb) && takeOffOwns(k, bb) && wineOwns(k, bb) && whipOwns(k, bb) && bornBugsOwns(k, bb) && radioOwns(k, bb) && shieldOwns(k, bb) && punchOwns(k, bb) && passiveOwns(k, bb)
+const complete = (k, bb) => elementHitOwns(k, bb) && takeOffOwns(k, bb) && wineOwns(k, bb) && whipOwns(k, bb) && bornBugsOwns(k, bb) && radioOwns(k, bb) && shieldOwns(k, bb) && punchOwns(k, bb) && passiveOwns(k, bb) && defdownOwns(k, bb)
   && (k !== 'aura' || stackCapped(bb))
   && (nestPulseOwns(k, bb) || (healBoom(k, bb) ? typeof bb.page === 'number' : (FOE_NEEDS[/** @type {keyof typeof FOE_NEEDS} */ (k)] ?? []).every((n) => typeof bb[n] === 'number')));
 
