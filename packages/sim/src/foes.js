@@ -11,7 +11,7 @@ import { dealEp } from './elements.js';
 import { selectable, sortAllies, friendly, evadesGround, stealthed } from './targeting.js';
 import { tileOf } from './body.js';
 import { tileAt } from './level.js';
-import { board, alight, detour, wayKeys, becomeFlyer } from './routes.js';
+import { board, alight, detour, wayKeys, becomeFlyer, becomeGround } from './routes.js';
 import { draw } from './rng.js';
 import { release } from './blocking.js';
 import { spawnDevice } from './devices.js';
@@ -107,6 +107,8 @@ export const BOLT_RADIUS = 0.3;
  *   places a 污染秽蚀 zone (敌能-46)
  * @property {(t: Unit, damage: number, seconds: number) => void} bleed gives or refreshes 逐腐 bleed (敌能-46)
  * @property {(u: Unit) => boolean} onLow whether a unit's tile is 低地 (敌能-46)
+ * @property {() => void} ground a flying unit's own motion becomes ground (`WALK`) and the move it is on drops its plan
+ *   (路线-2, 敌能-48); a unit that is not flying is left as it is
  */
 
 /**
@@ -220,6 +222,7 @@ function contextOf(w, c, e, of) {
     fly: () => { becomeFlyer(e); },
     attackAgain: () => { ab['@again'] = 1; },
     ...blightContext(w, c, e),
+    ground: () => { becomeGround(e); },
   };
 }
 

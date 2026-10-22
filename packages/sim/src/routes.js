@@ -172,6 +172,18 @@ export function becomeFlyer(e) {
 }
 
 /**
+ * A flying enemy's own motion becomes ground again (路线-2, 敌能-48): `WALK`, and the leg it is on is planned again.
+ * A unit that is not flying keeps the plan it has.
+ * @param {Unit} e
+ */
+export function becomeGround(e) {
+  if (e.base.motion !== 'FLY') return;
+  e.base.motion = 'WALK';
+  e.path = [];
+  e.pt = 0;
+}
+
+/**
  * Content moves a unit (路线-5): it stands at (x, y) at once; an enemy plans the move leg it is on afresh from there —
  * its leg, a wait it is in and its route stay.
  * @param {Unit} u @param {number} x @param {number} y
