@@ -892,6 +892,8 @@
  * @property {Bolt[]} bolts 直击 bolts in flight (敌能-4)
  * @property {Zone[]} [zones] areas that tick once a second (污染秽蚀 敌能-46, 燃烧区域 敌能-60), once there has been one
  * @property {Brood[]} [broods] enemies brought in that appear later (敌能-22), once there has been one
+ * @property {Record<string, number>} [branchAt] how many plain SPAWN individuals 召唤弩炮 has taken from each branch
+ *   (敌能-79), once one has been taken. 守御-6 does not read it
  * @property {number} bornThisFrame units created so far in this frame
  * @property {FortressState} [fortress] 堡垒守御's progress (守御-1), only in its levels
  * @property {Shot[]} shots projectiles in flight, in launch order (攻击-3)

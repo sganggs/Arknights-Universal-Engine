@@ -1,4 +1,4 @@
-// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-78): behaviours by talent and skill name. The
+// Enemy abilities of the official content (docs/spec/foes.md 敌能-5…敌能-79): behaviours by talent and skill name. The
 // game data holds only the multipliers; FOE_EXTRAS adds, per enemy, the parameters PRTS gives (radii, delays, bolts …)
 // to the blackboards the behaviours read, or a talent the data does not have. They act only through the context (ADR 0055).
 
@@ -52,6 +52,7 @@ import { vampireBehaviors, vampireOwns } from './vampire.js';
 import { c4Behaviors } from './c4.js';
 import { glowBehaviors, chargeAttackOwns } from './glow.js';
 import { helmKnightBehaviors, rebornOwns } from './helmknights.js';
+import { faustBehaviors, faustOwns } from './faust.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').EnemyDef} EnemyDef */
 
@@ -307,6 +308,10 @@ export const FOE_EXTRAS = Object.freeze({
   enemy_1104_lfkght: { talents: { reborn: { page: 1 }, noFly: {} }, source: `${PRTS}%E9%94%8B%E7%9B%94%E9%AA%91%E5%A3%AB%E5%9B%A2%E5%AD%A6%E5%BE%92&oldid=378942` },
   enemy_1104_lfkght_2: { talents: { reborn: { page: 1 }, noFly: {} }, source: `${PRTS}%E9%94%8B%E7%9B%94%E9%AA%91%E5%A3%AB%E5%9B%A2%E7%B2%BE%E9%94%90&oldid=367229` },
   enemy_1104_lfkght_3: { talents: { reborn: { page: 1 }, noFly: {} }, source: `${PRTS}%E2%80%9C%E5%B7%A6%E6%89%8B%E2%80%9D%E6%B3%B0%E7%89%B9%E6%96%AF%C2%B7%E7%99%BD%E6%9D%A8&oldid=378941` },
+  // 浮士德: 出场无敌、致命一击是物理、普通攻击不打飞行单位。召唤弩炮的 branch_id 在数据里。
+  enemy_1508_faust: { talents: { invincible: { page: 1 }, noFly: {} }, skills: { CriticalHit: { arts: 0 } }, source: `${PRTS}%E6%B5%AE%E5%A3%AB%E5%BE%B7&oldid=381104` },
+  // 锈锤战士: 同上，致命一击是法术。没有召唤弩炮。
+  enemy_2006_flsnip: { talents: { invincible: { page: 1 }, noFly: {} }, skills: { CriticalHit: { arts: 1 } }, source: `${PRTS}%E9%94%88%E9%94%A4%E6%88%98%E5%A3%AB&oldid=381103` },
 });
 
 /**
@@ -518,6 +523,7 @@ export const foeBehaviors = Object.freeze({
   ...blinkBehaviors,
   ...fieldAuraBehaviors,
   ...vampireBehaviors,
+  ...faustBehaviors,
 });
 
 /**
@@ -587,6 +593,8 @@ export const FOE_NEEDS = Object.freeze({
   ChargeAttack: Object.freeze(['page']),
   // The page marker of the three read 锋盔 pages (敌能-78). The rest of the shape is rebornOwns.
   reborn: Object.freeze(['page']),
+  // 出场无敌的页面标记（敌能-79）。「寒灾」有 duration，没有 page。致命一击的伤害类型同样只在页面上。
+  invincible: Object.freeze(['page']), CriticalHit: Object.freeze(['arts']),
 });
 
 /**
@@ -605,11 +613,11 @@ const healBoom = (k, bb) => k === 'Boom' && typeof bb.heal_scale === 'number';
  * The shape checks of the shared names (关卡-2): each says whether a blackboard of its names is the shape its behaviour
  * understands, and passes every other name. In a list, so that each family adds one entry, not one more `&&`.
  */
-const SHAPE_OWNERS = Object.freeze([elementHitOwns, takeOffOwns, wineOwns, whipOwns, bornBugsOwns, radioOwns, shieldOwns, punchOwns, passiveOwns, defdownOwns, knightOwns, blinkOwns, healAuraOwns, vampireOwns, chargeAttackOwns, rebornOwns]);
+const SHAPE_OWNERS = Object.freeze([elementHitOwns, takeOffOwns, wineOwns, whipOwns, bornBugsOwns, radioOwns, shieldOwns, punchOwns, passiveOwns, defdownOwns, knightOwns, blinkOwns, healAuraOwns, vampireOwns, chargeAttackOwns, rebornOwns, faustOwns]);
 
 /**
  * Whether an ability has what its behaviour needs (关卡-2). A shared talent name only counts when its blackboard is the
- * shape that behaviour understands (敌能-38, 敌能-47, 敌能-63, 敌能-65, 敌能-66, 敌能-67, 敌能-68, 敌能-70, 敌能-71, 敌能-73, 敌能-74, 敌能-75, 敌能-77, 敌能-78) — an `aura` only with 敌能-28's stack cap (敌能-45); anything else
+ * shape that behaviour understands (敌能-38, 敌能-47, 敌能-63, 敌能-65, 敌能-66, 敌能-67, 敌能-68, 敌能-70, 敌能-71, 敌能-73, 敌能-74, 敌能-75, 敌能-77, 敌能-78, 敌能-79) — an `aura` only with 敌能-28's stack cap (敌能-45); anything else
  * stays incomplete. The nest pulse does not need `el`: the page names 神经损伤. A `Boom` with `heal_scale` needs its page
  * marker (敌能-58).
  * @param {string} k @param {Record<string, unknown>} bb

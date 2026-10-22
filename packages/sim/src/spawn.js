@@ -7,6 +7,8 @@ import { emit } from './bus.js';
 import { joinRoute } from './routes.js';
 
 /** @typedef {import('./types.js').World} World @typedef {import('./types.js').Content} Content */
+/** @typedef {import('./types.js').WaveAction} WaveAction */
+/** One plain SPAWN individual a branch still owes (敌能-79). @typedef {{ key: string, route: number, unharmful?: boolean }} BranchSpawn */
 
 /**
  * @param {World} w @param {Content} c
@@ -23,4 +25,53 @@ export function spawnEnemy(w, c, a, fragAt, wave) {
   emit(w, 'deploy', { unit: u, initial: false });
   emit(w, 'enemySpawn', { enemy: u });
   return u;
+}
+
+/** A hidden group or a random pack is the wave scheduler's, not one preset ballista (波次-4, 波次-5). @param {WaveAction} a */
+const packed = (a) => !!(a.hidden || a.group || a.pack);
+
+/**
+ * The plain SPAWN individuals of a branch, in phase order then action order, `count` times each (敌能-79).
+ * ACTIVATE, WITHDRAW, STORY, NONE, hidden groups and random packs are not individuals. `preDelay` and `interval`
+ * belong to the level's own schedule and are not read: the skill places the one it takes now.
+ * @param {Content} c @param {string} branchId @returns {BranchSpawn[]}
+ */
+function plainSpawns(c, branchId) {
+  const phases = c.level.branches?.[branchId];
+  if (!phases) return [];
+  /** @type {BranchSpawn[]} */
+  const out = [];
+  for (const phase of phases) {
+    for (const a of phase.actions) {
+      if (a.type !== 'SPAWN' || packed(a) || !(a.count > 0)) continue;
+      for (let i = 0; i < a.count; i++) out.push({ key: a.key, route: a.route, ...(a.unharmful ? { unharmful: true } : {}) });
+    }
+  }
+  return out;
+}
+
+/** How many individuals of this branch 召唤弩炮 has already taken (敌能-79). Absent until the first take. @param {World} w @param {string} id @param {number} n */
+function remember(w, id, n) {
+  (w.branchAt ??= {})[id] = n;
+}
+
+/**
+ * The next plain SPAWN individual of a branch that has not been taken (敌能-79): spawned at that action's own route
+ * start, waiting for no wave. A key the content has no enemy for is skipped, as 敌能-22 summons nothing for one, and
+ * the search goes on so one cast still brings one enemy. Nothing left: null, and the cursor stays where it is.
+ * 守御-6 does not call this; its fragments are scheduled whole.
+ * @param {World} w @param {Content} c @param {string} branchId @returns {import('./types.js').Unit | null}
+ */
+export function takeBranch(w, c, branchId) {
+  const list = plainSpawns(c, branchId);
+  let at = w.branchAt?.[branchId] ?? 0;
+  while (at < list.length) {
+    const a = list[at];
+    at += 1;
+    remember(w, branchId, at);
+    if (!Object.hasOwn(c.enemies, a.key)) continue;
+    if (!c.level.routes[a.route]) throw new RangeError(`takeBranch: branch ${branchId} route ${a.route} is not on the level`);
+    return spawnEnemy(w, c, a, w.frame, -1);
+  }
+  return null;
 }
