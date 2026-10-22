@@ -65,7 +65,8 @@ export const BOLT_RADIUS = 0.3;
  * @property {() => void} use a skill was used: its cooldown starts again — one with a cooldown below 0 is not ready again
  * @property {(seconds: number) => number} frames seconds as whole frames (时间-2)
  * @property {(name: string) => Record<string, number> | null} talent another talent's blackboard
- * @property {(radius: number) => Unit[]} foes the units it may attack within `radius` of it
+ * @property {(radius: number, sel?: import('./targeting.js').Selector) => Unit[]} foes the units it may attack within `radius` of it.
+ *   `sel` is 索敌-2's selector; omitted, flying units stay out and 迷彩 still hides a unit
  * @property {(units: Unit[]) => Unit[]} order units it may attack in the order its attack picks them (索敌-5)
  * @property {(radius: number) => Unit[]} allies the enemies (not neutral units) on the field within `radius` of it, itself too
  * @property {(u: Unit, name: string) => Record<string, number> | null} talentOf another enemy's talent blackboard
@@ -208,7 +209,7 @@ function contextOf(w, c, e, of) {
     use: () => { if (skill) ab[`${name}.cd`] = skill.cooldown < 0 ? ONCE : secondsToFrames(skill.cooldown); },
     frames: secondsToFrames,
     talent: (t) => defOf(c, e).talents?.[t] ?? null,
-    foes: (radius) => w.units.filter((u) => isFoeOf(u, e) && selectable(u) && dist2(u, e) <= radius * radius),
+    foes: (radius, sel) => w.units.filter((u) => isFoeOf(u, e) && selectable(u, sel) && dist2(u, e) <= radius * radius),
     order: (units) => sortAllies(e, units, FPS),
     allies: (radius) => w.units.filter((u) => u.kind === KIND.ENEMY && u.base.neutral !== true && u.hp > 0 && !u.hidden && dist2(u, e) <= radius * radius),
     talentOf: (u, t) => (u.kind === KIND.ENEMY ? defOf(c, u).talents?.[t] ?? null : null),
