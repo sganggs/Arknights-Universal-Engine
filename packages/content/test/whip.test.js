@@ -213,6 +213,27 @@ test('[敌能-63] an operator and an enemy leaving within 1.0 each heal 15% and 
   assert.equal(atkOf(w2), 900);
 });
 
+test('[敌能-63] a neutral unit knocked down within 1.0 neither heals nor adds a layer; an enemy there does', () => {
+  /** @param {boolean} neutral */
+  const leave = (neutral) => {
+    // ATK 0: an enemy attacks a neutral unit, and this one would kill the fodder before the log is armed
+    const box = open({ whip: whipDef({ atk: 0 }), fodder: { ...FODDER, neutral } }, ['whip', 'fodder']);
+    const e = ofKey(box.w, 'whip')[0];
+    const fodder = ofKey(box.w, 'fodder')[0];
+    pin(e, 2, 1);
+    pin(fodder, 2, 1);
+    hold(e);
+    run(box.w, box.c, 1);
+    fodder.hp = 0;
+    run(box.w, box.c, 1);
+    e.hp = 10000;
+    run(box.w, box.c, 1);
+    return { hp: e.hp, layers: layers(e), logged: (box.w.exits ?? []).length };
+  };
+  assert.deepEqual(leave(true), { hp: 10000, layers: 0, logged: 0 });
+  assert.deepEqual(leave(false), { hp: 13000, layers: 1, logged: 1 });
+});
+
 test('[敌能-63] a knocked-down operator is healed on the next frame, not the frame it falls', () => {
   const { c, w } = open({ whip: whipDef() }, ['whip']);
   const e = ofKey(w, 'whip')[0];
