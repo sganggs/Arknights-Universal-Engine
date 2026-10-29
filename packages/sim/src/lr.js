@@ -3,8 +3,9 @@
 // Behind it, and in front of it (敌能-118): a unit whose tile is past its own column on that side. Its own column is neither.
 import { KIND } from '@aue/schema';
 import { tileOf } from './body.js';
+import { statsOf } from './attrs.js';
 
-/** @typedef {import('./types.js').Unit} Unit */
+/** @typedef {import('./types.js').Unit} Unit @typedef {import('./types.js').World} World */
 
 /** Turns an enemy by an x (敌能-90): left for one below 0, right above; none for 0 or another unit. @param {Unit} u @param {number} dx */
 export function turnLR(u, dx) {
@@ -41,3 +42,24 @@ export function front(u, other) {
  * it faces from. @param {Unit} u @param {{ x: number, y: number }} p
  */
 export const inBack = (u, p) => (facesLeft(u) ? p.x > u.x : p.x < u.x);
+
+/**
+ * Turns an enemy toward the side with more of our operators (敌能-119): those in the columns left of its own against
+ * those right of it; summons, devices and its own column do not count; equal keeps its facing. Only with the flag
+ * `faceCrowd`, or `faceCrowdFree` while it is not blocked. Run after its turn (enemies.js), so this is the facing the
+ * frame ends with, whatever 敌能-90's turns did.
+ * @param {World} w @param {Unit} e
+ */
+export function crowdTurn(w, e) {
+  const f = statsOf(e).flags;
+  if (!f.faceCrowd && !(f.faceCrowdFree && e.blockedBy < 0)) return;
+  const [, col] = tileOf(e);
+  let side = 0;
+  for (const u of w.units) {
+    if (u.kind !== KIND.OPERATOR || u.summoner !== undefined || u.hp <= 0 || u.hidden) continue;
+    const [, c] = tileOf(u);
+    side += c < col ? -1 : c > col ? 1 : 0;
+  }
+  if (side < 0) e.lr = -1;
+  else if (side > 0) delete e.lr;
+}
