@@ -124,3 +124,28 @@ test('[位移-4] a pull toward 0.5 tiles in front of the puller: PRTS 推与拉\
   const heavy = field(['........', '........', '........'], 5).e;
   assert.equal(pull(/** @type {any} */ ({}), c, heavy, 2, { to: { x: 0.5, y: 1 }, by: { x: 0, y: 1 } }), false, '受力等级 −3: none');
 });
+
+test('[敌能-90] [位移-2] a push into 失衡 turns an enemy toward the pusher once; a push toward the pusher and a 静态刚体 do not turn', () => {
+  const left = field(['.......', '.......', '.......']);
+  left.e.x = 3;
+  assert.equal(left.e.lr, undefined, 'right, as it appeared');
+  assert.equal(push(left.w, left.c, left.e, 3, { from: { x: 1, y: 1 } }), true);
+  assert.equal(left.e.lr, -1, 'pushed from its left: it faces left');
+  rest(left.c, left.e);
+  assert.ok(left.e.x > 3, 'slid right, away from the pusher');
+  assert.equal(left.e.lr, -1, 'the slide does not turn it');
+  const right = field(['.......', '.......', '.......']);
+  right.e.x = 3;
+  right.e.lr = -1;
+  assert.equal(push(right.w, right.c, right.e, 3, { from: { x: 5, y: 1 } }), true);
+  assert.equal(right.e.lr, undefined, 'pushed from its right: it faces right');
+  const drag = field(['.......', '.......', '.......']);
+  drag.e.x = 3;
+  assert.equal(push(drag.w, drag.c, drag.e, 3, { from: { x: 1, y: 1 }, toward: true }), true);
+  assert.equal(drag.e.lr, undefined, 'drawn toward the pusher: no turn');
+  const rock = field(['.......', '.......', '.......']);
+  rock.e.x = 3;
+  rock.e.buffs.push(makeBuff({ key: 'still', flags: { staticBody: true } }));
+  push(rock.w, rock.c, rock.e, 3, { from: { x: 1, y: 1 } });
+  assert.equal(rock.e.lr, undefined, 'a 静态刚体 does not move, so it does not turn');
+});
