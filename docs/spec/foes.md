@@ -1115,7 +1115,7 @@ R-11突击动力装甲（`enemy_1256_lyacpa`）、R-11a突击动力装甲（`ene
 
 ### 敌能-91 箭棘兽
 
-- **弱点**（天赋 `Weakness`，内容补上 `back` 的敌人：箭棘兽）：从出场起，它受到来自背后（敌能-90）的物理与法术伤害 × (1 − `damage_resistance`)（伤判，Buff 的 `backTakenMul`）。没有 `back` 的 `Weakness`（硬甲爪兽、岩冠兽、狡兽等）还没有核对，仍未覆盖。
+- **弱点**（天赋 `Weakness`，箭棘兽，内容补上 `back`）：从出场起，它受到来自背后（敌能-90）的物理与法术伤害 × (1 − `damage_resistance`)（伤判，Buff 的 `backTakenMul`）。带 `back` 或 `front` 的其余同名天赋见敌能-118。没有这两项的 `Weakness`（狡兽等）还没有核对，仍未覆盖。
 - **棘刺**（天赋 `QuillSpray`）：它受到伤害的那个回合之后的回合进行 `hp_ratio` 的已损失生命值判定（敌能-89，起始 100%）；通过时，背后半平面中半径 `range_radius` 以内所有它可以攻击的我方单位受到攻击力 × `atk_scale` 的物理伤害。
 - 天赋 `WeaknessUI` 只是界面的标记，没有效果。
 
@@ -1328,4 +1328,16 @@ R-11突击动力装甲（`enemy_1256_lyacpa`）、R-11a突击动力装甲（`ene
 - 诺伯特平民鉴定完成后的不可阻挡、天桩的自缚、失衡免疫、阻回与 `CheckAwake` 不是本条，仍未覆盖（关卡-2）。
 
 - 来源：[PRTS「诺伯特平民」oldid=353767](https://prts.wiki/index.php?title=%E8%AF%BA%E4%BC%AF%E7%89%B9%E5%B9%B3%E6%B0%91&oldid=353767)「无敌，不进行攻击」；[PRTS「匪帮窃贼」oldid=353841](https://prts.wiki/index.php?title=%E5%8C%AA%E5%B8%AE%E7%AA%83%E8%B4%BC&oldid=353841)、[PRTS「匪帮窃贼头目」oldid=353842](https://prts.wiki/index.php?title=%E5%8C%AA%E5%B8%AE%E7%AA%83%E8%B4%BC%E5%A4%B4%E7%9B%AE&oldid=353842)「无法被阻挡」；[PRTS「幽灵组长」oldid=371392](https://prts.wiki/index.php?title=%E5%B9%BD%E7%81%B5%E7%BB%84%E9%95%BF&oldid=371392)「不进行普通攻击，无法被阻挡」；[PRTS「天桩-甲」oldid=366637](https://prts.wiki/index.php?title=%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366637)、[PRTS「失控天桩-甲」oldid=366638](https://prts.wiki/index.php?title=%E5%A4%B1%E6%8E%A7%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366638)「常态持有自缚，失衡免疫，阻回，不进行普通攻击，无法被阻挡」。
+
+### 敌能-118 爪兽、棘兽与冠兽的弱点
+
+天赋 `Weakness` 只在正好有 `damage_resistance`、并且正好还有 `back: 1` 或 `front: 1` 其中一项时覆盖；两项都有、都没有，或者还有别的键，仍未覆盖。两名设计师的小写 `weakness` 不是这一项（敌能-65）。这五名都不在已收录的关卡里。
+
+- **背面**（内容补上 `back: 1`：硬甲爪兽、刚甲爪兽、棘兽）：受到来自背后（敌能-90）的物理与法术伤害 × (1 − `damage_resistance`)：硬甲爪兽、刚甲爪兽降低 80%，棘兽降低 75%。与箭棘兽（敌能-91）是同一个 Buff `weakness` 的 `backTakenMul`。棘兽的棘刺仍是敌能-91。
+- **正面**（内容补上 `front: 1`：岩冠兽、坚岩冠兽）：受到来自正面的物理与法术伤害降低 80%（同一 Buff 的 `frontTakenMul`）。正面是背后那一侧以外的列：向左时列号小于自己所在列，向右时列号大于自己所在列。
+- 同一列上的单位造成的伤害和无来源的伤害，不算正面也不算背面（作战机制 §3.2.2）；真实伤害和元素损伤不乘。面向变了，正面和背面跟着变（敌能-90）。
+- 从出场起一直在，直到离场（推断 INF-0675）。沉默不去掉它：硬甲爪兽、岩冠兽、坚岩冠兽「天赋&能力」栏标题的提示写「如无特殊说明，天赋默认不可沉默」，刚甲爪兽、棘兽的快照没有这句，也按不可沉默做（推断 INF-0676）。
+- 圆仔（两名）、驮兽补给员、「胆小如鼷」驮兽补给员、狡兽、恶狡兽、勇敢的壳、荒原刺背兽、石头脑袋的 `Weakness` 只有 `damage_resistance`，仍未覆盖。
+
+- 来源：[PRTS「硬甲爪兽」oldid=353755](https://prts.wiki/index.php?title=%E7%A1%AC%E7%94%B2%E7%88%AA%E5%85%BD&oldid=353755)「【弱点】位于正面，受到来自背面的物理/法术伤害降低80%」；[PRTS「刚甲爪兽」oldid=287747](https://prts.wiki/index.php?title=%E5%88%9A%E7%94%B2%E7%88%AA%E5%85%BD&oldid=287747)「【弱点】位于正面，受到来自背面的物理/法术伤害降低80%」；[PRTS「棘兽」oldid=353763](https://prts.wiki/index.php?title=%E6%A3%98%E5%85%BD&oldid=353763)「【弱点】位于正面，受到来自背面的物理/法术伤害降低75%」「没有任何常见的抗性」；[PRTS「岩冠兽」oldid=353757](https://prts.wiki/index.php?title=%E5%B2%A9%E5%86%A0%E5%85%BD&oldid=353757)「【弱点】位于背面，受到来自正面的物理/法术伤害降低80%」；[PRTS「坚岩冠兽」oldid=353758](https://prts.wiki/index.php?title=%E5%9D%9A%E5%B2%A9%E5%86%A0%E5%85%BD&oldid=353758)「【弱点】位于背面，受到来自正面的物理/法术伤害降低80%」；[PRTS「作战机制」oldid=428460](https://prts.wiki/index.php?title=%E4%BD%9C%E6%88%98%E6%9C%BA%E5%88%B6&oldid=428460)「如敌人模型的正面指向左侧，则来自左侧的伤害即为正面伤害，来自右侧的伤害即为背面伤害，反之亦然」「位于敌人所在格所在列的单位对该敌人造成的伤害与无来源伤害不属于上述情况的任意一种」；数据：enemy_database（17759cc8）`Weakness.damage_resistance` 硬甲爪兽、刚甲爪兽、岩冠兽、坚岩冠兽 0.8，棘兽 0.75；从出场起一直在为推断 INF-0675；刚甲爪兽与棘兽不被沉默去掉为推断 INF-0676
 

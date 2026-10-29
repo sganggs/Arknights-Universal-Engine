@@ -710,7 +710,8 @@
  * @property {number} src the id of the unit that gave it, −1 for none
  * @property {'queue' | 'max' | 'stack' | 'extend' | 'independent'} rule how buffs of the same key combine (状态-2)
  * @property {number} value its strength, for rule "max"
- * @property {Record<string, number>} mods
+ * @property {Record<string, number>} mods attribute modifiers. `backTakenMul` (敌能-91) and `frontTakenMul` (敌能-118)
+ *   scale physical and arts damage from behind the unit and from in front of it; neither is an attribute (属性-2)
  * @property {Record<string, boolean>} flags
  * @property {number} stacks
  * @property {number} maxStacks

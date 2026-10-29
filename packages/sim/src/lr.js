@@ -1,6 +1,6 @@
 // An enemy's left or right (docs/spec/foes.md 敌能-90, PRTS's 左右面向机制): right as it appears; a move turns it by the
 // move's x, being blocked by the x toward its blocker, starting an attack by the x toward what it attacks; no x, no turn.
-// What lies behind it: a unit whose tile is past its own column on the side it turns from.
+// Behind it, and in front of it (敌能-118): a unit whose tile is past its own column on that side. Its own column is neither.
 import { KIND } from '@aue/schema';
 import { tileOf } from './body.js';
 
@@ -24,6 +24,16 @@ export const facesLeft = (u) => u.lr === -1;
 export function behind(u, other) {
   const [, col] = tileOf(u), [, oc] = tileOf(/** @type {Unit} */ (other));
   return facesLeft(u) ? oc > col : oc < col;
+}
+
+/**
+ * Whether a unit is in front of an enemy (敌能-118): the other side of `behind`. Facing left, a smaller column; facing
+ * right, a greater one. Its own column is neither, the same as a hit with no source (作战机制 §3.2.2).
+ * @param {Unit} u @param {{ x: number, y: number }} other
+ */
+export function front(u, other) {
+  const [, col] = tileOf(u), [, oc] = tileOf(/** @type {Unit} */ (other));
+  return facesLeft(u) ? oc < col : oc > col;
 }
 
 /**

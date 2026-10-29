@@ -2,7 +2,7 @@
 // target's 伤判 effects one buff at a time in event priority and acquisition order, then the HP; the hook events on the
 // way (钩子-3).
 import { powi, FPS } from '@aue/math';
-import { behind } from './lr.js';
+import { behind, front } from './lr.js';
 import { KIND } from '@aue/schema';
 import { statsOf, activeBuffs } from './attrs.js';
 import { removeBuff, stamp, count, makeBuff, addBuff } from './buffs.js';
@@ -163,16 +163,24 @@ function blockOf(b, dmg, src) {
 }
 
 /**
+ * A side's taken multiplier, or 1 (敌能-91, 敌能-118): physical and arts damage from a source on that side. The same
+ * column and a hit with no source are neither side.
+ * @param {number | undefined} mul @param {boolean} pa @param {Unit | null} src @param {boolean} onSide
+ */
+const sideMul = (mul, pa, src, onSide) => (mul !== undefined && pa && src && onSide ? mul : 1);
+
+/**
  * A buff's taken multiplier by a hit's source (伤害-12), its stacks' power: `backTakenMul` on physical and arts damage
- * from a source behind the unit (敌能-90); `airTakenMul` on physical and arts damage from a flying source;
- * `from:<tag>` on physical, arts and true damage from an enemy with the tag, `fromPA:<tag>` on physical and arts damage
- * from one.
+ * from behind the unit (敌能-91), `frontTakenMul` on physical and arts damage from in front of it (敌能-118);
+ * `airTakenMul` on physical and arts damage from a flying source; `from:<tag>` on physical, arts and true damage from an
+ * enemy with the tag, `fromPA:<tag>` on physical and arts damage from one.
  * @param {Buff} b @param {Damage} dmg @param {{ src: Unit | null, tags: readonly string[] }} at @param {Unit} u the unit hit
  */
 function sourceMul(b, dmg, at, u) {
-  const m = b.mods, t = dmg.type, pa = t === 'phys' || t === 'arts';
-  const back = m.backTakenMul !== undefined && pa && at.src && behind(u, at.src) ? m.backTakenMul : 1;
-  const k = back * (m.airTakenMul !== undefined && pa && at.src && statsOf(at.src).flying ? m.airTakenMul : 1) * (at.tags.length && t !== 'elemental' ? tagMul(m, at.tags, pa) : 1);
+  const m = b.mods, t = dmg.type, pa = t === 'phys' || t === 'arts', src = at.src;
+  const back = sideMul(m.backTakenMul, pa, src, src !== null && behind(u, src));
+  const ahead = sideMul(m.frontTakenMul, pa, src, src !== null && front(u, src));
+  const k = back * ahead * (m.airTakenMul !== undefined && pa && src && statsOf(src).flying ? m.airTakenMul : 1) * (at.tags.length && t !== 'elemental' ? tagMul(m, at.tags, pa) : 1);
   return b.stacks === 1 ? k : powi(k, b.stacks);
 }
 

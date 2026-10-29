@@ -270,6 +270,14 @@ export const FOE_EXTRAS = Object.freeze({
   enemy_1177_dufrbl_2: { talents: { epdamage: { el: 3 } }, source: `${PRTS}%E5%87%80%E6%B5%8A%E4%B9%8B%E7%84%B0&oldid=436069` },
   // 箭棘兽: 「弱点部位位于正面，背面所受伤害降低」 — its `Weakness` is of the damage from behind (敌能-91)
   enemy_1310_mhprpn_2: { talents: { Weakness: { back: 1 } }, source: `${PRTS}%E7%AE%AD%E6%A3%98%E5%85%BD&oldid=439219` },
+  // 硬甲爪兽 / 刚甲爪兽: 「【弱点】位于正面，受到来自背面的物理/法术伤害降低80%」(敌能-118). 刚甲's snapshot is the older one.
+  enemy_1306_mhtrtl: { talents: { Weakness: { back: 1 } }, source: `${PRTS}%E7%A1%AC%E7%94%B2%E7%88%AA%E5%85%BD&oldid=353755` },
+  enemy_1306_mhtrtl_2: { talents: { Weakness: { back: 1 } }, source: `${PRTS}%E5%88%9A%E7%94%B2%E7%88%AA%E5%85%BD&oldid=287747` },
+  // 棘兽: 「【弱点】位于正面，受到来自背面的物理/法术伤害降低75%」
+  enemy_1310_mhprpn: { talents: { Weakness: { back: 1 } }, source: `${PRTS}%E6%A3%98%E5%85%BD&oldid=353763` },
+  // 岩冠兽 / 坚岩冠兽: 「【弱点】位于背面，受到来自正面的物理/法术伤害降低80%」
+  enemy_1307_mhrhcr: { talents: { Weakness: { front: 1 } }, source: `${PRTS}%E5%B2%A9%E5%86%A0%E5%85%BD&oldid=353757` },
+  enemy_1307_mhrhcr_2: { talents: { Weakness: { front: 1 } }, source: `${PRTS}%E5%9D%9A%E5%B2%A9%E5%86%A0%E5%85%BD&oldid=353758` },
   // 狙击步兵组长: 天赋「不会攻击飞行单位」 (敌能-33); its 眩晕打击 is 敌能-36
   enemy_1047_sagent_2: { talents: { noFly: {} }, source: `${PRTS}%E7%8B%99%E5%87%BB%E6%AD%A5%E5%85%B5%E7%BB%84%E9%95%BF&oldid=436077` },
   // 无胄盟第三小队组长: 「普通攻击时额外造成攻击力35%的侵蚀损伤」 (敌能-38, el 2)，「普通攻击与技能不会攻击飞行单位」 (敌能-33)
