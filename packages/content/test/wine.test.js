@@ -182,6 +182,24 @@ test('[敌能-62] 缴械 and stun postpone the barrel; the next frame the enemy 
   postponed('stun');
 });
 
+test('[敌能-62] 恐惧 postpones the barrel too, so no attack interval is held over; blocked again later, it spends it', () => {
+  const box = stand([recommender('enemy_10044_wintun', 850, 1e6)]);
+  const e = at(box.es), g = at(box.ops);
+  status.applyStatus(e, 'fear', { frames: 90 });
+  step(box.w, box.c);
+  assert.equal(g.hp, 1e6);
+  assert.equal(S(e).flags.noAttack, true, 'still carrying');
+  assert.equal(e.ab['@holdAtk'], undefined);
+  assert.equal(Object.hasOwn(box.w, 'tastings'), false);
+  buffs.removeBuff(e, 'fear');
+  /** @type {any[]} */
+  let hits = [];
+  for (let i = 0; i < 5 && hits.length === 0; i++) hits = stepHits(box.w, box.c);
+  assert.equal(hits.length, 1);
+  assert.equal(hits[0].damage, 850 * 2.8);
+  assert.equal(e.ab['@holdAtk'], undefined, 'the interval is taken the frame it is spent');
+});
+
 test('[敌能-62] let go, then blocked again: the one barrel is spent the first frame it is already blocked', () => {
   const box = stand([recommender('enemy_10044_wintun', 850, 1e6)]);
   const e = at(box.es), g = at(box.ops);
