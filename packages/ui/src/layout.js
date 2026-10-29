@@ -94,9 +94,8 @@ function fitText(s, w, h) {
  * @param {UiNode} s @param {number} PW @param {number} PH @param {readonly number[]} ppivot
  */
 function boxOf(s, PW, PH, ppivot) {
-  const csf = s.n.comps.csf, rt = s.rt;
   if (s.n.comps.fullscreen) return screenBox(s);
-  fitRect(s, PW, PH);
+  const csf = s.n.comps.csf, rt = fitRect(s, PW, PH);
   if (csf) for (const a of [0, 1]) if (csf[a] && rt.amin[a] === rt.amax[a]) rt.size[a] = prefSize(s, a);
   if (s.lgRect) return { left: s.lgRect.x, top: s.lgRect.y, w: s.lgRect.w, h: s.lgRect.h };
   return rectBox(rt, PW, PH, ppivot, s.lp);

@@ -10,6 +10,7 @@ import { createKitTerrain } from './kit.js';
 import { createHighlight } from './highlight.js';
 import { createRange } from './range.js';
 import { createTileMarks } from './tilemarks.js';
+import { createPitchMarks } from './pitchmarks.js';
 import { createEffects } from './effects.js';
 import { FPS } from './figure.js';
 import { createUnits, unitTextureKey } from './units.js';
@@ -97,9 +98,9 @@ export function createBattleRenderer(o) {
   const highlight = createHighlight(o.level), patch = highlight.patch;
   const terrain = o.kit ? createKitTerrain(o.level, o.kit, terrainTextures(o), patch) : createTerrain(o.level, o.textures, patch);
   const units = createUnits(o.textures, o.models, o.foeDevices, o.deviceMeshes, o.flyers), field = { ...o.level, highland: o.kit?.kit.highland };
-  const range = createRange(field, o.textures.get('ui:range')), marks = createTileMarks(field, o.textures.get('ui:range')), clock = battleClock();
+  const range = createRange(field, o.textures.get('ui:range')), marks = createTileMarks(field, o.textures.get('ui:range')), pitch = createPitchMarks(field), clock = battleClock();
   const effects = o.effects ? createEffects(o.effects, field, { skills: o.skills, seat: o.seat ?? 0 }) : null, placing = createPlacing(o.textures, o.models ?? new Map(), field);
-  scene.add(terrain.object, range.object, marks.object, units.shadows, units.indicators, placing.object, units.object, ...(effects ? [effects.object] : []));
+  scene.add(terrain.object, range.object, marks.object, pitch.object, units.shadows, units.indicators, placing.object, units.object, ...(effects ? [effects.object] : []));
   const overlays = createOverlays(o.bars === false ? new Map() : o.textures, o.leaders, o.foeDevices), ray = new THREE.Raycaster();
 
   let scale = o.pixelScale ?? 1, attackFx = o.attackEffects !== false;
@@ -135,13 +136,13 @@ export function createBattleRenderer(o) {
     range: (keys, heal) => range.show(keys, heal),
     /** Shows the marked tiles (渲染-19); null for none. @param {readonly import('./tilemarks.js').TileMark[] | null} list */
     marks: (list) => marks.show(list),
+    /** Shows 阵地足球's field marks (渲染-26): the effects the pack has, squares for the rest; null for none. @param {import('./pitchmarks.js').PitchState | null} s */
+    pitch: (s) => pitch.show(s, effects?.pitch(s)),
     /** Shows the operator being placed (渲染-14); null for none. @param {import('./placing.js').Placing | null} p */
     placing: (p) => placing.set(p),
     render() {
       const now = performance.now() / 1000; range.tick(now); marks.tick(now);
-      units.pose(camera);
-      placing.pose(camera);
-      overlays.pose(camera);
+      units.pose(camera); placing.pose(camera); overlays.pose(camera);
       effects?.step(clock.delta(performance.now()), camera);
       renderer.info.reset();
       renderer.clear();
@@ -161,7 +162,7 @@ export function createBattleRenderer(o) {
     shows: (id) => units.shows(id),
     /** What the last frame drew and what the GPU holds (for measuring): draw calls, triangles, geometries, textures and their estimated bytes. */
     stats: () => drawStats(renderer, [scene, overlays.scene]),
-    dispose() { terrain.dispose(); range.dispose(); marks.dispose(); highlight.dispose(); units.dispose(); placing.dispose(); overlays.dispose(); effects?.dispose(); renderer.dispose(); },
+    dispose() { terrain.dispose(); range.dispose(); marks.dispose(); pitch.dispose(); highlight.dispose(); units.dispose(); placing.dispose(); overlays.dispose(); effects?.dispose(); renderer.dispose(); },
   };
 }
 

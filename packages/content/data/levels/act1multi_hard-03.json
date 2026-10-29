@@ -7736,9 +7736,17 @@
       "epDamageResistance": 0,
       "epResistance": 0,
       "talents": {
+        "SpeedUp": {
+          "move_speed": 4,
+          "duration": 5,
+          "cooldown": 10
+        },
         "DeathPassive": {
           "token_key": "trap_140_dhsb",
           "cnt": 1
+        },
+        "AuraHit": {
+          "hp_ratio": 0.7
         }
       }
     },

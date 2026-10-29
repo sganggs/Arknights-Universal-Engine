@@ -113,7 +113,7 @@ test('[同步-3] [同步-5] the client: nothing is sent before the welcome; erro
   assert.deepEqual(out, []);
   const w = createWorld(content, { seed: 9, players: 2 });
   w.frame = 10;
-  client.receive({ t: 'welcome', v: PROTOCOL_VERSION, seat: 0, seed: 9, frame: 9, snapshot: takeSnapshot(w), match: null, content: 0, replay: null });
+  client.receive({ t: 'welcome', v: PROTOCOL_VERSION, seat: 0, seats: 2, seed: 9, frame: 9, snapshot: takeSnapshot(w), match: null, content: 0, replay: null });
   client.receive({ t: 'frames', from: 8, to: 12, cmds: [[8, 1, GUARD], [11, 0, SNIPER]] });
   assert.deepEqual([...client.queue.keys()], [11]);
   client.receive({ t: 'error', code: 'too-far-ahead', message: 'x' });

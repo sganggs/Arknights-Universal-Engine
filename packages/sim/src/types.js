@@ -18,11 +18,15 @@
  *   dontBlockWave?: boolean, hidden?: string, group?: string, pack?: string, weight?: number, unharmful?: boolean }} WaveAction
  */
 /** A fragment (波次-1, 波次-2). @typedef {{ preDelay: number, actions: WaveAction[] }} Fragment */
-/** A wave (波次-1…波次-3); `maxWait` is maxTimeWaitingForNextWave, −1 for none. @typedef {{ preDelay: number, postDelay: number, maxWait: number, fragments: Fragment[] }} Wave */
+/**
+ * A wave (波次-1…波次-3); `maxWait` is maxTimeWaitingForNextWave, −1 for none; `tag` 阵地足球's kickoff tag (足球-6);
+ * `penalty` the first wave of a 阵地足球锦标 penalty shootout (锦标-4).
+ * @typedef {{ preDelay: number, postDelay: number, maxWait: number, tag?: number, penalty?: boolean, fragments: Fragment[] }} Wave
+ */
 /**
  * A level's own cards (关卡-7): its operator cards with their training, its token cards with their count, alias and
  * whether they are hidden at first (波次-9).
- * @typedef {{ operators: { key: string, build: import('@aue/schema').Build }[], tokens: { key: string, alias: string, count: number, hidden: boolean }[] }} LevelCards
+ * @typedef {{ operators: { key: string, build: import('@aue/schema').Build, alias?: string, hidden?: boolean }[], tokens: { key: string, alias: string, count: number, hidden: boolean }[] }} LevelCards
  */
 /**
  * A predefined unit (波次-6): its tile and facing when the data gives them; a predefined operator's training (波次-7).
@@ -30,16 +34,46 @@
  */
 /**
  * A device's record (关卡-6, 装置-1): its name, attributes and its talents' blackboard; its side when it is the enemies'
- * (装置-3), the statuses it is immune to, and the modifiers it gives every enemy while on the field (装置-4).
+ * (装置-3), the statuses it is immune to, and the modifiers it gives every enemy while on the field (装置-4); its tile a
+ * 类障碍物地块 while it stands (`routeBlock`, 寻路-1), the side of its square body a ball bounces off (`square`, 足球-12),
+ * what a ball's damage to it and damage with no source are multiplied by (`ballDamage`, `envDamage`); a ball card's
+ * device (`ballCard`, 足球-14); a 锦标 智能裁判官's catch (`referee`, 锦标-2: its radius, interval in seconds, shot force × ).
+ * @typedef {{ radius: number, every: number, force: number }} RefereeDef
  * @typedef {{ name: string, maxHp: number, atk: number, def: number, res: number, blockCnt: number, baseAttackTime: number, aspd: number, tauntLevel: number,
  *   massLevel: number, talentBb: Record<string, number>, side?: 'ENEMY', immune?: string[], enemyMods?: Record<string, number>, talents?: Record<string, number>[],
- *   cost?: number, facility?: FacilityDef, builder?: BuilderDef, rubble?: RubbleDef, rumble?: RumbleDef, inert?: boolean }} DeviceDef
+ *   cost?: number, facility?: FacilityDef, builder?: BuilderDef, rubble?: RubbleDef, rumble?: RumbleDef, inert?: boolean, routeBlock?: boolean, square?: number,
+ *   ballDamage?: number, envDamage?: number, ballCard?: boolean, referee?: RefereeDef }} DeviceDef
  */
 /**
  * 堡垒守御 (守御-1…守御-6): the level's times in seconds and the life a rest gives; a facility's kind, its modes'
  * blackboards by level and a roadblock's blast; a builder's progress key, hits and seconds on the field; the rubble
  * pile's range cells, its guards' branch and its check times.
  * @typedef {{ rest: number, wave: number, waveLast: number, life: number, restAdd: number }} FortressRules
+ */
+/**
+ * 阵地足球's settings (足球-6, 足球-17): the match time and the players' wait at a kickoff (seconds), the stamps' net
+ * goals, the kickoff level of each lead ([lead, level] in order), each level's weights of the wave tags, the teams with
+ * their weights and players by role (and elite players by role, when the level has them), the role of each name part
+ * of the standard team's players, and what each goal of our lead adds to the players' max HP, ATK and move speed; a
+ * 阵地足球锦标 level's settings (锦标-1): its manager's enemy move speed for its 冻人冬日 stadium, the lead that wins at
+ * once (−1 for none), the change to the deploy limit in a penalty shootout (锦标-4), the type of team it draws
+ * (锦标-6, −1 for none), and its stadium, or the stadiums it draws one of by their weights (锦标-2); the two sides'
+ * names and the event's relics (锦标-7).
+ * @typedef {{ time: number, wait: number, stamps: number[], ahead: [number, number][], weights: Record<string, number[]>,
+ *   teams: { name: string, weight: number, players: Record<string, string>, elite?: Record<string, string> }[], roles: Record<string, string>,
+ *   catchUp?: { maxHp: number, atk: number, moveSpeed: number }, cup?: { moveSpeed: number, mercy: number, kickerDelta?: number, teamType: number, stadium?: Stadium, stadiums?: Stadium[],
+ *     sides?: { ours: string, theirs: string }, relics?: CupRelic[] } }} FootballRules
+ * A 锦标 relic (锦标-7): its id, the name and text of the stage that unlocks it, that stage, and its runes as seat runes
+ * (同步-9).
+ * @typedef {{ id: string, name: string, text: string, unlockedBy?: string, runes: { key: string, professions: number, board: [string, number | string][] }[] }} CupRelic
+ * A 锦标 stadium (锦标-2): its name, the hidden group of the waves it enables, the ice it lays on every field tile at
+ * each kickoff, what the enemies' move speed is multiplied by, its lightning, its weight where one is drawn.
+ * @typedef {{ name: string, group?: string, ice?: number, moveMul?: number, thunder?: ThunderDef, weight?: number }} Stadium
+ * 超强对流's lightning (锦标-2): seconds between a ball's warnings and from a warning to its bolt; the bolt's radius,
+ * its physical damage to ours and to the enemies and its stun in seconds; the ball's burning after it — radius, arts
+ * damage each second to ours and to the enemies, and how many seconds.
+ * @typedef {{ every: number, warn: number, radius: number, ally: number, enemy: number, stun: number,
+ *   burn: { radius: number, ally: number, enemy: number, seconds: number } }} ThunderDef
  * @typedef {{ kind: 'workshop' | 'lounge' | 'platform' | 'roadblock' | 'gym', modes: Record<string, number>[], boom?: number }} FacilityDef
  * @typedef {{ sp: 'sp' | 'sp2', hits: number, life: number }} BuilderDef
  * @typedef {{ range: string, cells: Cell[], branch: string, first: number, every: number }} RubbleDef
@@ -63,7 +97,7 @@
  * its co-op stages (合作-6).
  * @typedef {import('./level.js').LevelMap & { id: string, code?: string, name?: string, options: LevelOptions, routes: Route[], waves: Wave[],
  *   hiddenGroups?: string[], predefines?: Predefine[], stages?: Stage[], view?: number[], works?: { dealt: number, taken: number }, cards?: LevelCards,
- *   branches?: Record<string, Fragment[]>, fortress?: FortressRules, uncovered?: string[] }} Level
+ *   branches?: Record<string, Fragment[]>, fortress?: FortressRules, football?: FootballRules, uncovered?: string[] }} Level
  */
 
 /** @typedef {'phys' | 'arts' | 'true' | 'elemental'} DamageType */
@@ -561,7 +595,8 @@
  * `critTalents` its chances to strike harder (攻击-4), `timedTalents` its talents in time on the field (部署-7),
  * `deployTalents` what its talents do at its deployment (部署-8); from its seat's runes, `runeMods` its always-on buff
  * (符文-3), `probSp` its chances of SP on dealing damage (符文-4), `rangeSp` the SP it gives in its attack range (符文-5); a
- * carried unit's record (符文-6) what its deployment does (`carried`, 装置-6). A 轰隆隆先生 card carries `rumble` (装置-7). A summon's record names its owner's key (`summoner`)
+ * carried unit's record (符文-6) what its deployment does (`carried`, 装置-6). A 轰隆隆先生 card carries `rumble` (装置-7), a
+ * ball card `ballCard` (足球-14). A summon's record names its owner's key (`summoner`)
  * and how its card works (`summon`, 召唤-3, 召唤-4); `position` ALL lets it stand on melee and ranged tiles. An operator a mod
  * adds names the official operator whose figure and voice it has (`look`, mod-11).
  * @typedef {OptionalStats & { name: string, position: string, cost: number, blockCnt: number, baseAttackTime: number, maxHp: number, atk: number, def: number, res: number,
@@ -569,7 +604,7 @@
  *   talentBb?: Record<string, number>, talentMods?: Record<string, number>, talentTrait?: Partial<TraitDef>, fieldTalents?: TeamTalent[], fieldAspd?: { ally: number, enemy: number, cnt: number, allyExtra: number, enemyExtra: number },
  *   powers?: string[], rangeTalents?: RangeTalent[],
  *   critTalents?: CritTalent[], timedTalents?: TimedTalent[], deployTalents?: DeployTalent[], summoner?: string, summon?: SummonDef,
- *   runeMods?: Record<string, number>, probSp?: { prob: number, sp: number }[], rangeSp?: { sp: number, interval: number }, carried?: CarriedEffect, builder?: BuilderDef, rumble?: RumbleDef }} OperatorDef
+ *   runeMods?: Record<string, number>, probSp?: { prob: number, sp: number }[], rangeSp?: { sp: number, interval: number }, carried?: CarriedEffect, builder?: BuilderDef, rumble?: RumbleDef, ballCard?: boolean }} OperatorDef
  */
 /**
  * A summon's card rules (召唤-3, 召唤-4): its limits on the field and held, what its owner's deployment adds (0: no card),
@@ -738,6 +773,18 @@
  *   its 失衡 slide: speed (tiles/s) and 硬直 frames left (位移-3); a pull on it — its point, its puller's centre, its force,
  *   the distance it began at, its frames left, whether it stopped (位移-4). A 静态刚体 keeps vx and vy at 0 and drops the
  *   slide when the force ends (位移-5)
+ * @property {{ f: number, e: number, force: number, need: number, block: number, points: number, sum: number, ax: number, ay: number, touch: number[], bump?: number[], goal?: number, sel?: number, selUntil?: number,
+ *   hurt?: { amount: number, every: number, next: number, until: number }, cover?: number, countdown?: number, ref?: { by: number, at: number, x: number, y: number },
+ *   storm?: { next: number, bolt?: number, burns?: { lit: number, ticks: number } } }} [ball]
+ *   a ball's physics (足球-2): friction factor, restitution, default force, the damage that kicks it, the block count left
+ *   that stops it, the points of its goal (足球-7); the damage and direction summed so far (足球-3); the units of ours it
+ *   touched last frame (足球-4), the devices it bounced off this frame (足球-12); the goal it went into this frame (足球-5,
+ *   SCORE_GOAL); the player holding it and the frame its hold ends (足球-9); the damage a shot gave it to deal around it,
+ *   every so many frames, the next and the last frame (足球-15); the friction change it leaves on the tiles it enters
+ *   (足球-16); the frame its penalty countdown ends (锦标-4); the 智能裁判官 that took it, when, and where from (锦标-2).
+ *   Left out for other units
+ * @property {{ block: number }} [spot] a 守门位's block for one of ours on its tile (足球-13). Left out for other units
+ * @property {-1} [lr] an enemy faces left (敌能-90); left out while it faces right
  * @property {number} anim schema ANIM
  * @property {Drift} [drift] 恐惧 / 诱导 movement, present once either has been applied (状态-10, 状态-11)
  * @property {number} [summoner] the id of the unit that summoned it (召唤-4, 召唤-6); left out for others
@@ -799,7 +846,7 @@
  * A burn zone sets `arts` (flat arts each tick) and `pad` (added to the radius for the ally collider); 污染秽蚀 leaves
  * both off. Its source's id, the frame it was placed, frames until the next tick, frames of life left.
  * @typedef {{ x: number, y: number, radius: number, low: number, high: number, air: boolean, open: boolean, wide: boolean,
- *   src: number, placed: number, next: number, life: number, arts?: number, pad?: number }} Zone
+ *   src: number, placed: number, next: number, life: number, arts?: number, pad?: number, pure?: number }} Zone
  */
 /**
  * An enemy another brings in after a delay (敌能-22): its key, where it appears, the route and leg it goes on with, the
@@ -838,8 +885,10 @@
 
 /**
  * An operator's card in a player's deck (部署-3): the 再部署惩罚 layers it has (0–2) and the frame it may be deployed
- * again from; `lock`, the enemy that devoured it (吞噬, 敌能-30) — locked while that enemy is on the field.
- * @typedef {{ penalty: number, ready: number, lock?: number, retreated?: boolean }} Card
+ * again from; `lock`, the enemy that devoured it (吞噬, 敌能-30) — locked while that enemy is on the field —, and
+ * `facing`, the direction of one an enemy carries off, to put it back so (敌能-109); `seal`, the frame an enemy's 源石封印
+ * on it ends (敌能-110).
+ * @typedef {{ penalty: number, ready: number, lock?: number, facing?: import('./dir.js').Dir, seal?: number, retreated?: boolean }} Card
  */
 /**
  * A summon's card in a player's deck (召唤-4): copies held, the frame it may be deployed from, copies cooling (队列).
@@ -854,10 +903,12 @@
  * open cost request (−1 for none), `askCd` the frames until they may ask again (合作-5); its summons' cards, once one
  * has one (召唤-4); once talents give them (部署-10, 职业-30), the cut for its next operator (`cut`), the cuts on cards
  * (`cuts`), the cards whose first skill has started (`once`), its last operator deployed (`last`, 职业-31) and the kinds of
- * enemy each card killed (`slain`, 职业-34); `loot`, its 轰隆隆先生 cards, only when the deck has one (装置-7).
+ * enemy each card killed (`slain`, 职业-34); `loot`, its 轰隆隆先生 cards, only when the deck has one (装置-7); `balls`, the
+ * balls its goalkeepers caught, with the frame its card's time is up and the tile each was caught on, only while it
+ * holds one (足球-14).
  * @typedef {{ life: number, cost: number, costTimer: number, deployed: string[], cards: Record<string, Card>, revive: number, downs: number,
  *   ask: number, askCd: number, summons?: Record<string, SummonCard>, cut?: number, cuts?: Record<string, number>, once?: string[], last?: string,
- *   slain?: Record<string, string[]>, loot?: Record<string, LootPile> }} Player
+ *   slain?: Record<string, string[]>, loot?: Record<string, LootPile>, balls?: { id: number, until: number, row: number, col: number }[], costLock?: number }} Player
  */
 
 /**
@@ -884,6 +935,16 @@
  * @typedef {{ phase: 'defend' | 'rest' | 'go' | 'over', round: number, start: number, until: number, next: number, fell: boolean, defended: number, damage: number,
  *   ready: boolean[], pools: Record<string, number>[], guards: { at: number, key: string, route: number }[], freed: boolean, total: number, out: number }} FortressState
  */
+/**
+ * 阵地足球's progress (足球-6, 足球-7): the team drawn (its index), our goals and theirs, the frame the current kickoff
+ * began, the frame the match ends; the hits our operators dealt enemies this frame and the last ([enemy id, operator id,
+ * frame], 足球-15).
+ * The ice and slime on the field's tiles: their friction change by tile index (足球-16). A 锦标 penalty shootout
+ * (锦标-4): the round under way (0…5), the frame it began (−1 between rounds), the ball of the round once seen, whether
+ * it was kicked, whether our countdown is over. The 锦标 stadium drawn (its index, 锦标-2).
+ * @typedef {{ team: number, home: number, away: number, kick: number, until: number, hits?: [number, number, number][], cover?: Record<string, number>,
+ *   pk?: { round: number, begun: number, ball: number, kicked: boolean, counted: boolean }, stadium?: number }} FootballState
+ */
 
 /**
  * @typedef {object} World
@@ -904,6 +965,7 @@
  *   (敌能-79), once one has been taken. 守御-6 does not read it
  * @property {number} bornThisFrame units created so far in this frame
  * @property {FortressState} [fortress] 堡垒守御's progress (守御-1), only in its levels
+ * @property {FootballState} [football] 阵地足球's progress (足球-6, 足球-7), only in its levels
  * @property {Shot[]} shots projectiles in flight, in launch order (攻击-3)
  * @property {Alchemy[]} [alchemy] the 炼金单元 on the field (技能-13), once there has been one
  * @property {Tasting[]} [tastings] free-tasting areas (敌能-62), once one has been placed

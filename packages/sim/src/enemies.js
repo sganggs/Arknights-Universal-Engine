@@ -24,19 +24,31 @@ function reachGoal(w, c, e) {
 }
 
 /**
+ * The turn of an enemy that does not walk (位移-3, 足球-2): one in 失衡 only slides, and when that slide ends its
+ * abilities hear it (敌能-2) — unless it left the field, as a ball in a goal does (足球-5); a ball at rest stays where it
+ * is: it neither walks, is blocked nor attacks.
+ * @param {World} w @param {Content} c @param {Unit} e
+ */
+function stillTurn(w, c, e) {
+  e.anim = ANIM.IDLE;
+  if (!e.slide) return;
+  const still = slideStep(c, e, w);
+  if (!still && w.units.includes(e)) foeUnbalanceEnd(w, c, e);
+}
+
+/** An enemy's animation after its move this turn: moving when it left its place. @param {Unit} e @param {number} x0 @param {number} y0 */
+const moved = (e, x0, y0) => (e.x !== x0 || e.y !== y0 ? ANIM.MOVE : ANIM.IDLE);
+
+/**
  * One enemy's turn (帧-1): one in 失衡 only slides (位移-3), and when that slide ends its abilities hear it (敌能-2);
  * otherwise it is released if its blocker is gone or cannot block; it may be blocked; it attacks; an enemy that is not
  * blocked and did not attack walks, unless content placed it this turn (路线-5, 敌能-73), and may be blocked where it arrives.
  * @param {World} w @param {Content} c @param {Unit} e
  */
 function enemyTurn(w, c, e) {
+  const x0 = e.x, y0 = e.y;
   foeTick(w, c, e);
-  if (e.slide) {
-    const still = slideStep(c, e, w);
-    e.anim = ANIM.IDLE;
-    if (!still) foeUnbalanceEnd(w, c, e);
-    return;
-  }
+  if (e.slide || e.ball) { stillTurn(w, c, e); return; }
   keepOrRelease(w, e);
   tryBlock(w, c, e);
   const attacked = enemyAttack(w, c, e);
@@ -45,8 +57,8 @@ function enemyTurn(w, c, e) {
     return;
   }
   if (attacked) return;
-  // place() this turn is the whole move (路线-5, 敌能-73): do not also fear-walk or follow the route.
-  if (e.ab['@held'] === w.frame) { e.anim = ANIM.MOVE; return; }
+  // place() this turn is the whole move (路线-5, 敌能-73): do not also fear-walk or follow the route; held where it was, it stands
+  if (e.ab['@held'] === w.frame) { e.anim = moved(e, x0, y0); return; }
   const speed = speedOf(c, e);
   if (speed === 0) { e.anim = ANIM.IDLE; return; }
   const x = e.x, y = e.y;

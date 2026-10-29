@@ -12,6 +12,8 @@ import { tileAt } from './level.js';
 import { displace } from './routes.js';
 import { crossable } from './paths.js';
 import { dealDamage } from './damage.js';
+import { FRICTION, STOP_SPEED, HARD_FRAMES } from './constants.js';
+import { ballFriction, ballMove, ballMoved, ballRoll } from './ball.js';
 
 /** @typedef {import('./types.js').World} World @typedef {import('./types.js').Unit} Unit @typedef {import('./types.js').Content} Content */
 /**
@@ -23,14 +25,7 @@ import { dealDamage } from './damage.js';
 /** A push's speed (tiles/s) by 受力等级 −2…3 (位移-2): ≤ −3 none, ≥ 3 as 3. */
 export const PUSH_SPEED = Object.freeze({ '-2': 1, '-1': 2, 0: 4, 1: 4.5, 2: 5.3, 3: 5.8 });
 
-/** Friction's deceleration (位移-3): μ 0.5 × g 9.81, tiles/s². */
-export const FRICTION = 0.5 * 9.81;
-
-/** 失衡 ends at or below this speed (tiles/s), its 硬直 over (位移-3). */
-export const STOP_SPEED = 0.1;
-
-/** The 失衡硬直 in frames (位移-3: 0.1 s). */
-export const HARD_FRAMES = 3;
+export { FRICTION, STOP_SPEED, HARD_FRAMES };
 
 /** A pull's force at its start (N on a mass of 1) by 受力等级 −2…3 (位移-4): ≤ −3 none, ≥ 3 as 3. */
 export const PULL_FORCE = Object.freeze({ '-2': 2, '-1': 10, 0: 40, 1: 42, 2: 44, 3: 46 });
@@ -178,16 +173,17 @@ export function push(w, c, t, force, o) {
   t.slide = { vx: s.vx + a.ux * v, vy: s.vy + a.uy * v, hard: HARD_FRAMES };
   release(t);
   t.swing = null;
-  if (!o.effect) step(c, t, t.slide.vx / FPS, t.slide.vy / FPS);
+  if (!o.effect) step(c, t, t.slide.vx / FPS, t.slide.vy / FPS, w);
   return true;
 }
 
 /**
  * Moves a sliding unit by (dx, dy) unless that leaves the map or, for a ground unit, enters a tile it cannot walk or
- * crosses a closed edge (位移-3, 地图-2): then it stops where it is.
- * @param {Content} c @param {Unit} t @param {number} dx @param {number} dy
+ * crosses a closed edge (位移-3, 地图-2): then it stops where it is. A ball moves by its own rules (足球-4).
+ * @param {Content} c @param {Unit} t @param {number} dx @param {number} dy @param {World} [w]
  */
-function step(c, t, dx, dy) {
+function step(c, t, dx, dy, w) {
+  if (t.ball) { ballStep(c, t, dx, dy, w); return; }
   const m = c.level, nx = t.x + dx, ny = t.y + dy, r = Math.round(ny), col = Math.round(nx), r0 = Math.round(t.y), c0 = Math.round(t.x), tile = tileAt(m, r, col);
   const walled = (r !== r0 || col !== c0) && tileAt(m, r0, c0) !== null && !crossable(m, r0 * m.width + c0, r * m.width + col, false);
   if (!tile || tile.passable !== 'ALL' || walled) {
@@ -219,15 +215,81 @@ export function slideStep(c, t, w) {
   const s = t.slide;
   if (!s) return false;
   if (statsOf(t).flags.staticBody) return staticStep(c, t, w);
-  const v = len(s.vx, s.vy), nv = Math.max(0, v - FRICTION / FPS), k = v > 0 ? nv / v : 0, p = s.pull && s.pull.left > 0 ? s.pull : undefined;
+  const fr = frictionOf(c, t, w), v = len(s.vx, s.vy), nv = Math.max(0, v - fr / FPS), k = v > 0 ? nv / v : 0, p = s.pull && s.pull.left > 0 ? s.pull : undefined;
   const [vx, vy] = p ? pulled(t, p, s.vx * k, s.vy * k) : [s.vx * k, s.vy * k];
   t.slide = { vx, vy, hard: Math.max(0, s.hard - 1), ...(p ? { pull: { ...p, left: p.left - 1 } } : {}) };
   if (statsOf(t).flags.levitate) return settle(t, w, c);
-  const x0 = t.x, y0 = t.y;
-  step(c, t, t.slide.vx / FPS, t.slide.vy / FPS);
+  const x0 = t.x, y0 = t.y, moving = slideMove(c, t, w, { vx: s.vx, vy: s.vy, v, fr, pulled: !!p });
   const tr = t.slide.pull?.trauma;
   if (tr && w) traumaStep(w, c, t, tr, hypot(t.x - x0, t.y - y0));
-  return len(t.slide.vx, t.slide.vy) <= STOP_SPEED && t.slide.hard === 0 && !t.slide.pull ? settle(t, w, c) : true;
+  return slideGoesOn(c, t, w, moving);
+}
+
+/**
+ * This frame's move of a slide (位移-3, 足球-4): at its speed after friction — a ball, not pulled, the exact way under
+ * its deceleration: at its mean speed over the frame, up to where it stops. The speed it moved at.
+ * @param {Content} c @param {Unit} t @param {World | undefined} w
+ * @param {{ vx: number, vy: number, v: number, fr: number, pulled: boolean }} was its velocity and speed before friction, the friction, whether pulled
+ */
+function slideMove(c, t, w, was) {
+  const s = /** @type {NonNullable<Unit['slide']>} */ (t.slide);
+  if (!t.ball || was.pulled || !(was.v > 0)) {
+    step(c, t, s.vx / FPS, s.vy / FPS, w);
+    return len(s.vx, s.vy);
+  }
+  const m = ballRoll(was.v, was.fr);
+  step(c, t, (was.vx / was.v) * m, (was.vy / was.v) * m, w);
+  return m * FPS;
+}
+
+/**
+ * Whether a slide goes on after this frame's move (位移-3, 足球-4, 足球-5): a ball that went into a goal, or that one
+ * of ours stops, settles; otherwise the slide ends — settled — once its speed is at most 0.1 with
+ * its 硬直 and pull over. A ball's collisions take the speed it moved at this frame, before a bounce.
+ * @param {Content} c @param {Unit} t @param {World | undefined} w @param {number} moving
+ */
+function slideGoesOn(c, t, w, moving) {
+  const s = /** @type {NonNullable<Unit['slide']>} */ (t.slide), speed = len(s.vx, s.vy);
+  const end = t.ball && w ? ballMoved(w, c, t, moving) : null;
+  if (end) return settle(t, w, c);
+  return speed <= STOP_SPEED && s.hard === 0 && !s.pull ? settle(t, w, c) : true;
+}
+
+/** The deceleration friction gives a sliding unit (位移-3): μg, a ball's own (足球-4, 足球-16). @param {Content} c @param {Unit} t @param {World} [w] */
+const frictionOf = (c, t, w) => (t.ball ? ballFriction(c, t, w) : FRICTION);
+
+/**
+ * One frame's move of a sliding ball (足球-4, 足球-12): where ballMove takes it; an axis that hit a wall or a device's
+ * square body turns back × the ball's restitution; the devices it bounced off are noted for its collisions.
+ * @param {Content} c @param {Unit} t @param {number} dx @param {number} dy @param {World} [w]
+ */
+function ballStep(c, t, dx, dy, w) {
+  const m = ballMove(w, c, t, dx, dy), e = t.ball?.e ?? 0, s = t.slide;
+  displace(t, m.x, m.y);
+  if (t.ball && m.hit.length > 0) t.ball.bump = m.hit.map((u) => u.id);
+  if (s && (m.bx || m.by)) t.slide = { ...s, vx: m.bx ? -s.vx * e : s.vx, vy: m.by ? -s.vy * e : s.vy };
+}
+
+/**
+ * Stops a unit's slide at once where it is (足球-9: a player stops the ball before kicking it): 失衡 ends, no speed.
+ * @param {Unit} t
+ */
+export function stopSlide(t) {
+  if (!t.slide) return;
+  delete t.slide;
+  displace(t, t.x, t.y);
+}
+
+/**
+ * Sends a unit sliding along (ux, uy) — a unit vector — at `speed` tiles/s, its slide replaced, with 位移-3's 硬直:
+ * a ball's kick (足球-3). It leaves its blocker and its swing is cut.
+ * @param {Unit} t @param {number} ux @param {number} uy @param {number} speed
+ */
+export function kickSlide(t, ux, uy, speed) {
+  t.slide = { vx: ux * speed, vy: uy * speed, hard: HARD_FRAMES };
+  release(t);
+  t.swing = null;
+  if (t.ball) t.ball.touch = [];
 }
 
 /**
@@ -251,7 +313,8 @@ function traumaStep(w, c, t, tr, moved) {
 function settle(t, w, c) {
   const tr = t.slide?.pull?.trauma;
   if (tr && w && c && tr.moved > 0 && t.hp > 0) dealDamage(w, w.units.find((u) => u.id === tr.src && u.hp > 0) ?? null, t, { type: 'arts', amount: tr.moved * tr.per }, c);
-  t.slide = undefined;
+  // JSON drops undefined keys. Remove it here too so another slide has the same key order after a snapshot.
+  delete t.slide;
   displace(t, t.x, t.y);
   return false;
 }

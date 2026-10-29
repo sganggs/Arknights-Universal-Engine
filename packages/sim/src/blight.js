@@ -26,7 +26,7 @@ const dist2 = (a, b) => (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y);
 /**
  * Places a 污染秽蚀 zone (敌能-46). The first tick is a full second later: a skill places the zone before this frame's
  * effect pass, a death places it after, and skipping the birth frame makes both wait the same 30 frames.
- * @param {World} w @param {number} src the placer's id @param {{ x: number, y: number, radius: number, life: number, low: number, high: number, air?: boolean, open?: boolean, wide?: boolean, arts?: number, pad?: number }} o
+ * @param {World} w @param {number} src the placer's id @param {{ x: number, y: number, radius: number, life: number, low: number, high: number, air?: boolean, open?: boolean, wide?: boolean, arts?: number, pad?: number, pure?: number }} o
  */
 export function placeZone(w, src, o) {
   /** @type {Zone} */
@@ -38,6 +38,8 @@ export function placeZone(w, src, o) {
   // A 燃烧区域 (敌能-60). Left off a 污染秽蚀 zone so its snapshot stays the same.
   if (typeof o.arts === 'number') z.arts = o.arts;
   if (typeof o.pad === 'number') z.pad = o.pad;
+  // A 燃烧区域 of sourceless true damage (敌能-111).
+  if (typeof o.pure === 'number') z.pure = o.pure;
   if (w.zones) w.zones.push(z);
   else w.zones = [z];
 }
@@ -98,10 +100,23 @@ function burn(w, c, z, src) {
   }
 }
 
+/**
+ * One tick of a zone of sourceless true damage (敌能-111): each unit in range, every overlapping zone on its own, with no
+ * 受击回复. @param {World} w @param {Content} c @param {Zone} z
+ */
+function scorch(w, c, z) {
+  const r2 = z.radius * z.radius;
+  for (const u of [...w.units]) {
+    if (!accepts(u, z) || dist2(u, z) > r2) continue;
+    dealDamage(w, null, u, { type: 'true', amount: /** @type {number} */ (z.pure), sourceless: true, noHurtSp: true }, c);
+  }
+}
+
 /** One zone's tick. A burn zone does not take the 污染秽蚀 stamp, and a blight zone does not deal arts. @param {World} w @param {Content} c @param {Zone} z */
 function pulse(w, c, z) {
   const src = w.units.find((u) => u.id === z.src && u.hp > 0) ?? null;
-  if (typeof z.arts === 'number') burn(w, c, z, src);
+  if (typeof z.pure === 'number') scorch(w, c, z);
+  else if (typeof z.arts === 'number') burn(w, c, z, src);
   else pollute(w, c, z, src);
 }
 
@@ -160,7 +175,7 @@ export const onLow = (c, u) => { const [r, col] = tileOf(u); return tileAt(c.lev
  */
 export function blightContext(w, c, e) {
   return {
-    zone: (/** @type {{ x: number, y: number, radius: number, life: number, low: number, high: number, air?: boolean, open?: boolean, wide?: boolean, arts?: number, pad?: number }} */ o) => { placeZone(w, e.id, o); },
+    zone: (/** @type {{ x: number, y: number, radius: number, life: number, low: number, high: number, air?: boolean, open?: boolean, wide?: boolean, arts?: number, pad?: number, pure?: number }} */ o) => { placeZone(w, e.id, o); },
     bleed: (/** @type {Unit} */ t, /** @type {number} */ damage, /** @type {number} */ seconds) => { giveBleed(t, damage, seconds); },
     onLow: (/** @type {Unit} */ u) => onLow(c, u),
   };

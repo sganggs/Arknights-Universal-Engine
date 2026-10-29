@@ -5,6 +5,7 @@ import { makeEnemy } from './units.js';
 import { foeSpawn } from './foes.js';
 import { emit } from './bus.js';
 import { joinRoute } from './routes.js';
+import { teamKey, kickoffWait, catchUp } from './football.js';
 
 /** @typedef {import('./types.js').World} World @typedef {import('./types.js').Content} Content */
 /** @typedef {import('./types.js').WaveAction} WaveAction */
@@ -17,11 +18,13 @@ import { joinRoute } from './routes.js';
  * @param {number} fragAt the frame its fragment began @param {number} wave the wave that waits for it, −1 for none
  */
 export function spawnEnemy(w, c, a, fragAt, wave) {
-  const u = makeEnemy(w, c, { key: a.key, route: a.route, frag: fragAt, wave, unharmful: a.unharmful, ...(a.place ? { place: a.place } : {}) });
+  const key = teamKey(w, c, a.key), up = catchUp(w, c, key);
+  const u = makeEnemy(w, c, { key, route: a.route, frag: fragAt, wave, unharmful: a.unharmful, ...(a.place ? { place: a.place } : {}), ...(up ? { up } : {}) });
   if (a.place) joinRoute(c, u);
   w.units.push(u);
   w.events.push({ type: 'spawn', id: u.id, key: u.key });
   foeSpawn(w, c, u);
+  kickoffWait(w, c, u);
   emit(w, 'deploy', { unit: u, initial: false });
   emit(w, 'enemySpawn', { enemy: u });
   return u;
@@ -37,7 +40,7 @@ const packed = (a) => !!(a.hidden || a.group || a.pack);
  * @param {Content} c @param {string} branchId @returns {BranchSpawn[]}
  */
 function plainSpawns(c, branchId) {
-  const phases = c.level.branches?.[branchId];
+  const branches = c.level.branches, phases = branches && Object.hasOwn(branches, branchId) ? branches[branchId] : undefined;
   if (!phases) return [];
   /** @type {BranchSpawn[]} */
   const out = [];
@@ -52,7 +55,8 @@ function plainSpawns(c, branchId) {
 
 /** How many individuals of this branch 召唤弩炮 has already taken (敌能-79). Absent until the first take. @param {World} w @param {string} id @param {number} n */
 function remember(w, id, n) {
-  (w.branchAt ??= {})[id] = n;
+  // An own data key even for __proto__; JSON recovery gives the cursor dictionary an ordinary prototype again.
+  Object.defineProperty(w.branchAt ??= {}, id, { value: n, writable: true, enumerable: true, configurable: true });
 }
 
 /**
@@ -64,7 +68,7 @@ function remember(w, id, n) {
  */
 export function takeBranch(w, c, branchId) {
   const list = plainSpawns(c, branchId);
-  let at = w.branchAt?.[branchId] ?? 0;
+  let at = w.branchAt && Object.hasOwn(w.branchAt, branchId) ? w.branchAt[branchId] : 0;
   while (at < list.length) {
     const a = list[at];
     at += 1;

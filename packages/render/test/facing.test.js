@@ -30,6 +30,13 @@ test('a new target mirrors by the side it is on, however small (渲染-4)', () =
   assert.deepEqual(facingStep(back, 1, 5, true), { side: 'back', flip: false });
 });
 
+test('a back-deployed operator keeps its back model unless the target is steeply below (渲染-4)', () => {
+  assert.deepEqual(facingStep(back, 1, -3, true, true), { side: 'front', flip: false }, 'below and steeper than 45°');
+  assert.deepEqual(facingStep(back, 3, -1, true, true), { side: 'back', flip: false }, 'below but shallower keeps the back');
+  assert.deepEqual(facingStep(back, 1, 3, true, true), { side: 'back', flip: false }, 'above keeps the back');
+  assert.deepEqual(facingStep(back, -1, -5, true, true), { side: 'front', flip: true }, 'steeply below and to the left mirrors');
+});
+
 test('the same target keeps its side outside its column and only mirrors (渲染-4)', () => {
   assert.deepEqual(facingStep(back, 2, 1, false), { side: 'back', flip: false }, 'shallow above keeps the back');
   assert.deepEqual(facingStep(front, 1, 3, false), { side: 'front', flip: false }, 'steep above keeps the front');

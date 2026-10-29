@@ -160,5 +160,8 @@
   ],
   "drift": [
     "packages/sim/src/induce.js"
+  ],
+  "lr": [
+    "packages/sim/src/lr.js"
   ]
 }

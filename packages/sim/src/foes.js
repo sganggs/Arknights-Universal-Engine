@@ -17,16 +17,21 @@ import { board, alight, detour, wayKeys, becomeFlyer, becomeGround, displace, le
 import { draw } from './rng.js';
 import { release } from './blocking.js';
 import { spawnDevice } from './devices.js';
+import { stopSlide } from './displacement.js';
+import { inBack } from './lr.js';
 import { keyAt, passable, isHole } from './paths.js';
 import { bringIn, hatch } from './broods.js';
 import { takeBranch } from './spawn.js';
 import { devour } from './deck.js';
+import { carryOff, putBack, unlock } from './carry.js';
+import { lockCost, sealCard } from './seals.js';
 import { blightContext, tickBlight } from './blight.js';
 import { atPoint } from './tactical.js';
 import { on } from './bus.js';
 import { placeTasting, tickTastings } from './tasting.js';
 import { readDeparted } from './exits.js';
 import { grantLootCards } from './loot.js';
+import { footballContext } from './football.js';
 
 /** @typedef {import('./types.js').World} World @typedef {import('./types.js').Content} Content @typedef {import('./types.js').Unit} Unit */
 /** @typedef {import('./types.js').EnemyDef} EnemyDef @typedef {import('./types.js').Blast} Blast @typedef {import('./types.js').Bolt} Bolt */
@@ -107,6 +112,15 @@ export const BOLT_RADIUS = 0.3;
  * @property {() => number} draw one uniform draw in [0, 1) from the match (随机-1)
  * @property {(u: Unit) => void} remove an enemy's HP to 0 outright: it is knocked down at the frame's end (敌能-24)
  * @property {(t: Unit) => boolean} devour 吞噬 (敌能-30): whether the unit was devoured
+ * @property {(t: Unit) => boolean} carryOff 载客 (敌能-109): an operator of ours, not a summon, nobody holds yet — its HP may
+ *   have run out this frame — is knocked down with its card locked by this enemy and its direction kept; whether it was
+ * @property {(seconds: number) => boolean} putBack the operator this enemy carries goes back on its tile, stunned
+ *   `seconds`, or only has its card unlocked when the tile cannot hold it (敌能-109); whether it went back
+ * @property {(wait: boolean) => void} unlock the card this enemy locked is unlocked, its 再部署时间 starting now with
+ *   `wait` (敌能-108)
+ * @property {(seconds: number) => void} lockCost every player's cost stops regenerating for `seconds` (敌能-110)
+ * @property {(seconds: number) => void} sealCard each player's costliest card waiting to be deployed is sealed for
+ *   `seconds` (敌能-110)
  * @property {(t: Unit, key: string, init: { mods?: Record<string, number>, flags?: Record<string, boolean>, value?: number, prio?: number, act?: string, restore?: number }) => void} lend
  *   gives a unit a buff of a key that lasts while it is given again each turn (敌能-25): it ends within two frames of the
  *   last. `prio` and `act` are kept from the first time it is given
@@ -116,8 +130,9 @@ export const BOLT_RADIUS = 0.3;
  * @property {(u: Unit | null) => boolean} defaultAlly the unit is still on the field and is a 默认类 ally (敌能-54)
  * @property {() => void} fly its own motion becomes flying and the move it is on is planned again (路线-2, 敌能-34)
  * @property {() => void} attackAgain its next attack may start at once: the attack cooldown is cleared (敌能-44, 攻击-2)
- * @property {(o: { x: number, y: number, radius: number, life: number, low: number, high: number, air?: boolean, open?: boolean, wide?: boolean, arts?: number, pad?: number }) => void} zone
- *   places a zone (污染秽蚀 敌能-46; a 燃烧区域 when `arts` is set, 敌能-60)
+ * @property {(o: { x: number, y: number, radius: number, life: number, low: number, high: number, air?: boolean, open?: boolean, wide?: boolean, arts?: number, pad?: number, pure?: number }) => void} zone
+ *   places a zone (污染秽蚀 敌能-46; a 燃烧区域 when `arts` is set, 敌能-60; one of sourceless true damage when `pure` is set,
+ *   敌能-111)
  * @property {(t: Unit, damage: number, seconds: number) => void} bleed gives or refreshes 逐腐 bleed (敌能-46)
  * @property {(u: Unit) => boolean} onLow whether a unit's tile is 低地 (敌能-46)
  * @property {() => void} ground a flying unit's own motion becomes ground (`WALK`) and the move it is on drops its plan
@@ -132,6 +147,8 @@ export const BOLT_RADIUS = 0.3;
  *   area at the centre of the target's tile (敌能-62)
  * @property {() => { id: number, x: number, y: number, kind: number }[]} departed enemies and operators that left since
  *   this ability last asked (敌能-63); the first call only arms the log
+ * @property {() => void} steady its 失衡 ends now where it is, with no speed left (位移-3; 敌能-89)
+ * @property {(u: Unit) => boolean} behind whether a unit's centre is in the half of the plane behind it (敌能-90, 敌能-91)
  * @property {(x: number, y: number) => void} place puts this enemy at (x, y); during its own turn that is the whole move
  *   this frame (路线-5, 敌能-73)
  * @property {() => { x: number, y: number } | null} course where the move it is on is heading, or null when it is not on one (敌能-73)
@@ -140,6 +157,27 @@ export const BOLT_RADIUS = 0.3;
  * @property {(branchId: string) => Unit | null} summonNext the next plain SPAWN individual of a level branch, at that
  *   entry's own route start (敌能-79); null when the branch has none left. A missing enemy key is skipped
  * @property {(key: string, n: number) => void} grantLoot each allied seat's 待部署区 gains n of the device card `key` (敌能-80)
+ * @property {(p: import('./ball.js').BallParams) => void} ball makes this enemy a ball (足球-2)
+ * @property {() => Unit[]} balls the balls on the field that have not gone into a goal (足球-9)
+ * @property {(b: Unit) => boolean} freeBall whether no other player holds the ball (足球-9)
+ * @property {(b: Unit, frames: number) => void} holdBall stops the ball and makes it this enemy's for that many frames (足球-9)
+ * @property {(b: Unit, ux: number, uy: number, scale: number, hurt?: { amount: number, every: number, seconds: number }) => void} kickBall
+ *   kicks the ball along a unit vector at its default force × scale, and frees it (足球-9); with `hurt`, the ball deals that
+ *   damage to ours it touches every `every` seconds for `seconds` (足球-15)
+ * @property {(which: 'ours' | 'theirs') => { x: number, y: number }[]} goalTiles the centres of a goal's tiles (足球-1)
+ * @property {(x: number, y: number) => boolean} chase one frame's straight move toward a point, its move this frame (足球-9)
+ * @property {(block: number) => void} goalSpot makes this enemy a 守门位 that gives `block` (足球-13)
+ * @property {(b: Unit) => void} carry the ball at this enemy's centre, its for the frame; into a goal, scored (足球-15)
+ * @property {(g: { x: number, y: number }) => boolean} goalOpen whether a goal tile has no barrier nor goalkeeper in front (足球-15)
+ * @property {(x: number, y: number) => boolean} clearLine whether a ball from this enemy to a point touches none of ours
+ *   and no barrier (足球-15)
+ * @property {() => { target: number, source: number }[]} hits the hits our operators dealt enemies — not balls nor 守门位
+ *   — this frame and the last (足球-15)
+ * @property {(name: string) => Record<string, number> | null} skillBb the blackboard of one of its skills by name, or null
+ * @property {(d: number) => void} ballNeed changes this ball's kick threshold by d, not below 0 (足球-16)
+ * @property {(seconds: number) => void} countdown in our 锦标 penalty round, this ball holds what hits it for `seconds`
+ *   and is then kicked by it (锦标-4)
+ * @property {() => 'ours' | 'theirs' | null} penalty who kicks in the 锦标 penalty round under way, null outside one (锦标-4)
  * @property {(t: Unit, p: Payload) => void} hurl throws a homing skill projectile (敌能-83). Its speed is an enemy
  *   projectile's (攻击-3). `amount` is frozen as given. Arrival deals that as a skill hit, not an attack, then `status`
  *   when the target is still up
@@ -157,8 +195,9 @@ export const BOLT_RADIUS = 0.3;
  * @property {(ctx: FoeContext) => void} [death]
  * @property {(ctx: FoeContext, target: Unit, dealt: number, ranged: boolean) => void} [hit] a hit of its normal attack
  *   dealt damage (`ranged`: it came by a projectile)
- * @property {(ctx: FoeContext, target: Unit, how: { dealt: number, ranged: boolean, skill: boolean }) => void} [landed]
- *   a normal attack's hit connected (`dealt` may be 0; `skill`: the skill's attack). Splash does not (敌能-46)
+ * @property {(ctx: FoeContext, target: Unit, how: { dealt: number, ranged: boolean, skill: boolean, missed: boolean }) => void} [landed]
+ *   a normal attack's hit connected (`dealt` may be 0; `skill`: the skill's attack; `missed`: it was dodged or missed,
+ *   伤害-8). Splash does not (敌能-46)
  * @property {(ctx: FoeContext) => boolean} [fatal] its HP ran out: true when the ability keeps it on the field, its HP
  *   above 0
  * @property {(ctx: FoeContext) => void} [unbalanceEnd] 失衡 ended this turn, after the slide settled (敌能-2)
@@ -268,6 +307,7 @@ function contextOf(w, c, e, of) {
     defaultAlly: (u) => defaultAlly(c, u),
     departed: () => readDeparted(w, ab, name),
     ...barrelContext(w, ab),
+    ...footballContext(w, c, e),
     ...lateContext(w, c, e, ab),
   };
 }
@@ -276,7 +316,7 @@ function contextOf(w, c, e, of) {
  * The rest of an ability's context (敌能-2, 敌能-49). Split so `contextOf` stays within the line limit.
  * @param {World} w @param {Content} c @param {Unit} e @param {Record<string, number>} ab
  * @returns {Pick<FoeContext, 'setHp' | 'resetSkills' | 'onWay' | 'detour' | 'release' | 'placeDevice' | 'summon' | 'draw' | 'remove'
- *   | 'devour' | 'lend' | 'around' | 'enemies' | 'fly' | 'attackAgain' | 'ammoOf' | 'spendAmmo' | 'renew' | 'ours' | 'place'
+ *   | 'devour' | 'carryOff' | 'putBack' | 'unlock' | 'lockCost' | 'sealCard' | 'lend' | 'around' | 'enemies' | 'fly' | 'attackAgain' | 'ammoOf' | 'spendAmmo' | 'renew' | 'ours' | 'place' | 'steady' | 'behind'
  *   | 'course' | 'open' | 'planted' | 'summonNext' | 'grantLoot' | 'hurl'>}
  */
 function lateContext(w, c, e, ab) {
@@ -291,6 +331,11 @@ function lateContext(w, c, e, ab) {
     draw: () => draw(w),
     remove: (u) => { if (u.kind === KIND.ENEMY) knockDown(u); },
     devour: (t) => devour(e, t),
+    carryOff: (t) => carryOff(c, e, t),
+    putBack: (seconds) => putBack(w, c, e, seconds),
+    unlock: (wait) => { unlock(w, c, e, wait); },
+    lockCost: (seconds) => { lockCost(w, seconds); },
+    sealCard: (seconds) => { sealCard(w, c, seconds); },
     lend: (t, key, init) => { lend(e, t, key, init); },
     around: (t, area) => around(w, e, t, area),
     enemies: () => w.units.filter((u) => u.kind === KIND.ENEMY && u.base.neutral !== true && u.hp > 0),
@@ -335,7 +380,7 @@ function openAt(c, e, x, y) {
  * The context members that place an enemy or ask where it is going (敌能-44, 敌能-73). Kept out of contextOf so that
  * function stays within the line limit.
  * @param {World} w @param {Content} c @param {Unit} e @param {Record<string, number>} ab
- * @returns {Pick<FoeContext, 'attackAgain' | 'hurl' | 'grantLoot' | 'summonNext' | 'planted' | 'place' | 'course' | 'open'>}
+ * @returns {Pick<FoeContext, 'attackAgain' | 'hurl' | 'grantLoot' | 'summonNext' | 'planted' | 'place' | 'steady' | 'behind' | 'course' | 'open'>}
  */
 function moveMembers(w, c, e, ab) {
   return {
@@ -345,6 +390,8 @@ function moveMembers(w, c, e, ab) {
     summonNext: (branchId) => takeBranch(w, c, branchId),
     planted: (key) => w.units.filter((u) => u.buffs.some((b) => b.key === key && b.src === e.id)),
     place: (x, y) => { displace(e, x, y); ab['@held'] = w.frame; },
+    steady: () => { stopSlide(e); },
+    behind: (u) => inBack(e, u),
     course: () => courseOf(c, e),
     open: (x, y) => openAt(c, e, x, y),
   };
@@ -591,7 +638,7 @@ export function foeHit(w, c, e, t, how) {
 /**
  * A normal attack's hit connected (敌能-46): abilities' `landed`, also when the hit took no HP. Splash does not.
  * @param {World} w @param {Content} c @param {Unit} e @param {Unit} t
- * @param {{ dealt: number, ranged: boolean, skill: boolean }} how
+ * @param {{ dealt: number, ranged: boolean, skill: boolean, missed: boolean }} how
  */
 export function foeLanded(w, c, e, t, how) {
   each(w, c, e, 'landed', (b, ctx) => b.landed?.(ctx, t, how));

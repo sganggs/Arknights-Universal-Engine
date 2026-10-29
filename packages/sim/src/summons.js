@@ -4,6 +4,7 @@
 import { secondsToFrames } from '@aue/math';
 import { KIND, DIR } from '@aue/schema';
 import { tileAt } from './level.js';
+import { isKeeper } from './pitch.js';
 import { makeOperator } from './units.js';
 import { releaseAll } from './blocking.js';
 import { reachKeys } from './reach.js';
@@ -46,7 +47,9 @@ export const summonerOf = (w, c, seat, key) => onField(w, seat, c.operators[key]
 export function occupying(w, c, seat, free) {
   const p = w.players[seat];
   const summons = w.units.filter((u) => u.kind === KIND.OPERATOR && u.owner === seat && u.summoner !== undefined && c.operators[u.key].summon?.occupy === 1);
-  return p.deployed.filter((k) => !free(c.operators[k])).length + summons.length - freeSummons(w, c, summons);
+  // a goalkeeper takes no place (足球-13)
+  const keepers = w.units.filter((u) => u.kind === KIND.OPERATOR && u.owner === seat && u.summoner === undefined && p.deployed.includes(u.key) && !free(c.operators[u.key]) && isKeeper(u));
+  return p.deployed.filter((k) => !free(c.operators[k])).length - keepers.length + summons.length - freeSummons(w, c, summons);
 }
 
 /**

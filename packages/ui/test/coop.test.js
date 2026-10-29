@@ -34,6 +34,8 @@ const top = { ...N('coop', {}, [
   { ...N('panel_pause_confirm', {}, [N('image_bg', {}, [N('image_rect', {}, [N('text_description', text), N('slider_progress', slider('@panel_pause_confirm/image_bg/image_rect/slider_progress/fill'), [N('fill', fillImg)]),
     N('btn_confirm', { nodraw: 'raycast' }), N('btn_cancel', img, [N('text', text), N('hotspot', { nodraw: 'raycast' })])])])]), active: false },
   N('btn_menu', img),
+  { ...N('panel_cooperate_football_status', {}, [N('img_bg', img), { ...N('panel_lead', {}, [N('text_lead', text)]), active: false },
+    N('text_score_ally', text), N('text_score_enemy', text), N('text_footbal_timer', text)]), active: false },
 ]), rt: R({ amin: [0, 1], amax: [1, 1], size: [0, 1], pivot: [0, 1] }) };
 const cost = { ...N('cost', {}, [
   st('state_none_button', [N('cost_text', text), N('collider', { nodraw: 'raycast' })]),
@@ -148,3 +150,20 @@ test('[界面-17] the mate\'s pause request: the popup with its time left, the a
   quiet.update({ me: side, mate: side, speed: 1, paused: false, asking: -1, confirm: 0.5 });
   /** @type {any} */ (quiet.screen.one('btn_confirm')).el.fire('click');
 });
+
+test('[界面-41] 阵地足球: the football panel in place of the status panel — the goals, the time left; the lead tag while we lead', () => {
+  const ui = setup(), co = createCoopTop(ui, coopTop, { speed() {}, pause() {} }), s = co.screen;
+  const base = { me: side, mate: side, speed: 1, paused: false, asking: -1 };
+  assert.equal(node(s.one('panel_cooperate_football_status')).active, false, 'hidden until a football state');
+  co.update({ ...base, football: { home: 0, away: 1, left: 299.2 } });
+  const panel = node(s.one('panel_cooperate_football_status'));
+  assert.deepEqual([panel.active, node(s.one('status')).active], [true, false]);
+  const texts = (/** @type {string} */ n) => /** @type {any} */ (node(s.one(n, panel))).txt;
+  assert.deepEqual([texts('text_score_ally'), texts('text_score_enemy'), texts('text_footbal_timer')], ['0', '1', '05:00']);
+  assert.equal(node(s.one('panel_lead', panel)).active, false);
+  co.update({ ...base, football: { home: 2, away: 1, left: 61 } });
+  assert.deepEqual([texts('text_score_ally'), texts('text_footbal_timer'), node(s.one('panel_lead', panel)).active], ['2', '01:01', true]);
+  co.update({ ...base, football: { home: 2, away: 2, left: 30 } });
+  assert.equal(node(s.one('panel_lead', panel)).active, false, 'level again: the tag goes');
+});
+

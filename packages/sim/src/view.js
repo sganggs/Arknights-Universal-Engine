@@ -85,14 +85,17 @@ function writeUnit(a, i, u, cost) {
 }
 
 /**
- * Writes the render state of the world (into `out` when it is long enough).
+ * Writes the render state of the world (into `out` when it is long enough): the units not hidden (渲染-1: a passenger
+ * aboard, an enemy between a route's DISAPPEAR and APPEAR, a caught ball are not drawn) — a 守门位 is drawn as its
+ * tile's mark, not as a unit (渲染-26).
  * @param {World} w @param {Float64Array} [out] @returns {Float64Array}
  */
 export function toView(w, out) {
-  const n = viewLength(w.units.length, w.players.length), a = out && out.length >= n ? out : new Float64Array(n);
-  a[0] = VIEW_VERSION; a[1] = w.frame; a[2] = w.units.length; a[3] = w.players.length;
+  const shown = w.units.filter((u) => !u.hidden && !u.spot);
+  const n = viewLength(shown.length, w.players.length), a = out && out.length >= n ? out : new Float64Array(n);
+  a[0] = VIEW_VERSION; a[1] = w.frame; a[2] = shown.length; a[3] = w.players.length;
   let i = 4;
   for (const p of w.players) { a[i] = p.life; a[i + 1] = p.cost; i += 2; }
-  for (const u of w.units) i = writeUnit(a, i, u, w.players[u.owner]?.cost ?? 0);
+  for (const u of shown) i = writeUnit(a, i, u, w.players[u.owner]?.cost ?? 0);
   return a;
 }

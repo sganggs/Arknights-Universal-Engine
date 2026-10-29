@@ -1,6 +1,7 @@
 // Blocking (docs/spec/blocking.md 阻挡-1…阻挡-4): an operator stops the enemies that come within its block radius, as
 // many as its block count holds; a blocked enemy stays where it is until it is released.
 import { secondsToFrames } from '@aue/math';
+import { turnLR } from './lr.js';
 import { KIND } from '@aue/schema';
 import { statsOf } from './attrs.js';
 import { tileAt } from './level.js';
@@ -51,6 +52,7 @@ export function blockBy(w, e, by) {
   if (e.blockedBy < 0) {
     e.blockedBy = by.id;
     e.blockedAt = w.frame;
+    turnLR(e, by.x - e.x);
   }
   return e.blockedBy === by.id;
 }
@@ -160,6 +162,7 @@ export function tryBlock(w, c, e) {
   if (!best) return false;
   e.blockedBy = best.id;
   e.blockedAt = w.frame;
+  turnLR(e, best.x - e.x);
   deployOffset(w, best, e);
   return true;
 }

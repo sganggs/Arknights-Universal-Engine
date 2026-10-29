@@ -1,5 +1,5 @@
-// One talent name `Passive` (docs/spec/foes.md 敌能-63, 敌能-68). 血珀's seed shape and R-11's armor shape share this
-// object: a second behaviour under the same name would replace one of them. Any other blackboard stays uncovered
+// One talent name `Passive` (docs/spec/foes.md 敌能-63, 敌能-68; cup.md 锦标-2). 血珀's seed shape, R-11's armor shape
+// and 龙卷风's wind share this object: a second behaviour under the same name would replace one of them. Any other blackboard stays uncovered
 // (关卡-2) and these hooks do nothing with it. They act only through the context (ADR 0055).
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior */
@@ -9,6 +9,12 @@
 
 /** 血珀. `damage_resistance` must be 0: a non-zero pair would be 庇护, which this does not implement. */
 const SEED_KEYS = new Set(['damage_resistance', 'hp_ratio']);
+/** 龙卷风 (锦标-2): the radius of its wind alone. */
+const WIND_KEYS = new Set(['radius']);
+/** 龙卷风 (锦标-2): 无敌, 失衡免疫, it neither attacks nor is blocked. */
+const WIND_FLAGS = Object.freeze({ invincible: true, noDisplace: true, noAttack: true, unblockable: true });
+/** The buff of an enemy in a 龙卷风's wind (锦标-2): 浮空 while it stays inside. */
+const WIND = 'wind';
 /** R-11 / R-11a. `targets` is the page's cap (FOE_EXTRAS); 神射机甲 has the scale and not the cap. */
 const ARMOR_KEYS = new Set(['attack@ranged.atk_scale', 'targets']);
 /**
@@ -43,26 +49,45 @@ function armorShape(bb) {
   return num(bb['attack@ranged.atk_scale']) && num(bb.targets);
 }
 
+/** 龙卷风's wind: the radius, a number, and nothing else (锦标-2). @param {Record<string, unknown>} bb */
+const windShape = (bb) => exactKeys(bb, WIND_KEYS) && num(bb.radius);
+
 /**
- * Whether a talent of this name, with this blackboard, is one of the two shapes this object implements. Any other name
+ * Whether a talent of this name, with this blackboard, is one of the shapes this object implements. Any other name
  * is not this object's concern: the caller still asks the other owners. Exactly one owner of `Passive` (敌能-63, 敌能-68).
  * @param {string} name @param {Record<string, unknown>} bb
  */
 export function passiveOwns(name, bb) {
   if (name !== 'Passive') return true;
-  return seedShape(bb) || armorShape(bb);
+  return seedShape(bb) || armorShape(bb) || windShape(bb);
 }
 
 /** 血珀: the four flags at once, then 10% of max HP as 生命流失 every second, the first a second after it appears. @param {FoeContext} ctx */
 function seedSpawn(ctx) {
+  if (windShape(bbOf(ctx))) ctx.addBuff(ctx.self, { key: 'tornado', flags: { ...WIND_FLAGS } });
   if (!seedShape(bbOf(ctx))) return;
   ctx.addBuff(ctx.self, { key: 'dseed', flags: { ...SEED_FLAGS } });
   ctx.state.set('due', ctx.frame + ctx.frames(1));
 }
 
+/**
+ * 龙卷风's wind (锦标-2): every other enemy within `radius` of it is 浮空 while it stays inside — renewed each frame,
+ * so it ends once the enemy is out or the wind is gone —, unless it flies or is immune to 浮空. @param {FoeContext} ctx
+ */
+function windTick(ctx) {
+  const self = ctx.self, r = /** @type {number} */ (bbOf(ctx).radius), tag = String(self.id);
+  for (const u of ctx.enemies()) {
+    if (u === self) continue;
+    ctx.removeBuff(u, WIND, tag);
+    const dx = u.x - self.x, dy = u.y - self.y, s = ctx.stats(u), immune = s.flags['immune:levitate'] || (u.base.immune ?? []).includes('levitate');
+    if (u.hp > 0 && dx * dx + dy * dy <= r * r && !s.flying && !immune) ctx.addBuff(u, { key: WIND, tag, left: 2, flags: { levitate: true } });
+  }
+}
+
 /** @param {FoeContext} ctx */
 function seedTick(ctx) {
   const bb = bbOf(ctx);
+  if (windShape(bb)) { windTick(ctx); return; }
   if (!seedShape(bb)) return;
   const due = ctx.state.get('due');
   if (ctx.frame < due) return;
@@ -95,7 +120,7 @@ function armorAttack(ctx, mods) {
   return { ...mods, targets: /** @type {number} */ (bb.targets), scale: mods.scale * scale };
 }
 
-/** 血珀's drain and R-11's two attacks. The shape each hook reads decides which one runs. @type {FoeBehavior} */
+/** 血珀's drain, R-11's two attacks and 龙卷风's wind. The shape each hook reads decides which one runs. @type {FoeBehavior} */
 const Passive = Object.freeze({
   spawn: seedSpawn,
   tick: seedTick,

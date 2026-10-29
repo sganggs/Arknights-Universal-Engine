@@ -27,9 +27,9 @@ function clock() {
   };
 }
 
-/** A session wired to a host through fake sockets (no latency). */
-function rig() {
-  const c = tinyContent(), t = clock(), posts = /** @type {any[]} */ ([]), sent = /** @type {string[]} */ ([]);
+/** A session wired to a host through fake sockets (no latency). @param {any} [c] the content */
+function rig(c = tinyContent()) {
+  const t = clock(), posts = /** @type {any[]} */ ([]), sent = /** @type {string[]} */ ([]);
   /** @type {any} */
   let sock = null;
   const host = new LockstepHost({ hashEvery: 1, content: c, seats: 1, seed: 5, send: (_seat, msg) => sock?.onmessage?.(JSON.stringify(msg)) });
@@ -67,6 +67,33 @@ test('the session plays the server frames and posts a render state per frame tim
   assert.deepEqual({ ...st, players: undefined }, { wave: 0, stage: -1, start: 0, count: 0, stamps: 0, passed: 0, result: -1, players: undefined }, 'the match status rides along');
   assert.deepEqual(st.players.map((/** @type {any} */ p) => [p.deployed, p.cards, p.revive, p.ask]), [[[], {}, -1, -1]], 'with the state of each player');
   assert.ok(st.players[0].costTimer > 0);
+});
+
+test('[足球-6] [足球-14] in 阵地足球 the status has the match: the team, the goals, its end, the stamps, the balls, the cards held, the ice and slime, the 守门位', () => {
+  const c = /** @type {any} */ (tinyContent());
+  c.level.football = { time: 300, wait: 0, stamps: [1], ahead: [[0, 0]], weights: { 0: [1] }, teams: [{ name: 'normal', weight: 1, players: {} }], roles: {} };
+  const r = rig(c);
+  r.session.start({ url: 'ws://x', seat: 0, key: 'k' });
+  r.t.run(500, (now) => r.host.tick(now));
+  const st = r.posts.filter((p) => p.type === 'frame').at(-1).status;
+  assert.deepEqual(st.football, { team: 'normal', home: 0, away: 0, until: 300 * 30, stamps: 0, balls: [], held: [[]], cover: {}, spots: [] });
+});
+
+test('[锦标-2] [锦标-4] a 锦标 match\'s status has its stadium, and in a penalty shootout the round under way and whose it is', () => {
+  const c = /** @type {any} */ (tinyContent());
+  c.level.football = { time: 300, wait: 0, stamps: [1], ahead: [[0, 0]], weights: { 0: [1] }, teams: [{ name: 'normal', weight: 1, players: {} }], roles: {},
+    cup: { moveSpeed: 1.2, mercy: -1, stadium: { name: 'winter', moveMul: 1, ice: 0.3 } } };
+  const r = rig(c);
+  r.session.start({ url: 'ws://x', seat: 0, key: 'k' });
+  r.t.run(500, (now) => r.host.tick(now));
+  const st = r.posts.filter((p) => p.type === 'frame').at(-1).status;
+  assert.equal(st.football.stadium, 'winter');
+  assert.equal(st.football.pk, undefined, 'no shootout yet');
+  const w = /** @type {import('@aue/sim').World} */ (r.session.client.world);
+  /** @type {any} */ (w.football).pk = { round: 1, begun: -1, ball: 0, kicked: false, counted: false };
+  r.t.run(200, (now) => r.host.tick(now));
+  const later = r.posts.filter((p) => p.type === 'frame').at(-1).status;
+  assert.deepEqual(later.football.pk, { round: 1, side: 'theirs' });
 });
 
 test('a command reaches the field; the debug state matches the server at the same frame', () => {

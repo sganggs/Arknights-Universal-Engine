@@ -4,4 +4,5 @@ export { startBattle } from './main.js';
 export { BattleSession } from './session.js';
 /** @typedef {import('./session.js').Status} Status */
 /** @typedef {import('./session.js').PlayerStatus} PlayerStatus */
+/** @typedef {import('./session.js').FootballStatus} FootballStatus */
 /** @typedef {import('./cards.js').SummonStatus} SummonStatus */

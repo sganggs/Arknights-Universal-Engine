@@ -8,6 +8,7 @@ import { HIGHLIGHT, highlightFactor, RANGE, tileWorld, toThree } from '../src/in
 import { createHighlight } from '../src/highlight.js';
 import { createRange } from '../src/range.js';
 import { createTileMarks, TILE_MARKS } from '../src/tilemarks.js';
+import { createPitchMarks, PITCH_MARKS } from '../src/pitchmarks.js';
 import { createTerrain } from '../src/terrain.js';
 
 const level = tinyContent().level;
@@ -89,3 +90,21 @@ test("[渲染-19] the marks: a quad a marked tile at its height, this seat's blu
   bare.show([{ key: 7, mate: false }]);
   assert.equal(bare.count(), 0, 'no texture: nothing drawn');
 });
+
+test('[渲染-26] 阵地足球: a square on each 守门位 tile and each tile of ice or slime in its colour; an arrow for the kick a ball has summed, a tile long at its threshold', () => {
+  const field = { ...level, highland: 0.3 }, m = createPitchMarks(field);
+  m.show({ spots: [7], cover: { 8: -0.3, 9: 0.3 }, kicks: [{ x: 1, y: 1, ax: 2, ay: 0, share: 0.5 }, { x: 2, y: 1, ax: 0, ay: 0, share: 1 }] });
+  assert.equal(m.count(), 4, 'three squares and the arrow; a kick with no direction is none');
+  const meshes = /** @type {THREE.Mesh[]} */ (m.object.children), color = (/** @type {THREE.Mesh} */ q) => /** @type {any} */ (q.material).color;
+  const want = (/** @type {readonly number[]} */ c) => new THREE.Color().setRGB(c[0], c[1], c[2], THREE.SRGBColorSpace);
+  assert.ok(color(meshes[0]).equals(want(PITCH_MARKS.ice)) && color(meshes[1]).equals(want(PITCH_MARKS.slime)) && color(meshes[2]).equals(want(PITCH_MARKS.spot)));
+  const [x, , z] = toThree(tileWorld(field, 1, 1, 0));
+  assert.deepEqual([meshes[2].position.x, meshes[2].position.z], [x, z]);
+  assert.ok(Math.abs(meshes[3].scale.x - 0.5) < 1e-9, 'half its threshold: half a tile');
+  m.show(null);
+  assert.equal(m.count(), 0);
+  m.show({ spots: [7], cover: { 8: -0.3, 9: 0.3 }, kicks: [] }, new Set(['spot', 'ice']));
+  assert.deepEqual(m.object.children.map((q) => color(/** @type {THREE.Mesh} */ (q)).equals(want(PITCH_MARKS.slime))), [true], 'the kinds the effects draw: no square');
+  m.dispose();
+});
+

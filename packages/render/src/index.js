@@ -24,4 +24,5 @@ export { createUiFx, pageRoot } from './uifx.js';
 export { soundsOf, musicOf, pickSound, roomFor } from './sounds.js';
 export { dubOf, linesOf, voicesOf, leaderOf, admit, newGate, inDub, LINE_TYPES } from './voices.js';
 export { TILE_MARKS } from './tilemarks.js';
+export { PITCH_MARKS } from './pitchmarks.js';
 export { effectIndex, effectSubsetJson } from './fx/subset.js';

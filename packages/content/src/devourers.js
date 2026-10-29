@@ -3,6 +3,7 @@
 // only through the context (ADR 0055).
 
 import { KIND } from '@aue/sim';
+import { plantShape, plantSpawn, plantTick } from './plant.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior */
 
@@ -15,7 +16,10 @@ const DEVOUR_REACH = 0.7;
  * @type {FoeBehavior}
  */
 const Devour = Object.freeze({
+  // 暴走食人花's `Devour` with its page's marker is its eating (敌能-108, plant.js).
+  spawn: (ctx) => { if (plantShape(ctx.bb)) plantSpawn(ctx); },
   tick: (ctx) => {
+    if (plantShape(ctx.bb)) { plantTick(ctx); return; }
     const self = ctx.self, s = ctx.stats(self), b = ctx.blocker();
     if (ctx.state.get('done') || !b || s.disabled || s.flags.silence || ctx.stats(b).flying) return;
     const dx = b.x - self.x, dy = b.y - self.y;

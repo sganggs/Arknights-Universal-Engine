@@ -52,9 +52,9 @@ function watch(w) {
   return seen;
 }
 
-test('[敌能-51] [关卡-2] only the max_block_damage_cnt shape is covered', () => {
+test('[敌能-51] [关卡-2] only the max_block_damage_cnt shape is covered (and those of 敌能-102 and 敌能-113); another stays uncovered', () => {
   const lys = { talents: { Shield: { ...SHIELD } } };
-  const bro = { talents: { Shield: { dynamic: 8000, range_radius: 0.4 } } };
+  const bro = { talents: { Shield: { dynamic: 8000 } } };
   const half = { talents: { Shield: { max_block_damage_cnt: 1 } } };
   assert.deepEqual(uncoveredAbilities([/** @type {any} */ (lys)]), []);
   assert.deepEqual(uncoveredAbilities([/** @type {any} */ (bro), /** @type {any} */ (half)]), ['Shield']);
@@ -193,7 +193,7 @@ test('[敌能-51] a spent count grants nothing; two layers block twice; another 
   const { w } = open({
     spent: body({ max_block_damage_cnt: 1, block_damage_cnt: 1 }),
     two: body({ max_block_damage_cnt: 2, block_damage_cnt: 0 }),
-    bro: { name: 'bro', maxHp: 1000, atk: 0, def: 0, res: 0, moveSpeed: 0, talents: { Shield: { dynamic: 8000, range_radius: 0.4 } } },
+    bro: { name: 'bro', maxHp: 1000, atk: 0, def: 0, res: 0, moveSpeed: 0, talents: { Shield: { dynamic: 8000 } } },
     half: { name: 'half', maxHp: 1000, atk: 0, def: 0, res: 0, moveSpeed: 0, talents: { Shield: { max_block_damage_cnt: 1 } } },
   });
   const spent = foe(w, 'spent'), two = foe(w, 'two'), bro = foe(w, 'bro'), half = foe(w, 'half');

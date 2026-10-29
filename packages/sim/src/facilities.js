@@ -130,25 +130,34 @@ function syncBuff(u, key, mods) {
   if (!empty) addBuff(u, makeBuff({ key, mods }));
 }
 
-/** Per content, the content whose map has these platforms built (守御-5), by the platforms' tiles. @type {WeakMap<Content, Map<string, Content>>} */
+/** Per content, the content whose map has these platforms built (守御-5) and these devices standing (寻路-1), by their tiles. @type {WeakMap<Content, Map<string, Content>>} */
 const BUILT = new WeakMap();
 
+/** The tile of a device that blocks routes (寻路-1: 阵地屏障, 足球-12): a 类障碍物地块 while it stands. */
+const BLOCKER_TILE = Object.freeze({ obstacle: true });
+
+/** The tiles [row, col] of the devices on the field that block routes (寻路-1). @param {World} w @param {Content} c */
+const blockerTiles = (w, c) => (c.devices ? w.units.filter((u) => u.kind === KIND.DEVICE && u.hp > 0 && !u.hidden && c.devices?.[u.key]?.routeBlock).map((u) => [Math.round(u.y), Math.round(u.x)]) : []);
+
 /**
- * The content as the facilities make the field now (守御-5): its map with every built platform's tile high ground for
- * ranged operators and a 类障碍物地块 — the same content while none is built. Made once for each set of platforms (the
- * maps' flow fields are cached beside them, 寻路-1). @param {World} w @param {Content} c @returns {Content}
+ * The content as the facilities and devices make the field now (守御-5, 寻路-1): its map with every built platform's
+ * tile high ground for ranged operators and a 类障碍物地块, and every route-blocking device's tile a 类障碍物地块 — the
+ * same content while there are none. Made once for each set of them (the maps' flow fields are cached beside them,
+ * 寻路-1). @param {World} w @param {Content} c @returns {Content}
  */
 export function fieldContent(w, c) {
-  if (!w.fortress) return c;
-  const built = facilities(w, c).filter(({ f, u }) => f.kind === 'platform' && /** @type {any} */ (u.fac).level > 0).map(({ u }) => [u.y, u.x]);
-  if (built.length === 0) return c;
-  const key = built.map(([r, col]) => r * c.level.width + col).sort((a, b) => a - b).join(';');
+  const built = w.fortress ? facilities(w, c).filter(({ f, u }) => f.kind === 'platform' && /** @type {any} */ (u.fac).level > 0).map(({ u }) => [u.y, u.x]) : [];
+  const blockers = blockerTiles(w, c);
+  if (built.length === 0 && blockers.length === 0) return c;
+  const keyOf = (/** @type {number[][]} */ cells) => cells.map(([r, col]) => r * c.level.width + col).sort((a, b) => a - b).join(';');
+  const key = `${keyOf(built)}|${keyOf(blockers)}`;
   let byKey = BUILT.get(c);
   if (!byKey) { byKey = new Map(); BUILT.set(c, byKey); }
   const hit = byKey.get(key);
   if (hit) return hit;
   const tiles = c.level.tiles.map((row) => [...row]);
   for (const [r, col] of built) tiles[r][col] = { ...tiles[r][col], ...PLATFORM_TILE };
+  for (const [r, col] of blockers) if (tiles[r]?.[col]) tiles[r][col] = { ...tiles[r][col], ...BLOCKER_TILE };
   const made = { ...c, level: { ...c.level, tiles } };
   byKey.set(key, made);
   return made;

@@ -2,6 +2,7 @@
 // candidates in the official order are locked and a swing starts; at the end of its wind-up they take hits of the
 // attacker's attack — a healer's heals, a ranged attacker's projectiles — and the attacker waits out its interval.
 import { FPS, secondsToFrames, hypot } from '@aue/math';
+import { turnLR } from './lr.js';
 import { KIND, ANIM } from '@aue/schema';
 import { offsetTile, dirVec, frontOf } from './dir.js';
 import { push, pull, PULL_POINT } from './displacement.js';
@@ -195,12 +196,12 @@ function ridesOn(w, c, h, dmg, dealt) {
 
 /**
  * 敌能-46: bleed applies when a normal attack connects, including a hit that took no HP. Splash is not that attack.
- * @param {World} w @param {Content} c @param {{ src: Unit | null, t: Unit, load: Load, dealt: number }} hit
+ * @param {World} w @param {Content} c @param {{ src: Unit | null, t: Unit, load: Load, dealt: number, missed: boolean }} hit
  */
 function foeConnect(w, c, hit) {
-  const { src, t, load, dealt } = hit;
+  const { src, t, load, dealt, missed } = hit;
   if (!src || src.kind !== KIND.ENEMY || (load.hit ?? 'main') !== 'main') return;
-  foeLanded(w, c, src, t, { dealt, ranged: !!load.ranged, skill: !!load.skill });
+  foeLanded(w, c, src, t, { dealt, ranged: !!load.ranged, skill: !!load.skill, missed });
 }
 
 /**
@@ -211,7 +212,7 @@ function foeConnect(w, c, hit) {
 function oneHit(w, c, src, t, load) {
   const el = /** @type {import('./elements.js').Element | ''} */ (load.element), op = src && src.kind === KIND.OPERATOR ? src : null;
   const alive = t.hp > 0, dmg = hitDamage(w, c, op, t, load), dealt = dealDamage(w, src, t, dmg, c);
-  foeConnect(w, c, { src, t, load, dealt });
+  foeConnect(w, c, { src, t, load, dealt, missed: dmg.dodged === true });
   if (op) traitDealt(w, c, op, t, { dmg, taken: dealt });
   if (dealt > 0) afterDamage(w, c, { src, t, dealt, ranged: !!load.ranged });
   if (op && alive && t.hp <= 0) traitKill(w, c, op, t);
@@ -493,6 +494,8 @@ function startSwing(w, c, a, found, mods) {
   // faces them when it is an attack-everything-it-blocks (there is one thing it stands against), and a splash / extra-target
   // swing turns nobody (there is no single target to face). The highest-priority target is the first locked one.
   const face = targets.length === 1 || locked.blocked ? 1 : 0;
+  // an enemy turns toward what it attacks (敌能-90)
+  if (face) turnLR(a, targets[0].x - a.x);
   for (const t of targets) w.events.push({ type: 'attack', id: a.id, target: t.id, wind, face });
   a.swing = { wind, since: 0, targets: targets.map((t) => t.id), mods: locked };
   if (a.swing.wind === 0) land(w, c, a);
@@ -640,7 +643,7 @@ function crit(op, out, k) {
  */
 export function operatorsAttack(w, c) {
   for (const op of w.units) {
-    if (op.kind !== KIND.OPERATOR || op.hp <= 0) continue;
+    if (op.kind !== KIND.OPERATOR || op.hp <= 0 || !w.units.includes(op)) continue;
     enforceCapacity(w, c, op);
     blockingImmunity(w, op, traitOf(c, op).immuneBlocking);
     traitWhiles(w, c, op);

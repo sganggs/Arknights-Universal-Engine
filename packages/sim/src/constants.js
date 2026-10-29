@@ -26,3 +26,15 @@ export const ASPD_MAX = 600;
 
 /** A level's default move multiplier: tiles per second = moveSpeed × this (spec 常量-5, 移动-1). */
 export const MOVE_SCALE = 0.5;
+
+/** Friction's deceleration in 失衡 (spec 位移-3): μ 0.5 × g 9.81, tiles/s². A ball scales it by its own factor (足球-4). */
+export const FRICTION = 0.5 * 9.81;
+
+/** 失衡 ends at or below this speed (tiles/s), its 硬直 over (spec 位移-3). */
+export const STOP_SPEED = 0.1;
+
+/** The 失衡硬直 in frames (spec 位移-3: 0.1 s). */
+export const HARD_FRAMES = 3;
+
+/** What a predefined operator's content key ends with (spec 波次-7): its alias, then this. */
+export const PREDEFINED = '#pre';

@@ -3,7 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { secondsToFrames } from '@aue/math';
-import { createWorld, step, attrs, damage, status, deck } from '@aue/sim';
+import { createWorld, step, attrs, damage, status, deck, buffs } from '@aue/sim';
 import { tinyContent, oneWave, spawnAt } from '@aue/testkit';
 import { skeletonContent, levelAt, levelContent, FOE_EXTRAS } from '../src/index.js';
 
@@ -32,15 +32,17 @@ function tuneOps(c) {
 }
 
 /**
- * W spawns at (0, 2) and stays. `ops` deploy on the next frame as [op, row, col].
+ * W spawns at (0, 2) and stays — `count` of them, the same frame. `ops` deploy on the next frame as [op, row, col].
  * @param {EnemyDef} def @param {[string, number, number][]} ops
+ * @param {{ count?: number, tune?: (c: any) => void }} [more] how many W, and changes to the content before the battle
  */
-function arena(def, ops) {
+function arena(def, ops, more = {}) {
   const c = /** @type {any} */ (tinyContent());
   c.enemies = { [KEY]: def };
   c.behaviors = skeletonContent.behaviors;
-  c.level.waves = [oneWave([spawnAt(0, KEY)])];
+  c.level.waves = [oneWave(Array.from({ length: more.count ?? 1 }, () => spawnAt(0, KEY)))];
   tuneOps(c);
+  more.tune?.(c);
   const w = createWorld(c, { seed: 1, players: 1 });
   step(w, c);
   step(w, c, ops.map(([op, row, col]) => [0, { type: 'deploy', op, row, col, dir: 0 }]));
@@ -116,6 +118,42 @@ test('[敌能-76] a stun during the cast blows the charge at once, and it does n
   assert.equal(carrier.buffs.some((b) => b.key === 'c4'), false);
   assert.equal(e.buffs.some((b) => b.key === 'root'), false);
   assert.deepEqual(hits(w, c, carrier.id, FUSE), []);
+});
+
+test('[敌能-76] a stunned W blows only its own charge: another W\'s charge on the same unit stays and blows on time', () => {
+  const { c, w } = arena(wOf(5), [['guard', 1, 0]], { count: 2 });
+  const carrier = op(w, 'guard'), [first, second] = w.units.filter((u) => u.key === KEY);
+  if (!carrier || !first || !second) throw new Error('missing units');
+  assert.deepEqual(plants(w).map((b) => b.src), [first.id, second.id]);
+  status.applyStatus(first, 'stun', { seconds: 5 });
+  assert.deepEqual(hits(w, c, carrier.id, 1), [{ id: first.id, damage: 3000 }]);
+  assert.deepEqual(plants(w).map((b) => b.src), [second.id]);
+  assert.deepEqual(hits(w, c, carrier.id, FUSE - 2), []);
+  assert.deepEqual(hits(w, c, carrier.id, 1), [{ id: second.id, damage: 3000 }]);
+});
+
+test('[敌能-76] the cast ends only its own 自缚: a 束缚 put on W from elsewhere stays', () => {
+  const { c, w, e } = arena(wOf(5), [['guard', 1, 0]]);
+  status.applyStatus(e, 'root', { seconds: 10 });
+  assert.equal(e.buffs.filter((b) => b.key === 'root').length, 2);
+  for (let i = 0; i < FUSE; i++) step(w, c);
+  assert.equal(e.ab['C4.ch'] ?? 0, 0, 'the cast is over');
+  assert.equal(e.buffs.filter((b) => b.key === 'root').length, 1);
+  assert.equal(attrs.statsOf(e).immobile, true);
+});
+
+test('[敌能-76] the blast on time takes the same path as the early one: a buff behaviour of the content halves both', () => {
+  /** @type {import('@aue/sim').buffs.Behavior} */
+  const halve = { take: (_w, _u, _b, amount) => amount / 2 };
+  /** @param {any} c */
+  const halving = (c) => { c.behaviors = { ...c.behaviors, buffs: { ...c.behaviors.buffs, halve } }; };
+  const late = arena(wOf(5), [['guard', 1, 0]], { tune: halving }), early = arena(wOf(5), [['guard', 1, 0]], { tune: halving });
+  const lateCarrier = op(late.w, 'guard'), earlyCarrier = op(early.w, 'guard');
+  if (!lateCarrier || !earlyCarrier) throw new Error('missing operators');
+  for (const u of [lateCarrier, earlyCarrier]) buffs.addBuff(u, buffs.makeBuff({ key: 'halve' }));
+  status.applyStatus(early.e, 'stun', { seconds: 5 });
+  assert.deepEqual(hits(early.w, early.c, earlyCarrier.id, 1), [{ id: early.e.id, damage: 1500 }]);
+  assert.deepEqual(hits(late.w, late.c, lateCarrier.id, FUSE), [{ id: late.e.id, damage: 1500 }]);
 });
 
 test('[敌能-76] the first drop below half clears the cooldown once; the next cast plants three, a flyer among them', () => {

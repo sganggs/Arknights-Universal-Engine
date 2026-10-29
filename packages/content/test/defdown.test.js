@@ -15,7 +15,7 @@ import hard01 from '../data/levels/act1multi_fortress_hard-01.json' with { type:
 const KEY = 'enemy_1500_skulsr';
 /** Flat `defdown` users (enemy_database 17759cc8). None of these is the grenade. @type {[string, number][]} */
 const FLAT = [
-  ['enemy_1004_mslime', -10], ['enemy_1004_mslime_2', -15], ['enemy_1095_ccripr', -10],
+  ['enemy_1004_mslime_2', -15], ['enemy_1095_ccripr', -10],
   ['enemy_1095_ccripr_2', -15], ['enemy_5028_dqlime_2', -15], ['enemy_5047_dqripr', -10],
 ];
 /** Ground target, a closer flyer, a diagonal neighbour, a tile two away. @type {[string, number, number][]} */
@@ -94,7 +94,7 @@ function still(prep) {
   assert.equal(got[0].mods.defMul, undefined);
 }
 
-test('[敌能-70] [关卡-2] fortress 碎骨 takes the grenade shape; the other defdown shapes stay uncovered', () => {
+test('[敌能-70] [敌能-101] [关卡-2] fortress 碎骨 takes the grenade shape, 酸液源石虫 its acid by its page; the other defdown shapes stay uncovered', () => {
   for (const lv of [rm01, hard01]) {
     const raw = /** @type {EnemyDef} */ (/** @type {any} */ (lv).enemies[KEY]);
     assert.equal(raw.applyWay, 'ALL');
@@ -112,6 +112,8 @@ test('[敌能-70] [关卡-2] fortress 碎骨 takes the grenade shape; the other 
     assert.deepEqual(e.talents?.defdown, { def }, key);
     assert.deepEqual(uncoveredAbilities([e]), ['defdown'], key);
   }
+  const acid = withFoeExtras('enemy_1004_mslime', named({ defdown: { def: -10 } }));
+  assert.deepEqual([acid.talents?.defdown, uncoveredAbilities([acid])], [{ def: -10, acid: 1 }, []]);
   assert.deepEqual(uncoveredAbilities([named({ defdown: { def: -10, scale: 0.26, duration: 5, square: 1 } })]), ['defdown']);
   assert.deepEqual(uncoveredAbilities([named({ defdown: { def: -0.5 } })]), ['defdown']);
 });

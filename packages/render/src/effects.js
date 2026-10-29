@@ -6,7 +6,9 @@
 // turned toward the attack's direction. While an operator's skill runs, its attacks take the skill's own effects.
 // Besides the attacks (渲染-12): the start and end tiles carry their marker effects, a unit its statuses' effects for as
 // long as it has them, and deploying and dying play theirs. A thrown 炼金单元 (渲染-25) flies to where it lands and plays
-// its effects there until it ends. Effects keep battle time: they follow 2× and pause.
+// its effects there until it ends. 阵地足球's goals carry markers of their own, its 守门位 and ice and slime theirs
+// (渲染-26); a 锦标 ball lightning is coming to carries its warning, then the bolt and the burning (渲染-27). Effects keep
+// battle time: they follow 2× and pause.
 import * as THREE from 'three';
 import { KIND, DIR, SKILL_STATE, STATUS_BIT } from '@aue/schema';
 import { toThree, tileWorld } from './camera.js';
@@ -51,15 +53,19 @@ function rootFor(e, o, way) {
  *   grow: number, drift: number, r0: number, trail: FxInstance | null, landed: FxInstance[] | null }} Pot
  */
 
+/** 阵地足球's goals' markers (渲染-12): ours the third co-op end marker (blue), theirs the start marker (red). */
+const GOAL_MARKERS = /** @type {Readonly<Record<string, string>>} */ (Object.freeze({ tile_allygoal: 'tile_end_coop_3', tile_enemygoal: 'tile_start' }));
+
 /** The seat a co-op goal belongs to (the engine's 合作-1): side A seat 0, side B seat 1; −1 for one of no single seat. @param {string | undefined} goal */
 const goalSeat = (goal) => (goal === 'A' ? 0 : goal === 'B' ? 1 : -1);
 
 /**
  * The marker effect of a start or end tile (渲染-12), or null: a co-op goal of the viewer's partner takes the second co-op
- * end marker, the others the first.
+ * end marker, the others the first; a 阵地足球 goal its own.
  * @param {{ key: string, goal?: string }} t @param {Record<string, string>} named @param {number} seat the viewer's
  */
 function markerOf(t, named, seat) {
+  if (Object.hasOwn(GOAL_MARKERS, t.key)) return named[GOAL_MARKERS[t.key]] ?? null;
   if (t.key.startsWith('tile_start')) return named.tile_start ?? null;
   if (t.key !== 'tile_end_cooperate') return t.key.startsWith('tile_end') ? named.tile_end ?? null : null;
   const own = goalSeat(t.goal), mate = own >= 0 && own !== seat ? named.tile_end_coop_2 : undefined;
@@ -92,6 +98,8 @@ class Effects {
     this.pack = pack; this.level = level; this.object = new THREE.Group(); this.skills = o.skills ?? {}; this.seat = o.seat ?? 0;
     /** @type {Record<string, string>} effects by role */ this.named = pack.data.named ?? {};
     /** @type {Map<string, { inst: FxInstance, id: number, lift: number }>} a unit's status effects by `id:bit` */ this.statuses = new Map();
+    /** @type {Map<string, FxInstance>} 阵地足球's field effects by `kind:tile` (渲染-26) */ this.field = new Map();
+    /** @type {Map<number, { inst: FxInstance, id: number, lift: number }>} the lightning's lasting effect on each ball (渲染-27) */ this.storms = new Map();
     this.leads = new Map(Object.keys(pack.data.fx).map((k) => [k, effectLead(pack.data.fx[k])]));
     /** @type {FxInstance[]} */ this.live = [];
     /** @type {Flight[]} */ this.flights = [];
@@ -111,6 +119,39 @@ class Effects {
       const n = markerOf(t, this.named, this.seat);
       if (n) this.play(n, toThree(tileWorld(this.level, col, row, t.height === 'HIGHLAND' ? 1 : 0)), NOWHERE, 'loop', MARKER_ORDER);
     }));
+  }
+
+  /**
+   * 阵地足球's field (渲染-26): a lasting effect on each 守门位 tile and each tile of ice or slime, of the kinds the pack
+   * has (`football_spot`, `football_ice`, `football_slime`); started as a tile gets one, stopped as it loses it. The
+   * kinds it draws. @param {import('./pitchmarks.js').PitchState | null} s @returns {Set<string>}
+   */
+  pitch(s) {
+    const want = this.fieldWanted(s), drawn = new Set([...want.keys()].map((key) => key.split(':')[0]));
+    for (const [key, inst] of this.field) if (!want.has(key) || inst.done) { inst.stop(); this.field.delete(key); }
+    for (const [key, { n, k }] of want) {
+      if (this.field.has(key)) continue;
+      const row = Math.floor(k / this.level.width), col = k % this.level.width, high = this.level.tiles?.[row]?.[col]?.height === 'HIGHLAND';
+      const inst = this.play(n, toThree(tileWorld(this.level, col, row, high ? 1 : 0)), NOWHERE, 'loop', MARKER_ORDER);
+      if (inst) this.field.set(key, inst);
+    }
+    return drawn;
+  }
+
+  /**
+   * The field effects wanted (渲染-26), by `kind:tile`: the effect and the tile of each 守门位, ice and slime the pack
+   * has an effect for. @param {import('./pitchmarks.js').PitchState | null} s
+   */
+  fieldWanted(s) {
+    /** @type {Map<string, { n: string, k: number }>} */
+    const want = new Map();
+    const add = (/** @type {string} */ kind, /** @type {number} */ k) => {
+      const n = this.named[`football_${kind}`];
+      if (n && this.pack.data.fx[n]) want.set(`${kind}:${k}`, { n, k });
+    };
+    for (const k of s?.spots ?? []) add('spot', k);
+    for (const [k, v] of Object.entries(s?.cover ?? {})) add(v < 0 ? 'ice' : 'slime', Number(k));
+    return want;
   }
 
   /** A place lifted along the models' up. @param {number[]} feet @param {number} lift */
@@ -287,7 +328,22 @@ class Effects {
       else if (e.type === 'hit' || e.type === 'heal') this.hit(id, target);
       else if (e.type === 'deploy' || e.type === 'death') this.role(String(e.type), id);
       else if (e.type === 'alchemy') this.alchemy(e);
+      else if (e.type === 'thunder') this.thunder(id, Number(e.phase));
     }
+  }
+
+  /**
+   * Lightning on a 锦标 ball (渲染-27): its warning from the warning on, kept on the ball; at the bolt the warning stops,
+   * the bolt plays at the ball and its burning starts, kept on it until it is over. @param {number} id @param {number} phase 0 warn, 1 strike, 2 over
+   */
+  thunder(id, phase) {
+    const at = this.places.get(id), was = this.storms.get(id);
+    if (was) { was.inst.stop(); this.storms.delete(id); }
+    if (!at) return;
+    if (phase === 1) this.play(this.named.thunder_hit, at.feet, { facing: 1, dir: [1, 0, 0] }, 'start');
+    const n = phase === 0 ? this.named.thunder_warn : phase === 1 ? this.named.thunder_burn : undefined;
+    const lift = LIFT[this.pack.data.fx[n ?? '']?.sl] ?? 0, inst = n ? this.play(n, this.lifted(at.feet, lift), { facing: 1, dir: [1, 0, 0] }, 'loop') : null;
+    if (inst) this.storms.set(id, { inst, id, lift });
   }
 
   /** Advances the effects by dt seconds of battle time and draws them for the camera. @param {number} dt @param {THREE.Camera} camera */
@@ -296,7 +352,7 @@ class Effects {
     this.up = cam.up;
     this.fly(dt);
     this.potsStep(dt);
-    for (const s of this.statuses.values()) { const at = this.places.get(s.id); if (at) s.inst.R = { ...s.inst.R, o: this.lifted(at.feet, s.lift) }; }
+    for (const s of [...this.statuses.values(), ...this.storms.values()]) { const at = this.places.get(s.id); if (at) s.inst.R = { ...s.inst.R, o: this.lifted(at.feet, s.lift) }; }
     this.live = this.live.filter((i) => {
       i.step(dt);
       if (i.done) { this.object.remove(i.group); i.dispose(); return false; }
@@ -307,7 +363,7 @@ class Effects {
 
   count() { return this.live.length; }
 
-  dispose() { for (const i of this.live) i.dispose(); this.live = []; this.flights = []; this.pots = []; this.statuses.clear(); this.object.clear(); }
+  dispose() { for (const i of this.live) i.dispose(); this.live = []; this.flights = []; this.pots = []; this.statuses.clear(); this.field.clear(); this.storms.clear(); this.object.clear(); }
 }
 
 /**

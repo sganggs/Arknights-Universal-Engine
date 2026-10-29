@@ -24,7 +24,8 @@ export function operatorCards(w, c, seat) {
   return {
     slots: deck.deployLimit(c, seat, w) - summons.occupying(w, c, seat, free),
     cards: Object.fromEntries((c.decks?.[seat] ?? []).map((k) => [k, { cost: deck.deployCost(c, p, k, w), ready: deck.cardOf(p, k).ready, locked: deck.cardLocked(w, deck.cardOf(p, k)) }])),
-    hidden: (c.decks?.[seat] ?? []).filter((k) => deck.cardHidden(w, c, k)),
+    // a ball card shows only while the seat holds a caught ball (足球-14)
+    hidden: (c.decks?.[seat] ?? []).filter((k) => deck.cardHidden(w, c, k) || (c.operators[k]?.ballCard && !p.balls?.length)),
   };
 }
 

@@ -20,10 +20,11 @@
 | `char_attribute_mul` | 属性乘以倍率，乘在基础值上：`atk` 攻击力、`def` 防御力、`max_hp` 最大生命值、`magic_resistance` 法术抗性、`attack_speed` 攻击速度（基础 100）、`move_speed` 移动速度、`mass_level` 重量 |
 | `char_respawntime_mul` | 再部署时间乘以 `scale` |
 | `char_blockcnt_add` | 阻挡数加 `value`，不低于 0 |
+| `char_skill_cd_mul` | 技能所需技力（技能-2）乘以 `scale`，不取整 |
 | `env_gbuff_new`，`key` 为 `modify_sp[born]` | 每次部署时的初始技力加 `sp`（不超过技力上限，技能-2） |
 | `global_deck_placeable_char_num_add` | 这个座位的可部署人数（部署-2）加 `value`，不低于 0；与职业无关 |
 
-- 来源：[PRTS「促融共竞」oldid=377839](https://prts.wiki/index.php?title=%E4%BF%83%E8%9E%8D%E5%85%B1%E7%AB%9E&oldid=377839)「比赛风格一览」：基础「我方干员的攻击力+10%」（`char_attribute_mul` atk 1.1），攻坚「我方干员攻击速度+20」（attack_speed 1.2，即基础 100 的 1.2 倍），驻场「我方干员再部署时间增加15%」（`char_respawntime_mul` scale 1.15），游走「再部署时间减少20%，初始技力提升10」「我方干员可部署人数减少1」（scale 0.8、`modify_sp[born]` sp 10、`global_deck_placeable_char_num_add` value −1）；数据：activity_table `MULTIPLAY_V3/act1multi` `squadEffectList`；乘在基础值上为推断 INF-0162
+- 来源：[PRTS「促融共竞」oldid=377839](https://prts.wiki/index.php?title=%E4%BF%83%E8%9E%8D%E5%85%B1%E7%AB%9E&oldid=377839)「比赛风格一览」：基础「我方干员的攻击力+10%」（`char_attribute_mul` atk 1.1），攻坚「我方干员攻击速度+20」（attack_speed 1.2，即基础 100 的 1.2 倍），驻场「我方干员再部署时间增加15%」（`char_respawntime_mul` scale 1.15），游走「再部署时间减少20%，初始技力提升10」「我方干员可部署人数减少1」（scale 0.8、`modify_sp[born]` sp 10、`global_deck_placeable_char_num_add` value −1）；数据：activity_table `MULTIPLAY_V3/act1multi` `squadEffectList`；stage_table ME-1「<拘谨>干员施放技能所需技力提升」与该关的 `char_skill_cd_mul` scale 1.5；乘在基础值上为推断 INF-0162，技力不取整为推断 INF-0631
 
 ### 符文-3 在场效果
 

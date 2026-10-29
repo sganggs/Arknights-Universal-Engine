@@ -1,6 +1,6 @@
 // @aue/schema: the versioned formats between the simulation, the renderer and the network (ADR 0053).
 export { VIEW_VERSION, VIEW_HEADER, VIEW_PLAYER, VIEW_UNIT, FORM, KIND, ANIM, DIR, SKILL_STATE, STATUS_BIT, NO_SKILL, ELEMENT, viewLength, writeView, readView } from './view.js';
-export { EVENTS_VERSION, EVENT_FIELDS, FORTRESS_PHASE, eventProblems } from './events.js';
+export { EVENTS_VERSION, EVENT_FIELDS, FORTRESS_PHASE, SCORE_GOAL, eventProblems } from './events.js';
 export { PROTOCOL_VERSION, MAX_FRAME, MAX_SEAT, SIGNAL_FIELDS, SIGNAL_MAX, commandProblem, signalProblem, clientMessageProblem, serverMessageProblem } from './protocol.js';
 export { SNAPSHOT_VERSION, snapshotProblem } from './snapshot.js';
 export { MAX_DECK, MAX_RUNES, MAX_BOARD, DIFFICULTIES, matchProblem, buildProblem } from './match.js';

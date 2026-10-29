@@ -27,6 +27,8 @@ export class LockstepClient {
     this.sealed = -1;
     /** the battle's seed, from the welcome */
     this.seed = 0;
+    /** the arbiter's player count, from the welcome; the former default before any welcome */
+    this.seats = o.content.decks?.length ?? 1;
     /** @type {Map<number, [number, Command][]>} */
     this.queue = new Map();
     this.stats = { restamps: 0, resyncs: 0, errors: 0 };
@@ -36,7 +38,7 @@ export class LockstepClient {
 
   /** @param {ServerMessage} msg */
   receive(msg) {
-    if (msg.t === 'welcome') this.seed = msg.seed;
+    if (msg.t === 'welcome') { this.seed = msg.seed; this.seats = msg.seats; }
     if (msg.t === 'welcome' || msg.t === 'resync') this.startFrom(msg);
     if (msg.t === 'welcome') this.sealed = msg.frame;
     if (msg.t === 'frames') this.addFrames(msg.cmds, msg.to);
@@ -61,7 +63,7 @@ export class LockstepClient {
    * @param {[number, number, Command][]} cmds @param {number} upTo
    */
   replay(cmds, upTo) {
-    const c = this.o.content, w = createWorld(c, { seed: this.seed, players: c.decks?.length ?? 1 });
+    const c = this.o.content, w = createWorld(c, { seed: this.seed, players: this.seats });
     /** @type {Map<number, [number, Command][]>} */
     const by = new Map();
     for (const [f, seat, cmd] of cmds) by.set(f, [...(by.get(f) ?? []), [seat, cmd]]);

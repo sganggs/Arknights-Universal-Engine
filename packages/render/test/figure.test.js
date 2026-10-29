@@ -2,7 +2,7 @@
 // the die clip (docs/spec/render.md 渲染-3).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { ANIM } from '@aue/schema';
+import { ANIM, DIR, SKILL_STATE } from '@aue/schema';
 import { newFigure, follow, attacked, dies, deathOver, clipAt } from '../src/figure.js';
 import { tinyModel, formsModel, dollModel } from './model.js';
 import { dollRoles } from '../src/roles.js';
@@ -91,4 +91,11 @@ test('[渲染-24] the 替身 clips of the three ways models name them; none for 
   assert.equal(dollRoles(['Idle', 'Attack', 'Start']), null);
   const enemy = /** @type {import('../src/figure.js').Figure} */ (newFigure({ front: dollModel() }, unit(1, ANIM.IDLE), 0));
   assert.equal(enemy.dolls.front, null, 'enemies have none');
+});
+
+test('[渲染-4] an operator that does not turn (野鬃 2 技能) returns to its deploy facing, side and mirror', () => {
+  const f = /** @type {import('../src/figure.js').Figure} */ (newFigure({ front: tinyModel(), back: tinyModel() }, { ...unit(0, ANIM.IDLE), dir: DIR.UP }, 0));
+  f.role = 'attack'; f.aim = { x: 3, y: 1, id: 9 }; f.side = 'front'; f.flip = true;
+  follow(f, { ...unit(0, ANIM.ATTACK), dir: DIR.UP, skill: SKILL_STATE.RUNNING }, 30, 'char_496_wildmn');
+  assert.deepEqual([f.side, f.flip], ['back', false], 'both the side and the mirror return to the deploy direction');
 });

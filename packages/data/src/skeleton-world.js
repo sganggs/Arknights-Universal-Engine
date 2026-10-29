@@ -3,7 +3,7 @@ import { asArray, asInt, asNumber, asObject, asPos, asString, field } from './va
 import { readAction } from './waves.js';
 
 /** @typedef {{ row: number, col: number }} Pos */
-/** @typedef {{ key: string, height: string, buildable: string, passable: string, side: string, goal?: string }} Tile */
+/** @typedef {{ key: string, height: string, buildable: string, passable: string, side: string, goal?: string, landball?: boolean }} Tile */
 
 /** A co-op goal tile's side (合作-1): its blackboard `side`, Side_A → 'A', Side_B → 'B', Shared → 'Shared'. */
 const GOAL_SIDES = Object.freeze({ Side_A: 'A', Side_B: 'B', Shared: 'Shared' });
@@ -26,8 +26,10 @@ function readTileDef(raw, p) {
     passable: asString(field(t, 'passableMask', p), `${p}.passableMask`),
     side: asString(field(t, 'playerSideMask', p), `${p}.playerSideMask`),
   };
-  if (!key.startsWith('tile_end')) return tile;
   const bb = Array.isArray(t.blackboard) ? t.blackboard : [];
+  // a tile of our half a ball card may be deployed on (足球-14)
+  if (bb.some((b) => asObject(b, `${p}.blackboard`).key === 'tile' && asObject(b, `${p}.blackboard`).valueStr === 'landball')) return { ...tile, landball: true };
+  if (!key.startsWith('tile_end')) return tile;
   const side = bb.map((b, i) => asObject(b, `${p}.blackboard[${i}]`)).find((b) => b.key === 'side');
   const goal = side ? /** @type {Record<string, string>} */ (GOAL_SIDES)[String(side.valueStr)] : undefined;
   return goal ? { ...tile, goal } : tile;

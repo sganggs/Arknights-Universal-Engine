@@ -43,19 +43,21 @@ export function devour(e, t) {
 }
 
 /**
- * Whether a deck card is held back (波次-9): its unit is one of the level's token cards hidden at first (关卡-7) and that
- * card's alias has not come into effect (波次-6). @param {World} w @param {Content} c @param {string} key the card (unit id#seat)
+ * Whether a deck card is held back (波次-9): its unit is one of the level's cards hidden at first (关卡-7) — a token's or
+ * an operator's — and that card's alias has not come into effect (波次-6). @param {World} w @param {Content} c @param {string} key the card (unit id#seat)
  */
 export function cardHidden(w, c, key) {
-  const id = key.split('#')[0], t = c.level.cards?.tokens.find((x) => x.key === id && x.hidden);
-  return t !== undefined && !w.predefined.includes(t.alias);
+  const id = key.split('#')[0], cards = c.level.cards;
+  const t = cards?.tokens.find((x) => x.key === id && x.hidden) ?? cards?.operators?.find((x) => x.key === id && x.hidden);
+  return t?.alias !== undefined && !w.predefined.includes(t.alias);
 }
 
 /**
- * A seat's deploy limit (部署-2): the level's, changed by the seat's runes (符文-2) and the built 临时休息舱 (守御-5), not
- * below 0. @param {Content} c @param {number} seat @param {World} [w]
+ * A seat's deploy limit (部署-2): the level's, changed by the seat's runes (符文-2), the built 临时休息舱 (守御-5) and, in
+ * a 锦标 penalty shootout, the level's `kickerDelta` (锦标-4), not below 0. @param {Content} c @param {number} seat @param {World} [w]
  */
-export const deployLimit = (c, seat, w) => Math.max(0, c.level.options.characterLimit + (c.level.options.characterLimitAdd?.[seat] ?? 0) + (w ? facilitySum(w, c, 'lounge', 'value_char') : 0));
+export const deployLimit = (c, seat, w) => Math.max(0, c.level.options.characterLimit + (c.level.options.characterLimitAdd?.[seat] ?? 0)
+  + (w ? facilitySum(w, c, 'lounge', 'value_char') : 0) + (w?.football?.pk ? c.level.football?.cup?.kickerDelta ?? 0 : 0));
 
 /** Whether a cut is for an operator record (部署-10): of its profession or one of its factions. @param {{ profession: string } | { power: string }} x @param {import('./types.js').OperatorDef} d */
 const cutFits = (x, d) => ('profession' in x ? d.profession === x.profession : (d.powers ?? []).includes(x.power));
@@ -169,6 +171,12 @@ export function giveCuts(w, c, u) {
 }
 
 /**
+ * A card's 再部署惩罚 after its operator leaves (部署-3): one more, at most MAX_PENALTY; in 阵地足球 the same (足球-8), but
+ * one more again in 阵地足球锦标 (锦标-1: no field bonus). @param {World} w @param {Content} c @param {{ penalty: number }} card
+ */
+const nextPenalty = (w, c, card) => (w.football && !c.level.football?.cup ? card.penalty : Math.min(MAX_PENALTY, card.penalty + 1));
+
+/**
  * An operator leaves the field (部署-3, 撤退-1): a retreat returns ⌊min(paid × 返还倍率, initial cost)⌋ cost (without the
  * cap when its trait says so, 职业-21); either way its card gains a penalty layer (at most 2) and it may be deployed again
  * after its 再部署时间 — × its trait's share for its first retreat (职业-21), 20% shorter while a
@@ -194,9 +202,20 @@ export function leaveField(w, c, u, retreated) {
   if (retreated) retreatGains(w, c, u, t);
   const first = retreated && !card.retreated ? t.firstRetreatRespawn : 1;
   const wait = retreated && w.fortress?.phase === 'rest' ? 0 : secondsToFrames((d.respawnTime ?? DEFAULT_RESPAWN) * respawnFactor(w, c) * first);
-  const penalty = Math.min(MAX_PENALTY, card.penalty + 1), lock = u.ab['@devoured'], once = (retreated || card.retreated) && t.firstRetreatRespawn !== 1 ? { retreated: true } : {};
-  p.cards[u.key] = lock !== undefined && !retreated ? { penalty, ready: w.frame, lock, ...once } : { penalty, ready: w.frame + wait, ...once };
+  const penalty = nextPenalty(w, c, card), once = (retreated || card.retreated) && t.firstRetreatRespawn !== 1 ? { retreated: true } : {};
+  p.cards[u.key] = { penalty, ...lockOf(w, u, retreated, wait), ...once };
   p.deployed = p.deployed.filter((k) => k !== u.key);
+}
+
+/**
+ * A card's time and lock as its operator leaves (敌能-30, 敌能-109): devoured or carried off, not retreated, it may be
+ * deployed now but is locked by that enemy — a carried one's direction kept —; otherwise it waits `wait` frames.
+ * @param {World} w @param {Unit} u @param {boolean} retreated @param {number} wait
+ */
+function lockOf(w, u, retreated, wait) {
+  const lock = u.ab['@devoured'];
+  if (lock === undefined || retreated) return { ready: w.frame + wait };
+  return { ready: w.frame, lock, ...(u.ab['@carried'] === 1 ? { facing: u.dir } : {}) };
 }
 
 /**

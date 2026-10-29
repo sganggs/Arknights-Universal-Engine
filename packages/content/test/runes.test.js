@@ -2,7 +2,8 @@
 // deploy limit, and runes not supported yet.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { matchContent, seatRules, withRunes, PROFESSION_BITS, carriedDef, CARRIED_PROFILES } from '../src/index.js';
+import { matchContent, seatRules, withRunes, PROFESSION_BITS, carriedDef, CARRIED_PROFILES, LEVELS, OFFICIAL_SOURCE } from '../src/index.js';
+import football from '../data/levels/act1multi_football.json' with { type: 'json' };
 
 const BUILD = { elite: 2, level: 90, potential: 1, trust: 100, skill: 0, skillLevel: 10 };
 /** The eight operator professions (符文-1). */
@@ -52,6 +53,28 @@ test('[符文-1] [符文-2] [符文-3] a unit whose profession is in the mask ta
   const token = { ...sniper, profession: 'TOKEN' };
   assert.equal(withRunes(token, r.effects), token, 'a summon is not in 639');
   assert.equal(sniper.atk, 100, 'the record given is not changed');
+});
+
+test('[符文-2] char_skill_cd_mul: the SP its skill needs × scale; a unit with no skill as it was', () => {
+  const r = seatRules([rune('char_skill_cd_mul', [['scale', 0.8]], 1023)]);
+  const d = /** @type {any} */ (withRunes(/** @type {any} */ ({ name: 'x', profession: 'CASTER', skill: { cost: 35, init: 10 } }), r.effects));
+  assert.deepEqual([d.skill.cost, d.skill.init], [35 * 0.8, 10]);
+  const none = /** @type {any} */ ({ name: 'y', profession: 'CASTER' });
+  assert.deepEqual(withRunes(none, r.effects), none);
+});
+
+test('[关卡-2] [符文-1] a level\'s runes on our units are every seat\'s: IG-FT-1\'s 技力需求-20% on both seats\' operators; one not supported refused', async () => {
+  const decks = [[{ id: 'char_1035_wisdel', build: BUILD }], [{ id: 'char_1035_wisdel', build: BUILD }]];
+  const base = LEVELS.act1multi_01, ft = /** @type {any} */ (football).difficulties.NORMAL.ours;
+  /** act1multi_01 with these runes on our units. @param {any[]} ours */
+  const source = (ours) => ({ ...OFFICIAL_SOURCE, levels: { x: { ...base, difficulties: { ...base.difficulties, NORMAL: { ...base.difficulties.NORMAL, ours } } } } });
+  const plain = await matchContent({ level: 'act1multi_01', difficulty: 'NORMAL', seed: 1, decks });
+  const c = await matchContent({ level: 'x', difficulty: 'NORMAL', seed: 1, decks }, { source: source(ft) });
+  const op = (/** @type {any} */ x, /** @type {string} */ k) => x.operators[k];
+  for (const seat of [0, 1]) assert.equal(op(c, `char_1035_wisdel#${seat}`).skill.cost, op(plain, `char_1035_wisdel#${seat}`).skill.cost * 0.8);
+  assert.deepEqual(op(c, 'char_1035_wisdel#0').runeMods, { spRecoveryMul: 1 });
+  await assert.rejects(matchContent({ level: 'x', difficulty: 'NORMAL', seed: 1, decks }, { source: source([rune('env_gbuff_new', [['key', 'nope']], 1023)]) }),
+    /level x at NORMAL: runes not supported yet: env_gbuff_new:nope/);
 });
 
 test('[符文-1] [符文-2] a match with runes: each seat\'s own operators and summons by profession, the seat\'s deploy limit; runes not supported are refused', async () => {

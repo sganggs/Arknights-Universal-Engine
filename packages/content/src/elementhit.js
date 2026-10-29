@@ -11,6 +11,8 @@ import { nestBuffOwns, nestPulseOwns, nestPulseTick, nestPulseUp } from './nest.
 const ELEMENT_NAMES = new Set(['epdamage', 'empty', 'EpDamage', 'combat', 'attack']);
 /** Keys that simple ratio blackboard may hold. `el` and `cross` are content extras, not enemy data. */
 const ELEMENT_KEYS = new Set(['attack@ep_damage_ratio', 'el', 'cross']);
+/** 注亡拟嗣's `EpDamage` (敌能-107): the ratio, its own loss each second and the page's `el`. */
+const ERODE_KEYS = Object.freeze(['attack@ep_damage_ratio', 'damage', 'el']);
 /** Keys 绯红歌伶's `AttackSpeedUp` may hold. `warning_stack_cnt` is the smoke, and is not read. */
 const SPEED_KEYS = new Set(['attack_speed', 'duration', 'stack_cnt', 'warning_stack_cnt']);
 
@@ -31,6 +33,9 @@ function elementShape(bb) {
   return true;
 }
 
+/** 注亡拟嗣's `EpDamage` (敌能-107): exactly the ratio, `damage` and an element id. @param {Record<string, unknown>} bb */
+const erodeShape = (bb) => Object.keys(bb).length === 3 && ERODE_KEYS.every((k) => typeof bb[k] === 'number') && elementId(bb.el);
+
 /** 绯红歌伶's hit-count buff (敌能-38): the three numbers, and the smoke key if the data brought it. @param {Record<string, unknown>} bb */
 function speedShape(bb) {
   if (typeof bb.attack_speed !== 'number' || typeof bb.duration !== 'number' || typeof bb.stack_cnt !== 'number') return false;
@@ -45,7 +50,7 @@ function speedShape(bb) {
  * @param {string} name @param {Record<string, unknown>} bb
  */
 export function elementHitOwns(name, bb) {
-  if (ELEMENT_NAMES.has(name)) return elementShape(bb) || nestPulseOwns(name, bb);
+  if (ELEMENT_NAMES.has(name)) return elementShape(bb) || nestPulseOwns(name, bb) || erodeShape(bb);
   if (name === 'AttackSpeedUp') return speedShape(bb);
   if (name === 'Buff') return nestBuffOwns(bb);
   return true;
@@ -59,17 +64,33 @@ export function elementHitOwns(name, bb) {
 const onHit = Object.freeze({
   attack: (ctx, mods) => {
     const bb = ctx.bb;
-    if (!elementShape(bb) || typeof bb.el !== 'number') return mods;
+    if ((!elementShape(bb) && !erodeShape(bb)) || typeof bb.el !== 'number') return mods;
     const el = elements.ELEMENTS[bb.el - 1];
     if (!el) return mods;
     const ep = ctx.stats(ctx.self).atk * bb['attack@ep_damage_ratio'];
     const hit = { ...mods, element: el, ep };
     return bb.cross === 1 ? { ...hit, cross: true, splashScale: 1 } : hit;
   },
-  // The nest pulse lives on this same behaviour (敌能-47). Any other blackboard of these names does neither.
-  spawn: (ctx) => { if (nestPulseOwns('EpDamage', ctx.bb)) nestPulseUp(ctx); },
-  tick: (ctx) => { if (nestPulseOwns('EpDamage', ctx.bb)) nestPulseTick(ctx); },
+  // The nest pulse lives on this same behaviour (敌能-47), and 注亡拟嗣's 自缚 and loss (敌能-107). Any other blackboard
+  // of these names does neither.
+  spawn: (ctx) => {
+    if (nestPulseOwns('EpDamage', ctx.bb)) nestPulseUp(ctx);
+    if (erodeShape(ctx.bb)) ctx.addBuff(ctx.self, { key: 'erodeRoot', flags: { root: true } });
+  },
+  tick: (ctx) => {
+    if (nestPulseOwns('EpDamage', ctx.bb)) nestPulseTick(ctx);
+    if (erodeShape(ctx.bb)) erodeLoss(ctx);
+  },
 });
+
+/** 注亡拟嗣's loss (敌能-107): each second from its spawn, `damage` sourceless true damage on itself. @param {import('@aue/sim').FoeContext} ctx */
+function erodeLoss(ctx) {
+  const st = ctx.state;
+  if (st.get('next') === 0) st.set('next', ctx.frame + ctx.frames(1));
+  if (ctx.frame < st.get('next')) return;
+  st.set('next', ctx.frame + ctx.frames(1));
+  ctx.dealDamage(ctx.self, { type: 'true', amount: ctx.bb.damage, sourceless: true });
+}
 
 /** One shared key: a second buff of it would wait out the first and then extend it (状态-2), which 不可叠加 is not. */
 const PULSE = 'attackSpeedUp';

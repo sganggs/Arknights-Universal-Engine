@@ -2,7 +2,11 @@
 // “灰礼帽”: { atk_scale, dist }, a full SP bar, an even 2s glide, then a hit 0.3s after the trigger.
 // 弑君者: { dist, glide }, a cooldown, an even glide of `glide` seconds (the page's 0.5s, not a data key), and no hit.
 // { dist } alone is 卢西恩 and stays uncovered (关卡-2). The 1s 不可阻挡 is the page's duration, not a blackboard key.
+// 魔球帮's players (cup.md 锦标-3): { min_dist, max_dist, blink_cd }, a jump toward the ball or its target now and then.
+// 裹骸死士 (敌能-96): `Blink` { max_hp_ratio, dist }, once below that share of its HP and blocked, at once `dist` on.
 import { hypot } from '@aue/math';
+import { onItsOwn } from './footballers.js';
+import { dist2, nearBallTarget } from './teams.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior */
 /** @typedef {import('@aue/sim').FoeContext} FoeContext */
@@ -26,18 +30,30 @@ function shape(bb, need, allow) {
   return true;
 }
 
+/** 魔球帮 (锦标-3). */
+const TEAM_KEYS = new Set(['min_dist', 'max_dist', 'blink_cd']);
+/** 裹骸死士 (敌能-96). */
+const SKULL_KEYS = new Set(['max_hp_ratio', 'dist']);
+/** 裹骸死士's 不可阻挡 (敌能-96: 「获得0.2s不可阻挡」), seconds. */
+const SKULL_SLIP_S = 0.2;
+
 /** @param {Record<string, unknown>} bb */
 const hatShape = (bb) => shape(bb, HAT_KEYS, HAT_KEYS);
 /** @param {Record<string, unknown>} bb */
+const teamShape = (bb) => shape(bb, TEAM_KEYS, TEAM_KEYS);
+/** @param {Record<string, unknown>} bb */
 const crownShape = (bb) => shape(bb, CROWN_KEYS, CROWN_KEYS);
+/** @param {Record<string, unknown>} bb */
+const skullShape = (bb) => shape(bb, SKULL_KEYS, SKULL_KEYS);
 
 /**
- * Whether a behaviour of this name is one of these blinks, when the name is blink (敌能-73, 敌能-84). Any other name
- * is not this family's concern.
+ * Whether a behaviour of this name is one of these blinks, when the name is blink or Blink (敌能-73, 敌能-84, 敌能-96,
+ * 锦标-3). Any other name is not this family's concern.
  * @param {string} name @param {Record<string, unknown>} bb
  */
 export function blinkOwns(name, bb) {
-  return name !== 'blink' || hatShape(bb) || crownShape(bb);
+  if (name === 'Blink') return skullShape(bb);
+  return name !== 'blink' || hatShape(bb) || crownShape(bb) || teamShape(bb);
 }
 
 /** Ready, blocked, able to act, not silenced (敌能-73, 敌能-84). @param {FoeContext} ctx */
@@ -116,6 +132,52 @@ function strike(ctx) {
   ctx.dealDamage(t, { type: 'phys', amount: ctx.bb.atk_scale * ctx.stats(ctx.self).atk });
 }
 
+/**
+ * Where a 魔球帮 player jumps toward (锦标-3): a goalkeeper (`clearance_force`) the nearest ball at rest in its area —
+ * from its `tile_col_end` on — and within its `searchBall` radius; a forward the nearest free ball within that radius; a
+ * muscleman (`searchtarget`) the one of ours nearest the ball, within its radius of it. Null for none.
+ * @param {FoeContext} ctx @returns {{ x: number, y: number } | null}
+ */
+function teamTarget(ctx) {
+  const ft = ctx.talent('football'), search = ctx.talent('searchtarget');
+  if (search) return nearBallTarget(ctx, /** @type {number} */ (search.range_radius));
+  if (!ft) return null;
+  const r = ctx.talent('searchBall')?.range_radius ?? 0, keeper = typeof ft.clearance_force === 'number';
+  return ctx.balls().filter((b) => ctx.freeBall(b) && dist2(ctx.self, b) <= r * r && (!keeper || (!b.slide && (typeof ft.tile_col_end !== 'number' || Math.round(b.x) >= ft.tile_col_end))))
+    .toSorted((a, b) => dist2(ctx.self, a) - dist2(ctx.self, b) || a.id - b.id)[0] ?? null;
+}
+
+/**
+ * 魔球帮's jump (锦标-3): moving on its own and off its `blink_cd`, with a target at least `min_dist` away it jumps
+ * toward it — onto it, at most `max_dist` — when it may stand there, and its cooldown starts. @param {FoeContext} ctx
+ */
+function teamBlink(ctx) {
+  const bb = ctx.bb, st = ctx.state, t = ctx.frame >= st.get('next') && onItsOwn(ctx) ? teamTarget(ctx) : null;
+  if (!t) return;
+  const dx = t.x - ctx.self.x, dy = t.y - ctx.self.y, d = hypot(dx, dy);
+  if (d < bb.min_dist) return;
+  const k = Math.min(d, bb.max_dist) / d, x = ctx.self.x + dx * k, y = ctx.self.y + dy * k;
+  if (!ctx.open(x, y)) return;
+  ctx.place(x, y);
+  st.set('next', ctx.frame + ctx.frames(bb.blink_cd));
+}
+
+/**
+ * 裹骸死士's 闪现 (敌能-96): ready, blocked, able to act, not silenced and below `max_hp_ratio` of its max HP, it uses
+ * the skill, is unblockable for 0.2 s and at once `dist` toward its course, where it may stand there.
+ * @param {FoeContext} ctx
+ */
+function skullBlink(ctx) {
+  if (!acting(ctx) || !(ctx.self.hp < ctx.bb.max_hp_ratio * ctx.stats(ctx.self).maxHp)) return;
+  ctx.use();
+  ctx.addBuff(ctx.self, { key: 'blinkSlip', flags: { unblockable: true }, left: ctx.frames(SKULL_SLIP_S) });
+  const to = destination(ctx);
+  if (to) ctx.place(to.x, to.y);
+}
+
+/** `Blink` (敌能-96). @type {FoeBehavior} */
+const Blink = Object.freeze({ tick: (ctx) => { if (skullShape(ctx.bb)) skullBlink(ctx); } });
+
 /** 闪现 (敌能-73, 敌能-84). A hat's attack only fills the bar. A crown's attack is ordinary and adds nothing. @type {FoeBehavior} */
 const blink = Object.freeze({
   attack: (ctx, mods) => {
@@ -124,6 +186,7 @@ const blink = Object.freeze({
     return mods;
   },
   tick: (ctx) => {
+    if (teamShape(ctx.bb)) { teamBlink(ctx); return; }
     if (!hatShape(ctx.bb) && !crownShape(ctx.bb)) return;
     if (armed(ctx)) begin(ctx);
     glide(ctx);
@@ -141,4 +204,4 @@ const ShiftImmune = Object.freeze({
 });
 
 /** @type {Readonly<Record<string, FoeBehavior>>} */
-export const blinkBehaviors = Object.freeze({ blink, ShiftImmune });
+export const blinkBehaviors = Object.freeze({ blink, Blink, ShiftImmune });

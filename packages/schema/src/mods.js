@@ -4,7 +4,7 @@
 import { isRecord, isInt, keyProblem } from './checks.js';
 
 /** The engine's version: what a mod's `app` range is matched against. */
-export const ENGINE_VERSION = '0.1.3';
+export const ENGINE_VERSION = '0.1.4';
 /** The built-in mod of the official content (ADR 0037). */
 export const OFFICIAL = 'official';
 /** A mod id: 1–32 of a–z 0–9 _ - — the prefix of the ids it adds ("<mod id>:<name>"). */

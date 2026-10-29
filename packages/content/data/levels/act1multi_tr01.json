@@ -1547,7 +1547,9 @@
             "trust": 100,
             "skill": 1,
             "skillLevel": 7
-          }
+          },
+          "alias": "char_150_snakek",
+          "hidden": true
         },
         {
           "key": "char_117_myrrh",

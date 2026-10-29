@@ -1,8 +1,11 @@
 // Presentation events, version 4 (ADR 0053; version 2 adds a skill starting or ending, version 3 an element burst, version 4 a heal, version 5 a projectile launched, version 6 a player down and back, version 7 a cost request and its answer, version 8 a wave beginning, a predefined unit coming
-// into effect or leaving, a co-op stage beginning and settled, an enemy's 直击 bolt and explosion, and the end of the battle, version 9 an attack's wind-up in frames, version 10 a story told: 波次-8, version 11 堡垒守御's phases and a facility's level: 守御-1, 守御-3, version 12 a 炼金单元 thrown: 技能-13): what happened in a frame, for the renderer and the sound. They flow from
+// into effect or leaving, a co-op stage beginning and settled, an enemy's 直击 bolt and explosion, and the end of the battle, version 9 an attack's wind-up in frames, version 10 a story told: 波次-8, version 11 堡垒守御's phases and a facility's level: 守御-1, 守御-3, version 12 a 炼金单元 thrown: 技能-13, version 14 a goal in 阵地足球, a 阵地足球锦标 penalty round and its lightning: 足球-5, 锦标-4, 锦标-2): what happened in a frame, for the renderer and the sound. They flow from
 // the simulation to the screen only; the simulation never reads them back.
 
-export const EVENTS_VERSION = 13;
+export const EVENTS_VERSION = 14;
+
+/** The goal a `score` event names (足球-5): ours (the other side scores) or theirs (we score). */
+export const SCORE_GOAL = Object.freeze({ ours: 0, theirs: 1 });
 
 /** The phases a `fortress` event tells (守御-1): a defence begins, a rest begins, the last defence is over. */
 export const FORTRESS_PHASE = Object.freeze({ defend: 0, rest: 1, over: 2 });
@@ -36,6 +39,14 @@ export const EVENT_FIELDS = Object.freeze({
   // a 炼金单元 (技能-13): its id, its thrower, its centre (x the column, y the row) and radius, the frames it lasts; drifting,
   // its speed (tiles a second), radius growth a second and the frames it drifts (0 for none)
   alchemy: Object.freeze(['id', 'src', 'x', 'y', 'r', 'frames', 'vx', 'vy', 'grow', 'drift']),
+  // a ball in a goal (足球-5): the ball's id, the goal (SCORE_GOAL)
+  score: Object.freeze(['id', 'goal']),
+  // a 锦标 penalty round (锦标-4): the round 0…5 (even ours, odd theirs); at its start `goal` −1, at its end 1 when the
+  // side kicking scored, else 0
+  penalty: Object.freeze(['round', 'goal']),
+  // 超强对流's lightning on a ball (锦标-2): the ball's id, the phase (THUNDER_PHASE in @aue/sim: 0 the warning, 1 the
+  // bolt, 2 its burning over)
+  thunder: Object.freeze(['id', 'phase']),
 });
 
 /** @typedef {{ type: keyof typeof EVENT_FIELDS, [field: string]: string | number }} PresentationEvent */

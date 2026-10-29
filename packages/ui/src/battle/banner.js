@@ -1,6 +1,7 @@
-// The co-op stage start banner (docs/spec/ui.md 界面-22, 界面-40): when a stage begins, the banner shows its task — the
-// title, the stage number, the basic task and, when it has one, the advanced task — and plays its clip once (a
-// training's own clip in a training); 堡垒守御's waves have their own banners — the first wave, the others, the last.
+// The co-op stage start banner (docs/spec/ui.md 界面-22, 界面-40, 界面-41): when a stage begins, the banner shows its
+// task — the title, the stage number, the basic task and, when it has one, the advanced task — and plays its clip once
+// (a training's own clip in a training); 堡垒守御's waves have their own banners — the first wave, the others, the last —,
+// and 阵地足球 its own once the match begins.
 import { refNode, setText } from '../node.js';
 
 /** @typedef {import('../node.js').UiNode} UiNode */
@@ -25,13 +26,21 @@ export function createBanner(ui) {
   const parts = /** @type {Record<string, any>} */ (ui.ctx.pack).hud?.coopStage;
   if (!parts || !ui.ctx.pack.screens['coop.stage']) return null;
   const scr = ui.open('coop.stage'), root = scr.root, at = (/** @type {string | undefined} */ ref) => (ref ? refNode(root, ref) : null);
-  const panel = at(parts.panel), d = parts.defence ?? {};
+  const panel = at(parts.panel), d = parts.defence ?? {}, ft = parts.football ? at(parts.football.panel) : null;
   if (!panel) return null;
-  const panels = [panel, ...['first', 'wave', 'last'].map((k) => at(d[k]?.panel))].filter((n) => n !== null);
+  const panels = [panel, ft, ...['first', 'wave', 'last'].map((k) => at(d[k]?.panel))].filter((n) => n !== null);
   root.active = true;
   for (const n of panels) n.active = false;
-  let shown = '';
+  let shown = '', kicked = false;
   return {
+    /** 阵地足球's banner (界面-41), once: its panel as the pack has it, its clip (a training's in a training). */
+    football(training = false) {
+      if (!ft || kicked) return;
+      kicked = true;
+      shown = 'football';
+      for (const n of panels) n.active = n === ft;
+      void scr.anim.play(ft, (training && parts.football.trainingClip) || parts.football.clip).then(() => { if (shown === 'football') ft.active = false; });
+    },
     screen: scr, panel,
     /** The stage last shown (0 for none). */
     shown: () => (shown.startsWith('s') ? Number(shown.slice(1)) : 0),

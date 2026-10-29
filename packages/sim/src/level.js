@@ -1,8 +1,9 @@
 // The map of a level (spec 地图-1): tiles in route coordinates, row 0 the nearest row, col 0 the left column.
 
 /**
- * A tile: `goal` is the side a goal tile belongs to — 'A', 'B', 'Shared', or '' (合作-1).
- * @typedef {{ key: string, height: string, buildable: string, passable: string, side: string, goal?: string, obstacle?: boolean }} Tile
+ * A tile: `goal` is the side a goal tile belongs to — 'A', 'B', 'Shared', or '' (合作-1); `landball`, a tile of our half
+ * a ball card may be deployed on (足球-14).
+ * @typedef {{ key: string, height: string, buildable: string, passable: string, side: string, goal?: string, obstacle?: boolean, landball?: boolean }} Tile
  */
 /** A closed tile edge (地图-2). @typedef {{ row: number, col: number, dir: string, mask: string }} BlockEdge */
 /** @typedef {{ width: number, height: number, tiles: Tile[][], blockEdges?: BlockEdge[] }} LevelMap */

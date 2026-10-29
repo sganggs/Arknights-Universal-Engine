@@ -1,6 +1,7 @@
 // 碎骨's grenade (docs/spec/foes.md 敌能-70). The talent name `defdown` is also a flat DEF on other
 // enemies (def −10 / −15). Only the ratio, plus the page's scale, square and duration, is this grenade;
-// any other shape stays uncovered (关卡-2) and does not change the attack.
+// 酸液源石虫's flat DEF with the page's `acid` marker is its acid (敌能-101); any other shape stays uncovered
+// (关卡-2) and does not change the attack.
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior */
 
@@ -22,12 +23,18 @@ function grenadeShape(bb) {
   return true;
 }
 
+/** 酸液源石虫's acid (敌能-101): a flat `def` loss of 1 or more and the page's `acid` marker alone. @param {Record<string, unknown>} bb */
+export const acidShape = (bb) => Object.keys(bb).length === 2 && typeof bb.def === 'number' && bb.def <= -1 && bb.acid === 1;
+/** 【源石虫酸液】 (敌能-101). */
+const ACID = 'acid';
+
 /**
- * Whether a `defdown` blackboard is this grenade (敌能-70). Any other name is not this family's concern.
+ * Whether a `defdown` blackboard is this grenade (敌能-70) or the acid (敌能-101). Any other name is not this
+ * family's concern.
  * @param {string} name @param {Record<string, unknown>} bb
  */
 export function defdownOwns(name, bb) {
-  return name !== 'defdown' || grenadeShape(bb);
+  return name !== 'defdown' || grenadeShape(bb) || acidShape(bb);
 }
 
 /**
@@ -45,6 +52,13 @@ const defdown = Object.freeze({
       ...mods, scale: mods.scale * /** @type {number} */ (bb.scale), square: true, splashScale: 1,
       hitDebuff: { seconds: /** @type {number} */ (bb.duration), mods: { defPct: /** @type {number} */ (bb.def) } },
     };
+  },
+  // 酸液源石虫 (敌能-101): each hit adds a layer of 【源石虫酸液】, no end, no cap; n layers take n × the first
+  // layer's DEF, whoever laid it.
+  hit: (ctx, target) => {
+    if (!acidShape(ctx.bb)) return;
+    const b = target.buffs.find((x) => x.key === ACID), n = (b?.value ?? 0) + 1, per = b ? b.mods.defFlat / b.value : ctx.bb.def;
+    ctx.setBuff(target, ACID, n, { defFlat: per * n });
   },
 });
 

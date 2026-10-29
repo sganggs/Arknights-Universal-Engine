@@ -83,3 +83,13 @@ test('[界面-39] [守御-5] a built 临时休息舱 adds deploy places; a built
   w2.units.find((/** @type {any} */ u) => u.fac).fac.level = 1;
   assert.equal(deployableKeys(w2, pf, 'sniper', 0).includes(1 * 6 + 4), true);
 });
+
+test('[界面-41] [足球-14] a ball card is held back until its seat holds a caught ball', () => {
+  const c = /** @type {any} */ (tinyContent());
+  c.operators.ball = { ...c.operators.guard, name: 'ball', ballCard: true, cost: 3 };
+  c.decks = [['guard', 'ball']];
+  const w = /** @type {any} */ (createWorld(c, { seed: 1, players: 1 }));
+  assert.deepEqual(operatorCards(w, c, 0).hidden, ['ball']);
+  w.players[0].balls = [{ id: 9, until: 150, row: 1, col: 1 }];
+  assert.deepEqual(operatorCards(w, c, 0).hidden, []);
+});

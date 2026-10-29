@@ -2,6 +2,7 @@
 // attributes at its training (its phase, its level between that phase's first and last key frames) and its talents'
 // blackboard (a device's talents are hidden ones) — besides the co-op stage control, which is no unit (合作-6).
 import { asArray, asNumber, asObject, asString, field } from './validate.js';
+import { predefinedOperator } from './waves.js';
 
 /** The co-op stage controller (合作-6): no unit on the field. */
 const STAGE_CONTROLLER = 'trap_179_muctrl';
@@ -86,7 +87,7 @@ export function devicesOf(charTable, raw) {
     for (const [i, x] of (Array.isArray(pd[k]) ? pd[k] : []).entries()) {
       const p = `level.predefines.${k}[${i}]`, o = asObject(x, p), inst = asObject(field(o, 'inst', p), `${p}.inst`), key = asString(field(inst, 'characterKey', `${p}.inst`), `${p}.inst.characterKey`);
       // a predefined operator (波次-7) is no device
-      if (k === 'characterInsts' && !o.alias && o.position) continue;
+      if (predefinedOperator(k, o, key)) continue;
       if (key === STAGE_CONTROLLER || Object.hasOwn(out, key) || !Object.hasOwn(table, key)) continue;
       const cp = `character_table[${key}]`, c = asObject(table[key], cp), phase = PHASE[String(inst.phase)] ?? 0, level = typeof inst.level === 'number' ? inst.level : 1;
       const phases = asArray(field(c, 'phases', cp), `${cp}.phases`);

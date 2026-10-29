@@ -28,7 +28,7 @@ function isSkillAttack(ctx) {
  */
 const hitsOf = (mods, bb) => (typeof bb.times === 'number' ? { ...mods, times: mods.times * bb.times } : mods);
 
-/** 眩晕打击 (敌能-36): the skill's hit stuns for `stun` seconds. @type {FoeBehavior} */
+/** 眩晕打击 (敌能-36; 狙击步兵组长's is named `stunattack`): the skill's hit stuns for `stun` seconds. @type {FoeBehavior} */
 const stuncombat = Object.freeze({
   attack: (ctx, mods) => {
     const out = hitsOf(mods, ctx.bb);
@@ -53,4 +53,4 @@ const PowerAttack = Object.freeze({
 });
 
 /** The behaviours of this file, by skill name. @type {Readonly<Record<string, FoeBehavior>>} */
-export const chargedBehaviors = Object.freeze({ stuncombat, PowerAttack });
+export const chargedBehaviors = Object.freeze({ stuncombat, stunattack: stuncombat, PowerAttack });

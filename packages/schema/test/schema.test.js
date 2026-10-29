@@ -41,6 +41,7 @@ test('events: well formed ones pass; unknown types, wrong types and extra fields
     'version 8: a wave, a predefined unit, the end');
   assert.deepEqual(eventProblems({ type: 'stage', index: 1, on: 0, stamps: 2 }), [], 'version 8: a co-op stage');
   assert.deepEqual(eventProblems({ type: 'attack', id: 1, target: 2, wind: 12, face: 1 }), [], 'version 9: an attack with its wind-up; version 13 adds whether it faces');
+  assert.deepEqual(eventProblems({ type: 'score', id: 1, goal: 1 }), [], 'version 14: a goal in 阵地足球');
   assert.deepEqual([eventProblems({ type: 'fortress', wave: 1, phase: FORTRESS_PHASE.rest, until: 900 }), eventProblems({ type: 'facility', id: 4, level: 2 })], [[], []],
     "version 11: [守御-1] 堡垒守御's phases, [守御-3] a facility's level");
   assert.deepEqual(eventProblems({ type: 'attack', id: 1, target: 2 }), ['attack.wind is not a number', 'attack.face is not a number']);
@@ -62,7 +63,7 @@ test('client messages: exactly the well-formed ones are accepted', () => {
   }
   const bad = [
     [[], 'message is not an object'], [{ t: 'nope' }, 'unknown message type nope'], [{ t: 'constructor' }, 'unknown message type constructor'],
-    [{ ...HELLO, v: 3 }, 'protocol version 3, expected 10'], [{ ...HELLO, seat: 8 }, 'hello.seat out of range'], [{ ...HELLO, key: 'a b' }, 'hello.key is not an id'],
+    [{ ...HELLO, v: 3 }, 'protocol version 3, expected 11'], [{ ...HELLO, seat: 8 }, 'hello.seat out of range'], [{ ...HELLO, key: 'a b' }, 'hello.key is not an id'],
     [{ ...HELLO, since: 1.5 }, 'hello.since out of range'], [{ ...HELLO, admin: true }, 'unknown field admin'], [{ t: 'hash', frame: 1 }, 'missing field hash'],
     [{ t: 'hash', frame: 1, hash: -1 }, 'hash.hash is not a uint32'], [{ t: 'hash', frame: -1, hash: 1 }, 'hash.frame out of range'],
     [{ t: 'cmd', at: 2e6, cmd: DEPLOY }, 'cmd.at out of range'], [{ t: 'cmd', at: 1, cmd: { ...DEPLOY, row: 64 } }, 'deploy tile out of range'],
@@ -89,28 +90,28 @@ test('client messages: generated well-formed deploys are accepted', () => {
 });
 
 test('snapshot envelope v13', () => {
-  assert.equal(snapshotProblem({ v: 19, frame: 0, data: {} }), null, 'version 19: 轰隆隆先生 cards');
-  assert.equal(snapshotProblem({ v: 18, frame: 0, data: {} }), 'snapshot version 18, expected 19');
+  assert.equal(snapshotProblem({ v: 20, frame: 0, data: {} }), null, 'version 20: a ball\'s physics');
+  assert.equal(snapshotProblem({ v: 19, frame: 0, data: {} }), 'snapshot version 19, expected 20');
   assert.equal(snapshotProblem([]), 'snapshot is not an object');
-  assert.equal(snapshotProblem({ v: 20, frame: 0, data: {} }), 'snapshot version 20, expected 19');
-  assert.equal(snapshotProblem({ v: 19, frame: -1, data: {} }), 'snapshot.frame out of range');
-  assert.equal(snapshotProblem({ v: 19, frame: 0, data: [] }), 'snapshot.data is not an object');
-  assert.equal(snapshotProblem({ v: 19, frame: 0 }), 'missing field data');
+  assert.equal(snapshotProblem({ v: 21, frame: 0, data: {} }), 'snapshot version 21, expected 20');
+  assert.equal(snapshotProblem({ v: 20, frame: -1, data: {} }), 'snapshot.frame out of range');
+  assert.equal(snapshotProblem({ v: 20, frame: 0, data: [] }), 'snapshot.data is not an object');
+  assert.equal(snapshotProblem({ v: 20, frame: 0 }), 'missing field data');
 });
 
 test('server messages: well-formed ones pass; broken ones are reported, never thrown', () => {
   const ok = [
-    { t: 'welcome', v: PROTOCOL_VERSION, seat: 0, seed: 9, frame: -1, snapshot: { v: 17, frame: 0, data: {} }, match: null, content: 7, replay: null },
+    { t: 'welcome', v: PROTOCOL_VERSION, seat: 0, seats: 2, seed: 9, frame: -1, snapshot: { v: 17, frame: 0, data: {} }, match: null, content: 7, replay: null },
     { t: 'frames', from: 3, to: 5, cmds: [[4, 1, DEPLOY], [5, 0, { type: 'retreat', unit: 2 }]] },
     { t: 'restamp', from: 3, to: 7 }, { t: 'resync', snapshot: {}, frame: 3, replay: null }, { t: 'error', code: 'x', message: 'y' },
     { t: 'control', fast: [1, 0], held: 0, asker: -1, resuming: 0 }, { t: 'frames', from: 1, to: 1, cmds: [[1, 1, { type: 'answer', accept: 1 }]] },
-    { t: 'welcome', v: PROTOCOL_VERSION, seat: 1, seed: 9, frame: 40, snapshot: null, match: null, content: 7, replay: [[4, 1, DEPLOY]] },
+    { t: 'welcome', v: PROTOCOL_VERSION, seat: 1, seats: 2, seed: 9, frame: 40, snapshot: null, match: null, content: 7, replay: [[4, 1, DEPLOY]] },
     { t: 'resync', snapshot: null, frame: 40, replay: [] },
   ];
   for (const m of ok) assert.equal(serverMessageProblem(m), null, JSON.stringify(m));
   const bad = [
     [null, 'message is not an object'], [{ t: 'hello' }, 'unknown message type hello'],
-    [{ ...ok[0], v: 3 }, 'protocol version 3, expected 10'], [{ ...ok[0], seed: 1.5 }, 'welcome fields out of range'], [{ ...ok[0], content: -1 }, 'welcome fields out of range'],
+    [{ ...ok[0], v: 3 }, 'protocol version 3, expected 11'], [{ ...ok[0], seed: 1.5 }, 'welcome fields out of range'], [{ ...ok[0], content: -1 }, 'welcome fields out of range'],
     [{ ...ok[1], to: 2 }, 'frames range malformed'], [{ ...ok[1], cmds: {} }, 'sealed commands are not an array'],
     [{ ...ok[1], cmds: [[4, 9, DEPLOY]] }, 'frames.cmds has a malformed entry'], [{ ...ok[1], cmds: [[4, 1, { type: 'x' }]] }, 'unknown command type x'],
     [{ t: 'restamp', from: -1, to: 1 }, 'restamp out of range'], [{ t: 'error', code: 1, message: 'y' }, 'error fields are not strings'],
@@ -142,18 +143,30 @@ test('[同步-9] match settings: exactly the well-formed ones pass; a welcome ca
   ];
   for (const [m, why] of bad) assert.equal(matchProblem(m), why, JSON.stringify(m));
   assert.deepEqual(DIFFICULTIES, ['NORMAL', 'FOUR_STAR']);
-  const welcome = { t: 'welcome', v: PROTOCOL_VERSION, seat: 0, seed: 9, frame: -1, snapshot: null, match, content: 7, replay: null };
+  const welcome = { t: 'welcome', v: PROTOCOL_VERSION, seat: 0, seats: 2, seed: 9, frame: -1, snapshot: null, match, content: 7, replay: null };
   assert.equal(serverMessageProblem(welcome), null);
   assert.equal(serverMessageProblem({ ...welcome, match: { ...match, seed: 1.5 } }), 'match.seed is not a uint32');
   const { match: _m, ...noMatch } = welcome;
   assert.equal(serverMessageProblem(noMatch), 'missing field match');
 });
 
+test('[同步-5] protocol 11 welcome carries the arbiter seats and names one of them', () => {
+  const welcome = { t: 'welcome', v: PROTOCOL_VERSION, seat: 0, seats: 2, seed: 7, frame: -1, snapshot: null, match: null, content: 1, replay: [] };
+  assert.equal(PROTOCOL_VERSION, 11);
+  for (const [seats, seat] of [[1, 0], [2, 1], [8, 7]]) assert.equal(serverMessageProblem({ ...welcome, seats, seat }), null);
+  for (const seats of [0, 9, 1.5, null, '2']) assert.equal(serverMessageProblem({ ...welcome, seats }), 'welcome fields out of range');
+  assert.equal(serverMessageProblem({ ...welcome, seat: 2 }), 'welcome fields out of range');
+  const { seats: _seats, ...noSeats } = welcome;
+  assert.equal(serverMessageProblem(noSeats), 'missing field seats');
+  assert.equal(serverMessageProblem({ ...welcome, v: 10 }), 'protocol version 10, expected 11');
+  assert.equal(clientMessageProblem({ ...HELLO, v: 10 }), 'protocol version 10, expected 11');
+});
+
 test('[同步-9] [符文-1] a match may carry each seat\'s runes: a key, a profession mask and a blackboard of [key, number or text]', () => {
   const build = { elite: 2, level: 90, potential: 6, trust: 200, skill: 2, skillLevel: 10 };
   const match = { level: 'act1multi_01', difficulty: 'NORMAL', seed: 7, decks: [[{ id: 'char_122_beagle', build }], []] };
   const r = { key: 'env_gbuff_new', professions: 639, board: [['key', 'attr_up_on_trigger[atk][max_hp]'], ['atk', 0.03], ['attack@sp', 3]] };
-  assert.equal(PROTOCOL_VERSION, 10);
+  assert.equal(PROTOCOL_VERSION, 11);
   assert.equal(matchProblem({ ...match, runes: [[r], []] }), null);
   assert.equal(matchProblem({ ...match, runes: [[], []] }), null);
   const bad = [

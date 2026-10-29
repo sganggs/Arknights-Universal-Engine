@@ -520,6 +520,319 @@
                     "type": "null"
                   }
                 ]
+              },
+              "football": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "time": {
+                        "type": "number",
+                        "minimum": 1,
+                        "maximum": 36000
+                      },
+                      "wait": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 3600
+                      },
+                      "stamps": {
+                        "anyOf": [
+                          {
+                            "type": "array",
+                            "items": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 999
+                            },
+                            "minItems": 0,
+                            "maxItems": 8
+                          },
+                          {
+                            "type": "object",
+                            "additionalProperties": {
+                              "anyOf": [
+                                {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 999
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "ahead": {
+                        "anyOf": [
+                          {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/$defs/s41"
+                            },
+                            "minItems": 1,
+                            "maxItems": 32
+                          },
+                          {
+                            "type": "object",
+                            "additionalProperties": {
+                              "anyOf": [
+                                {
+                                  "$ref": "#/$defs/s41"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "weights": {
+                        "type": "object",
+                        "additionalProperties": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "number",
+                                    "minimum": 0,
+                                    "maximum": 1000000
+                                  },
+                                  "minItems": 1,
+                                  "maxItems": 64
+                                },
+                                {
+                                  "type": "object",
+                                  "additionalProperties": {
+                                    "anyOf": [
+                                      {
+                                        "type": "number",
+                                        "minimum": 0,
+                                        "maximum": 1000000
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "teams": {
+                        "anyOf": [
+                          {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/$defs/s42"
+                            },
+                            "minItems": 0,
+                            "maxItems": 16
+                          },
+                          {
+                            "type": "object",
+                            "additionalProperties": {
+                              "anyOf": [
+                                {
+                                  "$ref": "#/$defs/s42"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "roles": {
+                        "type": "object",
+                        "additionalProperties": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 4096
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "catchUp": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "maxHp": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 100
+                              },
+                              "atk": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 100
+                              },
+                              "moveSpeed": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 100
+                              }
+                            },
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "cup": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "moveSpeed": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 100
+                              },
+                              "stadiumType": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 5
+                              },
+                              "mercy": {
+                                "type": "integer",
+                                "minimum": -1,
+                                "maximum": 99
+                              },
+                              "teamType": {
+                                "type": "integer",
+                                "minimum": -1,
+                                "maximum": 9
+                              },
+                              "kickerDelta": {
+                                "anyOf": [
+                                  {
+                                    "type": "integer",
+                                    "minimum": -99,
+                                    "maximum": 99
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "stadiumWeights": {
+                                "anyOf": [
+                                  {
+                                    "anyOf": [
+                                      {
+                                        "type": "array",
+                                        "items": {
+                                          "$ref": "#/$defs/s43"
+                                        },
+                                        "minItems": 1,
+                                        "maxItems": 8
+                                      },
+                                      {
+                                        "type": "object",
+                                        "additionalProperties": {
+                                          "anyOf": [
+                                            {
+                                              "$ref": "#/$defs/s43"
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "sides": {
+                                "anyOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "ours": {
+                                        "type": "string",
+                                        "maxLength": 4096
+                                      },
+                                      "theirs": {
+                                        "type": "string",
+                                        "maxLength": 4096
+                                      }
+                                    },
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "relics": {
+                                "anyOf": [
+                                  {
+                                    "anyOf": [
+                                      {
+                                        "type": "array",
+                                        "items": {
+                                          "$ref": "#/$defs/s44"
+                                        },
+                                        "minItems": 0,
+                                        "maxItems": 8
+                                      },
+                                      {
+                                        "type": "object",
+                                        "additionalProperties": {
+                                          "anyOf": [
+                                            {
+                                              "$ref": "#/$defs/s44"
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              }
+                            },
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
               }
             },
             "additionalProperties": false
@@ -528,10 +841,10 @@
             "type": "object",
             "properties": {
               "NORMAL": {
-                "$ref": "#/$defs/s41"
+                "$ref": "#/$defs/s49"
               },
               "FOUR_STAR": {
-                "$ref": "#/$defs/s41"
+                "$ref": "#/$defs/s49"
               }
             },
             "additionalProperties": false
@@ -541,7 +854,7 @@
             "additionalProperties": {
               "anyOf": [
                 {
-                  "$ref": "#/$defs/s45"
+                  "$ref": "#/$defs/s54"
                 },
                 {
                   "type": "null"
@@ -704,7 +1017,7 @@
         "maxLength": 64
       },
       "additionalProperties": {
-        "$ref": "#/$defs/s45"
+        "$ref": "#/$defs/s54"
       }
     },
     "tokens": {
@@ -757,7 +1070,7 @@
               {
                 "type": "array",
                 "items": {
-                  "$ref": "#/$defs/s48"
+                  "$ref": "#/$defs/s56"
                 },
                 "minItems": 1,
                 "maxItems": 3
@@ -767,7 +1080,7 @@
                 "additionalProperties": {
                   "anyOf": [
                     {
-                      "$ref": "#/$defs/s48"
+                      "$ref": "#/$defs/s56"
                     },
                     {
                       "type": "null"
@@ -2194,6 +2507,16 @@
               "type": "null"
             }
           ]
+        },
+        "landball": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "additionalProperties": false
@@ -2245,6 +2568,8 @@
         "type": {
           "enum": [
             "MOVE",
+            "PATROL_MOVE",
+            "MAP_OFFSET_MOVE",
             "WAIT_CURRENT_FRAGMENT_TIME",
             "WAIT_FOR_SECONDS",
             "DISAPPEAR",
@@ -2348,6 +2673,7 @@
           "enum": [
             "SPAWN",
             "ACTIVATE",
+            "WITHDRAW",
             "NONE",
             "STORY"
           ]
@@ -2425,6 +2751,16 @@
               "type": "integer",
               "minimum": 0,
               "maximum": 1000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "dontBlockWave": {
+          "anyOf": [
+            {
+              "type": "boolean"
             },
             {
               "type": "null"
@@ -2515,6 +2851,28 @@
         },
         "fragments": {
           "$ref": "#/$defs/s32"
+        },
+        "tag": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 99
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "penalty": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "additionalProperties": false
@@ -2732,6 +3090,27 @@
         },
         "build": {
           "$ref": "#/$defs/s36"
+        },
+        "alias": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 4096
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "hidden": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "additionalProperties": false
@@ -2758,7 +3137,260 @@
       },
       "additionalProperties": false
     },
+    "s41": {
+      "anyOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000000
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1000000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "s42": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "maxLength": 4096
+        },
+        "weight": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000
+        },
+        "players": {
+          "type": "object",
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4096
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "elite": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 4096
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "s43": {
+      "anyOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1000000
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1000000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "s47": {
+      "type": "object",
+      "additionalProperties": {
+        "anyOf": [
+          {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": -1000000000,
+                "maximum": 1000000000
+              },
+              {
+                "type": "string",
+                "maxLength": 4096
+              }
+            ]
+          },
+          {
+            "type": "null"
+          }
+        ]
+      }
+    },
+    "s46": {
+      "anyOf": [
+        {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": -1000000000,
+                "maximum": 1000000000
+              },
+              {
+                "type": "string",
+                "maxLength": 4096
+              }
+            ]
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        {
+          "$ref": "#/$defs/s47"
+        }
+      ]
+    },
+    "s45": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string",
+          "maxLength": 4096
+        },
+        "professions": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1023
+        },
+        "board": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/s46"
+              },
+              "minItems": 0,
+              "maxItems": 32
+            },
+            {
+              "type": "object",
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/s46"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "s48": {
+      "type": "object",
+      "additionalProperties": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/s45"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      }
+    },
     "s44": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 4096
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 4096
+        },
+        "text": {
+          "type": "string",
+          "maxLength": 4096
+        },
+        "runes": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/s45"
+              },
+              "minItems": 1,
+              "maxItems": 8
+            },
+            {
+              "$ref": "#/$defs/s48"
+            }
+          ]
+        },
+        "unlockedBy": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 4096
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "s53": {
       "anyOf": [
         {
           "type": "array",
@@ -2785,17 +3417,17 @@
         }
       ]
     },
-    "s43": {
+    "s52": {
       "anyOf": [
         {
-          "$ref": "#/$defs/s44"
+          "$ref": "#/$defs/s53"
         },
         {
           "type": "null"
         }
       ]
     },
-    "s42": {
+    "s51": {
       "type": "object",
       "properties": {
         "mods": {
@@ -2814,44 +3446,47 @@
           }
         },
         "enemy": {
-          "$ref": "#/$defs/s43"
+          "$ref": "#/$defs/s52"
         },
         "exclude": {
-          "$ref": "#/$defs/s43"
+          "$ref": "#/$defs/s52"
         }
       },
       "additionalProperties": false
     },
-    "s41": {
+    "s50": {
+      "anyOf": [
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/s51"
+          },
+          "minItems": 0,
+          "maxItems": 16
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/s51"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "s49": {
       "type": "object",
       "properties": {
         "enemyMul": {
-          "anyOf": [
-            {
-              "type": "array",
-              "items": {
-                "$ref": "#/$defs/s42"
-              },
-              "minItems": 0,
-              "maxItems": 16
-            },
-            {
-              "type": "object",
-              "additionalProperties": {
-                "anyOf": [
-                  {
-                    "$ref": "#/$defs/s42"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ]
-              }
-            }
-          ]
+          "$ref": "#/$defs/s50"
         },
         "hiddenGroups": {
-          "$ref": "#/$defs/s44"
+          "$ref": "#/$defs/s53"
         },
         "replace": {
           "type": "object",
@@ -2868,7 +3503,17 @@
           }
         },
         "unsupported": {
-          "$ref": "#/$defs/s44"
+          "$ref": "#/$defs/s53"
+        },
+        "talentMul": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/s50"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "lifePoint": {
           "anyOf": [
@@ -2917,34 +3562,33 @@
               "type": "null"
             }
           ]
+        },
+        "ours": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/s45"
+                  },
+                  "minItems": 0,
+                  "maxItems": 32
+                },
+                {
+                  "$ref": "#/$defs/s48"
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "additionalProperties": false
     },
-    "s46": {
-      "type": "object",
-      "additionalProperties": {
-        "anyOf": [
-          {
-            "anyOf": [
-              {
-                "type": "number",
-                "minimum": -1000000000,
-                "maximum": 1000000000
-              },
-              {
-                "type": "string",
-                "maxLength": 4096
-              }
-            ]
-          },
-          {
-            "type": "null"
-          }
-        ]
-      }
-    },
-    "s47": {
+    "s55": {
       "type": "object",
       "properties": {
         "key": {
@@ -2967,12 +3611,12 @@
           "maximum": 1000000
         },
         "bb": {
-          "$ref": "#/$defs/s46"
+          "$ref": "#/$defs/s47"
         }
       },
       "additionalProperties": false
     },
-    "s45": {
+    "s54": {
       "type": "object",
       "properties": {
         "name": {
@@ -3055,7 +3699,7 @@
               "additionalProperties": {
                 "anyOf": [
                   {
-                    "$ref": "#/$defs/s46"
+                    "$ref": "#/$defs/s47"
                   },
                   {
                     "type": "null"
@@ -3146,7 +3790,7 @@
                 {
                   "type": "array",
                   "items": {
-                    "$ref": "#/$defs/s47"
+                    "$ref": "#/$defs/s55"
                   },
                   "minItems": 0,
                   "maxItems": 16
@@ -3156,7 +3800,7 @@
                   "additionalProperties": {
                     "anyOf": [
                       {
-                        "$ref": "#/$defs/s47"
+                        "$ref": "#/$defs/s55"
                       },
                       {
                         "type": "null"
@@ -3174,7 +3818,7 @@
       },
       "additionalProperties": false
     },
-    "s49": {
+    "s57": {
       "type": "object",
       "properties": {
         "level": {
@@ -3270,7 +3914,7 @@
       },
       "additionalProperties": false
     },
-    "s48": {
+    "s56": {
       "type": "object",
       "properties": {
         "maxLevel": {
@@ -3286,7 +3930,7 @@
             {
               "type": "array",
               "items": {
-                "$ref": "#/$defs/s49"
+                "$ref": "#/$defs/s57"
               },
               "minItems": 1,
               "maxItems": 8
@@ -3296,7 +3940,7 @@
               "additionalProperties": {
                 "anyOf": [
                   {
-                    "$ref": "#/$defs/s49"
+                    "$ref": "#/$defs/s57"
                   },
                   {
                     "type": "null"

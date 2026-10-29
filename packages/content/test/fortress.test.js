@@ -10,7 +10,8 @@ import { levelAt, levelContent, matchContent, TESTING, withBuilders, LEVELS, OFF
 const FORTRESS_PHASE = { defend: 0, rest: 1 };
 
 test('[关卡-8] [关卡-2] [守御-1] the 堡垒守御 levels and level files being tested load, naming their enemies\' abilities with no behaviour or missing values; others still refuse', async () => {
-  assert.deepEqual(TESTING, ['act1multi_fortress_rm01', 'act1multi_fortress_hard-01']);
+  assert.deepEqual(TESTING, ['act1multi_fortress_rm01', 'act1multi_fortress_hard-01', 'act1multi_football', 'act1multi_football_hard-01',
+    ...Object.keys(LEVELS).filter((k) => k.startsWith('act1football_'))]);
   for (const [id, rules] of /** @type {const} */ ([['act1multi_fortress_rm01', { rest: 65, wave: 120, waveLast: 300, life: 3, restAdd: 5 }],
     ['act1multi_fortress_hard-01', { rest: 60, wave: 100, waveLast: 120, life: 3, restAdd: 5 }]])) {
     for (const d of /** @type {const} */ (['NORMAL', 'FOUR_STAR'])) {

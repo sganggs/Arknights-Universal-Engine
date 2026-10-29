@@ -14,9 +14,17 @@ const REVIVING = Object.freeze({ invincible: true, untargetable: true, unblockab
  * @param {FoeContext} ctx @param {number} ratio @returns {boolean}
  */
 export function beginRebirth(ctx, ratio) {
+  if (ctx.state.get('done')) return false;
+  ctx.state.set('done', 1);
+  return beginRevival(ctx, ratio);
+}
+
+/**
+ * A knockdown stays, as often as it comes (敌能-18's revival without the once, 足球-9): buffs cleared, HP to `ratio` of
+ * the maximum, then `duration` seconds of the reviving flags. @param {FoeContext} ctx @param {number} ratio @returns {boolean}
+ */
+export function beginRevival(ctx, ratio) {
   const self = ctx.self, st = ctx.state;
-  if (st.get('done')) return false;
-  st.set('done', 1);
   st.set('reviving', 1);
   for (const key of new Set(self.buffs.map((b) => b.key))) ctx.removeBuff(self, key);
   ctx.setHp(self, ctx.stats(self).maxHp * ratio);

@@ -7,6 +7,7 @@ import { levelContent, levelAt, LEVELS, matchContent, OFFICIAL_SOURCE } from '..
 import { uncoveredAbilities } from '../src/foes.js';
 import { profiledDevices } from '../src/devices.js';
 import hard02 from '../data/levels/act1multi_hard-02.json' with { type: 'json' };
+import football from '../data/levels/act1multi_football.json' with { type: 'json' };
 
 const raw = LEVELS.act1multi_01;
 
@@ -172,4 +173,17 @@ test('[装置-3] [装置-4] [地图-3] the official devices: 城防路障 immune
   assert.throws(() => levelAt('x', 'NORMAL', undefined, { x: only }), /devices not supported yet: trap_x/);
   const ok = levelAt('x', 'NORMAL', undefined, { x: { ...only, devices: { trap_103_ymdgct: only.devices.trap_103_ymdgct } } });
   assert.deepEqual([ok.level.works, ok.devices], [{ dealt: 1.3, taken: 0.7 }, {}]);
+  // a device the level never places — hidden, never activated, no card — needs none
+  const unplaced = { ...only, level: { ...only.level, predefines: [...only.level.predefines, { alias: 'trap_x#1', key: 'trap_x', hidden: true, row: 0, col: 0, dir: 'UP' }] } };
+  assert.deepEqual(levelAt('x', 'NORMAL', undefined, { x: unplaced }).devices, {});
+  const activated = { ...unplaced, level: { ...unplaced.level, waves: [{ preDelay: 0, postDelay: 0, maxWait: -1, fragments: [{ preDelay: 0, actions: [{ type: 'ACTIVATE', key: 'trap_x#1', count: 1, interval: 0, preDelay: 0, route: -1 }] }] }] } };
+  assert.throws(() => levelAt('x', 'NORMAL', undefined, { x: activated }), /devices not supported yet: trap_x/);
+});
+
+test('[足球-12] 阵地屏障: a device of the enemies, immune to its statuses, blocking routes, a 0.9 square, ball damage × its damage_scale, none with no source', () => {
+  const { devices, missing } = profiledDevices({ trap_154_mugtps: /** @type {any} */ (football).devices.trap_154_mugtps });
+  assert.deepEqual(missing, []);
+  const d = devices.trap_154_mugtps;
+  assert.deepEqual([d.side, d.immune, d.routeBlock, d.square, d.ballDamage, d.envDamage, d.tauntLevel, d.maxHp],
+    ['ENEMY', ['stun', 'silence', 'cold', 'freeze', 'sleep'], true, 0.9, 5, 0, -1, 50000]);
 });

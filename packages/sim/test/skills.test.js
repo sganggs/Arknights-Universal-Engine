@@ -89,6 +89,8 @@ test('[技能-2] by attacking: one point an attack, none for the skill\'s own at
   g.buffs.push(makeBuff({ key: 'shield', shieldHits: 1 }), makeBuff({ key: 'dodge', mods: { dodgePhys: 1 } }));
   for (let i = 0; i < 2; i++) dealDamage(h.w, foe, g, { type: 'phys', amount: 10 });
   assert.equal(g.skill?.sp, 2, 'dodged and blocked hits count');
+  dealDamage(h.w, foe, g, { type: 'arts', amount: 10, noHurtSp: true });
+  assert.equal(g.skill?.sp, 2, 'none for a hit marked noHurtSp (敌能-103: the burn)');
   dealDamage(h.w, foe, g, { type: 'phys', amount: 10, hpLoss: true });
   applyStatus(g, 'invincible', { frames: 5 });
   dealDamage(h.w, foe, g, { type: 'phys', amount: 10 });

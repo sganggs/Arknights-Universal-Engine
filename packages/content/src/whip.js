@@ -1,7 +1,10 @@
 // 萨卡兹骸骨鞭笞者 / 拷打者 and 新生血裔's share of that summon (docs/spec/foes.md 敌能-63).
-// `Attack` and `Summon` are shared names. Only the blackboards below are this family; any other shape stays uncovered
-// (关卡-2) and these hooks do nothing with it. `Passive` (血珀 and R-11) lives in passive.js, so the name has one owner.
+// `Attack` and `Summon` are shared names (固海凿石者's `Attack` is stonecutter.js's, dispatched here). Only the
+// blackboards below are this family; any other shape stays uncovered (关卡-2) and these hooks do nothing with it. `Passive` (血珀 and R-11) lives in passive.js, so the name has one owner.
 // They act only through the context (ADR 0055).
+
+import { guardShape, digIn } from './stonecutter.js';
+import { stonesShape, broodShape, catapultAttack } from './catapult.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior */
 /** @typedef {import('@aue/sim').FoeContext} FoeContext */
@@ -44,7 +47,7 @@ function summonShape(bb) {
  * @param {string} name @param {Record<string, unknown>} bb
  */
 export function whipOwns(name, bb) {
-  if (name === 'Attack') return attackShape(bb);
+  if (name === 'Attack') return attackShape(bb) || guardShape(bb) || stonesShape(bb) || broodShape(bb);
   if (name === 'Summon') return summonShape(bb);
   return true;
 }
@@ -77,11 +80,18 @@ function onLeave(ctx) {
   }
 }
 
-/** 未被阻挡时 the shot is × `attack@ranged_atk_scale`. Blocked, the engine already hits only the blocker at ×1. */
+/**
+ * 未被阻挡时 the shot is × `attack@ranged_atk_scale`. Blocked, the engine already hits only the blocker at ×1. 固海凿石者's
+ * shape digs in before its first attack (敌能-87, stonecutter.js); 自制投石机's and 投嗣育母's are catapult.js's (敌能-106).
+ */
 const Attack = Object.freeze(/** @type {FoeBehavior} */ ({
+  targets: (ctx, cands) => catapultAttack.targets?.(ctx, cands) ?? cands,
+  cancelHit: (ctx, t) => catapultAttack.cancelHit?.(ctx, t) ?? false,
+  landed: (ctx, t, how) => { catapultAttack.landed?.(ctx, t, how); },
   tick: (ctx) => { onLeave(ctx); },
   attack: (ctx, mods) => {
     const bb = bbOf(ctx);
+    if (guardShape(bb)) return digIn(ctx, mods);
     if (!attackShape(bb) || ctx.blocked) return mods;
     return { ...mods, scale: mods.scale * /** @type {number} */ (bb['attack@ranged_atk_scale']) };
   },

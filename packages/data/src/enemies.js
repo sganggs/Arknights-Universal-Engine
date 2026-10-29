@@ -178,8 +178,24 @@ export function mergeEnemyData(base, over, p) {
 }
 
 /**
- * One enemy of the database (关卡-1): level 0, overlaid with the level `ref` asks for and its overwrittenData; with
- * useDb false, its overwrittenData alone.
+ * A level's overwrittenData laid on an enemy (关卡-1): as mergeEnemyData, but a talentBlackboard given sets only the keys
+ * it lists — each replaces the entry of the same key, a key the enemy lacks is added after its own, the others stay.
+ * @param {Record<string, unknown>} base @param {Record<string, unknown>} over @param {string} p path of over
+ * @returns {Record<string, unknown>}
+ */
+export function overwriteEnemyData(base, over, p) {
+  if (!Array.isArray(over.talentBlackboard)) return mergeEnemyData(base, over, p);
+  const keyOf = (/** @type {unknown} */ t, /** @type {string} */ tp) => asString(asObject(t, tp).key, `${tp}.key`);
+  const mine = new Map(over.talentBlackboard.map((t, i) => [keyOf(t, `${p}.talentBlackboard[${i}]`), t]));
+  const own = Array.isArray(base.talentBlackboard) ? base.talentBlackboard : [];
+  const ownKeys = new Set(own.map((t, i) => keyOf(t, `talentBlackboard[${i}]`)));
+  const talents = [...own.map((t) => mine.get(keyOf(t, 'talentBlackboard[]')) ?? t), ...[...mine].filter(([k]) => !ownKeys.has(k)).map(([, t]) => t)];
+  return mergeEnemyData(base, { ...over, talentBlackboard: talents }, p);
+}
+
+/**
+ * One enemy of the database (关卡-1): level 0, overlaid with the level `ref` asks for and its overwrittenData (talents
+ * key by key); with useDb false, its overwrittenData alone.
  * @param {unknown} dbRaw enemy_database.json @param {string} key
  * @param {{ level?: number, useDb?: boolean, overwrittenData?: unknown }} [ref] the level's enemyDbRefs entry
  */
@@ -198,6 +214,6 @@ export function enemyOf(dbRaw, key, ref) {
     if (i < 0) throw new Error(`${p}: no level ${lv}`);
     data = mergeEnemyData(data, dataOf(values[i], i), `${p}.Value[${i}].enemyData`);
   }
-  if (over) data = mergeEnemyData(data, over, `${p}.overwrittenData`);
+  if (over) data = overwriteEnemyData(data, over, `${p}.overwrittenData`);
   return readEnemy(data, key, `${p}.Value[0].enemyData`);
 }

@@ -83,8 +83,9 @@ export class LockstepHost {
     return ms === null || !this.running() ? battle : battle + (now - ms) * this.rate();
   }
 
-  /** Folds the time so far into the clock before its speed or running state changes. @param {number} now */
+  /** Folds time before a speed or running change, including controls due since the last tick. @param {number} now */
   rebase(now) {
+    this.controls(now);
     this.clock = { ms: now, battle: this.battleMs(now) };
   }
 
@@ -98,7 +99,7 @@ export class LockstepHost {
   hello(seat, now) {
     this.rebase(now);
     this.connected.add(seat);
-    this.o.send(seat, { t: 'welcome', v: PROTOCOL_VERSION, seat, seed: this.o.seed, frame: this.sealed, ...this.state(), match: this.o.match ?? null, content: this.content });
+    this.o.send(seat, { t: 'welcome', v: PROTOCOL_VERSION, seat, seats: this.o.seats, seed: this.o.seed, frame: this.sealed, ...this.state(), match: this.o.match ?? null, content: this.content });
     this.broadcastControl();
   }
 
@@ -147,24 +148,27 @@ export class LockstepHost {
    * @param {number} seat @param {number} now
    */
   pause(seat, now) {
+    this.rebase(now);
     if (this.held || this.asker >= 0) return;
-    if (this.alone(seat)) { this.rebase(now); this.held = true; }
+    if (this.alone(seat)) this.held = true;
     else { this.asker = seat; this.askedAt = now; }
     this.broadcastControl();
   }
 
   /** The mate answers a pause request (同步-8): yes pauses now, no closes it. @param {number} seat @param {number} accept @param {number} now */
   pauseReply(seat, accept, now) {
+    this.rebase(now);
     if (this.asker < 0 || this.asker === seat) return;
     this.asker = -1;
-    if (accept) { this.rebase(now); this.held = true; }
+    if (accept) this.held = true;
     this.broadcastControl();
   }
 
   /** Any seat resumes a pause (同步-8): after RESUME_MS the clock runs again — at once for a seat alone (同步-14). @param {number} seat @param {number} now */
   resume(seat, now) {
+    this.rebase(now);
     if (!this.held || this.resumeAt !== null) return;
-    if (this.alone(seat)) { this.held = false; this.clock = { ms: now, battle: this.clock.battle }; } else this.resumeAt = now + RESUME_MS;
+    if (this.alone(seat)) this.held = false; else this.resumeAt = now + RESUME_MS;
     this.broadcastControl();
   }
 

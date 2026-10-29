@@ -21,10 +21,14 @@ import { refNode } from '../node.js';
  * @typedef {{ wave: number, waves: number, out: number, total: number, left: number, last: boolean, damage: number }} FortressTask
  */
 /**
+ * 阵地足球's score (界面-41): our goals, theirs, the seconds left of the match.
+ * @typedef {{ home: number, away: number, left: number }} FootballTask
+ */
+/**
  * What the co-op top bar shows: this seat and the mate, the speed the battle runs at, whether it is paused, the share
  * left of this seat's pause request and of the mate's (−1 for none), the stage's task (none before the first), or
  * 堡垒守御's wave and the rest panel's state (界面-39).
- * @typedef {{ me: Side, mate: Side, speed: number, paused: boolean, asking: number, confirm?: number, task?: Task | null, fortress?: FortressTask | null,
+ * @typedef {{ me: Side, mate: Side, speed: number, paused: boolean, asking: number, confirm?: number, task?: Task | null, fortress?: FortressTask | null, football?: FootballTask | null,
  *   resting?: import('./resting.js').Resting | null }} CoopState
  */
 
@@ -54,7 +58,7 @@ export function createCoopTop(ui, c, on) {
   if (status) status.active = true;
   for (const ref of [c.status.lifeLost, c.status.lifeLost?.replace('[my]', '[you]'), c.lag?.back]) { const n = refNode(root, ref); if (n) n.active = false; }
   scr.show('text_battle_end_time', false);
-  for (const n of ['fortress', 'fortress_lastWave', 'slider_progress_outer']) scr.show(n, false);
+  for (const n of ['fortress', 'fortress_lastWave', 'slider_progress_outer', FOOTBALL]) scr.show(n, false);
   const confirm = refNode(root, c.pauseConfirm);
   if (confirm) {
     scr.tap('btn_confirm', () => on.confirm?.(true), confirm);
@@ -76,7 +80,8 @@ export function createCoopTop(ui, c, on) {
       showPause(scr, root, c, s);
       if (confirm) showConfirm(scr, root, c, confirm, s);
       first ||= s.task?.stage ?? 0;
-      if (status && s.fortress) showFortress(scr, status, s.fortress, c.timerWarn ?? TIMER_WARN);
+      if (s.football) showFootball(scr, root, status, s.football);
+      else if (status && s.fortress) showFortress(scr, status, s.fortress, c.timerWarn ?? TIMER_WARN);
       else if (status) showTask(scr, status, s.task ?? null, { warn: c.timerWarn ?? TIMER_WARN, first });
       taskMotion(scr, root, c, was, s);
       was = s;
@@ -231,6 +236,28 @@ function showFortress(scr, status, f, warn) {
   scr.show('text_timer', late, task);
   scr.show('text_timer_normal', !late, task);
   scr.text(late ? 'text_timer' : 'text_timer_normal', clockText(f.left), task);
+}
+
+/** The pack's 阵地足球 panel of the co-op top bar (界面-41), and its lead tag's clip. */
+const FOOTBALL = 'panel_cooperate_football_status', LEAD_CLIP = 'multiplay_battle_topbar_football_lead_tag';
+
+/**
+ * 阵地足球's score (界面-41): the pack's football panel in place of the status panel — our goals, theirs, the match's
+ * time left; the lead tag comes in with its clip when we lead, and goes when we no longer do.
+ * @param {Screen} scr @param {UiNode} root @param {UiNode | null} status @param {FootballTask} f
+ */
+function showFootball(scr, root, status, f) {
+  const panel = scr.one(FOOTBALL, root);
+  if (!panel) return;
+  panel.active = true;
+  if (status) status.active = false;
+  scr.text('text_score_ally', String(f.home), panel);
+  scr.text('text_score_enemy', String(f.away), panel);
+  scr.text('text_footbal_timer', clockText(f.left), panel);
+  const tag = scr.one('panel_lead', panel), ahead = f.home > f.away;
+  if (!tag || tag.active === ahead) return;
+  tag.active = ahead;
+  if (ahead) void scr.anim.play(tag, LEAD_CLIP);
 }
 
 /** @param {Screen} scr @param {UiNode} root @param {string} ref @param {() => void} fn */

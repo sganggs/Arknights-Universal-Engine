@@ -13,8 +13,9 @@ import { statsOf, maxHpOf } from './attrs.js';
  */
 
 /**
- * What a buff does on its triggers, when it ends, and during its own 伤判 (伤害-8), by key.
- * @typedef {{ tick?: (w: World, u: Unit, b: Buff) => void, expire?: (w: World, u: Unit, b: Buff) => void, take?: (w: World, u: Unit, b: Buff, amount: number, hit: TakeHit) => number }} Behavior
+ * What a buff does on its triggers, when it ends, and during its own 伤判 (伤害-8), by key. Its expiry gets the content,
+ * so damage it deals takes the content's part of the path (tags, buff behaviours) as the hits of abilities do.
+ * @typedef {{ tick?: (w: World, u: Unit, b: Buff) => void, expire?: (w: World, u: Unit, b: Buff, c?: import('./types.js').Content) => void, take?: (w: World, u: Unit, b: Buff, amount: number, hit: TakeHit) => number }} Behavior
  */
 
 /** @typedef {Partial<Buff> & { key: string }} BuffInit */
@@ -192,9 +193,9 @@ function advance(w, u, b, step, beh) {
 /**
  * One frame of a unit's buffs (状态-3, 状态-4), in acquisition order: triggers advance by the decay rate (by 1 when
  * fixed), the time left drops by it, and a buff at 0 or below expires — it leaves the list, then its expiry runs.
- * @param {World} w @param {Unit} u @param {Record<string, Behavior>} behaviors
+ * @param {World} w @param {Unit} u @param {Record<string, Behavior>} behaviors @param {import('./types.js').Content} [c]
  */
-export function tickUnitBuffs(w, u, behaviors) {
+export function tickUnitBuffs(w, u, behaviors, c) {
   if (u.buffs.length === 0) return;
   const list = [...u.buffs], statusRes = list.some((b) => b.resist) ? statsOf(u).statusRes : 1;
   let changed = false;
@@ -207,12 +208,15 @@ export function tickUnitBuffs(w, u, behaviors) {
     if (b.left > 0) continue;
     u.buffs.splice(u.buffs.indexOf(b), 1);
     changed = true;
-    beh?.expire?.(w, u, b);
+    beh?.expire?.(w, u, b, c);
   }
   if (changed) refreshHp(u);
 }
 
-/** One frame of every unit's buffs, units in creation order (帧-1). @param {World} w @param {Record<string, Behavior>} [behaviors] */
-export function tickBuffs(w, behaviors = {}) {
-  for (const u of [...w.units]) if (w.units.includes(u)) tickUnitBuffs(w, u, behaviors);
+/**
+ * One frame of every unit's buffs, units in creation order (帧-1).
+ * @param {World} w @param {Record<string, Behavior>} [behaviors] @param {import('./types.js').Content} [c]
+ */
+export function tickBuffs(w, behaviors = {}, c) {
+  for (const u of [...w.units]) if (w.units.includes(u)) tickUnitBuffs(w, u, behaviors, c);
 }

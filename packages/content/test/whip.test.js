@@ -394,7 +394,9 @@ test('[敌能-63] only this Attack, Summon and Passive shape is covered; the oth
   assert.deepEqual(gaps(attackOnly({ 'attack@atk_scale': 2 })), ['Attack']);
   assert.deepEqual(gaps(attackOnly({ 'attack@max_target': 3 })), ['Attack']);
   assert.deepEqual(gaps(attackOnly({ atk_scale: 1 })), ['Attack']);
-  assert.deepEqual(gaps(attackOnly({ duration: 10, def: 200 })), ['Attack']);
+  // 固海凿石者's shape is 敌能-87's (stonecutter.js); one more key is no shape
+  assert.deepEqual(gaps(attackOnly({ duration: 10, def: 200 })), []);
+  assert.deepEqual(gaps(attackOnly({ duration: 10, def: 200, atk: 1 })), ['Attack']);
   assert.deepEqual(gaps(passiveOnly({ damage_resistance: 0.3, hp_ratio: 0.1 })), ['Passive']);
   assert.deepEqual(gaps(passiveOnly({ hp_ratio: 0.04 })), ['Passive']);
   assert.deepEqual(gaps(passiveOnly({ damage_resistance: 0, hp_ratio: 0.1, duration: 1 })), ['Passive']);

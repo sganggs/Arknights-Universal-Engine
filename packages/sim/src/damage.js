@@ -2,6 +2,7 @@
 // target's 伤判 effects one buff at a time in event priority and acquisition order, then the HP; the hook events on the
 // way (钩子-3).
 import { powi, FPS } from '@aue/math';
+import { behind } from './lr.js';
 import { KIND } from '@aue/schema';
 import { statsOf, activeBuffs } from './attrs.js';
 import { removeBuff, stamp, count, makeBuff, addBuff } from './buffs.js';
@@ -33,7 +34,8 @@ import { stealthed, liftoffRefused } from './targeting.js';
  * @property {boolean} [isAttack] @property {boolean} [isSkill] @property {boolean} [isSplash] @property {boolean} [isProjectile]
  * @property {string[]} [tags]
  * @property {boolean} [canDodge]
- * @property {boolean} [hpLoss]
+ * @property {boolean} [hpLoss] @property {boolean} [noHurtSp] gives no 受击回复 (技能-2: 敌能-103's burn)
+ * @property {boolean} [dodged] set by the 伤判 when the hit was dodged or missed (伤害-8; 敌能-2's `landed`)
  * @property {boolean} [sourceless] 无来源 though credited to its source: the events see no source, the kill is its source's,
  *   without the source's penetration and multiplier (伤害-7)
  * @property {number} [stopAt] this hit does not take the target below this HP (敌能-46: 无法致死 stops at 1)
@@ -161,14 +163,16 @@ function blockOf(b, dmg, src) {
 }
 
 /**
- * A buff's taken multiplier by a hit's source (伤害-12), its stacks' power: `airTakenMul` on physical and arts damage
- * from a flying source; `from:<tag>` on physical, arts and true damage from an enemy with the tag, `fromPA:<tag>` on
- * physical and arts damage from one.
- * @param {Buff} b @param {Damage} dmg @param {{ src: Unit | null, tags: readonly string[] }} at
+ * A buff's taken multiplier by a hit's source (伤害-12), its stacks' power: `backTakenMul` on physical and arts damage
+ * from a source behind the unit (敌能-90); `airTakenMul` on physical and arts damage from a flying source;
+ * `from:<tag>` on physical, arts and true damage from an enemy with the tag, `fromPA:<tag>` on physical and arts damage
+ * from one.
+ * @param {Buff} b @param {Damage} dmg @param {{ src: Unit | null, tags: readonly string[] }} at @param {Unit} u the unit hit
  */
-function sourceMul(b, dmg, at) {
+function sourceMul(b, dmg, at, u) {
   const m = b.mods, t = dmg.type, pa = t === 'phys' || t === 'arts';
-  const k = (m.airTakenMul !== undefined && pa && at.src && statsOf(at.src).flying ? m.airTakenMul : 1) * (at.tags.length && t !== 'elemental' ? tagMul(m, at.tags, pa) : 1);
+  const back = m.backTakenMul !== undefined && pa && at.src && behind(u, at.src) ? m.backTakenMul : 1;
+  const k = back * (m.airTakenMul !== undefined && pa && at.src && statsOf(at.src).flying ? m.airTakenMul : 1) * (at.tags.length && t !== 'elemental' ? tagMul(m, at.tags, pa) : 1);
   return b.stacks === 1 ? k : powi(k, b.stacks);
 }
 
@@ -203,7 +207,7 @@ function judge(w, u, b, amount, hit) {
   const { dmg, src } = hit, p = dodgeOf(b, dmg), q = blockOf(b, dmg, src);
   if (p > 0 && dodgeable(dmg, src) && draw(w) < 1 - powi(1 - p, b.stacks)) return -1;
   if (q > 0 && draw(w) < 1 - powi(1 - q, b.stacks)) return 0;
-  let left = amount * takenMul(b, dmg.type) * blockedMul(u, b, src) * sourceMul(b, dmg, hit);
+  let left = amount * takenMul(b, dmg.type) * blockedMul(u, b, src) * sourceMul(b, dmg, hit, u);
   if (b.mods.dmgReduceFlat && (dmg.type === 'phys' || dmg.type === 'arts')) left = Math.max(0, left - b.mods.dmgReduceFlat * b.stacks);
   if (b.shieldHits > 0 && absorbs(b, dmg.type)) {
     b.shieldHits--;
@@ -256,6 +260,7 @@ function reachable(e) {
 
 /** A dodge or a miss (伤害-8): the `dodge` event (钩子-3), and one more on the target's `dodges` tracker (职业-26). @param {World} w @param {Unit} u @param {Unit | null} src @param {Damage} dmg */
 function dodged(w, u, src, dmg) {
+  dmg.dodged = true;
   emit(w, 'dodge', { source: src, target: u, dmg });
   const t = tracker(u, 'dodges');
   if (t) count(t, 1);
@@ -487,7 +492,7 @@ export function dealDamage(w, src, target, dmg, c) {
   settle(dmg);
   if (dmg.hpLoss) return loseHp(w, src, target, dmg.amount, dmg);
   if (hitStops(w, src, target, dmg)) return 0;
-  hurtSp(target);
+  if (!dmg.noHurtSp) hurtSp(target);
   tallyTaken(target);
   if (c && src && !dmg.sourceless) runeSp(w, c, src);
   const seen = seenOf(src, dmg), ss = seen ? statsOf(seen) : null;

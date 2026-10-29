@@ -10,7 +10,7 @@ import { asArray, asInt, asNumber, asObject, asString, field } from './validate.
  * @typedef {{ alias: string, objective: string, goal: number, advanced?: number, time: number, rest: number, enemy?: string, hpMax?: number }} Stage
  */
 /** @typedef {{ preDelay: number, actions: WaveAction[] }} Fragment */
-/** @typedef {{ preDelay: number, postDelay: number, maxWait: number, fragments: Fragment[] }} Wave */
+/** @typedef {{ preDelay: number, postDelay: number, maxWait: number, tag?: number, fragments: Fragment[] }} Wave */
 
 /** The data's action types the simulation acts on (波次-1); every other type is NONE. */
 const ACTION_TYPES = Object.freeze({ SPAWN: 'SPAWN', ACTIVATE_PREDEFINED: 'ACTIVATE', TRIGGER_PREDEFINED: 'ACTIVATE', WITHDRAW_PREDEFINED: 'WITHDRAW', STORY: 'STORY' });
@@ -84,6 +84,10 @@ export function extractWaves(wavesRaw, routeOf) {
       preDelay: asNumber(wave.preDelay ?? 0, `${wp}.preDelay`, 0, 1e6),
       postDelay: asNumber(wave.postDelay ?? 0, `${wp}.postDelay`, 0, 1e6),
       maxWait: asNumber(wave.maxTimeWaitingForNextWave ?? -1, `${wp}.maxTimeWaitingForNextWave`, -1, 1e6),
+      // 阵地足球's kickoff tag (足球-6), when the wave has one; other levels write words there (stage, bosswave…); a
+      // 阵地足球锦标 penalty shootout starts at the wave written penaltystart (锦标-4)
+      ...(/^\d+$/.test(String(wave.advancedWaveTag ?? '')) ? { tag: asInt(Number(wave.advancedWaveTag), `${wp}.advancedWaveTag`, 0, 99) } : {}),
+      ...(wave.advancedWaveTag === 'penaltystart' ? { penalty: true } : {}),
       fragments: asArray(field(wave, 'fragments', wp), `${wp}.fragments`).map((fRaw, fi) => {
         const fp = `${wp}.fragments[${fi}]`, frag = asObject(fRaw, fp);
         const actions = asArray(field(frag, 'actions', fp), `${fp}.actions`).map((a, ai) => readAction(a, `${fp}.actions[${ai}]`, routeOf));
@@ -139,9 +143,16 @@ export function hiddenGroupsOf(runesRaw, difficulty) {
 }
 
 /**
+ * Whether a predefined instance is an operator (波次-7): a character instance with a tile that has no alias or is an
+ * operator's (its key `char_…`). @param {string} list the predefines list it is in @param {Record<string, unknown>} o @param {string} key
+ */
+export const predefinedOperator = (list, o, key) => list === 'characterInsts' && !!o.position && typeof o.position === 'object' && (!o.alias || key.startsWith('char_'));
+
+/**
  * The predefined units (波次-6): the character and token instances that have an alias, with their key, whether they
  * start hidden, and their tile and facing when the data gives them; and the predefined operators (波次-7): the
- * character instances without an alias that have a tile, by their key, with their training (`build`).
+ * character instances with a tile that have no alias or are operators, by their alias (else their key), with their
+ * training (`build`).
  * @param {unknown} raw level.predefines
  * @returns {{ alias: string, key: string, hidden: boolean, row?: number, col?: number, dir?: string, build?: ReturnType<typeof levelBuild> }[]}
  */
@@ -151,10 +162,9 @@ export function predefinesOf(raw) {
   return ['characterInsts', 'tokenInsts'].flatMap((k) => (Array.isArray(pd[k]) ? pd[k] : []).flatMap((x, i) => {
     const p = `level.predefines.${k}[${i}]`, o = asObject(x, p);
     const pos = o.position && typeof o.position === 'object' ? asObject(o.position, `${p}.position`) : null;
-    const operator = !o.alias && k === 'characterInsts' && pos !== null;
+    const key = keyOf(o, p), operator = predefinedOperator(k, o, key);
     if (!o.alias && !operator) return [];
-    const key = keyOf(o, p);
-    return [{ alias: operator ? key : asString(o.alias, `${p}.alias`), key, hidden: o.hidden === true,
+    return [{ alias: o.alias ? asString(o.alias, `${p}.alias`) : key, key, hidden: o.hidden === true,
       ...(pos ? { row: asInt(field(pos, 'row', `${p}.position`), `${p}.position.row`, 0, 99), col: asInt(field(pos, 'col', `${p}.position`), `${p}.position.col`, 0, 99) } : {}),
       ...(typeof o.direction === 'string' ? { dir: o.direction } : {}), ...(operator ? { build: levelBuild(o, p) } : {}) }];
   }));
@@ -164,18 +174,18 @@ export function predefinesOf(raw) {
 const keyOf = (o, p) => asString(field(asObject(field(o, 'inst', p), `${p}.inst`), 'characterKey', `${p}.inst`), `${p}.inst.characterKey`);
 
 /**
- * The cards a level gives (关卡-7): its character cards with their training, and its token cards with how many and
- * whether they start hidden (and the alias a wave action shows them by).
+ * The cards a level gives (关卡-7): its character cards with their training, and its token cards with how many; each
+ * with whether it starts hidden (and the alias a wave action shows it by).
  * @param {unknown} raw level.predefines
- * @returns {{ operators: { key: string, build: ReturnType<typeof levelBuild> }[], tokens: { key: string, alias: string, count: number, hidden: boolean }[] }}
+ * @returns {{ operators: { key: string, build: ReturnType<typeof levelBuild>, alias?: string, hidden?: true }[], tokens: { key: string, alias: string, count: number, hidden: boolean }[] }}
  */
 export function levelCardsOf(raw) {
   if (raw === null || raw === undefined) return { operators: [], tokens: [] };
   const pd = asObject(raw, 'level.predefines');
   return {
     operators: (Array.isArray(pd.characterCards) ? pd.characterCards : []).map((x, i) => {
-      const p = `level.predefines.characterCards[${i}]`, o = asObject(x, p);
-      return { key: keyOf(o, p), build: levelBuild(o, p) };
+      const p = `level.predefines.characterCards[${i}]`, o = asObject(x, p), key = keyOf(o, p);
+      return { key, build: levelBuild(o, p), ...(o.hidden === true ? { alias: o.alias ? asString(o.alias, `${p}.alias`) : key, hidden: /** @type {const} */ (true) } : {}) };
     }),
     tokens: (Array.isArray(pd.tokenCards) ? pd.tokenCards : []).map((x, i) => {
       const p = `level.predefines.tokenCards[${i}]`, o = asObject(x, p), key = keyOf(o, p);

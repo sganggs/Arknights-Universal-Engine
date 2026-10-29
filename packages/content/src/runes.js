@@ -21,7 +21,7 @@ const BUFF_KEYS = Object.freeze({
 /** @typedef {import('@aue/sim').OperatorDef} OperatorDef */
 /**
  * What one rune does to a unit it applies to.
- * @typedef {{ mask: number, mul?: Record<string, number>, respawn?: number, blockAdd?: number, bornSp?: number, mods?: Record<string, number>,
+ * @typedef {{ mask: number, mul?: Record<string, number>, respawn?: number, blockAdd?: number, bornSp?: number, skillCost?: number, mods?: Record<string, number>,
  *   stack?: import('@aue/sim').TimedTalent, probSp?: { prob: number, sp: number }, rangeSp?: { sp: number, interval: number } }} RuneEffect
  */
 
@@ -59,6 +59,7 @@ function effectOf(r) {
   if (r.key === 'char_attribute_mul') return { mask, mul: Object.fromEntries(Object.keys(MUL_FIELDS).filter((k) => k in bb).map((k) => [k, num(bb, k)])) };
   if (r.key === 'char_respawntime_mul') return { mask, respawn: num(bb, 'scale') };
   if (r.key === 'char_blockcnt_add') return { mask, blockAdd: num(bb, 'value') };
+  if (r.key === 'char_skill_cd_mul') return { mask, skillCost: num(bb, 'scale') };
   if (r.key === 'env_gbuff_new' || r.key === 'char_dynamic_ability_new') return keyedEffect(mask, bb);
   return null;
 }
@@ -94,7 +95,10 @@ function joinMods(a, b) {
   return out;
 }
 
-/** An effect's changes to a def's record (符文-2): base attributes, redeployment, block, SP at deployment. @param {Record<string, any>} d @param {RuneEffect} e */
+/** An effect's changes to a def's skill (符文-2): SP at deployment, the SP it needs. @param {Record<string, any>} skill @param {RuneEffect} e */
+const skillChanges = (skill, e) => ({ ...skill, ...(e.bornSp !== undefined ? { init: skill.init + e.bornSp } : {}), ...(e.skillCost !== undefined ? { cost: skill.cost * e.skillCost } : {}) });
+
+/** An effect's changes to a def's record (符文-2): base attributes, redeployment, block, its skill. @param {Record<string, any>} d @param {RuneEffect} e */
 function recordChanges(d, e) {
   /** @type {Record<string, any>} */
   const out = {};
@@ -104,7 +108,7 @@ function recordChanges(d, e) {
   }
   if (e.respawn !== undefined) out.respawnTime = (d.respawnTime ?? 0) * e.respawn;
   if (e.blockAdd !== undefined) out.blockCnt = Math.max(0, (d.blockCnt ?? 0) + e.blockAdd);
-  return e.bornSp !== undefined && d.skill ? { ...out, skill: { ...d.skill, init: d.skill.init + e.bornSp } } : out;
+  return (e.bornSp !== undefined || e.skillCost !== undefined) && d.skill ? { ...out, skill: skillChanges(d.skill, e) } : out;
 }
 
 /** An effect's battle parts (符文-3…5): the rune buff's modifiers, a stacking talent, SP on damage or in range. @param {Record<string, any>} d @param {RuneEffect} e */

@@ -187,6 +187,25 @@ test('[渲染-12] co-op goals by the viewer: their own goal and one of no single
   only.dispose();
 });
 
+test('[渲染-12] [渲染-26] 阵地足球: our goal takes the third co-op end marker, theirs the start marker; the 守门位, ice and slime their effects while they last', () => {
+  const lasting = () => ({ d: 0.5, ps: [sys({ loop: true, rate: C(5), bursts: [] })], tr: [] });
+  const data = { by: {}, named: { tile_start: 'red', tile_end_coop_1: 'blue1', tile_end_coop_3: 'blue3', football_spot: 'spot', football_ice: 'ice' },
+    fx: { red: lasting(), blue1: lasting(), blue3: lasting(), spot: lasting(), ice: lasting() } };
+  const tile = (/** @type {string} */ key) => ({ key, height: 'LOWLAND' });
+  const fx = createEffects({ data, textures: new Map() }, { width: 3, height: 2, tiles: [[tile('tile_allygoal'), tile('tile_football'), tile('tile_enemygoal')], [tile('tile_allygoal'), tile('tile_football'), tile('tile_enemygoal')]] });
+  const kinds = () => fx.live.filter((i) => !i.stopped).map((i) => Object.keys(data.fx).find((k) => data.fx[/** @type {keyof typeof data.fx} */ (k)] === i.e)).sort();
+  assert.deepEqual(kinds(), ['blue3', 'blue3', 'red', 'red'], 'a marker on each goal tile');
+  const drawn = fx.pitch({ spots: [3], cover: { 1: -0.3, 4: 0.3 }, kicks: [] });
+  assert.deepEqual([...drawn].sort(), ['ice', 'spot'], 'the slime has no effect in this pack: its square stays');
+  assert.deepEqual(kinds(), ['blue3', 'blue3', 'ice', 'red', 'red', 'spot']);
+  fx.pitch({ spots: [3], cover: { 1: -0.3, 4: 0.3 }, kicks: [] });
+  assert.equal(fx.field.size, 2, 'kept, not started again');
+  fx.pitch({ spots: [3], cover: {}, kicks: [] });
+  assert.deepEqual(kinds(), ['blue3', 'blue3', 'red', 'red', 'spot'], 'the ice gone: its effect stops');
+  fx.pitch(null);
+  assert.equal(fx.field.size, 0);
+  fx.dispose();
+});
 
 test('[渲染-25] a 炼金单元: its trail flies to the landing tile, its effects loop there, drift and grow with it, and stop at its end', () => {
   const tex = new Map([['a', new THREE.Texture()]]), lasting = () => ({ d: 0.5, ps: [sys({ loop: true, rate: C(5), bursts: [] })], tr: [] });
@@ -212,4 +231,25 @@ test('[渲染-25] a 炼金单元: its trail flies to the landing tile, its effec
   none.update(view, { 1: 'op' }, [{ type: 'alchemy', id: 9, src: 1, x: 2, y: 0, r: 1, frames: 90, vx: 0, vy: 0, grow: 0, drift: 0 }]);
   assert.equal(none.pots.length, 0, 'no throw in the pack: nothing');
   fx.dispose(); none.dispose();
+});
+
+test('[渲染-27] 锦标 lightning on a ball: its warning kept on the ball, then the bolt and the burning until it is over', () => {
+  const lasting = () => ({ d: 0.5, ps: [sys({ loop: true, rate: C(5), bursts: [] })], tr: [] });
+  const data = { by: {}, named: { thunder_warn: 'warn', thunder_hit: 'hit', thunder_burn: 'burn' }, fx: { warn: lasting(), hit: { d: 0.5, ps: [sys()], tr: [] }, burn: lasting() } };
+  const fx = createEffects({ data, textures: new Map([['a', new THREE.Texture()]]) }, { width: 4, height: 2 });
+  const ball = { id: 5, kind: KIND.ENEMY, owner: -1, x: 1, y: 0, z: 0, dir: DIR.RIGHT, hp: 1, maxHp: 1, anim: 0, sp: -1, spCost: 0, skill: 0, skillLeft: -1, status: 0 };
+  const cam = new THREE.PerspectiveCamera();
+  cam.updateMatrixWorld();
+  const on = () => fx.live.filter((i) => !i.stopped).map((i) => Object.keys(data.fx).find((k) => data.fx[/** @type {keyof typeof data.fx} */ (k)] === i.e)).sort();
+  fx.update(/** @type {any} */ ({ frame: 1, players: [], units: [ball] }), { 5: 'ball' }, [{ type: 'thunder', id: 5, phase: 0 }]);
+  assert.deepEqual(on(), ['warn']);
+  const o0 = fx.storms.get(5)?.inst.R.o[0] ?? 0;
+  fx.update(/** @type {any} */ ({ frame: 2, players: [], units: [{ ...ball, x: 2 }] }), {}, []);
+  fx.step(0.1, cam);
+  assert.ok((fx.storms.get(5)?.inst.R.o[0] ?? 0) > o0, 'the warning follows the ball');
+  fx.update(/** @type {any} */ ({ frame: 3, players: [], units: [{ ...ball, x: 2 }] }), {}, [{ type: 'thunder', id: 5, phase: 1 }]);
+  assert.deepEqual(on(), ['burn', 'hit'], 'the bolt: the warning stops');
+  fx.update(/** @type {any} */ ({ frame: 4, players: [], units: [{ ...ball, x: 2 }] }), {}, [{ type: 'thunder', id: 5, phase: 2 }]);
+  assert.deepEqual([on().includes('burn'), fx.storms.size], [false, 0], 'over');
+  fx.dispose();
 });

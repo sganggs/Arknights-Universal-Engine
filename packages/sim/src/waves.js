@@ -11,7 +11,9 @@ import { stageOf, startStage, resting } from './stage.js';
 import { spawnEnemy } from './spawn.js';
 import { defendStart, defendEnd, cutDefence, mayBegin } from './fortress.js';
 import { placeDevice, withdrawDevice } from './devices.js';
-import { placePredefined, isPredefinedOperator } from './predefined.js';
+import { placePredefined, isPredefinedOperator, withdrawPredefined } from './predefined.js';
+import { kickoffWave } from './football.js';
+import { actingGroups } from './cup.js';
 
 /** @typedef {import('./types.js').World} World @typedef {import('./types.js').Content} Content */
 /** @typedef {import('./types.js').Wave} Wave @typedef {import('./types.js').WaveAction} WaveAction @typedef {import('./types.js').Schedule} Schedule */
@@ -45,8 +47,8 @@ function tableOf(wave) {
 /** A wave's actions in order, fragment by fragment; the same list each time — never change it. @param {Wave} wave @returns {WaveAction[]} */
 const actionsOf = (wave) => tableOf(wave).actions;
 
-/** Whether an action's hidden group lets it act (波次-4). @param {Content} c @param {WaveAction} a */
-const groupEnabled = (c, a) => !a.hidden || (c.level.hiddenGroups ?? []).includes(a.hidden);
+/** Whether an action's hidden group lets it act (波次-4). @param {readonly string[]} groups the groups enabled @param {WaveAction} a */
+const groupEnabled = (groups, a) => !a.hidden || groups.includes(a.hidden);
 
 /**
  * The random alternatives of a wave (波次-5): for each group in order of first appearance, the indices (into the wave's
@@ -65,12 +67,13 @@ function groupsOf(wave) {
 /**
  * Which of the current wave's actions act (波次-4, 波次-5): those whose own hidden group is enabled and that are not
  * left out by the draw — a candidate must be chosen, and a member of a candidate's pack acts only with that candidate.
- * @param {Content} c @param {Wave} wave @param {Schedule} s @returns {boolean[]} by index into the wave's actions
+ * The groups enabled are the level's and a drawn 锦标 stadium's (锦标-2).
+ * @param {World} w @param {Content} c @param {Wave} wave @param {Schedule} s @returns {boolean[]} by index into the wave's actions
  */
-function acting(c, wave, s) {
-  const t = tableOf(wave), m = t.mask, groups = c.level.hiddenGroups ?? [];
+function acting(w, c, wave, s) {
+  const t = tableOf(wave), m = t.mask, groups = actingGroups(w, c);
   if (m && sameList(m.groups, groups) && sameList(m.chosen, s.chosen)) return m.on;
-  const on = actingNow(c, wave, s);
+  const on = actingNow(groups, wave, s);
   t.mask = { groups: [...groups], chosen: [...s.chosen], on };
   return on;
 }
@@ -82,13 +85,13 @@ function sameList(a, b) {
   return true;
 }
 
-/** acting, worked out. @param {Content} c @param {Wave} wave @param {Schedule} s @returns {boolean[]} */
-function actingNow(c, wave, s) {
+/** acting, worked out. @param {readonly string[]} groups @param {Wave} wave @param {Schedule} s @returns {boolean[]} */
+function actingNow(groups, wave, s) {
   const all = actionsOf(wave);
   const packs = new Set(all.filter((x) => x.group && x.pack).map((x) => x.pack));
   const chosen = new Set(s.chosen.map((j) => all[j].pack));
   return all.map((a, i) => {
-    if (!groupEnabled(c, a)) return false;
+    if (!groupEnabled(groups, a)) return false;
     if (a.group) return s.chosen.includes(i);
     return !a.pack || !packs.has(a.pack) || chosen.has(a.pack);
   });
@@ -98,22 +101,23 @@ function actingNow(c, wave, s) {
 const frames = (seconds) => secondsToFrames(Math.max(0, seconds));
 
 /**
- * A wave begins (波次-2, 波次-5): its random alternatives are drawn and its preDelay starts. After the last wave: done.
+ * A wave begins (波次-2, 波次-5): its random alternatives are drawn and its preDelay starts. After the last wave: done. In
+ * 阵地足球 the next is the kickoff's layout (足球-6): with kickoff tags there is always one, without them they go in order.
  * @param {World} w @param {Content} c @param {number} at the frame it begins
  */
 function beginWave(w, c, at) {
-  const s = w.sched, next = s.wave + 1, wave = c.level.waves[next];
+  const s = w.sched, next = w.football ? kickoffWave(w, c, at) : s.wave + 1, wave = c.level.waves[next];
   if (!wave) { w.sched = { ...s, wave: next, step: 'done', at }; return; }
   const all = actionsOf(wave);
   const chosen = groupsOf(wave).map((ids) => ids[weightedPick(w, ids.map((i) => all[i].weight ?? 1))]);
   w.sched = { wave: next, step: 'pre', at, frag: 0, fragAt: -1, fired: [], chosen };
   w.events.push({ type: 'wave', index: next });
-  if (w.fortress) defendStart(w, c, next, spawnTotal(c, wave, w.sched));
+  if (w.fortress) defendStart(w, c, next, spawnTotal(w, c, wave, w.sched));
 }
 
-/** The enemies a wave spawns that it waits for (波次-3): the counts of its acting SPAWN actions. @param {Content} c @param {Wave} wave @param {Schedule} s */
-function spawnTotal(c, wave, s) {
-  const on = acting(c, wave, s);
+/** The enemies a wave spawns that it waits for (波次-3): the counts of its acting SPAWN actions. @param {World} w @param {Content} c @param {Wave} wave @param {Schedule} s */
+function spawnTotal(w, c, wave, s) {
+  const on = acting(w, c, wave, s);
   return actionsOf(wave).reduce((n, a, i) => n + (on[i] && a.type === 'SPAWN' && !a.dontBlockWave ? a.count : 0), 0);
 }
 
@@ -139,7 +143,7 @@ function act(w, c, a, fragAt, wave) {
   } else if (a.type === 'WITHDRAW' && w.predefined.includes(a.key)) {
     w.predefined = w.predefined.filter((k) => k !== a.key);
     w.events.push({ type: 'predefine', key: a.key, on: 0 });
-    withdrawDevice(w, a.key);
+    if (isPredefinedOperator(c, a.key)) withdrawPredefined(w, c, a.key); else withdrawDevice(w, a.key);
   }
 }
 
@@ -157,7 +161,7 @@ function runFragment(w, c, wave) {
     s.fragAt = s.at + frames(frag.preDelay);
     s.fired = frag.actions.map(() => 0);
   }
-  const base = tableOf(wave).starts[s.frag], on = acting(c, wave, s);
+  const base = tableOf(wave).starts[s.frag], on = acting(w, c, wave, s);
   let end = s.fragAt, open = false;
   frag.actions.forEach((a, i) => {
     if (!on[base + i]) return;

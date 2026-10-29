@@ -36,6 +36,20 @@ export const DEVICE_PROFILES = Object.freeze({
     profile: () => ({ rubble: { range: 'x-2', cells: cellsOf('x-2'), branch: 'mufrprn_branch', first: 5, every: 2 } }),
     source: `${PRTS}%E5%9D%8D%E5%A1%8C%E7%9A%84%E6%9D%82%E7%89%A9%E5%A0%86&oldid=380508`,
   },
+  // 阵地屏障 (足球-12): 阵营=敌方；晕眩、沉默、寒冷、冻结、沉睡免疫；重写所在地块可以<阻挡路线>；受击判定区域与物理碰撞箱均为边长0.9
+  // 的正方形；受到的环境伤害降低至0%；受到来自足球类敌人的伤害提升至500%（隐藏天赋 damage_scale）
+  trap_154_mugtps: {
+    profile: (d) => ({ side: 'ENEMY', immune: ['stun', 'silence', 'cold', 'freeze', 'sleep'], routeBlock: true, square: 0.9, ballDamage: d.talentBb.damage_scale, envDamage: 0 }),
+    source: `${PRTS}%E9%98%B5%E5%9C%B0%E5%B1%8F%E9%9A%9C&oldid=417821`,
+  },
+  // 智能裁判官 (锦标-2): 阵营=我方；可以对自身半径1.5范围内的1个足球（不可对空）进行普通攻击……向敌方球门的大致方向射出；攻击间隔、
+  // 射出力度的倍数取记录的
+  trap_309_muctba: {
+    profile: (d) => ({ referee: { radius: 1.5, every: d.baseAttackTime, force: d.talentBb['attack@force'] } }),
+    source: `${PRTS}%E6%99%BA%E8%83%BD%E8%A3%81%E5%88%A4%E5%AE%98&oldid=404176`,
+  },
+  // 足球 (足球-14): 部署至我方半场来重新发球；部署费用取记录的
+  trap_165_muftbl: { profile: () => ({ ballCard: true }), source: `${PRTS}%E8%B6%B3%E7%90%83&oldid=337850` },
   // 轰隆隆先生 (装置-7): 1.5s after deploy, stun the cross and break. Respawn is the page's 5s; the record has cost, not respawnTime.
   trap_018_bomb: { profile: () => ({ rumble: { delay: 1.5, stun: 12, respawn: 5 } }), source: `${PRTS}%E8%BD%B0%E9%9A%86%E9%9A%86%E5%85%88%E7%94%9F&oldid=358736` },
   // 地形增伤控制: 位于<玉门天灾工事>中的单位对位于普通地块中的非飞行单位，造成伤害提升至130%，受到伤害降低至70%

@@ -42,24 +42,27 @@ test('[波次-4] hidden groups enabled at a difficulty: the runes whose mask nam
 
 test('[波次-6] predefined units: the instances with an alias, their key, whether they start hidden, their tile and facing', () => {
   const inst = (/** @type {string | null} */ alias, /** @type {string} */ key, /** @type {boolean} */ hidden) => ({ alias, hidden, position: { row: 2, col: 8 }, direction: 'UP', inst: { characterKey: key } });
-  assert.deepEqual(predefinesOf({ characterInsts: [inst('op#1', 'char_x', false)], tokenInsts: [inst('trap#1', 'trap_179_muctrl', true), inst(null, 'trap_y', false)], characterCards: [] }), [
-    { alias: 'op#1', key: 'char_x', hidden: false, row: 2, col: 8, dir: 'UP' }, { alias: 'trap#1', key: 'trap_179_muctrl', hidden: true, row: 2, col: 8, dir: 'UP' },
+  assert.deepEqual(predefinesOf({ characterInsts: [inst('dev#1', 'trap_x', false)], tokenInsts: [inst('trap#1', 'trap_179_muctrl', true), inst(null, 'trap_y', false)], characterCards: [] }), [
+    { alias: 'dev#1', key: 'trap_x', hidden: false, row: 2, col: 8, dir: 'UP' }, { alias: 'trap#1', key: 'trap_179_muctrl', hidden: true, row: 2, col: 8, dir: 'UP' },
   ]);
   assert.deepEqual(predefinesOf(null), []);
 });
 
-test('[波次-7] predefined operators: character instances with a tile and no alias, by their key, with their training at trust 100', () => {
+test('[波次-7] predefined operators: character instances with a tile and no alias or an operator key, by their alias or key, with their training at trust 100', () => {
   const op = { alias: null, hidden: true, position: { row: 3, col: 6 }, direction: 'LEFT', skillIndex: 1, mainSkillLvl: 7, inst: { characterKey: 'char_002_amiya', level: 50, phase: 'PHASE_1', favorPoint: 50, potentialRank: 1 } };
-  assert.deepEqual(predefinesOf({ characterInsts: [op, { ...op, position: null }], tokenInsts: [] }), [
-    { alias: 'char_002_amiya', key: 'char_002_amiya', hidden: true, row: 3, col: 6, dir: 'LEFT', build: { elite: 1, level: 50, potential: 2, trust: 100, skill: 1, skillLevel: 7 } },
-  ], 'one without a tile is none');
+  const build = { elite: 1, level: 50, potential: 2, trust: 100, skill: 1, skillLevel: 7 };
+  assert.deepEqual(predefinesOf({ characterInsts: [op, { ...op, position: null }, { ...op, alias: 'char_002_amiya#2', position: { row: 5, col: 5 } }], tokenInsts: [] }), [
+    { alias: 'char_002_amiya', key: 'char_002_amiya', hidden: true, row: 3, col: 6, dir: 'LEFT', build },
+    { alias: 'char_002_amiya#2', key: 'char_002_amiya', hidden: true, row: 5, col: 5, dir: 'LEFT', build },
+  ], 'one without a tile is none; one with an alias by it (the second 玫兰莎 of IG-TR-2)');
   assert.throws(() => predefinesOf({ characterInsts: [{ ...op, inst: { ...op.inst, phase: 'PHASE_9' } }] }), /unknown phase/);
 });
 
 test('[关卡-7] a level\'s own cards: its character cards with their training, its token cards with their count and whether hidden', () => {
   const card = (/** @type {string} */ key, /** @type {Record<string, unknown>} */ v) => ({ hidden: true, alias: null, skillIndex: 0, mainSkillLvl: 7, inst: { characterKey: key, level: 50, phase: 'PHASE_1', potentialRank: 0 }, ...v });
-  assert.deepEqual(levelCardsOf({ characterCards: [card('char_124_kroos', {})], tokenCards: [card('trap_201_muulco', { alias: 'trap_201_muulco', initialCnt: 1 })] }), {
-    operators: [{ key: 'char_124_kroos', build: { elite: 1, level: 50, potential: 1, trust: 100, skill: 0, skillLevel: 7 } }],
+  assert.deepEqual(levelCardsOf({ characterCards: [card('char_124_kroos', {}), card('char_150_snakek', { hidden: false })], tokenCards: [card('trap_201_muulco', { alias: 'trap_201_muulco', initialCnt: 1 })] }), {
+    operators: [{ key: 'char_124_kroos', build: { elite: 1, level: 50, potential: 1, trust: 100, skill: 0, skillLevel: 7 }, alias: 'char_124_kroos', hidden: true },
+      { key: 'char_150_snakek', build: { elite: 1, level: 50, potential: 1, trust: 100, skill: 0, skillLevel: 7 } }],
     tokens: [{ key: 'trap_201_muulco', alias: 'trap_201_muulco', count: 1, hidden: true }],
   });
   assert.deepEqual(levelCardsOf(null), { operators: [], tokens: [] });

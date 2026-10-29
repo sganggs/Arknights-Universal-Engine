@@ -5,5 +5,5 @@ export { NEUTRAL_ENEMIES } from './neutral.js';
 export { extractLevel, difficultyOf, withSummoned, summonedBy } from './level.js';
 export { devicesOf } from './devices.js';
 export { extractRoster, extractTraining, extractTokens, extractRanges, extractPowers, carriedIds, extractCarried } from './operators.js';
-export { enemyOf, mergeEnemyData, damageTypeOf } from './enemies.js';
+export { enemyOf, mergeEnemyData, overwriteEnemyData, damageTypeOf } from './enemies.js';
 export { attackClip, attackTiming, frameProblem } from './timings.js';

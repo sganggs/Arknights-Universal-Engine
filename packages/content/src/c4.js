@@ -43,6 +43,9 @@ function noteHalf(ctx) {
 /** One charge's hit: physical, an attack hit, from the skill, on the carrier alone. @param {number} scale @param {number} atk */
 const hitOf = (scale, atk) => ({ type: /** @type {'phys'} */ ('phys'), amount: scale * atk, isAttack: true, isSkill: true });
 
+/** The tag of the charges one W plants, so that W takes off its own and no other W's. @param {Unit} self */
+const plantTag = (self) => `${ACT}:${self.id}`;
+
 /** Blow every charge this W planted that is still on a unit, then take the buff off so expiry cannot hit again. @param {FoeContext} ctx */
 function blowPlanted(ctx) {
   const atk = ctx.stats(ctx.self).atk;
@@ -50,14 +53,14 @@ function blowPlanted(ctx) {
     const b = u.buffs.find((x) => x.key === PLANT && x.src === ctx.self.id);
     if (!b) continue;
     ctx.dealDamage(u, hitOf(b.value, atk));
-    ctx.removeBuff(u, PLANT);
+    ctx.removeBuff(u, PLANT, plantTag(ctx.self));
   }
 }
 
-/** The cast is over: W may attack and move again. @param {FoeContext} ctx */
+/** The cast is over: W may attack and move again. Only the cast's own 自缚 ends; a 束缚 from elsewhere stays. @param {FoeContext} ctx */
 function endCast(ctx) {
   ctx.state.set('ch', 0);
-  ctx.removeBuff(ctx.self, 'root');
+  ctx.removeBuff(ctx.self, 'root', ACT);
 }
 
 /**
@@ -88,8 +91,8 @@ function begin(ctx) {
   if (!(frames > 0)) return;
   ctx.use();
   ctx.state.set('ch', frames);
-  ctx.applyStatus(ctx.self, 'root', { seconds });
-  for (const u of picked) ctx.addBuff(u, { key: PLANT, act: ACT, value: ctx.bb.atk_scale, n: s.atk, left: frames });
+  ctx.applyStatus(ctx.self, 'root', { seconds, tag: ACT });
+  for (const u of picked) ctx.addBuff(u, { key: PLANT, act: ACT, tag: plantTag(ctx.self), value: ctx.bb.atk_scale, n: s.atk, left: frames });
 }
 
 /**
@@ -116,13 +119,13 @@ const C4 = Object.freeze({
 
 /**
  * The fuse (敌能-76). W still on the field, even at 0 HP, is the source and the attack is its attack now; once W has
- * left, the attack noted at planting is the amount and the hit has no source.
- * @param {World} w @param {Unit} u @param {Buff} b
+ * left, the attack noted at planting is the amount and the hit has no source. With the content, as the early blast.
+ * @param {World} w @param {Unit} u @param {Buff} b @param {import('@aue/sim').Content} [c]
  */
-function blast(w, u, b) {
+function blast(w, u, b, c) {
   if (u.hp <= 0) return;
   const src = w.units.find((x) => x.id === b.src) ?? null;
-  damage.dealDamage(w, src, u, hitOf(b.value, src ? attrs.statsOf(src).atk : b.n));
+  damage.dealDamage(w, src, u, hitOf(b.value, src ? attrs.statsOf(src).atk : b.n), c);
 }
 
 /** The behaviours of this file, by skill name. @type {Readonly<Record<string, FoeBehavior>>} */

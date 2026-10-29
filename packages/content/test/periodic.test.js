@@ -302,13 +302,15 @@ test('[敌能-50] noFly is added only for the two throwers; the witch\'s boom an
   assert.equal(left.includes('occupy'), true);
 });
 
-test('[敌能-50] unread { damage } users stay uncovered and the tick does not run', () => {
+test('[敌能-50] [足球-11] unread { damage } users stay uncovered and the tick does not run; a { damage: 0 } — the players\' — does nothing; 锤锤到肉 hurts itself', () => {
   const unread = /** @type {[string, number][]} */ ([
-    ['enemy_1227_dair', 60], ['enemy_1227_dair_2', 90], ['enemy_15032_dqhrgr', 0], ['enemy_19053_akrbt', 300],
-    ['enemy_19054_akrbsp', 350], ['enemy_4005_musqrl', 5000], ['enemy_4005_musqrl_2', 5000], ['enemy_4014_mugnfu', 0],
-    ['enemy_4014_mugnfu_2', 330], ['enemy_4024_mushtg', 0], ['enemy_4024_mushtg_2', 0], ['enemy_4030_mukfug', 0],
-    ['enemy_4030_mukfug_2', 0], ['enemy_5036_dqger_2', 300],
+    ['enemy_1227_dair', 60], ['enemy_1227_dair_2', 90], ['enemy_19053_akrbt', 300],
+    ['enemy_19054_akrbsp', 350], ['enemy_4005_musqrl', 5000], ['enemy_4005_musqrl_2', 5000],
+    ['enemy_5036_dqger_2', 300],
   ]);
+  for (const key of ['enemy_15032_dqhrgr', 'enemy_4014_mugnfu', 'enemy_4024_mushtg', 'enemy_4024_mushtg_2', 'enemy_4030_mukfug', 'enemy_4030_mukfug_2']) {
+    assert.equal(uncoveredAbilities([bare(key, 0)]).includes('periodic_damage'), false, key);
+  }
   for (const [key, damage] of unread) {
     assert.equal(FOE_EXTRAS[key], undefined, key);
     const raw = bare(key, damage);
@@ -316,6 +318,12 @@ test('[敌能-50] unread { damage } users stay uncovered and the tick does not r
     const stripped = withoutIncomplete(raw).talents;
     assert.equal(stripped && stripped.periodic_damage, undefined, key);
   }
+  // “锤锤到肉”: the page leaves the 330 unwritten; it is the talent every page writes out, on itself (足球-11)
+  const hammer = withFoeExtras('enemy_4014_mugnfu_2', bare('enemy_4014_mugnfu_2', 330));
+  assert.equal(uncoveredAbilities([hammer]).includes('periodic_damage'), false);
+  const h = open({ enemy_4014_mugnfu_2: hammer }, [spawnAt(0, 'enemy_4014_mugnfu_2')]);
+  run(h.w, h.c, 2 * SEC + 5);
+  assert.equal(ofKey(h.w, 'enemy_4014_mugnfu_2')[0].hp, 5000 - 2 * 330, 'two seconds: 2 × 330 on itself');
   const quiet = open({ enemy_1227_dair: withoutIncomplete(bare('enemy_1227_dair', 60)) }, [spawnAt(0, 'enemy_1227_dair')]);
   run(quiet.w, quiet.c, SEC + 5);
   assert.equal(ofKey(quiet.w, 'enemy_1227_dair')[0].hp, 5000);

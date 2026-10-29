@@ -1,0 +1,2850 @@
+{
+  "source": {
+    "repo": "Kengxxiao/ArknightsGameData",
+    "commit": "17759cc8cdf37388414145d16262a3a06f3ab25e",
+    "server": "zh_CN",
+    "view": "yuanyan3060/ArknightsGameResource@9bf239661e37766fba585806fb9fa67e79bb679e:map.json"
+  },
+  "level": {
+    "id": "act1multi_tr02",
+    "code": "IG-TR-2",
+    "name": "规则教学-阵地足球",
+    "width": 13,
+    "height": 9,
+    "options": {
+      "maxLifePoint": 99,
+      "initialCost": 60,
+      "maxCost": 99,
+      "costIncreaseTime": 1,
+      "characterLimit": 4,
+      "moveMultiplier": 0.5
+    },
+    "tiles": [
+      [
+        {
+          "key": "tile_forbidden",
+          "height": "HIGHLAND",
+          "buildable": "NONE",
+          "passable": "FLY_ONLY",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_forbidden",
+          "height": "HIGHLAND",
+          "buildable": "NONE",
+          "passable": "FLY_ONLY",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_forbidden",
+          "height": "HIGHLAND",
+          "buildable": "NONE",
+          "passable": "FLY_ONLY",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_forbidden",
+          "height": "HIGHLAND",
+          "buildable": "NONE",
+          "passable": "FLY_ONLY",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_forbidden",
+          "height": "HIGHLAND",
+          "buildable": "NONE",
+          "passable": "FLY_ONLY",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_forbidden",
+          "height": "HIGHLAND",
+          "buildable": "NONE",
+          "passable": "FLY_ONLY",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_forbidden",
+          "height": "HIGHLAND",
+          "buildable": "NONE",
+          "passable": "FLY_ONLY",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_forbidden",
+          "height": "HIGHLAND",
+          "buildable": "NONE",
+          "passable": "FLY_ONLY",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_forbidden",
+          "height": "HIGHLAND",
+          "buildable": "NONE",
+          "passable": "FLY_ONLY",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_forbidden",
+          "height": "HIGHLAND",
+          "buildable": "NONE",
+          "passable": "FLY_ONLY",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_forbidden",
+          "height": "HIGHLAND",
+          "buildable": "NONE",
+          "passable": "FLY_ONLY",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_forbidden",
+          "height": "HIGHLAND",
+          "buildable": "NONE",
+          "passable": "FLY_ONLY",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_forbidden",
+          "height": "HIGHLAND",
+          "buildable": "NONE",
+          "passable": "FLY_ONLY",
+          "side": "ALL"
+        }
+      ],
+      [
+        {
+          "key": "tile_forbidden",
+          "height": "HIGHLAND",
+          "buildable": "NONE",
+          "passable": "FLY_ONLY",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_enemygoal",
+          "height": "LOWLAND",
+          "buildable": "NONE",
+          "passable": "ALL",
+          "side": "ALL"
+        }
+      ],
+      [
+        {
+          "key": "tile_allygoal",
+          "height": "LOWLAND",
+          "buildable": "NONE",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_enemygoal",
+          "height": "LOWLAND",
+          "buildable": "NONE",
+          "passable": "ALL",
+          "side": "ALL"
+        }
+      ],
+      [
+        {
+          "key": "tile_allygoal",
+          "height": "LOWLAND",
+          "buildable": "NONE",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_enemygoal",
+          "height": "LOWLAND",
+          "buildable": "NONE",
+          "passable": "ALL",
+          "side": "ALL"
+        }
+      ],
+      [
+        {
+          "key": "tile_allygoal",
+          "height": "LOWLAND",
+          "buildable": "NONE",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_enemygoal",
+          "height": "LOWLAND",
+          "buildable": "NONE",
+          "passable": "ALL",
+          "side": "ALL"
+        }
+      ],
+      [
+        {
+          "key": "tile_allygoal",
+          "height": "LOWLAND",
+          "buildable": "NONE",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL",
+          "landball": true
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_enemygoal",
+          "height": "LOWLAND",
+          "buildable": "NONE",
+          "passable": "ALL",
+          "side": "ALL"
+        }
+      ],
+      [
+        {
+          "key": "tile_allygoal",
+          "height": "LOWLAND",
+          "buildable": "NONE",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_enemygoal",
+          "height": "LOWLAND",
+          "buildable": "NONE",
+          "passable": "ALL",
+          "side": "ALL"
+        }
+      ],
+      [
+        {
+          "key": "tile_forbidden",
+          "height": "HIGHLAND",
+          "buildable": "NONE",
+          "passable": "FLY_ONLY",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_road",
+          "height": "LOWLAND",
+          "buildable": "ALL",
+          "passable": "ALL",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_enemygoal",
+          "height": "LOWLAND",
+          "buildable": "NONE",
+          "passable": "ALL",
+          "side": "ALL"
+        }
+      ],
+      [
+        {
+          "key": "tile_forbidden",
+          "height": "HIGHLAND",
+          "buildable": "NONE",
+          "passable": "FLY_ONLY",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_forbidden",
+          "height": "HIGHLAND",
+          "buildable": "NONE",
+          "passable": "FLY_ONLY",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_forbidden",
+          "height": "HIGHLAND",
+          "buildable": "NONE",
+          "passable": "FLY_ONLY",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_forbidden",
+          "height": "HIGHLAND",
+          "buildable": "NONE",
+          "passable": "FLY_ONLY",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_forbidden",
+          "height": "HIGHLAND",
+          "buildable": "NONE",
+          "passable": "FLY_ONLY",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_forbidden",
+          "height": "HIGHLAND",
+          "buildable": "NONE",
+          "passable": "FLY_ONLY",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_forbidden",
+          "height": "HIGHLAND",
+          "buildable": "NONE",
+          "passable": "FLY_ONLY",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_forbidden",
+          "height": "HIGHLAND",
+          "buildable": "NONE",
+          "passable": "FLY_ONLY",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_forbidden",
+          "height": "HIGHLAND",
+          "buildable": "NONE",
+          "passable": "FLY_ONLY",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_forbidden",
+          "height": "HIGHLAND",
+          "buildable": "NONE",
+          "passable": "FLY_ONLY",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_forbidden",
+          "height": "HIGHLAND",
+          "buildable": "NONE",
+          "passable": "FLY_ONLY",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_forbidden",
+          "height": "HIGHLAND",
+          "buildable": "NONE",
+          "passable": "FLY_ONLY",
+          "side": "ALL"
+        },
+        {
+          "key": "tile_forbidden",
+          "height": "HIGHLAND",
+          "buildable": "NONE",
+          "passable": "FLY_ONLY",
+          "side": "ALL"
+        }
+      ]
+    ],
+    "routes": [
+      {
+        "start": {
+          "row": 4,
+          "col": 6
+        },
+        "end": {
+          "row": 4,
+          "col": 12
+        },
+        "checkpoints": [],
+        "motion": "WALK",
+        "allowDiagonal": true,
+        "spawnOffset": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "start": {
+          "row": 4,
+          "col": 4
+        },
+        "end": {
+          "row": 4,
+          "col": 12
+        },
+        "checkpoints": [],
+        "motion": "WALK",
+        "allowDiagonal": true,
+        "spawnOffset": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "start": {
+          "row": 4,
+          "col": 7
+        },
+        "end": {
+          "row": 4,
+          "col": 12
+        },
+        "checkpoints": [
+          {
+            "type": "PATROL_MOVE",
+            "row": 4,
+            "col": 5,
+            "time": 0,
+            "dx": 0,
+            "dy": 0
+          },
+          {
+            "type": "PATROL_MOVE",
+            "row": 1,
+            "col": 5,
+            "time": 0,
+            "dx": 0,
+            "dy": 0
+          }
+        ],
+        "motion": "WALK",
+        "allowDiagonal": true,
+        "spawnOffset": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "start": {
+          "row": 4,
+          "col": 1
+        },
+        "end": {
+          "row": 4,
+          "col": 12
+        },
+        "checkpoints": [],
+        "motion": "WALK",
+        "allowDiagonal": true,
+        "spawnOffset": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "start": {
+          "row": 3,
+          "col": 1
+        },
+        "end": {
+          "row": 4,
+          "col": 12
+        },
+        "checkpoints": [],
+        "motion": "WALK",
+        "allowDiagonal": true,
+        "spawnOffset": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "start": {
+          "row": 5,
+          "col": 1
+        },
+        "end": {
+          "row": 4,
+          "col": 12
+        },
+        "checkpoints": [],
+        "motion": "WALK",
+        "allowDiagonal": true,
+        "spawnOffset": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "start": {
+          "row": 4,
+          "col": 6
+        },
+        "end": {
+          "row": 4,
+          "col": 12
+        },
+        "checkpoints": [],
+        "motion": "WALK",
+        "allowDiagonal": true,
+        "spawnOffset": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "start": {
+          "row": 4,
+          "col": 10
+        },
+        "end": {
+          "row": 4,
+          "col": 12
+        },
+        "checkpoints": [
+          {
+            "type": "PATROL_MOVE",
+            "row": 7,
+            "col": 10,
+            "time": 0,
+            "dx": 0,
+            "dy": 0
+          },
+          {
+            "type": "PATROL_MOVE",
+            "row": 3,
+            "col": 10,
+            "time": 0,
+            "dx": 0,
+            "dy": 0
+          }
+        ],
+        "motion": "WALK",
+        "allowDiagonal": true,
+        "spawnOffset": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "start": {
+          "row": 4,
+          "col": 1
+        },
+        "end": {
+          "row": 4,
+          "col": 12
+        },
+        "checkpoints": [],
+        "motion": "WALK",
+        "allowDiagonal": true,
+        "spawnOffset": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "start": {
+          "row": 3,
+          "col": 1
+        },
+        "end": {
+          "row": 4,
+          "col": 12
+        },
+        "checkpoints": [],
+        "motion": "WALK",
+        "allowDiagonal": true,
+        "spawnOffset": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "start": {
+          "row": 5,
+          "col": 1
+        },
+        "end": {
+          "row": 4,
+          "col": 12
+        },
+        "checkpoints": [],
+        "motion": "WALK",
+        "allowDiagonal": true,
+        "spawnOffset": {
+          "x": 0,
+          "y": 0
+        }
+      }
+    ],
+    "waves": [
+      {
+        "preDelay": 0,
+        "postDelay": 0,
+        "maxWait": -1,
+        "fragments": [
+          {
+            "preDelay": 0,
+            "actions": [
+              {
+                "type": "SPAWN",
+                "key": "enemy_4015_musucr",
+                "route": 0,
+                "count": 1,
+                "preDelay": 0,
+                "interval": 1,
+                "group": "ball",
+                "pack": "a",
+                "weight": 33
+              },
+              {
+                "type": "ACTIVATE",
+                "key": "trap_154_mugtps#0101",
+                "route": -1,
+                "count": 1,
+                "preDelay": 0,
+                "interval": 1
+              },
+              {
+                "type": "ACTIVATE",
+                "key": "trap_154_mugtps#0107",
+                "route": -1,
+                "count": 1,
+                "preDelay": 0,
+                "interval": 1
+              },
+              {
+                "type": "ACTIVATE",
+                "key": "trap_154_mugtps#0201",
+                "route": -1,
+                "count": 1,
+                "preDelay": 0,
+                "interval": 1
+              },
+              {
+                "type": "ACTIVATE",
+                "key": "trap_154_mugtps#0202",
+                "route": -1,
+                "count": 1,
+                "preDelay": 0,
+                "interval": 1
+              },
+              {
+                "type": "ACTIVATE",
+                "key": "trap_154_mugtps#0206",
+                "route": -1,
+                "count": 1,
+                "preDelay": 0,
+                "interval": 1
+              },
+              {
+                "type": "ACTIVATE",
+                "key": "trap_154_mugtps#0207",
+                "route": -1,
+                "count": 1,
+                "preDelay": 0,
+                "interval": 1
+              },
+              {
+                "type": "STORY",
+                "key": "Activities/MultiV3/Training/training_multi_v3_01-02_a",
+                "route": -1,
+                "count": 1,
+                "preDelay": 1,
+                "interval": 1
+              },
+              {
+                "type": "ACTIVATE",
+                "key": "char_208_melan",
+                "route": -1,
+                "count": 1,
+                "preDelay": 1.1,
+                "interval": 1
+              },
+              {
+                "type": "ACTIVATE",
+                "key": "char_190_clour",
+                "route": -1,
+                "count": 1,
+                "preDelay": 5,
+                "interval": 1
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "preDelay": 0,
+        "postDelay": 0,
+        "maxWait": -1,
+        "fragments": [
+          {
+            "preDelay": 0,
+            "actions": [
+              {
+                "type": "SPAWN",
+                "key": "enemy_4015_musucr",
+                "route": 1,
+                "count": 1,
+                "preDelay": 0.5,
+                "interval": 1,
+                "group": "ball",
+                "pack": "c",
+                "weight": 33
+              },
+              {
+                "type": "SPAWN",
+                "key": "enemy_4012_mumssi",
+                "route": 2,
+                "count": 1,
+                "preDelay": 0.5,
+                "interval": 1
+              },
+              {
+                "type": "SPAWN",
+                "key": "enemy_4021_muredy",
+                "route": 3,
+                "count": 1,
+                "preDelay": 0,
+                "interval": 1
+              },
+              {
+                "type": "SPAWN",
+                "key": "enemy_4021_muredy",
+                "route": 4,
+                "count": 1,
+                "preDelay": 0,
+                "interval": 1
+              },
+              {
+                "type": "SPAWN",
+                "key": "enemy_4021_muredy",
+                "route": 5,
+                "count": 1,
+                "preDelay": 0,
+                "interval": 1
+              },
+              {
+                "type": "ACTIVATE",
+                "key": "trap_154_mugtps#0101",
+                "route": -1,
+                "count": 1,
+                "preDelay": 0,
+                "interval": 1
+              },
+              {
+                "type": "ACTIVATE",
+                "key": "trap_154_mugtps#0102",
+                "route": -1,
+                "count": 1,
+                "preDelay": 0,
+                "interval": 1
+              },
+              {
+                "type": "ACTIVATE",
+                "key": "trap_154_mugtps#0103",
+                "route": -1,
+                "count": 1,
+                "preDelay": 0,
+                "interval": 1
+              },
+              {
+                "type": "ACTIVATE",
+                "key": "trap_154_mugtps#0201",
+                "route": -1,
+                "count": 1,
+                "preDelay": 0,
+                "interval": 1
+              },
+              {
+                "type": "ACTIVATE",
+                "key": "trap_154_mugtps#0202",
+                "route": -1,
+                "count": 1,
+                "preDelay": 0,
+                "interval": 1
+              },
+              {
+                "type": "ACTIVATE",
+                "key": "trap_154_mugtps#0206",
+                "route": -1,
+                "count": 1,
+                "preDelay": 0,
+                "interval": 1
+              },
+              {
+                "type": "ACTIVATE",
+                "key": "trap_154_mugtps#0207",
+                "route": -1,
+                "count": 1,
+                "preDelay": 0,
+                "interval": 1
+              },
+              {
+                "type": "ACTIVATE",
+                "key": "char_122_beagle",
+                "route": -1,
+                "count": 1,
+                "preDelay": 4.3,
+                "interval": 1
+              },
+              {
+                "type": "ACTIVATE",
+                "key": "char_150_snakek",
+                "route": -1,
+                "count": 1,
+                "preDelay": 4.3,
+                "interval": 1
+              },
+              {
+                "type": "ACTIVATE",
+                "key": "char_209_ardign",
+                "route": -1,
+                "count": 1,
+                "preDelay": 4.3,
+                "interval": 1
+              },
+              {
+                "type": "STORY",
+                "key": "Activities/MultiV3/Training/training_multi_v3_01-02_b",
+                "route": -1,
+                "count": 1,
+                "preDelay": 0.1,
+                "interval": 1
+              },
+              {
+                "type": "ACTIVATE",
+                "key": "char_106_franka",
+                "route": -1,
+                "count": 1,
+                "preDelay": 8,
+                "interval": 1
+              },
+              {
+                "type": "ACTIVATE",
+                "key": "char_208_melan#2",
+                "route": -1,
+                "count": 1,
+                "preDelay": 14.5,
+                "interval": 1
+              },
+              {
+                "type": "ACTIVATE",
+                "key": "char_190_clour#2",
+                "route": -1,
+                "count": 1,
+                "preDelay": 18.700001,
+                "interval": 1
+              },
+              {
+                "type": "ACTIVATE",
+                "key": "char_289_gyuki",
+                "route": -1,
+                "count": 1,
+                "preDelay": 20.700001,
+                "interval": 1
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "preDelay": 0,
+        "postDelay": 0,
+        "maxWait": -1,
+        "fragments": [
+          {
+            "preDelay": 0,
+            "actions": [
+              {
+                "type": "SPAWN",
+                "key": "enemy_4015_musucr",
+                "route": 6,
+                "count": 1,
+                "preDelay": 0,
+                "interval": 1,
+                "group": "ball",
+                "pack": "a",
+                "weight": 33
+              },
+              {
+                "type": "SPAWN",
+                "key": "enemy_4013_mubufn",
+                "route": 7,
+                "count": 1,
+                "preDelay": 0,
+                "interval": 1
+              },
+              {
+                "type": "SPAWN",
+                "key": "enemy_4021_muredy",
+                "route": 8,
+                "count": 1,
+                "preDelay": 0,
+                "interval": 1
+              },
+              {
+                "type": "SPAWN",
+                "key": "enemy_4021_muredy",
+                "route": 9,
+                "count": 1,
+                "preDelay": 0,
+                "interval": 1
+              },
+              {
+                "type": "SPAWN",
+                "key": "enemy_4021_muredy",
+                "route": 10,
+                "count": 1,
+                "preDelay": 0,
+                "interval": 1
+              },
+              {
+                "type": "ACTIVATE",
+                "key": "trap_154_mugtps#0101",
+                "route": -1,
+                "count": 1,
+                "preDelay": 0,
+                "interval": 1
+              },
+              {
+                "type": "ACTIVATE",
+                "key": "trap_154_mugtps#0107",
+                "route": -1,
+                "count": 1,
+                "preDelay": 0,
+                "interval": 1
+              },
+              {
+                "type": "ACTIVATE",
+                "key": "trap_154_mugtps#0201",
+                "route": -1,
+                "count": 1,
+                "preDelay": 0,
+                "interval": 1
+              },
+              {
+                "type": "ACTIVATE",
+                "key": "trap_154_mugtps#0202",
+                "route": -1,
+                "count": 1,
+                "preDelay": 0,
+                "interval": 1
+              },
+              {
+                "type": "ACTIVATE",
+                "key": "trap_154_mugtps#0206",
+                "route": -1,
+                "count": 1,
+                "preDelay": 0,
+                "interval": 1
+              },
+              {
+                "type": "ACTIVATE",
+                "key": "trap_154_mugtps#0207",
+                "route": -1,
+                "count": 1,
+                "preDelay": 0,
+                "interval": 1
+              },
+              {
+                "type": "STORY",
+                "key": "Activities/MultiV3/Training/training_multi_v3_01-02_c",
+                "route": -1,
+                "count": 1,
+                "preDelay": 1,
+                "interval": 1
+              },
+              {
+                "type": "ACTIVATE",
+                "key": "char_208_melan#3",
+                "route": -1,
+                "count": 1,
+                "preDelay": 1.1,
+                "interval": 1
+              },
+              {
+                "type": "ACTIVATE",
+                "key": "char_122_beagle#3",
+                "route": -1,
+                "count": 1,
+                "preDelay": 1.1,
+                "interval": 1
+              },
+              {
+                "type": "ACTIVATE",
+                "key": "char_106_franka#3",
+                "route": -1,
+                "count": 1,
+                "preDelay": 1.1,
+                "interval": 1
+              },
+              {
+                "type": "ACTIVATE",
+                "key": "char_190_clour#3",
+                "route": -1,
+                "count": 1,
+                "preDelay": 1.1,
+                "interval": 1
+              },
+              {
+                "type": "ACTIVATE",
+                "key": "char_150_snakek#3",
+                "route": -1,
+                "count": 1,
+                "preDelay": 1.1,
+                "interval": 1
+              },
+              {
+                "type": "ACTIVATE",
+                "key": "char_237_gravel#3",
+                "route": -1,
+                "count": 1,
+                "preDelay": 1.1,
+                "interval": 1
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "predefines": [
+      {
+        "alias": "char_208_melan",
+        "key": "char_208_melan",
+        "hidden": true,
+        "row": 4,
+        "col": 5,
+        "dir": "RIGHT",
+        "build": {
+          "elite": 1,
+          "level": 55,
+          "potential": 1,
+          "trust": 100,
+          "skill": 0,
+          "skillLevel": 1
+        }
+      },
+      {
+        "alias": "char_122_beagle",
+        "key": "char_122_beagle",
+        "hidden": true,
+        "row": 5,
+        "col": 1,
+        "dir": "RIGHT",
+        "build": {
+          "elite": 1,
+          "level": 55,
+          "potential": 1,
+          "trust": 100,
+          "skill": 0,
+          "skillLevel": 1
+        }
+      },
+      {
+        "alias": "char_150_snakek",
+        "key": "char_150_snakek",
+        "hidden": true,
+        "row": 4,
+        "col": 1,
+        "dir": "RIGHT",
+        "build": {
+          "elite": 1,
+          "level": 55,
+          "potential": 1,
+          "trust": 100,
+          "skill": 0,
+          "skillLevel": 1
+        }
+      },
+      {
+        "alias": "char_209_ardign",
+        "key": "char_209_ardign",
+        "hidden": true,
+        "row": 3,
+        "col": 1,
+        "dir": "RIGHT",
+        "build": {
+          "elite": 1,
+          "level": 55,
+          "potential": 1,
+          "trust": 100,
+          "skill": 0,
+          "skillLevel": 1
+        }
+      },
+      {
+        "alias": "char_190_clour",
+        "key": "char_190_clour",
+        "hidden": true,
+        "row": 3,
+        "col": 7,
+        "dir": "RIGHT",
+        "build": {
+          "elite": 1,
+          "level": 55,
+          "potential": 1,
+          "trust": 100,
+          "skill": 0,
+          "skillLevel": 1
+        }
+      },
+      {
+        "alias": "char_106_franka",
+        "key": "char_106_franka",
+        "hidden": true,
+        "row": 2,
+        "col": 5,
+        "dir": "LEFT",
+        "build": {
+          "elite": 1,
+          "level": 70,
+          "potential": 1,
+          "trust": 100,
+          "skill": 0,
+          "skillLevel": 7
+        }
+      },
+      {
+        "alias": "char_208_melan#2",
+        "key": "char_208_melan",
+        "hidden": true,
+        "row": 5,
+        "col": 5,
+        "dir": "RIGHT",
+        "build": {
+          "elite": 1,
+          "level": 55,
+          "potential": 1,
+          "trust": 100,
+          "skill": 0,
+          "skillLevel": 1
+        }
+      },
+      {
+        "alias": "char_190_clour#2",
+        "key": "char_190_clour",
+        "hidden": true,
+        "row": 5,
+        "col": 8,
+        "dir": "RIGHT",
+        "build": {
+          "elite": 1,
+          "level": 55,
+          "potential": 1,
+          "trust": 100,
+          "skill": 0,
+          "skillLevel": 1
+        }
+      },
+      {
+        "alias": "char_289_gyuki",
+        "key": "char_289_gyuki",
+        "hidden": true,
+        "row": 4,
+        "col": 11,
+        "dir": "UP",
+        "build": {
+          "elite": 1,
+          "level": 60,
+          "potential": 6,
+          "trust": 100,
+          "skill": 0,
+          "skillLevel": 7
+        }
+      },
+      {
+        "alias": "char_144_red#3",
+        "key": "char_144_red",
+        "hidden": true,
+        "row": 4,
+        "col": 1,
+        "dir": "RIGHT",
+        "build": {
+          "elite": 1,
+          "level": 55,
+          "potential": 1,
+          "trust": 100,
+          "skill": 0,
+          "skillLevel": 1
+        }
+      },
+      {
+        "alias": "trap_154_mugtps#0101",
+        "key": "trap_154_mugtps",
+        "hidden": true,
+        "row": 7,
+        "col": 11,
+        "dir": "UP"
+      },
+      {
+        "alias": "trap_154_mugtps#0102",
+        "key": "trap_154_mugtps",
+        "hidden": true,
+        "row": 6,
+        "col": 11,
+        "dir": "UP"
+      },
+      {
+        "alias": "trap_154_mugtps#0103",
+        "key": "trap_154_mugtps",
+        "hidden": true,
+        "row": 5,
+        "col": 11,
+        "dir": "UP"
+      },
+      {
+        "alias": "trap_154_mugtps#0104",
+        "key": "trap_154_mugtps",
+        "hidden": true,
+        "row": 4,
+        "col": 11,
+        "dir": "UP"
+      },
+      {
+        "alias": "trap_154_mugtps#0105",
+        "key": "trap_154_mugtps",
+        "hidden": true,
+        "row": 3,
+        "col": 11,
+        "dir": "UP"
+      },
+      {
+        "alias": "trap_154_mugtps#0106",
+        "key": "trap_154_mugtps",
+        "hidden": true,
+        "row": 2,
+        "col": 11,
+        "dir": "UP"
+      },
+      {
+        "alias": "trap_154_mugtps#0107",
+        "key": "trap_154_mugtps",
+        "hidden": true,
+        "row": 1,
+        "col": 11,
+        "dir": "UP"
+      },
+      {
+        "alias": "trap_154_mugtps#0201",
+        "key": "trap_154_mugtps",
+        "hidden": true,
+        "row": 7,
+        "col": 1,
+        "dir": "UP"
+      },
+      {
+        "alias": "trap_154_mugtps#0202",
+        "key": "trap_154_mugtps",
+        "hidden": true,
+        "row": 6,
+        "col": 1,
+        "dir": "UP"
+      },
+      {
+        "alias": "trap_154_mugtps#0203",
+        "key": "trap_154_mugtps",
+        "hidden": true,
+        "row": 5,
+        "col": 1,
+        "dir": "UP"
+      },
+      {
+        "alias": "trap_154_mugtps#0204",
+        "key": "trap_154_mugtps",
+        "hidden": true,
+        "row": 4,
+        "col": 1,
+        "dir": "UP"
+      },
+      {
+        "alias": "trap_154_mugtps#0205",
+        "key": "trap_154_mugtps",
+        "hidden": true,
+        "row": 3,
+        "col": 1,
+        "dir": "UP"
+      },
+      {
+        "alias": "trap_154_mugtps#0206",
+        "key": "trap_154_mugtps",
+        "hidden": true,
+        "row": 2,
+        "col": 1,
+        "dir": "UP"
+      },
+      {
+        "alias": "trap_154_mugtps#0207",
+        "key": "trap_154_mugtps",
+        "hidden": true,
+        "row": 1,
+        "col": 1,
+        "dir": "UP"
+      },
+      {
+        "alias": "trap_007_ballis#1",
+        "key": "trap_007_ballis",
+        "hidden": true,
+        "row": 8,
+        "col": 10,
+        "dir": "DOWN"
+      },
+      {
+        "alias": "trap_007_ballis#2",
+        "key": "trap_007_ballis",
+        "hidden": true,
+        "row": 8,
+        "col": 9,
+        "dir": "DOWN"
+      },
+      {
+        "alias": "trap_007_ballis#3",
+        "key": "trap_007_ballis",
+        "hidden": true,
+        "row": 8,
+        "col": 8,
+        "dir": "DOWN"
+      },
+      {
+        "alias": "trap_007_ballis#4",
+        "key": "trap_007_ballis",
+        "hidden": true,
+        "row": 8,
+        "col": 7,
+        "dir": "DOWN"
+      },
+      {
+        "alias": "trap_007_ballis#5",
+        "key": "trap_007_ballis",
+        "hidden": true,
+        "row": 8,
+        "col": 6,
+        "dir": "DOWN"
+      },
+      {
+        "alias": "trap_007_ballis#6",
+        "key": "trap_007_ballis",
+        "hidden": true,
+        "row": 8,
+        "col": 5,
+        "dir": "DOWN"
+      },
+      {
+        "alias": "trap_007_ballis#6",
+        "key": "trap_007_ballis",
+        "hidden": true,
+        "row": 8,
+        "col": 4,
+        "dir": "DOWN"
+      },
+      {
+        "alias": "trap_007_ballis#7",
+        "key": "trap_007_ballis",
+        "hidden": true,
+        "row": 8,
+        "col": 3,
+        "dir": "DOWN"
+      },
+      {
+        "alias": "trap_007_ballis#8",
+        "key": "trap_007_ballis",
+        "hidden": true,
+        "row": 8,
+        "col": 2,
+        "dir": "DOWN"
+      },
+      {
+        "alias": "trap_165_muftbl#2",
+        "key": "trap_165_muftbl",
+        "hidden": true,
+        "row": 6,
+        "col": 6,
+        "dir": "UP"
+      }
+    ],
+    "stages": [],
+    "cards": {
+      "operators": [
+        {
+          "key": "char_208_melan",
+          "build": {
+            "elite": 1,
+            "level": 55,
+            "potential": 1,
+            "trust": 100,
+            "skill": 0,
+            "skillLevel": 1
+          },
+          "alias": "char_208_melan#3",
+          "hidden": true
+        },
+        {
+          "key": "char_122_beagle",
+          "build": {
+            "elite": 1,
+            "level": 55,
+            "potential": 1,
+            "trust": 100,
+            "skill": 0,
+            "skillLevel": 1
+          },
+          "alias": "char_122_beagle#3",
+          "hidden": true
+        },
+        {
+          "key": "char_106_franka",
+          "build": {
+            "elite": 1,
+            "level": 70,
+            "potential": 1,
+            "trust": 100,
+            "skill": 0,
+            "skillLevel": 7
+          },
+          "alias": "char_106_franka#3",
+          "hidden": true
+        },
+        {
+          "key": "char_190_clour",
+          "build": {
+            "elite": 1,
+            "level": 55,
+            "potential": 1,
+            "trust": 100,
+            "skill": 0,
+            "skillLevel": 1
+          },
+          "alias": "char_190_clour#3",
+          "hidden": true
+        },
+        {
+          "key": "char_150_snakek",
+          "build": {
+            "elite": 1,
+            "level": 55,
+            "potential": 1,
+            "trust": 100,
+            "skill": 0,
+            "skillLevel": 1
+          },
+          "alias": "char_150_snakek#3",
+          "hidden": true
+        },
+        {
+          "key": "char_237_gravel",
+          "build": {
+            "elite": 1,
+            "level": 55,
+            "potential": 1,
+            "trust": 100,
+            "skill": 0,
+            "skillLevel": 1
+          },
+          "alias": "char_237_gravel#3",
+          "hidden": true
+        }
+      ],
+      "tokens": [
+        {
+          "key": "trap_165_muftbl",
+          "alias": "trap_165_muftbl",
+          "count": 0,
+          "hidden": false
+        }
+      ]
+    },
+    "football": {
+      "time": 80,
+      "wait": 3,
+      "stamps": [
+        1,
+        2,
+        4
+      ],
+      "ahead": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          2
+        ],
+        [
+          3,
+          3
+        ],
+        [
+          4,
+          4
+        ],
+        [
+          5,
+          5
+        ],
+        [
+          6,
+          6
+        ],
+        [
+          8,
+          7
+        ],
+        [
+          10,
+          8
+        ],
+        [
+          10000,
+          9
+        ]
+      ],
+      "weights": {
+        "0": [
+          100,
+          50,
+          25,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "1": [
+          50,
+          100,
+          50,
+          25,
+          12,
+          6,
+          0,
+          0,
+          0,
+          0
+        ],
+        "2": [
+          25,
+          50,
+          100,
+          50,
+          25,
+          12,
+          6,
+          3,
+          0,
+          0
+        ],
+        "3": [
+          12,
+          25,
+          50,
+          100,
+          50,
+          25,
+          12,
+          6,
+          3,
+          0
+        ],
+        "4": [
+          6,
+          12,
+          25,
+          50,
+          100,
+          50,
+          25,
+          12,
+          6,
+          3
+        ],
+        "5": [
+          3,
+          6,
+          12,
+          25,
+          50,
+          100,
+          50,
+          25,
+          12,
+          6
+        ],
+        "6": [
+          0,
+          3,
+          6,
+          12,
+          25,
+          50,
+          100,
+          50,
+          25,
+          12
+        ],
+        "7": [
+          0,
+          0,
+          3,
+          6,
+          12,
+          25,
+          50,
+          100,
+          50,
+          25
+        ],
+        "8": [
+          0,
+          0,
+          0,
+          3,
+          6,
+          12,
+          25,
+          50,
+          100,
+          50
+        ],
+        "9": [
+          0,
+          0,
+          0,
+          0,
+          3,
+          6,
+          12,
+          25,
+          50,
+          100
+        ]
+      },
+      "teams": [
+        {
+          "name": "normal",
+          "weight": 10,
+          "players": {
+            "forward": "enemy_4012_mumssi",
+            "goalkeeper": "enemy_4013_mubufn",
+            "muscleman": "enemy_4014_mugnfu"
+          }
+        },
+        {
+          "name": "shooter",
+          "weight": 10,
+          "players": {
+            "forward": "enemy_4022_mushtm",
+            "goalkeeper": "enemy_4023_mushtb",
+            "muscleman": "enemy_4024_mushtg"
+          }
+        },
+        {
+          "name": "hurrier",
+          "weight": 10,
+          "players": {
+            "forward": "enemy_4025_muhrym",
+            "goalkeeper": "enemy_4026_muhryb",
+            "muscleman": "enemy_4027_muhryg"
+          }
+        },
+        {
+          "name": "kungfuer",
+          "weight": 10,
+          "players": {
+            "forward": "enemy_4028_mukfum",
+            "goalkeeper": "enemy_4029_mukfub",
+            "muscleman": "enemy_4030_mukfug"
+          }
+        }
+      ],
+      "roles": {
+        "mumssi": "forward",
+        "mubufn": "goalkeeper",
+        "mugnfu": "muscleman"
+      }
+    },
+    "view": [
+      0,
+      -6.1,
+      -9.76
+    ],
+    "bgm": "multinormal"
+  },
+  "difficulties": {
+    "NORMAL": {
+      "hiddenGroups": [],
+      "enemyMul": [],
+      "replace": {},
+      "unsupported": [],
+      "ours": [
+        {
+          "key": "env_gbuff_new",
+          "professions": 1023,
+          "board": [
+            [
+              "key",
+              "sp_recovery_reduction"
+            ],
+            [
+              "sp_recovery_per_sec",
+              4
+            ]
+          ]
+        }
+      ]
+    },
+    "FOUR_STAR": {
+      "hiddenGroups": [],
+      "enemyMul": [
+        {
+          "mods": {
+            "max_hp": 0.1
+          }
+        }
+      ],
+      "replace": {},
+      "unsupported": []
+    }
+  },
+  "enemies": {
+    "enemy_4012_mumssi": {
+      "name": "阵地击球手",
+      "maxHp": 1500,
+      "atk": 500,
+      "def": 300,
+      "res": 20,
+      "moveSpeed": 1,
+      "baseAttackTime": 3,
+      "rangeRadius": -1,
+      "applyWay": "MELEE",
+      "motion": "WALK",
+      "massLevel": 0,
+      "levelType": "ELITE",
+      "lifePointReduce": 1,
+      "immune": [
+        "silence"
+      ],
+      "talents": {
+        "Reborn": {
+          "duration": 20
+        },
+        "football": {
+          "passing_force": 1.2,
+          "slapshot_force": 1.5
+        },
+        "searchBall": {
+          "range_radius": 2
+        }
+      },
+      "skills": [
+        {
+          "key": "passtheball",
+          "cooldown": 2,
+          "initCooldown": 0,
+          "sp": 0,
+          "bb": {
+            "duration": 3
+          }
+        },
+        {
+          "key": "slapshot",
+          "cooldown": 2,
+          "initCooldown": 0,
+          "sp": 0,
+          "bb": {
+            "duration": 3
+          }
+        }
+      ]
+    },
+    "enemy_4013_mubufn": {
+      "name": "阵地守门员",
+      "maxHp": 3500,
+      "atk": 700,
+      "def": 400,
+      "res": 20,
+      "moveSpeed": 1.2,
+      "baseAttackTime": 3,
+      "rangeRadius": -1,
+      "applyWay": "MELEE",
+      "motion": "WALK",
+      "massLevel": 3,
+      "levelType": "ELITE",
+      "lifePointReduce": 1,
+      "immune": [
+        "silence"
+      ],
+      "talents": {
+        "Reborn": {
+          "duration": 20
+        },
+        "football": {
+          "clearance_force": 1.5,
+          "tile_col_end": 9,
+          "defence": 0.5
+        },
+        "searchBall": {
+          "range_radius": 2
+        }
+      },
+      "skills": [
+        {
+          "key": "slapshot",
+          "cooldown": 0,
+          "initCooldown": 0,
+          "sp": 0,
+          "bb": {}
+        },
+        {
+          "key": "clearance",
+          "cooldown": 0,
+          "initCooldown": 0,
+          "sp": 0,
+          "bb": {}
+        }
+      ]
+    },
+    "enemy_4014_mugnfu": {
+      "name": "阵地击人手",
+      "maxHp": 30000,
+      "atk": 1000,
+      "def": 300,
+      "res": 20,
+      "moveSpeed": 1,
+      "baseAttackTime": 3,
+      "rangeRadius": -1,
+      "applyWay": "MELEE",
+      "motion": "WALK",
+      "massLevel": 0,
+      "levelType": "ELITE",
+      "lifePointReduce": 1,
+      "immune": [
+        "silence"
+      ],
+      "talents": {
+        "periodic_damage": {
+          "damage": 0
+        },
+        "Reborn": {
+          "duration": 20
+        },
+        "searchtarget": {
+          "range_radius": 2
+        }
+      }
+    },
+    "enemy_4015_musucr": {
+      "name": "RMA70刺球",
+      "maxHp": 1000,
+      "atk": 10000,
+      "def": 0,
+      "res": 0,
+      "moveSpeed": 1,
+      "baseAttackTime": 1,
+      "rangeRadius": -1,
+      "applyWay": "NONE",
+      "motion": "WALK",
+      "massLevel": 1,
+      "levelType": "ELITE",
+      "lifePointReduce": 1,
+      "immune": [
+        "levitate"
+      ],
+      "talents": {
+        "aura": {
+          "block_cnt": 3
+        },
+        "physic": {
+          "friction_factor": 0.7,
+          "restitution_factor": 0.75,
+          "value": 900,
+          "force": 450
+        }
+      }
+    },
+    "enemy_4021_muredy": {
+      "name": "守门位",
+      "maxHp": 1,
+      "atk": 1,
+      "def": 0,
+      "res": 0,
+      "moveSpeed": 1,
+      "baseAttackTime": 1,
+      "rangeRadius": -1,
+      "applyWay": "NONE",
+      "motion": "WALK",
+      "massLevel": 0,
+      "levelType": "ELITE",
+      "lifePointReduce": 1,
+      "talents": {
+        "aura": {
+          "sp": 0,
+          "value": 0,
+          "block_cnt": 3
+        }
+      }
+    },
+    "enemy_4022_mushtm": {
+      "name": "战术队击球手",
+      "maxHp": 20000,
+      "atk": 500,
+      "def": 300,
+      "res": 20,
+      "moveSpeed": 1,
+      "baseAttackTime": 1.5,
+      "rangeRadius": -1,
+      "applyWay": "MELEE",
+      "motion": "WALK",
+      "massLevel": 0,
+      "levelType": "ELITE",
+      "lifePointReduce": 1,
+      "immune": [
+        "silence"
+      ],
+      "talents": {
+        "Reborn": {
+          "duration": 20
+        },
+        "football": {
+          "passing_force": 1.25,
+          "slapshot_force": 1.65
+        },
+        "searchBall": {
+          "range_radius": 2.5
+        }
+      },
+      "skills": [
+        {
+          "key": "passtheball",
+          "cooldown": 2,
+          "initCooldown": 0,
+          "sp": 0,
+          "bb": {
+            "duration": 3
+          }
+        },
+        {
+          "key": "slapshot",
+          "cooldown": 2,
+          "initCooldown": 0,
+          "sp": 0,
+          "bb": {
+            "duration": 3
+          }
+        }
+      ]
+    },
+    "enemy_4023_mushtb": {
+      "name": "战术队守门员",
+      "maxHp": 25000,
+      "atk": 900,
+      "def": 400,
+      "res": 20,
+      "moveSpeed": 1.2,
+      "baseAttackTime": 1.5,
+      "rangeRadius": -1,
+      "applyWay": "MELEE",
+      "motion": "WALK",
+      "massLevel": 3,
+      "levelType": "ELITE",
+      "lifePointReduce": 1,
+      "immune": [
+        "silence"
+      ],
+      "talents": {
+        "Reborn": {
+          "duration": 20
+        },
+        "football": {
+          "clearance_force": 1.5,
+          "tile_col_end": 9,
+          "defence": 0.5
+        },
+        "searchBall": {
+          "range_radius": 2.5
+        }
+      },
+      "skills": [
+        {
+          "key": "slapshot",
+          "cooldown": 0,
+          "initCooldown": 0,
+          "sp": 0,
+          "bb": {}
+        },
+        {
+          "key": "clearance",
+          "cooldown": 0,
+          "initCooldown": 0,
+          "sp": 0,
+          "bb": {}
+        }
+      ]
+    },
+    "enemy_4024_mushtg": {
+      "name": "战术队击人手",
+      "maxHp": 20000,
+      "atk": 700,
+      "def": 500,
+      "res": 20,
+      "moveSpeed": 1,
+      "baseAttackTime": 1.5,
+      "rangeRadius": -1,
+      "applyWay": "MELEE",
+      "motion": "WALK",
+      "massLevel": 0,
+      "levelType": "ELITE",
+      "lifePointReduce": 1,
+      "immune": [
+        "silence"
+      ],
+      "talents": {
+        "periodic_damage": {
+          "damage": 0
+        },
+        "Reborn": {
+          "duration": 20
+        },
+        "searchtarget": {
+          "range_radius": 2.5
+        },
+        "passiveMarkTarget": {
+          "move_speed": 1.4,
+          "duration": 3,
+          "cooldown": 6
+        }
+      }
+    },
+    "enemy_4025_muhrym": {
+      "name": "爱球会击球手",
+      "maxHp": 20000,
+      "atk": 800,
+      "def": 300,
+      "res": 20,
+      "moveSpeed": 2.2,
+      "baseAttackTime": 3,
+      "rangeRadius": -1,
+      "applyWay": "MELEE",
+      "motion": "WALK",
+      "massLevel": 0,
+      "levelType": "ELITE",
+      "lifePointReduce": 1,
+      "immune": [
+        "silence"
+      ],
+      "talents": {
+        "Reborn": {
+          "duration": 20
+        },
+        "football": {
+          "passing_force": 1.1,
+          "slapshot_force": 1
+        },
+        "searchBall": {
+          "range_radius": 2.5
+        }
+      },
+      "skills": [
+        {
+          "key": "passtheball",
+          "cooldown": 2,
+          "initCooldown": 0,
+          "sp": 0,
+          "bb": {
+            "duration": 3
+          }
+        },
+        {
+          "key": "slapshot",
+          "cooldown": 2,
+          "initCooldown": 0,
+          "sp": 0,
+          "bb": {
+            "duration": 0.2,
+            "block_volume": 1,
+            "move_speed": 0.8,
+            "up_duration": 2
+          }
+        }
+      ]
+    },
+    "enemy_4026_muhryb": {
+      "name": "爱球会守门员",
+      "maxHp": 30000,
+      "atk": 1200,
+      "def": 400,
+      "res": 20,
+      "moveSpeed": 3.2,
+      "baseAttackTime": 3,
+      "rangeRadius": -1,
+      "applyWay": "MELEE",
+      "motion": "WALK",
+      "massLevel": 3,
+      "levelType": "ELITE",
+      "lifePointReduce": 1,
+      "immune": [
+        "silence"
+      ],
+      "talents": {
+        "Reborn": {
+          "duration": 20
+        },
+        "football": {
+          "clearance_force": 1.3,
+          "tile_col_end": 9,
+          "defence": 0.5
+        },
+        "searchBall": {
+          "range_radius": 2
+        }
+      },
+      "skills": [
+        {
+          "key": "slapshot",
+          "cooldown": 0,
+          "initCooldown": 0,
+          "sp": 0,
+          "bb": {}
+        },
+        {
+          "key": "clearance",
+          "cooldown": 0,
+          "initCooldown": 0,
+          "sp": 0,
+          "bb": {}
+        }
+      ]
+    },
+    "enemy_4027_muhryg": {
+      "name": "爱球会击人手",
+      "maxHp": 20000,
+      "atk": 800,
+      "def": 500,
+      "res": 20,
+      "moveSpeed": 2.2,
+      "baseAttackTime": 3,
+      "rangeRadius": -1,
+      "applyWay": "MELEE",
+      "motion": "WALK",
+      "massLevel": 0,
+      "levelType": "ELITE",
+      "lifePointReduce": 1,
+      "immune": [
+        "silence"
+      ],
+      "talents": {
+        "Reborn": {
+          "duration": 20
+        },
+        "football": {
+          "passing_force": 1.2,
+          "slapshot_force": 2.8
+        },
+        "searchBall": {
+          "range_radius": 2
+        }
+      }
+    },
+    "enemy_4028_mukfum": {
+      "name": "球德联击球手",
+      "maxHp": 30000,
+      "atk": 1200,
+      "def": 500,
+      "res": 20,
+      "moveSpeed": 1,
+      "baseAttackTime": 5,
+      "rangeRadius": -1,
+      "applyWay": "MELEE",
+      "motion": "WALK",
+      "massLevel": 0,
+      "levelType": "ELITE",
+      "lifePointReduce": 1,
+      "immune": [
+        "silence"
+      ],
+      "talents": {
+        "Reborn": {
+          "duration": 20
+        },
+        "football": {
+          "passing_force": 1.35,
+          "slapshot_force": 1.5
+        },
+        "searchBall": {
+          "range_radius": 2.5
+        }
+      },
+      "skills": [
+        {
+          "key": "passtheball",
+          "cooldown": 2,
+          "initCooldown": 0,
+          "sp": 0,
+          "bb": {
+            "duration": 3
+          }
+        },
+        {
+          "key": "slapshot",
+          "cooldown": 2,
+          "initCooldown": 0,
+          "sp": 0,
+          "bb": {
+            "duration": 3,
+            "aoe_duration": 10,
+            "damage_duration": 1.5,
+            "ball_damage": 1000
+          }
+        }
+      ]
+    },
+    "enemy_4029_mukfub": {
+      "name": "球德联守门员",
+      "maxHp": 30000,
+      "atk": 1700,
+      "def": 550,
+      "res": 20,
+      "moveSpeed": 1.5,
+      "baseAttackTime": 5,
+      "rangeRadius": -1,
+      "applyWay": "MELEE",
+      "motion": "WALK",
+      "massLevel": 3,
+      "levelType": "ELITE",
+      "lifePointReduce": 1,
+      "immune": [
+        "silence"
+      ],
+      "talents": {
+        "Reborn": {
+          "duration": 20
+        },
+        "football": {
+          "clearance_force": 1.3,
+          "tile_col_end": 9,
+          "defence": 0.5
+        },
+        "searchBall": {
+          "range_radius": 1.5
+        },
+        "rage": {
+          "hp_ratio": 0.5,
+          "atk": 2,
+          "def": 2,
+          "rage_duration": 15
+        }
+      },
+      "skills": [
+        {
+          "key": "slapshot",
+          "cooldown": 0,
+          "initCooldown": 0,
+          "sp": 0,
+          "bb": {}
+        },
+        {
+          "key": "clearance",
+          "cooldown": 0,
+          "initCooldown": 0,
+          "sp": 0,
+          "bb": {}
+        }
+      ]
+    },
+    "enemy_4030_mukfug": {
+      "name": "球德联击人手",
+      "maxHp": 25000,
+      "atk": 1200,
+      "def": 500,
+      "res": 20,
+      "moveSpeed": 0.8,
+      "baseAttackTime": 5,
+      "rangeRadius": -1,
+      "applyWay": "MELEE",
+      "motion": "WALK",
+      "massLevel": 0,
+      "levelType": "ELITE",
+      "lifePointReduce": 1,
+      "immune": [
+        "silence"
+      ],
+      "talents": {
+        "periodic_damage": {
+          "damage": 0
+        },
+        "Reborn": {
+          "duration": 20
+        },
+        "searchtarget": {
+          "range_radius": 2
+        }
+      }
+    }
+  },
+  "devices": {
+    "trap_154_mugtps": {
+      "name": "阵地屏障",
+      "maxHp": 50000,
+      "atk": 0,
+      "def": 0,
+      "res": 0,
+      "blockCnt": 1,
+      "baseAttackTime": 1,
+      "aspd": 100,
+      "tauntLevel": -1,
+      "massLevel": 0,
+      "talentBb": {
+        "damage_scale": 5
+      },
+      "talents": [
+        {
+          "damage_scale": 5
+        }
+      ],
+      "cost": 5
+    },
+    "trap_007_ballis": {
+      "name": "弩炮",
+      "maxHp": 100,
+      "atk": 600,
+      "def": 0,
+      "res": 0,
+      "blockCnt": 3,
+      "baseAttackTime": 1,
+      "aspd": 100,
+      "tauntLevel": 0,
+      "massLevel": 0,
+      "talentBb": {},
+      "talents": [],
+      "cost": 5
+    },
+    "trap_165_muftbl": {
+      "name": "足球",
+      "maxHp": 100,
+      "atk": 0,
+      "def": 0,
+      "res": 0,
+      "blockCnt": 1,
+      "baseAttackTime": 1,
+      "aspd": 100,
+      "tauntLevel": -1,
+      "massLevel": 0,
+      "talentBb": {},
+      "talents": [
+        {}
+      ],
+      "cost": 3
+    }
+  }
+}
