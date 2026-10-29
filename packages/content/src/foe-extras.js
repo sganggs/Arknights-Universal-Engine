@@ -344,4 +344,15 @@ export const FOE_EXTRAS = Object.freeze({
   // The same three keys on the other 补给员 are not this skill, and stay uncovered (关卡-2).
   enemy_4004_muvltr: { skills: { boomb: { soda: 1 } }, source: `${PRTS}%E8%B5%9B%E5%9C%BA%E8%A1%A5%E7%BB%99%E8%BD%A6&oldid=361382` },
   enemy_4004_muvltr_2: { skills: { boomb: { soda: 1 } }, source: `${PRTS}%E2%80%9C%E5%A4%A9%E8%BD%A6%E6%95%A3%E8%8A%B1%E2%80%9D%E8%B5%9B%E5%9C%BA%E8%A1%A5%E7%BB%99%E8%BD%A6&oldid=361313` },
+  // 敌能-117: 攻击方式 NONE is not read (敌人攻击-1), so the pages' 不进行普通攻击 (NoAttack) and 无法被阻挡 (unblockable).
+  // 诺伯特平民: 无敌，不进行攻击 — its 鉴定 (civilianTalent) is not this clause and stays uncovered
+  enemy_1313_wdfmr: { talents: { NoAttack: {} }, source: `${PRTS}%E8%AF%BA%E4%BC%AF%E7%89%B9%E5%B9%B3%E6%B0%91&oldid=353767` },
+  // 匪帮窃贼 / 匪帮窃贼头目: 无法被阻挡
+  enemy_1354_eghost: { talents: { unblockable: {} }, source: `${PRTS}%E5%8C%AA%E5%B8%AE%E7%AA%83%E8%B4%BC&oldid=353841` },
+  enemy_1354_eghost_2: { talents: { unblockable: {} }, source: `${PRTS}%E5%8C%AA%E5%B8%AE%E7%AA%83%E8%B4%BC%E5%A4%B4%E7%9B%AE&oldid=353842` },
+  // 幽灵组长: 不进行普通攻击，无法被阻挡
+  enemy_1026_aghost: { talents: { NoAttack: {}, unblockable: {} }, source: `${PRTS}%E5%B9%BD%E7%81%B5%E7%BB%84%E9%95%BF&oldid=371392` },
+  // 天桩-甲 / 失控天桩-甲: ……不进行普通攻击，无法被阻挡 — their 自缚, 失衡免疫, 阻回 and CheckAwake are not this clause
+  enemy_1398_dhdcr: { talents: { NoAttack: {}, unblockable: {} }, source: `${PRTS}%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366637` },
+  enemy_1398_dhdcr_2: { talents: { NoAttack: {}, unblockable: {} }, source: `${PRTS}%E5%A4%B1%E6%8E%A7%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366638` },
 });

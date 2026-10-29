@@ -39,7 +39,11 @@ function summonSeeds(ctx) {
 /** @type {FoeBehavior} */
 const BornBugs = Object.freeze({ tick: summonSeeds });
 
-/** 不进行普通攻击 (敌能-64): a lasting flag. The page does not call it silenceable, so spawn sets it once. @type {FoeBehavior} */
+/**
+ * 不进行普通攻击 (敌能-64; the pages of 敌能-117 too): a lasting flag. The pages do not call it silenceable, so spawn sets
+ * it once.
+ * @type {FoeBehavior}
+ */
 const NoAttack = Object.freeze({
   spawn: (ctx) => { ctx.addBuff(ctx.self, { key: 'noAttack', flags: { noAttack: true } }); },
 });

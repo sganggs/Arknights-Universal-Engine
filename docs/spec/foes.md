@@ -1317,3 +1317,14 @@ R-11突击动力装甲（`enemy_1256_lyacpa`）、R-11a突击动力装甲（`ene
 
 - 来源：[PRTS「集团军盾卫」oldid=435978](https://prts.wiki/index.php?title=%E9%9B%86%E5%9B%A2%E5%86%9B%E7%9B%BE%E5%8D%AB&oldid=435978)「受到<指挥官指令>影响时，受到的物理与法术伤害-40%」；[PRTS「家族专用轿车」oldid=436018](https://prts.wiki/index.php?title=%E5%AE%B6%E6%97%8F%E4%B8%93%E7%94%A8%E8%BD%BF%E8%BD%A6&oldid=436018)「被击倒时若被阻挡，则在距离自身最近的可通行地块中心0.2边长正方形范围内随机位置以自身路径召唤3个家族士兵」；数据：两者的黑板，阵地足球锦标特训赛关卡的敌人表里没有 enemy_1277_sgman
 
+### 敌能-117 页面写的不进行普通攻击与无法被阻挡
+
+攻击方式（`applyWay`）`NONE` 不单独作数（敌人攻击-1，推断 INF-0673）。下面几名的页面天赋栏写了，内容按页面补上标记，出场时加上，一直有效，不可沉默（推断 INF-0674）：
+
+- **不进行普通攻击**（`NoAttack`，敌能-64）：诺伯特平民、幽灵组长、天桩-甲、失控天桩-甲。
+- **无法被阻挡**（`unblockable`，敌能-69）：匪帮窃贼、匪帮窃贼头目、幽灵组长、天桩-甲、失控天桩-甲。
+- 关卡里另外几名攻击方式为 `NONE`、攻击力大于 0 的不加：术师囚犯、危险术师囚犯（页面写了解放后的普通攻击）和梅菲斯特（普通攻击为治疗）照常攻击；寒霜（敌能-35）、两辆赛场补给车（敌能-86）、狂奔丰碑（敌能-69）已有各自的标记。
+- 诺伯特平民鉴定完成后的不可阻挡、天桩的自缚、失衡免疫、阻回与 `CheckAwake` 不是本条，仍未覆盖（关卡-2）。
+
+- 来源：[PRTS「诺伯特平民」oldid=353767](https://prts.wiki/index.php?title=%E8%AF%BA%E4%BC%AF%E7%89%B9%E5%B9%B3%E6%B0%91&oldid=353767)「无敌，不进行攻击」；[PRTS「匪帮窃贼」oldid=353841](https://prts.wiki/index.php?title=%E5%8C%AA%E5%B8%AE%E7%AA%83%E8%B4%BC&oldid=353841)、[PRTS「匪帮窃贼头目」oldid=353842](https://prts.wiki/index.php?title=%E5%8C%AA%E5%B8%AE%E7%AA%83%E8%B4%BC%E5%A4%B4%E7%9B%AE&oldid=353842)「无法被阻挡」；[PRTS「幽灵组长」oldid=371392](https://prts.wiki/index.php?title=%E5%B9%BD%E7%81%B5%E7%BB%84%E9%95%BF&oldid=371392)「不进行普通攻击，无法被阻挡」；[PRTS「天桩-甲」oldid=366637](https://prts.wiki/index.php?title=%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366637)、[PRTS「失控天桩-甲」oldid=366638](https://prts.wiki/index.php?title=%E5%A4%B1%E6%8E%A7%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366638)「常态持有自缚，失衡免疫，阻回，不进行普通攻击，无法被阻挡」。
+
