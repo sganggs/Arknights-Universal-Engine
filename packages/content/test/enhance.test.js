@@ -132,7 +132,8 @@ test('[敌能-122] an operator takes the normal multiplier', () => {
     const ev = step(w, c, [[0, { type: 'deploy', op: 'guard', row: 1, col: 2, dir: 0 }]]);
     const guard = w.units.find((u) => u.key === 'guard');
     assert.ok(guard, key);
-    assert.equal(e.blockedBy, guard.id, key);
+    // 长臂投手 shoot it from range whether it blocks them or not: 敌能-121 makes them unblockable
+    if (key === HEAD || key === HEAD2) assert.equal(e.blockedBy, guard.id, key);
     const hits = ev.filter((x) => x.type === 'hit' && x.id === e.id);
     assert.equal(hits.length, 1, key);
     assert.equal(hits[0].target, guard.id, key);
