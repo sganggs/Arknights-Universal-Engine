@@ -1,9 +1,12 @@
 // The howling and boiling knight orders (docs/spec/foes.md 敌能-71) and 斗志昂扬无人机 (敌能-85). `buff` and
 // `enhance` are shared talent names, so only the blackboards below, each with the marker of the pages read, are this
 // family (关卡-2). The armour is one buff from the appearance frame; a layer comes from the `down` hook when another
-// enemy is knocked down (敌能-2). The drone's blast is the `death` hook. They act only through the context (ADR 0055).
+// enemy is knocked down (敌能-2). The drone's blast is the `death` hook. The same `enhance` object also carries
+// 敌能-122's attack hook, which no-ops unless the blackboard is exactly `{ atk_scale }`. They act only through the
+// context (ADR 0055).
 
 import { KIND } from '@aue/sim';
+import { facilityAttack, scaleShape } from './enhance.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').FoeContext} FoeContext @typedef {import('@aue/sim').Unit} Unit */
 
@@ -45,7 +48,7 @@ function exact(bb, keys) {
  */
 export function knightOwns(name, bb) {
   if (name === 'buff') return exact(bb, ARMOUR_KEYS) || exact(bb, ZEAL_KEYS);
-  if (name === 'enhance') return exact(bb, BLOOD_KEYS);
+  if (name === 'enhance') return exact(bb, BLOOD_KEYS) || scaleShape(bb);
   return true;
 }
 
@@ -92,15 +95,17 @@ function arm(ctx) {
 const buff = Object.freeze({ spawn: arm, death: zealBlast });
 
 /**
- * One layer for each other enemy knocked down while it is on the field (敌能-71): ATK ×(1 + `atk`) and attack speed
- * +`attack_speed` per layer, up to `max_stack_cnt`, never expiring. A neutral unit does not count; a goal is no
- * knockdown (敌能-2). Not silenceable.
+ * 沸血 layers (敌能-71), and the facility multiplier on the other shape (敌能-122). One layer for each other enemy
+ * knocked down while it is on the field: ATK ×(1 + `atk`) and attack speed +`attack_speed` per layer, up to
+ * `max_stack_cnt`, never expiring. A neutral unit does not count; a goal is no knockdown (敌能-2). The `down` hook
+ * stays on the boiling blackboard, so a `{ atk_scale }` enemy does not take layers. Not silenceable.
  * @type {FoeBehavior}
  */
 const enhance = Object.freeze({
+  attack: facilityAttack,
   down(ctx, dead) {
     const bb = ctx.bb;
-    if (!knightOwns('enhance', bb) || dead.base.neutral === true) return;
+    if (!exact(bb, BLOOD_KEYS) || dead.base.neutral === true) return;
     ctx.addBuff(ctx.self, { key: BLOOD, rule: 'stack', stacks: 1, maxStacks: bb.max_stack_cnt, left: -1, mods: { atkPct: bb.atk, aspd: bb.attack_speed } });
   },
 });

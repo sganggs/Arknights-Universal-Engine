@@ -112,7 +112,8 @@ export const pickTarget = (w, c, op) => targetsOf(w, c, op)[0] ?? null;
  * @typedef {{ type: import('./types.js').DamageType, amount: number, times: number, element: string, ep: number, splash?: import('./types.js').Splash | null,
  *   aftershock?: number, chain?: import('./types.js').Chain | null, ranged?: boolean, hitStatus?: { key: import('./status.js').StatusKey, seconds: number, value?: number, prob?: number } | null,
  *   hitDebuff?: { seconds: number, mods: Record<string, number> }, displace?: { pull: boolean, force: number, along?: boolean },
- *   skill?: boolean, hit?: 'splash' | 'chain' | 'aftershock', mark?: number, frozen?: number, packed?: { cnt: number, atk: number }, aftershocks?: number, ignoreDef?: number, ignoreSelect?: boolean }} Load
+ *   skill?: boolean, hit?: 'splash' | 'chain' | 'aftershock', mark?: number, frozen?: number, packed?: { cnt: number, atk: number }, aftershocks?: number, ignoreDef?: number, ignoreSelect?: boolean,
+ *   facScale?: number, plain?: number, atkMul?: number }} Load
  */
 
 /**
@@ -258,16 +259,21 @@ const atkOf = (a, pct) => (pct ? computeStats({ base: a.base, buffs: [...a.buffs
 
 /**
  * What an attack carries to each target (攻击-2): its type, the attack × 攻击力倍率 (the attack's × the attacker's, 伤害-6),
- * hits, 元素损伤. @param {Unit} a @param {AttackMods} mods @returns {Load}
+ * hits, 元素损伤. `facScale` keeps the attack before `scale` (`plain`) and the attacker's 倍率 (`atkMul`) so a facility
+ * hit can use `facScale` in place of `scale` (敌能-122). @param {Unit} a @param {AttackMods} mods @returns {Load}
  */
-const loadOf = (a, mods) => ({
-  type: mods.type ?? a.base.dmgType, amount: atkOf(a, mods.atkPct) * mods.scale * statsOf(a).atkScaleMul, times: mods.times, element: mods.element ?? '',
-  ep: (mods.ep ?? 0) + (mods.epScale ? statsOf(a).atk * mods.epScale : 0),
-  ...(mods.hitStatus ? { hitStatus: mods.hitStatus } : {}), ...(mods.hitDebuff ? { hitDebuff: mods.hitDebuff } : {}), ...(mods.displace ? { displace: mods.displace } : {}), ...(mods.skill ? { skill: true } : {}), ...(mods.mark ? { mark: mods.mark } : {}),
-  ...(mods.frozen ? { frozen: mods.frozen } : {}), ...(mods.ignoreDef ? { ignoreDef: mods.ignoreDef } : {}),
-  ...(mods.splash ? { splash: mods.splash } : {}),
-  ...(mods.ignoreSelect ? { ignoreSelect: true } : {}),
-});
+const loadOf = (a, mods) => {
+  const plain = atkOf(a, mods.atkPct), atkMul = statsOf(a).atkScaleMul;
+  return {
+    type: mods.type ?? a.base.dmgType, amount: plain * mods.scale * atkMul, times: mods.times, element: mods.element ?? '',
+    ep: (mods.ep ?? 0) + (mods.epScale ? statsOf(a).atk * mods.epScale : 0),
+    ...(mods.hitStatus ? { hitStatus: mods.hitStatus } : {}), ...(mods.hitDebuff ? { hitDebuff: mods.hitDebuff } : {}), ...(mods.displace ? { displace: mods.displace } : {}), ...(mods.skill ? { skill: true } : {}), ...(mods.mark ? { mark: mods.mark } : {}),
+    ...(mods.frozen ? { frozen: mods.frozen } : {}), ...(mods.ignoreDef ? { ignoreDef: mods.ignoreDef } : {}),
+    ...(mods.splash ? { splash: mods.splash } : {}),
+    ...(mods.ignoreSelect ? { ignoreSelect: true } : {}),
+    ...(typeof mods.facScale === 'number' ? { facScale: mods.facScale, plain, atkMul } : {}),
+  };
+};
 
 /**
  * The units an enemy's tile splash reaches (敌能-7, 敌能-8): those it may attack on the target's tile and the four tiles
@@ -286,16 +292,29 @@ function areaOf(w, a, t, area, through = false) {
 }
 
 /**
+ * 敌能-122: a 守御-3 facility (`t.fac`) takes this attack at `facScale` in place of `scale`. The extra fields leave
+ * the load, so a projectile does not carry them into the state hash.
+ * @param {Unit} t @param {Load} load @returns {Load}
+ */
+function facilityHit(t, load) {
+  if (typeof load.facScale !== 'number') return load;
+  const { facScale, plain, atkMul, ...rest } = load;
+  if (!t.fac || typeof plain !== 'number' || typeof atkMul !== 'number') return rest;
+  return { ...rest, amount: plain * facScale * atkMul };
+}
+
+/**
  * An operator's attack against one target (职业-8, 职业-11, 职业-12, 职业-14): its amount × the trait's 倍率 for enemies
  * it does not block or its summons block, its zone's 倍率 and its funnel's, and the trait's splash, aftershock and chain;
- * an enemy's as it is.
+ * an enemy's as it is, with a facility's 倍率 already in place of `scale` (敌能-122).
  * @param {World} w @param {Content} c @param {Unit} a @param {Unit} t @param {Load} load @returns {Load}
  */
 function loadFor(w, c, a, t, load) {
-  if (a.kind !== KIND.OPERATOR) return load;
+  const hit = facilityHit(t, load);
+  if (a.kind !== KIND.OPERATOR) return hit;
   const tr = traitOf(c, a);
   return {
-    ...load, amount: load.amount * traitScale(w, c, a, t) * funnelScale(c, a, t), splash: tr.skillSplash && inSkill(a) ? tr.skillSplash : tr.splash, aftershock: tr.aftershock, chain: tr.chain,
+    ...hit, amount: hit.amount * traitScale(w, c, a, t) * funnelScale(c, a, t), splash: tr.skillSplash && inSkill(a) ? tr.skillSplash : tr.splash, aftershock: tr.aftershock, chain: tr.chain,
     ...(tr.aftershocks !== 1 ? { aftershocks: tr.aftershocks } : {}),
     ...(tr.packed ? { packed: tr.packed } : {}),
   };

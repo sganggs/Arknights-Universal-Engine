@@ -70,6 +70,7 @@ import { passiveBehaviors, passiveOwns } from './passive.js';
 import { monumentBehaviors } from './monuments.js';
 import { defdownBehaviors, defdownOwns, acidShape } from './defdown.js';
 import { knightBehaviors, knightOwns } from './knights.js';
+import { scaleShape } from './enhance.js';
 import { lassoBehaviors } from './lasso.js';
 import { blinkBehaviors, blinkOwns } from './blink.js';
 import { fieldAuraBehaviors, healAuraOwns } from './fieldaura.js';
@@ -444,6 +445,7 @@ export const FOE_NEEDS = Object.freeze({
   // 眩晕击 (敌能-83). The data already has atk_scale and stun; `page` marks this page. 配重投石机 has no page, so no marker.
   StunAttack: Object.freeze(['page']),
   // 沸血的标记在这里（敌能-71）。`buff` 的两种形状各带自己的标记，由 knightOwns 认（敌能-71 的 page、敌能-85 的 zeal）。
+  // `{ atk_scale }` is 敌能-122's: no `page`, whole by its shape (WHOLE_SHAPES), not by this list.
   enhance: Object.freeze(['page']),
   // 量产巨像 occupies 2 block counts (敌能-120). Without `block` the page-only talent stays uncovered (关卡-2).
   blockSlots: Object.freeze(['block']),
@@ -472,17 +474,18 @@ const SHAPE_OWNERS = Object.freeze([rebornShape, boarOwns, elementHitOwns, takeO
 
 /** Shapes whole in themselves, whatever FOE_NEEDS lists for their name (关卡-2). @type {readonly ((k: string, bb: Record<string, unknown>) => boolean)[]} */
 const WHOLE_SHAPES = Object.freeze([nestPulseOwns, cartBoom, noPeriodic, (k, bb) => k === 'boom' && ballBoom(bb), (k, bb) => k === 'Shield' && heteroShield(bb), (k, bb) => k === 'defdown' && acidShape(bb),
-  (k, bb) => k === 'rush' && chargeShape(bb), (k, bb) => k === 'Shield' && broShield(bb)]);
+  (k, bb) => k === 'rush' && chargeShape(bb), (k, bb) => k === 'Shield' && broShield(bb), (k, bb) => k === 'enhance' && scaleShape(bb)]);
 
 /** FOE_NEEDS's keys all numbers, a `Boom` with `heal_scale` its page marker (敌能-58). @param {string} k @param {Record<string, unknown>} bb */
 const needsMet = (k, bb) => (healBoom(k, bb) ? typeof bb.page === 'number' : (FOE_NEEDS[/** @type {keyof typeof FOE_NEEDS} */ (k)] ?? []).every((n) => typeof bb[n] === 'number'));
 
 /**
  * Whether an ability has what its behaviour needs (关卡-2). A shared talent name only counts when its blackboard is the
- * shape that behaviour understands (敌能-38, 敌能-47, 敌能-63, 敌能-65, 敌能-66, 敌能-67, 敌能-68, 敌能-70, 敌能-71, 敌能-73, 敌能-74, 敌能-75, 敌能-77, 敌能-78, 敌能-79, 敌能-81, 敌能-82, 敌能-83, 敌能-85, 敌能-86, 敌能-118) — an `aura` only with 敌能-28's stack cap (敌能-45), as a ball's (足球-2) or a 守门位's (足球-13); anything else
+ * shape that behaviour understands (敌能-38, 敌能-47, 敌能-63, 敌能-65, 敌能-66, 敌能-67, 敌能-68, 敌能-70, 敌能-71, 敌能-73, 敌能-74, 敌能-75, 敌能-77, 敌能-78, 敌能-79, 敌能-81, 敌能-82, 敌能-83, 敌能-85, 敌能-86, 敌能-118, 敌能-122) — an `aura` only with 敌能-28's stack cap (敌能-45), as a ball's (足球-2) or a 守门位's (足球-13); anything else
  * stays incomplete. The nest pulse does not need `el`: the page names 神经损伤. A `Boom` with `heal_scale` needs its page
  * marker (敌能-58). The candy cart's `boom` needs no death-blast radius or delay (敌能-82). A ball's `boom` (足球-16),
- * 异质源石虫's `Shield` (敌能-102) and 酸液源石虫's `defdown` (敌能-101) are whole by their shapes.
+ * 异质源石虫's `Shield` (敌能-102) and 酸液源石虫's `defdown` (敌能-101) are whole by their shapes. `{ atk_scale }`'s
+ * `enhance` is whole too (敌能-122): FOE_NEEDS lists 沸血's keys for the name.
  * @param {string} k @param {Record<string, unknown>} bb
  */
 const complete = (k, bb) => SHAPE_OWNERS.every((own) => own(k, bb))
