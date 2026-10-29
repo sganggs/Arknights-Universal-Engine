@@ -103,7 +103,7 @@ export const roleOf = (anim) => (anim === ANIM.MOVE ? 'move' : anim === ANIM.ATT
 export const operatorFacing = (facing, m) => ({ side: facing.side === 'back' && m.back && (m.backDies || !m.dying) ? 'back' : 'front', flip: facing.flip });
 
 /**
- * An enemy's mirroring (渲染-4): facing left after moving left, right after moving right, unchanged otherwise.
- * @param {boolean} left the facing so far @param {number} dx the move since the last frame
+ * An enemy's mirroring (渲染-4): the simulation's left or right (敌能-90, the render state's `lr`), mirrored when left.
+ * @param {number | undefined} lr −1 left, 1 right
  */
-export const enemyFacing = (left, dx) => (dx < -1e-9 ? true : dx > 1e-9 ? false : left);
+export const enemyFacing = (lr) => lr === -1;

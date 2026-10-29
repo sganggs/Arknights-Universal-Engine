@@ -10,18 +10,18 @@ import {
 } from '../src/index.js';
 
 const SEED = 20261011;
-const fixture = JSON.parse(readFileSync(new URL('fixtures/view-v6.json', import.meta.url), 'utf8'));
+const fixture = JSON.parse(readFileSync(new URL('fixtures/view-v7.json', import.meta.url), 'utf8'));
 
-test('render state v6: the layout is the fixture, number by number, and reads back', () => {
-  assert.equal(VIEW_VERSION, 6);
+test('render state v7: the layout is the fixture, number by number, and reads back', () => {
+  assert.equal(VIEW_VERSION, 7);
   const a = writeView(fixture.view);
   assert.deepEqual(Array.from(a), fixture.numbers);
   assert.deepEqual(readView(a), fixture.view);
-  assert.equal(viewLength(3, 2), fixture.numbers.length);
+  assert.equal(viewLength(4, 2), fixture.numbers.length);
 });
 
 test('render state: reuses a long enough array, refuses a wrong version or a short array', () => {
-  const big = new Float64Array(72), a = writeView(fixture.view, big);
+  const big = new Float64Array(96), a = writeView(fixture.view, big);
   assert.equal(a, big);
   assert.notEqual(writeView(fixture.view, new Float64Array(3)), null);
   assert.throws(() => readView(Float64Array.from([1, 0, 0, 0])), RangeError);

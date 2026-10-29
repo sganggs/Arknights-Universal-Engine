@@ -278,11 +278,11 @@ class Effects {
     });
   }
 
-  /** The units' places: operators face by their direction, enemies by how they moved. @param {import('@aue/schema').View} view */
+  /** The units' places: operators face by their direction, enemies by their left or right (敌能-90), devices by how they moved. @param {import('@aue/schema').View} view */
   track(view) {
     for (const u of view.units) {
       const old = this.places.get(u.id), feet = toThree(tileWorld(this.level, u.x, u.y, u.z)), op = u.kind === KIND.OPERATOR;
-      const facing = op ? (u.dir === DIR.LEFT ? -1 : 1) : old ? Math.sign(feet[0] - old.feet[0]) || old.facing : 1;
+      const facing = op ? (u.dir === DIR.LEFT ? -1 : 1) : u.kind === KIND.ENEMY ? (u.lr === -1 ? -1 : 1) : old ? Math.sign(feet[0] - old.feet[0]) || old.facing : 1;
       this.places.set(u.id, { feet, facing, dir: op ? DIR_VEC[u.dir] ?? [1, 0, 0] : [facing, 0, 0], kind: u.kind, running: u.skill === SKILL_STATE.RUNNING, seen: view.frame });
     }
     for (const [id, p] of this.places) if (view.frame - p.seen > 30) this.places.delete(id);

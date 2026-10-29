@@ -1,5 +1,5 @@
 {
-  "$comment": "Render state version 6, written by hand from the layout in ADR 0053 (version 2 adds each unit's SP, SP cost, skill state and skill frames left; version 3 its statuses, STATUS_BIT or-ed; version 4 its element, element value share and burst flag; version 5 the unit kind DEVICE, here the third unit; version 6 a 傀儡师's form, the second unit in its 替身). A layout change must bump VIEW_VERSION and replace this file.",
+  "$comment": "Render state version 7, written by hand from the layout in ADR 0053 (version 2 adds each unit's SP, SP cost, skill state and skill frames left; version 3 its statuses, STATUS_BIT or-ed; version 4 its element, element value share and burst flag; version 5 the unit kind DEVICE, here the third unit; version 6 a 傀儡师's form, the second unit in its 替身; version 7 an enemy's left or right, the fourth unit, an enemy facing left). A layout change must bump VIEW_VERSION and replace this file.",
   "view": {
     "frame": 42,
     "players": [
@@ -32,7 +32,8 @@
         "element": 0,
         "ep": 1,
         "burst": 0,
-        "form": 0
+        "form": 0,
+        "lr": 0
       },
       {
         "id": 3,
@@ -53,7 +54,8 @@
         "element": 3,
         "ep": 0.375,
         "burst": 0,
-        "form": 2
+        "form": 2,
+        "lr": 0
       },
       {
         "id": 2,
@@ -74,14 +76,37 @@
         "element": 1,
         "ep": 0.5,
         "burst": 1,
-        "form": 0
+        "form": 0,
+        "lr": 0
+      },
+      {
+        "id": 7,
+        "kind": 1,
+        "owner": -1,
+        "x": 2.75,
+        "y": 1,
+        "z": 0,
+        "dir": 3,
+        "hp": 2400,
+        "maxHp": 3000,
+        "anim": 1,
+        "sp": -1,
+        "spCost": 0,
+        "skill": 0,
+        "skillLeft": -1,
+        "status": 0,
+        "element": 0,
+        "ep": 1,
+        "burst": 0,
+        "form": 0,
+        "lr": -1
       }
     ]
   },
   "numbers": [
-    6,
+    7,
     42,
-    3,
+    4,
     2,
     8,
     10,
@@ -106,6 +131,7 @@
     1,
     0,
     0,
+    0,
     3,
     0,
     1,
@@ -125,6 +151,7 @@
     0.375,
     0,
     2,
+    0,
     2,
     2,
     -1,
@@ -143,6 +170,27 @@
     1,
     0.5,
     1,
-    0
+    0,
+    0,
+    7,
+    1,
+    -1,
+    2.75,
+    1,
+    0,
+    3,
+    2400,
+    3000,
+    1,
+    -1,
+    0,
+    0,
+    -1,
+    0,
+    0,
+    1,
+    0,
+    0,
+    -1
   ]
 }

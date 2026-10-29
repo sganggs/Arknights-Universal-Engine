@@ -79,7 +79,7 @@ export function follow(f, u, frame, key = '') {
   if (role === 'attack' && !held) play(f, 'attack', frame, 1);
   else if (role !== f.role && !(held && role === 'idle')) play(f, role, frame, 1);
   const back = { back: !!f.sides.back, backDies: !!f.roles.back?.die, dying: role === 'die' };
-  const facing = u.kind === KIND.OPERATOR ? operatorFacing(faced(f, u, key), back) : { side: 'front', flip: enemyFacing(f.flip, u.x - f.x) };
+  const facing = u.kind === KIND.OPERATOR ? operatorFacing(faced(f, u, key), back) : { side: 'front', flip: enemyFacing(u.lr) };
   // A turn is animated (渲染-4): the model squeezes edge-on and opens again over TURN_FRAMES — 4 frames counted from the
   // game — its skeleton swapping on the narrowest frame. Only a real change of side or mirror starts one.
   if (facing.side !== f.side || facing.flip !== f.flip) {

@@ -1,5 +1,5 @@
-// The render state, version 6 (ADR 0053; version 2 adds each unit's skill, version 3 its statuses, version 4 its element, version 5 the unit kind DEVICE,
-// version 6 a 傀儡师's form): one Float64Array per simulated frame,
+// The render state, version 7 (ADR 0053; version 2 adds each unit's skill, version 3 its statuses, version 4 its element, version 5 the unit kind DEVICE,
+// version 6 a 傀儡师's form, version 7 an enemy's left or right): one Float64Array per simulated frame,
 // transferred from the worker to the main thread without a copy. Layout: the header, then each player's fields, then
 // each unit's fields.
 // Positions are in tile coordinates of the level: x = column, y = row (row 0 the nearest), z = the height level of the
@@ -9,16 +9,16 @@
 // the statuses it has (STATUS_BIT, or-ed); `element` its 当前损伤元素 (ELEMENT; NONE when every element value is full),
 // `ep` that element's value as a share of the maximum — while a burst locks it, the share of the burst gone by —, and
 // `burst` 1 during a burst; `form` a 傀儡师's form (FORM: its own, switching to its 替身, the 替身, switching back; 0 for any other
-// unit).
+// unit); `lr` an enemy's left or right facing in the simulation (敌能-90: −1 left, 1 right; 0 for a unit that is not an enemy).
 
-export const VIEW_VERSION = 6;
+export const VIEW_VERSION = 7;
 
 /** The header fields, in order. */
 export const VIEW_HEADER = Object.freeze(['version', 'frame', 'units', 'players']);
 /** Each player's fields, in order. */
 export const VIEW_PLAYER = Object.freeze(['life', 'cost']);
 /** Each unit's fields, in order. */
-export const VIEW_UNIT = Object.freeze(['id', 'kind', 'owner', 'x', 'y', 'z', 'dir', 'hp', 'maxHp', 'anim', 'sp', 'spCost', 'skill', 'skillLeft', 'status', 'element', 'ep', 'burst', 'form']);
+export const VIEW_UNIT = Object.freeze(['id', 'kind', 'owner', 'x', 'y', 'z', 'dir', 'hp', 'maxHp', 'anim', 'sp', 'spCost', 'skill', 'skillLeft', 'status', 'element', 'ep', 'burst', 'form', 'lr']);
 /** A 傀儡师's form in the render state (职业-15): its own, switching to its 替身, the 替身, switching back. */
 export const FORM = Object.freeze({ OWN: 0, SWITCH_IN: 1, DOLL: 2, SWITCH_OUT: 3 });
 
@@ -42,7 +42,7 @@ export const NO_SKILL = STATUS_BIT.stun | STATUS_BIT.freeze | STATUS_BIT.sleep |
 /** @typedef {{ life: number, cost: number }} ViewPlayer */
 /**
  * @typedef {{ id: number, kind: number, owner: number, x: number, y: number, z: number, dir: number, hp: number, maxHp: number, anim: number,
- *   sp: number, spCost: number, skill: number, skillLeft: number, status: number, element: number, ep: number, burst: number, form?: number }} ViewUnit
+ *   sp: number, spCost: number, skill: number, skillLeft: number, status: number, element: number, ep: number, burst: number, form?: number, lr?: number }} ViewUnit
  */
 /** @typedef {{ frame: number, players: ViewPlayer[], units: ViewUnit[] }} View */
 
