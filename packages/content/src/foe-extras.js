@@ -344,4 +344,7 @@ export const FOE_EXTRAS = Object.freeze({
   // The same three keys on the other 补给员 are not this skill, and stay uncovered (关卡-2).
   enemy_4004_muvltr: { skills: { boomb: { soda: 1 } }, source: `${PRTS}%E8%B5%9B%E5%9C%BA%E8%A1%A5%E7%BB%99%E8%BD%A6&oldid=361382` },
   enemy_4004_muvltr_2: { skills: { boomb: { soda: 1 } }, source: `${PRTS}%E2%80%9C%E5%A4%A9%E8%BD%A6%E6%95%A3%E8%8A%B1%E2%80%9D%E8%B5%9B%E5%9C%BA%E8%A1%A5%E7%BB%99%E8%BD%A6&oldid=361313` },
+  // 量产巨像 / 改进型量产巨像: 占用2个阻挡数. The number is not in the enemy data (敌能-120). Weak is the beam and gets no behaviour.
+  enemy_1240_ltgint: { talents: { blockSlots: { block: 2 } }, source: `${PRTS}%E9%87%8F%E4%BA%A7%E5%B7%A8%E5%83%8F&oldid=353633` },
+  enemy_1240_ltgint_2: { talents: { blockSlots: { block: 2 } }, source: `${PRTS}%E6%94%B9%E8%BF%9B%E5%9E%8B%E9%87%8F%E4%BA%A7%E5%B7%A8%E5%83%8F&oldid=371221` },
 });
