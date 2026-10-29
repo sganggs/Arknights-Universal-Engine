@@ -344,4 +344,8 @@ export const FOE_EXTRAS = Object.freeze({
   // The same three keys on the other 补给员 are not this skill, and stay uncovered (关卡-2).
   enemy_4004_muvltr: { skills: { boomb: { soda: 1 } }, source: `${PRTS}%E8%B5%9B%E5%9C%BA%E8%A1%A5%E7%BB%99%E8%BD%A6&oldid=361382` },
   enemy_4004_muvltr_2: { skills: { boomb: { soda: 1 } }, source: `${PRTS}%E2%80%9C%E5%A4%A9%E8%BD%A6%E6%95%A3%E8%8A%B1%E2%80%9D%E8%B5%9B%E5%9C%BA%E8%A1%A5%E7%BB%99%E8%BD%A6&oldid=361313` },
+  // 长臂投手 / 「精准制导」长臂投手: 无法被阻挡 (敌能-69's unblockable) and 不会攻击飞行单位 (敌能-33's noFly).
+  // The 200% against 设施 and the attack order are not these markers. 铁头前锋's pages say neither sentence (敌能-121).
+  enemy_4010_mubsbl: { talents: { unblockable: {}, noFly: {} }, source: `${PRTS}%E9%95%BF%E8%87%82%E6%8A%95%E6%89%8B&oldid=380514` },
+  enemy_4010_mubsbl_2: { talents: { unblockable: {}, noFly: {} }, source: `${PRTS}%E2%80%9C%E7%B2%BE%E5%87%86%E5%88%B6%E5%AF%BC%E2%80%9D%E9%95%BF%E8%87%82%E6%8A%95%E6%89%8B&oldid=380515` },
 });
