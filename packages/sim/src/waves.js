@@ -13,7 +13,7 @@ import { defendStart, defendEnd, cutDefence, mayBegin } from './fortress.js';
 import { placeDevice, withdrawDevice } from './devices.js';
 import { placePredefined, isPredefinedOperator, withdrawPredefined } from './predefined.js';
 import { kickoffWave } from './football.js';
-import { actingGroups } from './cup.js';
+import { actingGroups, waveStart } from './cup.js';
 
 /** @typedef {import('./types.js').World} World @typedef {import('./types.js').Content} Content */
 /** @typedef {import('./types.js').Wave} Wave @typedef {import('./types.js').WaveAction} WaveAction @typedef {import('./types.js').Schedule} Schedule */
@@ -110,7 +110,8 @@ function beginWave(w, c, at) {
   if (!wave) { w.sched = { ...s, wave: next, step: 'done', at }; return; }
   const all = actionsOf(wave);
   const chosen = groupsOf(wave).map((ids) => ids[weightedPick(w, ids.map((i) => all[i].weight ?? 1))]);
-  w.sched = { wave: next, step: 'pre', at, frag: 0, fragAt: -1, fired: [], chosen };
+  // a 锦标 penalty round starts after its gap (锦标-4)
+  w.sched = { wave: next, step: 'pre', at: waveStart(w, at), frag: 0, fragAt: -1, fired: [], chosen };
   w.events.push({ type: 'wave', index: next });
   if (w.fortress) defendStart(w, c, next, spawnTotal(w, c, wave, w.sched));
 }

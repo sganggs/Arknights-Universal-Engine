@@ -63,7 +63,7 @@ test('[渲染-2] the figure of an operator or an enemy stands south of and above
 });
 
 test('[渲染-21] a flying enemy is drawn in the air over its shadow on the ground; its lift for the bars', () => {
-  const u = createUnits(textures(['ui:shadow', unitTextureKey(1, 'bat')]), new Map([['drone', { front: tinyModel() }]]), new Set(), new Map(), new Set(['drone', 'bat']));
+  const u = createUnits(textures(['ui:shadow', unitTextureKey(1, 'bat')]), new Map([['drone', { front: tinyModel() }]]), new Set(), new Map(), { flyers: new Set(['drone', 'bat']) });
   u.update(view(1, [{ id: 1, kind: 1, x: 1, y: 1, z: 0 }, { id: 2, kind: 1, x: 2, y: 1, z: 0 }]), { 1: 'drone', 2: 'bat' }, level, 0);
   const [drone, bat] = /** @type {THREE.Object3D[]} */ (u.object.children), [sd, sb] = /** @type {THREE.Mesh[]} */ (u.shadows.children);
   assert.ok(Math.abs(drone.position.y - sd.position.y - GRAPHIC.up - HOVER) < 1e-12, 'a figure: its graphic, lifted');
@@ -93,4 +93,15 @@ test('[渲染-22] every operator on the field has the direction indicator at its
   bare.update(view(1, [{ id: 1, kind: 0, x: 1, y: 1, z: 0 }]), { 1: 'guard' }, level, 0);
   assert.equal(bare.indicators.children.length, 0, 'no textures: none');
   bare.dispose();
+});
+
+test('[渲染-28] a unit whose look is an effect: no figure, card or block, only its shadow on the ground; drawn for its bars', () => {
+  const u = createUnits(textures(['ui:shadow', unitTextureKey(1, 'wind'), unitTextureKey(2, 'post')]), new Map([['wind', { front: tinyModel() }]]), new Set(), new Map(),
+    { flyers: new Set(['wind']), looks: new Set(['wind', 'post']) });
+  u.update(view(1, [{ id: 1, kind: 1, x: 1, y: 1, z: 0 }, { id: 2, kind: 2, x: 2, y: 1, z: 0 }]), { 1: 'wind', 2: 'post' }, level, 0);
+  assert.deepEqual([u.object.children.length, u.shadows.children.length, u.count()], [0, 2, 0], 'nothing drawn here but the shadows');
+  assert.deepEqual([u.shows(1), u.shows(2), u.lift(1)], [true, true, 0], 'shown, and a flyer of them on the ground');
+  u.update(view(2, [{ id: 2, kind: 2, x: 2, y: 1, z: 0 }]), {}, level, 0);
+  assert.deepEqual([u.shows(1), u.shadows.children.length], [false, 1], 'gone: its shadow goes');
+  u.dispose();
 });

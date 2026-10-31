@@ -51,10 +51,14 @@ function carry(ctx, speed) {
   if (!ctx.self.buffs.some((b) => b.key === CARRY)) ctx.addBuff(ctx.self, { key: CARRY, flags: { noAttack: true }, mods: { moveMul: speed } });
 }
 
-/** Able to spend the barrel this frame (敌能-62): blocked, able to act, not silenced, not 缴械 while blocked. @param {FoeContext} ctx */
+/**
+ * Able to spend the barrel this frame (敌能-62): blocked, able to act, not silenced, not 缴械 while blocked, not feared —
+ * 恐惧 stops this frame's normal attack (敌人攻击-1), and the barrel takes that attack's place, so it waits too.
+ * @param {FoeContext} ctx
+ */
 function maySmash(ctx) {
   const s = ctx.stats(ctx.self);
-  return ctx.blocked && !s.disabled && !s.flags.silence && !s.flags.disarmedCombat;
+  return ctx.blocked && !s.disabled && !s.flags.silence && !s.flags.disarmedCombat && !s.flags.fear;
 }
 
 /**

@@ -21,8 +21,8 @@ import { refNode } from '../node.js';
  * @typedef {{ wave: number, waves: number, out: number, total: number, left: number, last: boolean, damage: number }} FortressTask
  */
 /**
- * 阵地足球's score (界面-41): our goals, theirs, the seconds left of the match.
- * @typedef {{ home: number, away: number, left: number }} FootballTask
+ * 阵地足球's score (界面-41): our goals, theirs, the seconds left of the match; in 阵地足球锦标 its own part (界面-42).
+ * @typedef {{ home: number, away: number, left: number, cup?: import('./cup.js').CupTask }} FootballTask
  */
 /**
  * What the co-op top bar shows: this seat and the mate, the speed the battle runs at, whether it is paused, the share
@@ -249,8 +249,10 @@ const FOOTBALL = 'panel_cooperate_football_status', LEAD_CLIP = 'multiplay_battl
 function showFootball(scr, root, status, f) {
   const panel = scr.one(FOOTBALL, root);
   if (!panel) return;
-  panel.active = true;
   if (status) status.active = false;
+  // 阵地足球锦标 has its own top bar (界面-42)
+  panel.active = !f.cup;
+  if (f.cup) return;
   scr.text('text_score_ally', String(f.home), panel);
   scr.text('text_score_enemy', String(f.away), panel);
   scr.text('text_footbal_timer', clockText(f.left), panel);
