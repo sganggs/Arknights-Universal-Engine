@@ -57,6 +57,7 @@ import { avalancheBehaviors, avalancheOwns } from './avalanche.js';
 import { crossBehaviors, crossOwns } from './crossroad.js';
 import { absentBehaviors, absentOwns } from './absent.js';
 import { tyrantBehaviors } from './tyrant.js';
+import { colossusBehaviors } from './colossus.js';
 import { pengBehaviors } from './peng.js';
 import { bombardBehaviors } from './bombard.js';
 import { templarBehaviors } from './templar.js';
@@ -308,6 +309,7 @@ export const foeBehaviors = Object.freeze({
   ...mirrorBehaviors,
   ...lancerBehaviors,
   ...tyrantBehaviors,
+  ...colossusBehaviors,
   ...c4Behaviors,
   ...glowBehaviors,
   ...helmKnightBehaviors,
@@ -443,6 +445,8 @@ export const FOE_NEEDS = Object.freeze({
   StunAttack: Object.freeze(['page']),
   // 沸血的标记在这里（敌能-71）。`buff` 的两种形状各带自己的标记，由 knightOwns 认（敌能-71 的 page、敌能-85 的 zeal）。
   enhance: Object.freeze(['page']),
+  // 量产巨像 occupies 2 block counts (敌能-120). Without `block` the page-only talent stays uncovered (关卡-2).
+  blockSlots: Object.freeze(['block']),
 });
 
 /**
