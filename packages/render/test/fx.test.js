@@ -253,3 +253,29 @@ test('[渲染-27] 锦标 lightning on a ball: its warning kept on the ball, then
   assert.deepEqual([on().includes('burn'), fx.storms.size], [false, 0], 'over');
   fx.dispose();
 });
+
+test('[渲染-28] a unit drawn by an effect: its look while on the field, following it; its end where it left instead of the death effect', () => {
+  const lasting = () => ({ d: 0.5, ps: [sys({ loop: true, rate: C(5), bursts: [] })], tr: [] }), once = () => ({ d: 0.5, ps: [sys()], tr: [] });
+  const data = { by: { wind: { b: 'loop', e: 'end' }, ghost: { b: 'missing' } }, named: { die_enemy: 'die' }, fx: { loop: { ...lasting(), sl: 2 }, end: once(), die: once() } };
+  const fx = createEffects({ data, textures: new Map([['a', new THREE.Texture()]]) }, { width: 4, height: 2 });
+  const foe = (/** @type {number} */ id, /** @type {number} */ x) => ({ id, kind: KIND.ENEMY, owner: -1, x, y: 0, z: 0, dir: DIR.RIGHT, hp: 1, maxHp: 1, anim: 0, sp: -1, spCost: 0, skill: 0, skillLeft: -1, status: 0 });
+  const cam = new THREE.PerspectiveCamera();
+  cam.updateMatrixWorld();
+  const on = () => fx.live.filter((i) => !i.stopped).map((i) => Object.keys(data.fx).find((k) => data.fx[/** @type {keyof typeof data.fx} */ (k)] === i.e)).sort();
+  fx.update(/** @type {any} */ ({ frame: 1, players: [], units: [foe(5, 1), foe(6, 2)] }), { 5: 'wind', 6: 'ghost' }, []);
+  assert.deepEqual([on(), fx.looks.size], [['loop'], 1], 'a look the pack has; none for the other');
+  const look = /** @type {any} */ (fx.looks.get(5)).inst, o0 = look.R.o[0];
+  fx.step(0.1, cam);
+  assert.ok(Math.abs(look.R.o[1] - FX.chest * fx.up[1]) < 1e-9, 'lifted by its spawn location (2: the chest)');
+  fx.update(/** @type {any} */ ({ frame: 2, players: [], units: [foe(5, 2), foe(6, 2)] }), {}, []);
+  fx.step(0.1, cam);
+  assert.ok(look.R.o[0] > o0, 'it follows the unit');
+  fx.update(/** @type {any} */ ({ frame: 3, players: [], units: [] }), {}, [{ type: 'death', id: 5 }, { type: 'death', id: 6 }]);
+  assert.ok(look.stopped && fx.looks.size === 0, 'gone: the look stops');
+  assert.deepEqual(on(), ['die', 'end'], 'its end where it left, the death effect only for the other');
+  const end = fx.live.find((i) => i.e === data.fx.end);
+  assert.ok(end && Math.abs(end.R.o[0] - look.R.o[0]) < 1e-9, 'at its last place');
+  fx.update(/** @type {any} */ ({ frame: 4, players: [], units: [foe(5, 3)] }), {}, []);
+  assert.equal(fx.looks.size, 1, 'back on the field: its look again');
+  fx.dispose();
+});

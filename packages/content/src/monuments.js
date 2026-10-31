@@ -39,8 +39,8 @@ function stage(name, parts) {
 }
 
 /**
- * 无法被阻挡 (敌能-69), the page-only talent on 狂奔丰碑 (`free` is a data talent name, so not that). Its own key, so it does not share a buff with a stage
- * (状态-2). Not `noAttack`: whether an attack-type NONE enemy attacks is not this family.
+ * 无法被阻挡 (敌能-69), the page-only talent on 狂奔丰碑 and on the pages of 敌能-117 (`free` is a data talent name, so not that). Its own key, so it does not share a buff with a stage
+ * (状态-2). Not `noAttack`: a page that also says 不进行普通攻击 gets `NoAttack` as well (敌人攻击-1).
  * @type {FoeBehavior}
  */
 const unblockable = Object.freeze({

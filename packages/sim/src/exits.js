@@ -10,13 +10,14 @@ import { KIND } from '@aue/schema';
  */
 
 /**
- * Notes a leaving enemy or operator, and only once some ability has asked (敌能-63). Devices are not 敌人/干员.
- * A missing log is left missing.
+ * Notes a leaving enemy or operator, and only once some ability has asked (敌能-63). Devices are not 敌人/干员, and
+ * neither is a neutral unit: it is a camp of its own (INF-0468). A missing log is left missing.
  * @param {World} w @param {Unit} u
  */
 export function noteExit(w, u) {
   if (!w.exits) return;
   if (u.kind !== KIND.ENEMY && u.kind !== KIND.OPERATOR) return;
+  if (u.base.neutral === true) return;
   w.exits.push({ id: u.id, x: u.x, y: u.y, kind: u.kind });
 }
 

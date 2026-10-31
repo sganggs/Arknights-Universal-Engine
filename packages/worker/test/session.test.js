@@ -79,21 +79,27 @@ test('[足球-6] [足球-14] in 阵地足球 the status has the match: the team,
   assert.deepEqual(st.football, { team: 'normal', home: 0, away: 0, until: 300 * 30, stamps: 0, balls: [], held: [[]], cover: {}, spots: [] });
 });
 
-test('[锦标-2] [锦标-4] a 锦标 match\'s status has its stadium, and in a penalty shootout the round under way and whose it is', () => {
+test('[锦标-2] [锦标-4] [锦标-7] [界面-42] a 锦标 match\'s status: its stadium, the sides, the kickoff wait; in a penalty shootout the round, whose, whether under way, the results', () => {
   const c = /** @type {any} */ (tinyContent());
-  c.level.football = { time: 300, wait: 0, stamps: [1], ahead: [[0, 0]], weights: { 0: [1] }, teams: [{ name: 'normal', weight: 1, players: {} }], roles: {},
-    cup: { moveSpeed: 1.2, mercy: -1, stadium: { name: 'winter', moveMul: 1, ice: 0.3 } } };
+  c.level.football = { time: 300, wait: 3, stamps: [1], ahead: [[0, 0]], weights: { 0: [1] }, teams: [{ name: 'normal', weight: 1, players: {} }], roles: {},
+    cup: { moveSpeed: 1.2, mercy: -1, stadium: { name: 'winter', moveMul: 1, ice: 0.3 }, sides: { ours: '罗德岛队', theirs: '业余组' },
+      icons: { ours: 'act1football_teamicon_1', theirs: 'act1football_teamicon_3' } } };
   const r = rig(c);
   r.session.start({ url: 'ws://x', seat: 0, key: 'k' });
   r.t.run(500, (now) => r.host.tick(now));
   const st = r.posts.filter((p) => p.type === 'frame').at(-1).status;
-  assert.equal(st.football.stadium, 'winter');
+  const w = /** @type {import('@aue/sim').World} */ (r.session.client.world), fs = /** @type {any} */ (w.football);
+  assert.deepEqual([st.football.stadium, st.football.sides, st.football.ready], ['winter', { ours: '罗德岛队', theirs: '业余组' }, fs.kick + 90]);
+  assert.deepEqual(st.football.icons, { ours: 'act1football_teamicon_1', theirs: 'act1football_teamicon_3' });
   assert.equal(st.football.pk, undefined, 'no shootout yet');
-  const w = /** @type {import('@aue/sim').World} */ (r.session.client.world);
-  /** @type {any} */ (w.football).pk = { round: 1, begun: -1, ball: 0, kicked: false, counted: false };
+  fs.pk = { round: 1, begun: -1, ball: 0, kicked: false, counted: false, shots: [1] };
   r.t.run(200, (now) => r.host.tick(now));
   const later = r.posts.filter((p) => p.type === 'frame').at(-1).status;
-  assert.deepEqual(later.football.pk, { round: 1, side: 'theirs' });
+  assert.deepEqual(later.football.pk, { round: 1, side: 'theirs', on: false, until: -1, shots: [1] }, 'between rounds: no countdown');
+  fs.pk = { round: 2, begun: w.frame, ball: 0, kicked: false, counted: false, shots: [1, 0] };
+  r.t.run(100, (now) => r.host.tick(now));
+  const pk = r.posts.filter((p) => p.type === 'frame').at(-1).status.football.pk;
+  assert.deepEqual([pk.side, pk.on, pk.shots], ['ours', true, [1, 0]]);
 });
 
 test('a command reaches the field; the debug state matches the server at the same frame', () => {

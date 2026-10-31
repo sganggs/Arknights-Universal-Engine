@@ -13,6 +13,7 @@ import { createUnitBars } from './unitbars.js';
 import { createStart } from './start.js';
 import { createBanner } from './banner.js';
 import { createGoalBanner } from './goal.js';
+import { createCupHud } from './cup.js';
 import { createResting } from './resting.js';
 
 /** @typedef {import('../node.js').UiNode} UiNode */
@@ -96,10 +97,10 @@ export function createBattleHud(ui, o) {
     tapRef(scr, root, t.pause, () => emit('pause'));
   }
   const menus = createFieldMenus(ui, hud, { cancel: () => emit('cancel'), withdraw: () => emit('withdraw'), skill: () => emit('skill') });
-  const { states, bars, start, banner, goal } = overlays(ui, scr, hud, !!coop, o);
+  const { states, bars, start, banner, goal, cup } = overlays(ui, scr, hud, !!coop, o);
   const flash = costFlasher(scr, hud.cost);
   return {
-    screen: scr, cards, coop, cost, resting, states, bars, start, banner, goal, direction: menus.direction, menu: menus.menu,
+    screen: scr, cards, coop, cost, resting, states, bars, start, banner, goal, cup, direction: menus.direction, menu: menus.menu,
     /** @param {string} name @param {(arg?: string) => void} fn */
     on(name, fn) { (handlers[name] ??= []).push(fn); },
     /** @param {HudState} s */
@@ -107,7 +108,7 @@ export function createBattleHud(ui, o) {
       cards.update(cardViews(o.deck, s), s.selected, ui.canvas.w);
       showCost(scr, hud.cost, s);
       flash(s);
-      showCoop({ coop, resting, cost, banner, goal }, s);
+      showCoop({ coop, resting, cost, banner, goal, cup }, s);
       if (s.states) states.update(s.states);
       if (bars && s.units) bars.update(s.units, [ui.canvas.w, ui.canvas.h]);
       start?.begin();
@@ -118,17 +119,28 @@ export function createBattleHud(ui, o) {
 }
 
 /**
- * A frame of a match of two (界面-15, 界面-39, 界面-41): the co-op top bar, the rest panel, the cost request; in 阵地足球
- * its start banner once and its goal banner as the score goes up.
+ * A frame of a match of two (界面-15, 界面-39, 界面-41, 界面-42): the co-op top bar, the rest panel, the cost request; in
+ * 阵地足球 its start banner once and its goal banner as the score goes up; in 阵地足球锦标 its own battle UI instead.
  * @param {{ coop: { update(s: import('./coop.js').CoopState): void } | null, resting: { update(r: any): void } | null,
  *   cost: { update(c: import('./coopcost.js').CostAsk): void } | null, banner: { football(): void } | null,
- *   goal: { update(f: import('./coop.js').FootballTask): void } | null }} p @param {HudState} s
+ *   goal: { update(f: import('./coop.js').FootballTask): void } | null, cup: ReturnType<typeof createCupHud> }} p @param {HudState} s
  */
 function showCoop(p, s) {
   if (p.coop && s.coop) p.coop.update(s.coop);
   p.resting?.update(s.coop?.resting ?? null);
   if (p.cost && s.coop?.cost) p.cost.update(s.coop.cost);
-  if (s.coop?.football) { p.banner?.football(); p.goal?.update(s.coop.football); }
+  const f = s.coop?.football;
+  if (f) showFootballParts(p, f);
+}
+
+/**
+ * 阵地足球's banners (界面-41), or 阵地足球锦标's battle UI in their place (界面-42).
+ * @param {Parameters<typeof showCoop>[0]} p @param {import('./coop.js').FootballTask} f
+ */
+function showFootballParts(p, f) {
+  if (f.cup) { p.cup?.update({ ...f, cup: f.cup }); return; }
+  p.banner?.football();
+  p.goal?.update(f);
 }
 
 /**
@@ -146,14 +158,15 @@ function coopPanels(ui, coop, emit) {
 
 /**
  * The panels over the battle: the state panels (界面-18), the units' bars when the pack has them (界面-19); in a match
- * of two the start panel given its stage (界面-21), the stage start banner (界面-22) and 阵地足球's goal banner (界面-41).
+ * of two the start panel given its stage (界面-21), the stage start banner (界面-22), 阵地足球's goal banner (界面-41) and
+ * 阵地足球锦标's battle UI (界面-42, its screens opened with its first score).
  * @param {ReturnType<typeof import('../ui.js').createUi>} ui @param {Screen} scr @param {Record<string, any>} hud @param {boolean} coop
  * @param {{ stage?: import('./start.js').StageInfo | null, start?: ReturnType<typeof createStart> }} o the stage, or a start panel already open
  */
 function overlays(ui, scr, hud, coop, o) {
   const start = o.start !== undefined ? o.start : coop && o.stage ? createStart(ui, o.stage) : null;
   return { states: createStates(ui, scr, coop), bars: hud.units ? createUnitBars(scr, hud.units) : null, start, banner: coop ? createBanner(ui) : null,
-    goal: coop ? createGoalBanner(ui) : null };
+    goal: coop ? createGoalBanner(ui) : null, cup: coop ? createCupHud(ui) : null };
 }
 
 /** A tap on the node at a reference (its hit area when it has one). @param {Screen} scr @param {UiNode} root @param {string} ref @param {() => void} fn */
