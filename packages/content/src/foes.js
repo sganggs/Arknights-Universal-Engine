@@ -80,6 +80,7 @@ import { shotbuffBehaviors, shotbuffOwns } from './pathshot.js';
 import { lootBehaviors } from './loot.js';
 import { candycarBehaviors, cartShape, bornCarOwns, cartTick, cartAttack } from './candycar.js';
 import { rockmanBehaviors, stunAttackOwns } from './rockman.js';
+import { pitcherBehaviors } from './pitcher.js';
 import { FOE_EXTRAS } from './foe-extras.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').EnemyDef} EnemyDef */
@@ -358,6 +359,7 @@ export const foeBehaviors = Object.freeze({
   ...avalancheBehaviors,
   ...crossBehaviors,
   ...absentBehaviors,
+  ...pitcherBehaviors,
   rush,
 });
 

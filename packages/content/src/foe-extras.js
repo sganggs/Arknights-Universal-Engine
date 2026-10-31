@@ -363,8 +363,8 @@ export const FOE_EXTRAS = Object.freeze({
   // 天桩-甲 / 失控天桩-甲: ……不进行普通攻击，无法被阻挡 — their 自缚, 失衡免疫, 阻回 and CheckAwake are not this clause
   enemy_1398_dhdcr: { talents: { NoAttack: {}, unblockable: {} }, source: `${PRTS}%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366637` },
   enemy_1398_dhdcr_2: { talents: { NoAttack: {}, unblockable: {} }, source: `${PRTS}%E5%A4%B1%E6%8E%A7%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366638` },
-  // 长臂投手 / 「精准制导」长臂投手: 无法被阻挡 (敌能-69's unblockable) and 不会攻击飞行单位 (敌能-33's noFly).
-  // The 200% against 设施 and the attack order are not these markers. 铁头前锋's pages say neither sentence (敌能-121).
-  enemy_4010_mubsbl: { talents: { unblockable: {}, noFly: {} }, source: `${PRTS}%E9%95%BF%E8%87%82%E6%8A%95%E6%89%8B&oldid=380514` },
-  enemy_4010_mubsbl_2: { talents: { unblockable: {}, noFly: {} }, source: `${PRTS}%E2%80%9C%E7%B2%BE%E5%87%86%E5%88%B6%E5%AF%BC%E2%80%9D%E9%95%BF%E8%87%82%E6%8A%95%E6%89%8B&oldid=380515` },
+  // 长臂投手 / 「精准制导」长臂投手: 无法被阻挡 (敌能-69's unblockable), 不会攻击飞行单位 (敌能-33's noFly) and the 攻击优先度
+  // (敌能-123's moduleFirst). The 200% against 设施 is not these markers. 铁头前锋's pages say none of the three (敌能-121).
+  enemy_4010_mubsbl: { talents: { unblockable: {}, noFly: {}, moduleFirst: {} }, source: `${PRTS}%E9%95%BF%E8%87%82%E6%8A%95%E6%89%8B&oldid=380514` },
+  enemy_4010_mubsbl_2: { talents: { unblockable: {}, noFly: {}, moduleFirst: {} }, source: `${PRTS}%E2%80%9C%E7%B2%BE%E5%87%86%E5%88%B6%E5%AF%BC%E2%80%9D%E9%95%BF%E8%87%82%E6%8A%95%E6%89%8B&oldid=380515` },
 });
