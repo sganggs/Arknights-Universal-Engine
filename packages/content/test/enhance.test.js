@@ -150,14 +150,14 @@ test('[敌能-122] a builder and a rubble pile stay at the normal multiplier', (
   }
 });
 
-test('[敌能-122] a level-0 facility is not hit', () => {
+test('[敌能-122] a level-0 facility takes nothing at 150% or 200%; it is no target for 铁头', () => {
   for (const key of [HEAD, PITCH]) {
     const got = strike(key, WORK, 0);
     assert.equal(got.dev.fac?.level, 0, key);
-    assert.equal(got.attacks.length, 0, key);
-    assert.equal(got.hits.length, 0, key);
+    assert.deepEqual(got.hits.filter((h) => h.target === got.dev.id && Number(h.damage) > 0), [], key);
     assert.equal(got.dev.hp, got.dev.maxHp, key);
   }
+  assert.equal(strike(HEAD, WORK, 0).attacks.length, 0, 'the raw box does not block it');
 });
 
 test('[敌能-122] silence does not stop the facility multiplier', () => {
