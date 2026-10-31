@@ -255,6 +255,8 @@ export const FOE_EXTRAS = Object.freeze({
   enemy_4039_mufbse: { talents: { unblockable: {} }, source: `${PRTS}%E7%8B%82%E5%A5%94%E4%B8%B0%E7%A2%91&oldid=364869` },
   // 碎骨: 不会攻击飞行单位; 未被阻挡时榴弹（攻击力 26%，目标及周围八格，防御力下降 50% 持续 5 秒）. The flat `defdown` users get none of these.
   enemy_1500_skulsr: { talents: { defdown: { scale: 0.26, duration: 5, square: 1 }, noFly: {} }, source: `${PRTS}%E7%A2%8E%E9%AA%A8&oldid=367689` },
+  // 「巨大的丑东西」: 第一形态未被阻挡时远程攻击的半径 2.5 is the page's; the 3×3 and the blocked melee's scale need no extra (敌能-124).
+  enemy_1512_mcmstr: { talents: { combat: { radius: 2.5 } }, source: `${PRTS}%E2%80%9C%E5%B7%A8%E5%A4%A7%E7%9A%84%E4%B8%91%E4%B8%9C%E8%A5%BF%E2%80%9D&oldid=384625` },
   // 萨卡兹术师 / 萨卡兹术师组长: 不会攻击飞行单位 (the data has no talent). `page` marks 枷锁 as read (敌能-72); the same
   // blackboard on 萨卡兹业余术师 has no snapshot, so it stays uncovered (关卡-2).
   enemy_1022_dmage: { talents: { noFly: {} }, skills: { lasso: { page: 1 } }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E6%9C%AF%E5%B8%88&oldid=380593` },
