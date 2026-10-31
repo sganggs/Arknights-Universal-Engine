@@ -167,3 +167,10 @@ test('[界面-41] 阵地足球: the football panel in place of the status panel 
   assert.equal(node(s.one('panel_lead', panel)).active, false, 'level again: the tag goes');
 });
 
+test('[界面-42] 阵地足球锦标: neither the football panel nor the status panel — the event\'s own top bar is shown instead', () => {
+  const ui = setup(), co = createCoopTop(ui, coopTop, { speed() {}, pause() {} }), s = co.screen;
+  const cup = { ours: '罗德岛队', theirs: '业余组', wait: 0, pk: null, over: false };
+  co.update({ me: side, mate: side, speed: 1, paused: false, asking: -1, football: { home: 0, away: 1, left: 299.2, cup } });
+  assert.deepEqual([node(s.one('panel_cooperate_football_status')).active, node(s.one('status')).active], [false, false]);
+});
+

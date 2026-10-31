@@ -43,16 +43,17 @@ test('[渲染-3] animation roles by name, falling back to idle; the role of what
   assert.equal(formRoles(['A_Idle', 'Move_Loop', 'B_Die']).length, 1, 'not every name in a form: one form');
 });
 
-test('[渲染-4] facing: operators use the back facing up and mirror facing left; enemies mirror after moving left', () => {
+test('[渲染-4] facing: operators use the back facing up and mirror facing left; enemies mirror when the simulation faces them left', () => {
   const m = { back: true, backDies: false, dying: false };
   assert.deepEqual(operatorFacing({ side: 'back', flip: false }, m), { side: 'back', flip: false });
   assert.deepEqual(operatorFacing({ side: 'front', flip: true }, m), { side: 'front', flip: true });
   assert.deepEqual(operatorFacing({ side: 'front', flip: false }, m), { side: 'front', flip: false });
   assert.deepEqual(operatorFacing({ side: 'back', flip: false }, { ...m, dying: true }), { side: 'front', flip: false });
   assert.deepEqual(operatorFacing({ side: 'back', flip: false }, { ...m, back: false }), { side: 'front', flip: false });
-  assert.equal(enemyFacing(false, -0.1), true);
-  assert.equal(enemyFacing(true, 0.1), false);
-  assert.equal(enemyFacing(true, 0), true);
+  assert.equal(enemyFacing(-1), true);
+  assert.equal(enemyFacing(1), false);
+  assert.equal(enemyFacing(0), false, 'a device: no left or right of its own');
+  assert.equal(enemyFacing(undefined), false);
 });
 
 test('[渲染-2] a model drawn at its own scale: across and up apart (a prefab scaled and stretched)', () => {

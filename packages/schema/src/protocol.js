@@ -7,7 +7,7 @@
 import { isRecord, isInt, isId, keyProblem } from './checks.js';
 import { matchProblem } from './match.js';
 
-export const PROTOCOL_VERSION = 11;
+export const PROTOCOL_VERSION = 12;
 
 /** Largest frame number (about 9.5 hours at 30 frames per second). */
 export const MAX_FRAME = 1_000_000;
@@ -148,7 +148,7 @@ export function serverMessageProblem(m) {
  * A training (干员-1, 干员-2, 干员-7); without the module fields, no module.
  * @typedef {{ elite: number, level: number, potential: number, trust: number, skill: number, skillLevel: number, module?: number, moduleLevel?: number }} Build
  */
-/** @typedef {{ id: string, build: Build }} DeckEntry */
+/** A deck's operator: its id, its training, and whether it is the seat's support unit (同步-9). @typedef {{ id: string, build: Build, assist?: true }} DeckEntry */
 /** A seat rune (符文-1): its key, the professions it applies to (a bit mask), its blackboard. @typedef {{ key: string, professions: number, board: [string, number | string][] }} SeatRune */
 /** The match settings (同步-9; match.js checks them). @typedef {{ level: string, difficulty: 'NORMAL' | 'FOUR_STAR', seed: number, decks: DeckEntry[][], runes?: SeatRune[][] }} Match */
 /**

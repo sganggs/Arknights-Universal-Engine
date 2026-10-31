@@ -5,8 +5,8 @@
 import { isRecord, isInt, isId, keyProblem } from './checks.js';
 import { MAX_SEAT } from './protocol.js';
 
-/** The most operators a deck holds. */
-export const MAX_DECK = 12;
+/** The most operators a deck holds: twelve and a support unit (同步-9, 阵地足球锦标's 「12名参赛选手+至多1名助战单位」). */
+export const MAX_DECK = 13;
 /** The most runes a seat carries, and the most entries of a rune's blackboard (符文-1). */
 export const MAX_RUNES = 16, MAX_BOARD = 16;
 /** A rune key, a blackboard key or a text value: lower-case letters, digits and _ [ ] @ . */
@@ -31,14 +31,17 @@ export function buildProblem(b) {
   return bad ? `build.${bad} out of range` : null;
 }
 
-/** @param {unknown} deck @returns {string | null} */
+/** @param {unknown} deck @returns {string | null} why a deck is malformed: at most one entry its support unit (`assist: true`) */
 function deckProblem(deck) {
   if (!Array.isArray(deck) || deck.length > MAX_DECK) return `a deck is not a list of at most ${MAX_DECK}`;
   const ids = new Set();
+  let assists = 0;
   for (const e of deck) {
     if (!isRecord(e)) return 'a deck entry is not an object';
-    const why = keyProblem(e, ['id', 'build']) ?? (!isId(e.id) ? 'deck entry id is not an id' : null) ?? buildProblem(e.build);
+    const why = keyProblem(e, 'assist' in e ? ['id', 'build', 'assist'] : ['id', 'build']) ?? (!isId(e.id) ? 'deck entry id is not an id' : null) ?? buildProblem(e.build);
     if (why) return why;
+    if ('assist' in e && e.assist !== true) return 'deck entry assist is not true';
+    if ('assist' in e && ++assists > 1) return 'more than one support unit in one deck';
     if (ids.has(e.id)) return `${String(e.id)} twice in one deck`;
     ids.add(e.id);
   }

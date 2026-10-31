@@ -9,8 +9,8 @@ import { refNode } from '../node.js';
 /**
  * A deck operator's card as the page gives it: its avatar (a URL; none: the card has none), profession (the data's
  * name: WARRIOR, SNIPER, …), rarity 1–6, elite phase 0–2, 再部署时间 in seconds; `summon` for a summon's card (界面-23),
- * `pool` for a counted card (界面-39).
- * @typedef {{ id: string, avatar: string | null, profession: string, rarity: number, phase: number, respawn: number, summon?: boolean, pool?: boolean }} DeckCard
+ * `pool` for a counted card (界面-39), `assist` for the seat's support unit (界面-10).
+ * @typedef {{ id: string, avatar: string | null, profession: string, rarity: number, phase: number, respawn: number, summon?: boolean, pool?: boolean, assist?: boolean }} DeckCard
  */
 /**
  * What a card shows now: its cost, its countdown, whether it may be deployed, the copies a summon's card holds (−1: none shown).
@@ -121,7 +121,10 @@ function makeCard(scr, c, list, d) {
   const root = scr.instantiate(list, 'card');
   const node = (/** @type {string} */ key) => refNode(root, c.nodes[key]);
   for (const ref of c.extras) { const n = refNode(root, ref); if (n) n.active = false; }
-  for (const key of ['assist', 'remainBack', 'remainCount']) { const n = node(key); if (n) n.active = false; }
+  for (const key of ['remainBack', 'remainCount']) { const n = node(key); if (n) n.active = false; }
+  // the support unit's mark (界面-10, 同步-9)
+  const assist = node('assist');
+  if (assist) assist.active = !!d.assist;
   fillCard(c, node, d);
   /** @type {[UiNode, number[]][]} */
   const tints = [];

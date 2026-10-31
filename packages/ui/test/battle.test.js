@@ -133,6 +133,15 @@ test('[界面-10] the cards on the screen: faces, greyed, the countdown, raised 
   assert.equal(b.root.rt.size[0], 178);
 });
 
+test('[界面-10] the support unit\'s card shows the pack\'s assist mark; the others do not', () => {
+  const ui = createUi({ pack: pack(), host: fakeHost(fakeDocument()), base: '/u/' });
+  ui.resize(1920, 1080);
+  const hud = createBattleHud(ui, { deck: [DECK[0], { ...DECK[2], assist: true }], coop: false });
+  hud.update(state());
+  const [a, c] = ['a', 'c'].map((id) => /** @type {any} */ (hud.cards.cards.get(id)));
+  assert.deepEqual([a.node('assist').active, c.node('assist').active], [false, true]);
+});
+
 /** A summon card of the deck and its state (界面-23). @param {Record<string, any>} [more] */
 const summonState = (more = {}) => state({ summons: { s: { cost: 3, ready: 0, held: 2, shown: true, full: false, occupy: true, ...more } } });
 const WITH_SUMMON = [...DECK, { id: 's', avatar: null, profession: 'TOKEN', rarity: 1, phase: 0, respawn: 10, summon: true }];
