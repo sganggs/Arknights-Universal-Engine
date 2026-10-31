@@ -63,7 +63,7 @@ test('client messages: exactly the well-formed ones are accepted', () => {
   }
   const bad = [
     [[], 'message is not an object'], [{ t: 'nope' }, 'unknown message type nope'], [{ t: 'constructor' }, 'unknown message type constructor'],
-    [{ ...HELLO, v: 3 }, 'protocol version 3, expected 11'], [{ ...HELLO, seat: 8 }, 'hello.seat out of range'], [{ ...HELLO, key: 'a b' }, 'hello.key is not an id'],
+    [{ ...HELLO, v: 3 }, `protocol version 3, expected ${PROTOCOL_VERSION}`], [{ ...HELLO, seat: 8 }, 'hello.seat out of range'], [{ ...HELLO, key: 'a b' }, 'hello.key is not an id'],
     [{ ...HELLO, since: 1.5 }, 'hello.since out of range'], [{ ...HELLO, admin: true }, 'unknown field admin'], [{ t: 'hash', frame: 1 }, 'missing field hash'],
     [{ t: 'hash', frame: 1, hash: -1 }, 'hash.hash is not a uint32'], [{ t: 'hash', frame: -1, hash: 1 }, 'hash.frame out of range'],
     [{ t: 'cmd', at: 2e6, cmd: DEPLOY }, 'cmd.at out of range'], [{ t: 'cmd', at: 1, cmd: { ...DEPLOY, row: 64 } }, 'deploy tile out of range'],
@@ -111,7 +111,7 @@ test('server messages: well-formed ones pass; broken ones are reported, never th
   for (const m of ok) assert.equal(serverMessageProblem(m), null, JSON.stringify(m));
   const bad = [
     [null, 'message is not an object'], [{ t: 'hello' }, 'unknown message type hello'],
-    [{ ...ok[0], v: 3 }, 'protocol version 3, expected 11'], [{ ...ok[0], seed: 1.5 }, 'welcome fields out of range'], [{ ...ok[0], content: -1 }, 'welcome fields out of range'],
+    [{ ...ok[0], v: 3 }, `protocol version 3, expected ${PROTOCOL_VERSION}`], [{ ...ok[0], seed: 1.5 }, 'welcome fields out of range'], [{ ...ok[0], content: -1 }, 'welcome fields out of range'],
     [{ ...ok[1], to: 2 }, 'frames range malformed'], [{ ...ok[1], cmds: {} }, 'sealed commands are not an array'],
     [{ ...ok[1], cmds: [[4, 9, DEPLOY]] }, 'frames.cmds has a malformed entry'], [{ ...ok[1], cmds: [[4, 1, { type: 'x' }]] }, 'unknown command type x'],
     [{ t: 'restamp', from: -1, to: 1 }, 'restamp out of range'], [{ t: 'error', code: 1, message: 'y' }, 'error fields are not strings'],
@@ -152,21 +152,21 @@ test('[同步-9] match settings: exactly the well-formed ones pass; a welcome ca
 
 test('[同步-5] protocol 11 welcome carries the arbiter seats and names one of them', () => {
   const welcome = { t: 'welcome', v: PROTOCOL_VERSION, seat: 0, seats: 2, seed: 7, frame: -1, snapshot: null, match: null, content: 1, replay: [] };
-  assert.equal(PROTOCOL_VERSION, 11);
+  assert.ok(PROTOCOL_VERSION >= 11, 'seats since protocol 11');
   for (const [seats, seat] of [[1, 0], [2, 1], [8, 7]]) assert.equal(serverMessageProblem({ ...welcome, seats, seat }), null);
   for (const seats of [0, 9, 1.5, null, '2']) assert.equal(serverMessageProblem({ ...welcome, seats }), 'welcome fields out of range');
   assert.equal(serverMessageProblem({ ...welcome, seat: 2 }), 'welcome fields out of range');
   const { seats: _seats, ...noSeats } = welcome;
   assert.equal(serverMessageProblem(noSeats), 'missing field seats');
-  assert.equal(serverMessageProblem({ ...welcome, v: 10 }), 'protocol version 10, expected 11');
-  assert.equal(clientMessageProblem({ ...HELLO, v: 10 }), 'protocol version 10, expected 11');
+  assert.equal(serverMessageProblem({ ...welcome, v: 10 }), `protocol version 10, expected ${PROTOCOL_VERSION}`);
+  assert.equal(clientMessageProblem({ ...HELLO, v: 10 }), `protocol version 10, expected ${PROTOCOL_VERSION}`);
 });
 
 test('[同步-9] [符文-1] a match may carry each seat\'s runes: a key, a profession mask and a blackboard of [key, number or text]', () => {
   const build = { elite: 2, level: 90, potential: 6, trust: 200, skill: 2, skillLevel: 10 };
   const match = { level: 'act1multi_01', difficulty: 'NORMAL', seed: 7, decks: [[{ id: 'char_122_beagle', build }], []] };
   const r = { key: 'env_gbuff_new', professions: 639, board: [['key', 'attr_up_on_trigger[atk][max_hp]'], ['atk', 0.03], ['attack@sp', 3]] };
-  assert.equal(PROTOCOL_VERSION, 11);
+  assert.ok(PROTOCOL_VERSION >= 8, 'runes since protocol 8');
   assert.equal(matchProblem({ ...match, runes: [[r], []] }), null);
   assert.equal(matchProblem({ ...match, runes: [[], []] }), null);
   const bad = [
@@ -178,4 +178,16 @@ test('[同步-9] [符文-1] a match may carry each seat\'s runes: a key, a profe
     [{ ...match, runes: [[{ ...r, board: Array(MAX_BOARD + 1).fill(['atk', 1]) }], []] }, 'rune.board is not a list of [key, value]'],
   ];
   for (const [m, why] of bad) assert.equal(matchProblem(m), why, JSON.stringify(m).slice(0, 120));
+});
+
+test('[同步-9] protocol 12: a deck of twelve and a support unit, at most one entry marked assist', () => {
+  const build = { elite: 2, level: 90, potential: 6, trust: 200, skill: 2, skillLevel: 10 };
+  const deck = Array.from({ length: 12 }, (_, i) => ({ id: `char_${i}`, build }));
+  const match = (/** @type {unknown[]} */ d) => ({ level: 'act1football_01', difficulty: 'NORMAL', seed: 7, decks: [d, []] });
+  assert.ok(PROTOCOL_VERSION >= 12);
+  assert.equal(MAX_DECK, 13);
+  assert.equal(matchProblem(match([...deck, { id: 'char_x', build, assist: true }])), null);
+  assert.equal(matchProblem(match([...deck, { id: 'char_x', build, assist: false }])), 'deck entry assist is not true');
+  assert.equal(matchProblem(match([{ id: 'char_x', build, assist: true }, { id: 'char_y', build, assist: true }])), 'more than one support unit in one deck');
+  assert.equal(matchProblem(match([...deck, { id: 'char_x', build }, { id: 'char_y', build }])), `a deck is not a list of at most ${MAX_DECK}`);
 });

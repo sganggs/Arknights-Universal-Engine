@@ -41,10 +41,14 @@ const FRAME_MS = 1000 / 30, RECONNECT_MS = 1000;
  * 阵地足球's state the page shows (足球-6, 足球-7, 足球-3, 足球-14, 足球-16): the team drawn (its name), our goals and
  * theirs, the frame the match ends, the stamps; each ball on the field with what it summed toward its kick (the damage,
  * its threshold and the direction); the balls each seat holds with the frame its card's time is up; the ice and slime
- * by tile index; the tiles of the 守门位 (row × width + col); in a 锦标 match its stadium's name (锦标-2) and, in a penalty
- * shootout, the round under way and whose it is (锦标-4).
+ * by tile index; the tiles of the 守门位 (row × width + col); in a 锦标 match its stadium's name (锦标-2), the two sides'
+ * names and team icons (锦标-7), the frame the players' wait after the last kickoff is over (足球-6) and, in a penalty shootout, the
+ * round and whose it is, whether it is under way (past its gap), the frame our kick's countdown is over (−1 for none)
+ * and the results of the rounds over (锦标-4) — what 阵地足球锦标's battle UI shows (界面-42).
+ * @typedef {{ round: number, side: 'ours' | 'theirs', on: boolean, until: number, shots: number[] }} PenaltyStatus
  * @typedef {{ team: string, home: number, away: number, until: number, stamps: number, balls: { id: number, sum: number, need: number, ax: number, ay: number }[],
- *   held: { until: number }[][], cover: Record<string, number>, spots: number[], stadium?: string, pk?: { round: number, side: 'ours' | 'theirs' } }} FootballStatus
+ *   held: { until: number }[][], cover: Record<string, number>, spots: number[], stadium?: string, sides?: { ours: string, theirs: string }, icons?: { ours: string, theirs: string }, ready?: number,
+ *   pk?: PenaltyStatus }} FootballStatus
  */
 /**
  * The match's state the page shows besides the view (合作-6, 波次-2, 结束-1): the current wave, the current stage, the
@@ -75,10 +79,16 @@ const footballOf = (w, c) => {
   };
 };
 
-/** A 锦标 match's stadium and penalty round (锦标-2, 锦标-4), nothing outside one. @param {import('@aue/sim').World} w @param {import('@aue/sim').Content} c */
+/**
+ * A 锦标 match's stadium, sides and their icons, kickoff wait and penalty round (锦标-2, 锦标-4, 锦标-7), nothing outside one.
+ * @param {import('@aue/sim').World} w @param {import('@aue/sim').Content} c
+ */
 const cupOf = (w, c) => {
-  const st = cup.isCup(c) ? cup.stadiumOf(w, c) : null, side = cup.penaltySide(w), pk = w.football?.pk;
-  return { ...(st ? { stadium: st.name } : {}), ...(side && pk ? { pk: { round: pk.round, side } } : {}) };
+  const f = c.level.football, fs = w.football;
+  if (!cup.isCup(c) || !f || !fs) return {};
+  const st = cup.stadiumOf(w, c), side = cup.penaltySide(w), pk = fs.pk, sides = f.cup?.sides, icons = f.cup?.icons;
+  return { ...(st ? { stadium: st.name } : {}), ...(sides ? { sides: { ...sides } } : {}), ...(icons ? { icons: { ...icons } } : {}), ready: football.waitOver(f, fs),
+    ...(side && pk ? { pk: { round: pk.round, side, on: pk.begun >= 0 && w.frame >= pk.begun, until: cup.countdownEnd(w), shots: [...pk.shots] } } : {}) };
 };
 
 /** @param {import('@aue/sim').World} w @param {import('@aue/sim').Content} c @returns {Status} */

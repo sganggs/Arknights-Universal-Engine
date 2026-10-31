@@ -7,7 +7,8 @@
 // Besides the attacks (渲染-12): the start and end tiles carry their marker effects, a unit its statuses' effects for as
 // long as it has them, and deploying and dying play theirs. A thrown 炼金单元 (渲染-25) flies to where it lands and plays
 // its effects there until it ends. 阵地足球's goals carry markers of their own, its 守门位 and ice and slime theirs
-// (渲染-26); a 锦标 ball lightning is coming to carries its warning, then the bolt and the burning (渲染-27). Effects keep
+// (渲染-26); a 锦标 ball lightning is coming to carries its warning, then the bolt and the burning (渲染-27). A unit
+// whose look is an effect carries it while it is on the field and plays its end where it leaves (渲染-28). Effects keep
 // battle time: they follow 2× and pause.
 import * as THREE from 'three';
 import { KIND, DIR, SKILL_STATE, STATUS_BIT } from '@aue/schema';
@@ -100,6 +101,7 @@ class Effects {
     /** @type {Map<string, { inst: FxInstance, id: number, lift: number }>} a unit's status effects by `id:bit` */ this.statuses = new Map();
     /** @type {Map<string, FxInstance>} 阵地足球's field effects by `kind:tile` (渲染-26) */ this.field = new Map();
     /** @type {Map<number, { inst: FxInstance, id: number, lift: number }>} the lightning's lasting effect on each ball (渲染-27) */ this.storms = new Map();
+    /** @type {Map<number, { inst: FxInstance, id: number, lift: number, end?: string }>} the looks of the units drawn by effects (渲染-28) */ this.looks = new Map();
     this.leads = new Map(Object.keys(pack.data.fx).map((k) => [k, effectLead(pack.data.fx[k])]));
     /** @type {FxInstance[]} */ this.live = [];
     /** @type {Flight[]} */ this.flights = [];
@@ -285,8 +287,37 @@ class Effects {
       const facing = op ? (u.dir === DIR.LEFT ? -1 : 1) : u.kind === KIND.ENEMY ? (u.lr === -1 ? -1 : 1) : old ? Math.sign(feet[0] - old.feet[0]) || old.facing : 1;
       this.places.set(u.id, { feet, facing, dir: op ? DIR_VEC[u.dir] ?? [1, 0, 0] : [facing, 0, 0], kind: u.kind, running: u.skill === SKILL_STATE.RUNNING, seen: view.frame });
     }
+    this.trackLooks(view);
     for (const [id, p] of this.places) if (view.frame - p.seen > 30) this.places.delete(id);
     this.trackStatuses(view);
+  }
+
+  /** The look of a unit drawn by an effect (渲染-28): its pack entry's `b` when the pack has that effect, else none. @param {number} id */
+  lookOf(id) {
+    const E = this.pack.data.by[this.keys.get(id) ?? ''];
+    return E?.b && this.pack.data.fx[E.b] ? E : null;
+  }
+
+  /**
+   * The units drawn by effects (渲染-28): each in the view carries its look, lifted by its spawn location; one that has
+   * left stops it and plays its end where it was last. @param {import('@aue/schema').View} view
+   */
+  trackLooks(view) {
+    const seen = new Set();
+    for (const u of view.units) {
+      const E = this.lookOf(u.id), at = this.places.get(u.id);
+      if (!E || !at) continue;
+      seen.add(u.id);
+      if (this.looks.has(u.id)) continue;
+      const lift = LIFT[this.pack.data.fx[E.b].sl] ?? 0, inst = this.play(E.b, this.lifted(at.feet, lift), { facing: at.facing, dir: at.dir }, 'loop');
+      if (inst) this.looks.set(u.id, { inst, id: u.id, lift, end: E.e });
+    }
+    for (const [id, s] of this.looks) {
+      if (seen.has(id)) continue;
+      s.inst.stop(); this.looks.delete(id);
+      const at = this.places.get(id);
+      if (at) this.play(s.end, at.feet, { facing: at.facing, dir: at.dir }, 'start');
+    }
   }
 
   /** Each shown status a unit has plays its effect for as long as it lasts (渲染-12). @param {import('@aue/schema').View} view */
@@ -308,7 +339,8 @@ class Effects {
   /** A unit deploying or dying (渲染-12): its effect at its feet. @param {string} type @param {number} id */
   role(type, id) {
     const at = this.places.get(id);
-    if (!at) return;
+    // 渲染-28: a unit drawn by an effect ends with its own effect, not the enemies' death
+    if (!at || (type === 'death' && this.lookOf(id))) return;
     const n = type === 'deploy' ? this.named.deploy : at.kind === KIND.OPERATOR ? this.named.die_operator : this.named.die_enemy;
     this.play(n, at.feet, { facing: at.facing, dir: at.dir }, 'start');
   }
@@ -352,7 +384,7 @@ class Effects {
     this.up = cam.up;
     this.fly(dt);
     this.potsStep(dt);
-    for (const s of [...this.statuses.values(), ...this.storms.values()]) { const at = this.places.get(s.id); if (at) s.inst.R = { ...s.inst.R, o: this.lifted(at.feet, s.lift) }; }
+    for (const s of [...this.statuses.values(), ...this.storms.values(), ...this.looks.values()]) { const at = this.places.get(s.id); if (at) s.inst.R = { ...s.inst.R, o: this.lifted(at.feet, s.lift) }; }
     this.live = this.live.filter((i) => {
       i.step(dt);
       if (i.done) { this.object.remove(i.group); i.dispose(); return false; }
@@ -363,7 +395,7 @@ class Effects {
 
   count() { return this.live.length; }
 
-  dispose() { for (const i of this.live) i.dispose(); this.live = []; this.flights = []; this.pots = []; this.statuses.clear(); this.field.clear(); this.storms.clear(); this.object.clear(); }
+  dispose() { for (const i of this.live) i.dispose(); this.live = []; this.flights = []; this.pots = []; this.statuses.clear(); this.field.clear(); this.storms.clear(); this.looks.clear(); this.object.clear(); }
 }
 
 /**

@@ -1,6 +1,7 @@
 // 智能裁判官 (docs/spec/cup.md 锦标-2: 智能时代球场): a device of ours that, every so many seconds, takes one ball on the
 // ground within its radius — drags it in and makes it vanish —, then puts it out again at its own tile, shot at the
-// ball's force × its own toward the right half (toward their goal), never into a wall beside it.
+// ball's force × its own toward the right half (toward their goal), never into a wall beside it. Each take and shot is a
+// `cast` event for the renderer.
 import { sin, cos, secondsToFrames } from '@aue/math';
 import { KIND } from '@aue/schema';
 import { draw } from './rng.js';
@@ -18,6 +19,8 @@ import { statsOf } from './attrs.js';
 export const DRAG_FRAMES = secondsToFrames(0.3);
 /** Frames a ball stays vanished before it is shot out again (锦标-2; the page leaves it unknown: INF-0664). */
 export const HOLD_FRAMES = secondsToFrames(1);
+/** The abilities a referee's `cast` events name (锦标-2): taking a ball, shooting it out. */
+export const CAST = Object.freeze({ take: 1, shoot: 2 });
 
 /** The ball a referee holds, or null. @param {World} w @param {Unit} d */
 const heldBy = (w, d) => w.units.find((u) => u.ball?.ref?.by === d.id) ?? null;
@@ -61,6 +64,7 @@ function holdStep(w, c, d, b, r) {
   if (e < DRAG_FRAMES + HOLD_FRAMES) return;
   alight(c, b, { x: d.x, y: d.y });
   delete s.ref; delete s.sel; delete s.selUntil;
+  w.events.push({ type: 'cast', id: d.id, n: CAST.shoot });
   const a = shotAngle(w, c, d);
   kickSlide(b, cos(a), sin(a), s.force * r.force * FORCE_TO_SPEED);
 }
@@ -83,5 +87,6 @@ export function refereeStep(w, c) {
     b.ball.sel = d.id;
     b.ball.selUntil = Number.MAX_SAFE_INTEGER;
     d.ab['@ref'] = w.frame + secondsToFrames(r.every);
+    w.events.push({ type: 'cast', id: d.id, n: CAST.take });
   }
 }

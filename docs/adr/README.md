@@ -78,4 +78,6 @@
 | [0062](0062-release-bundles-with-assets.md) | 发布包附带素材和 kit | 已采纳 | 素材 |
 | [0063](0063-coop-lobby-ui-restoration.md) | 促融共竞的战斗外界面也按原版还原 | 已采纳 | 素材 |
 | [0064](0064-data-mod-loader-and-sdk.md) | 数据 mod 加载器和 SDK 第一版 | 已采纳 | 定位与仓库 |
+| [0065](0065-operator-facing-toward-target.md) | 干员模型朝攻击目标（仅显示） | 已采纳 | 渲染 |
+| [0066](0066-turn-transition.md) | 转身的过渡：4 帧内压扁再展开，骨架在最窄帧换 | 已采纳 | 渲染 |
 | [0068](0068-enemy-facing-in-simulation.md) | 敌人的左右面向记在模拟里，渲染读它 | 已采纳 | 渲染 |

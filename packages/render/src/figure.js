@@ -1,7 +1,7 @@
 // A unit's figure over time (docs/spec/render.md 渲染-3, 渲染-4): which side of its model shows and mirrored or not,
 // and which clip plays — the deploy clip first, each attack from its start at the pace that lands its OnAttack on the
-// hit frame, idle once an attack is over, the die clip after the unit dies; a model with forms (A_…, B_…) takes its next
-// form's clips after its first attack.
+// hit frame, a cast ability's Skill_<n> once, idle once an attack or a cast is over, the die clip after the unit dies;
+// a model with forms (A_…, B_…) takes its next form's clips after its first attack.
 import * as THREE from 'three';
 import { KIND, FORM } from '@aue/schema';
 import { createFigure } from './spine.js';
@@ -112,6 +112,15 @@ export function attacked(f, wind, frame) {
   const fig = f.sides[f.side], name = f.roles[f.side].attack, hit = fig.hit(name);
   play(f, 'attack', frame, wind > 0 && hit > 0 ? (hit * FPS) / wind : 1, name);
   for (const [side, forms] of Object.entries(f.forms)) if (forms.length > 1 && f.roles[side] === forms[0]) f.roles[side] = forms[1];
+}
+
+/**
+ * A unit casting its n-th ability (渲染-3): its model's clip Skill_<n> (any case) from its start at its own pace, once,
+ * as an attack clip plays; nothing when the model has none. @param {Figure} f @param {number} n @param {number} frame
+ */
+export function cast(f, n, frame) {
+  const want = `skill_${n}`, name = f.sides[f.side].animations.find((a) => a.toLowerCase() === want);
+  if (name) play(f, 'attack', frame, 1, name);
 }
 
 /**

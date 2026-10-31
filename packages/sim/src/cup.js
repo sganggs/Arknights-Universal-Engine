@@ -11,6 +11,12 @@ import { FORCE_TO_SPEED } from './ball.js';
 
 /** The rounds of a penalty shootout, ours and theirs in turn (锦标-4: 双方各罚3次). */
 export const ROUNDS = 6;
+/**
+ * Frames before the first penalty round and between two (锦标-4): the banners of the event's battle UI played in turn —
+ * 平局！, the shootout's start banner and whose kick it is (1.383 + 4 + 1.383 s); a round's result and whose kick is next
+ * (2 × 1.383 s) — as long as they take in the PF-6 recording (INF-0693).
+ */
+export const FIRST_GAP = 203, NEXT_GAP = 83;
 
 /** Whether a level is a 阵地足球锦标 one (锦标-1): its 阵地足球 settings have the manager. @param {Content} c */
 export const isCup = (c) => !!c.level.football?.cup;
@@ -59,6 +65,12 @@ export const stadiumSpeed = (w, c) => stadiumOf(w, c)?.moveMul ?? 1;
 /** The first wave of the level's penalty shootout, or −1 (锦标-4). @param {Content} c */
 export const penaltyStart = (c) => c.level.waves.findIndex((x) => x.penalty === true);
 
+/**
+ * The frame a wave begun at `at` starts (锦标-4): a penalty round's own start, after its gap; any other wave's `at`.
+ * @param {World} w @param {number} at
+ */
+export const waveStart = (w, at) => Math.max(at, w.football?.pk?.begun ?? at);
+
 /** Who kicks in the penalty round under way (锦标-4): even rounds us, odd ones them; null outside a shootout. @param {World} w @returns {'ours' | 'theirs' | null} */
 export const penaltySide = (w) => (w.football?.pk ? (w.football.pk.round % 2 === 0 ? 'ours' : 'theirs') : null);
 
@@ -69,11 +81,14 @@ function end(w, result) {
 }
 
 /**
- * The wave of the next penalty round (锦标-4), noted as begun at a frame. @param {World} w @param {Content} c @param {number} at
+ * The wave of the next penalty round (锦标-4), called at a frame: the round begins the gap after it (the first's or the
+ * next's); after the sixth none (past the waves).
+ * @param {World} w @param {Content} c @param {number} at
  */
 export function penaltyWave(w, c, at) {
   const pk = /** @type {NonNullable<import('./types.js').FootballState['pk']>} */ (w.football?.pk);
-  Object.assign(pk, { begun: at, ball: 0, kicked: false, counted: false });
+  if (pk.round >= ROUNDS) return c.level.waves.length;
+  Object.assign(pk, { begun: at + (pk.round === 0 ? FIRST_GAP : NEXT_GAP), ball: 0, kicked: false, counted: false });
   w.events.push({ type: 'penalty', round: pk.round, goal: -1 });
   return penaltyStart(c) + pk.round;
 }
@@ -85,6 +100,9 @@ export function penaltyWave(w, c, at) {
 export function startCountdown(w, b, seconds) {
   if (b.ball && penaltySide(w) === 'ours') b.ball.countdown = w.frame + secondsToFrames(seconds);
 }
+
+/** The frame our penalty kick's countdown is over (锦标-4), −1 when none runs. @param {World} w */
+export const countdownEnd = (w) => w.units.find((u) => u.ball?.countdown !== undefined)?.ball?.countdown ?? -1;
 
 /**
  * Countdowns over this frame (锦标-4): the ball is kicked along all that hit it at its force when that reached its
@@ -119,7 +137,8 @@ function missed(w) {
 
 /**
  * A frame's end in a penalty shootout (锦标-4): countdowns run out; a round with a goal (the field already cleared) or a
- * miss is over — a miss clears the field; the round counts for the side kicking when it was its goal —; after the sixth
+ * miss is over — a miss clears the field; the round counts for the side kicking when it was its goal, and its result is
+ * noted in `shots` (1 in, 0 out) —; after the sixth
  * the side with more goals in all wins, a draw is no win. @param {World} w @param {number} scored the side whose goal
  * went in this frame — 1 ours, 0 theirs (SCORE_GOAL) —, −1 for none @param {() => void} clear
  */
@@ -131,6 +150,7 @@ function penaltyStep(w, scored, clear) {
   if (scored < 0) clear();
   const goal = scored === (penaltySide(w) === 'ours' ? 1 : 0) ? 1 : 0;
   w.events.push({ type: 'penalty', round: pk.round, goal });
+  pk.shots.push(goal);
   pk.round += 1;
   pk.begun = -1;
   if (pk.round >= ROUNDS) end(w, st.home > st.away ? 1 : 0);
@@ -150,7 +170,7 @@ export function cupEnd(w, c, scored, clear) {
   if (mercy > 0 && Math.abs(lead) >= mercy) { end(w, lead > 0 ? 1 : 0); return; }
   if (w.frame + 1 < st.until) return;
   if (lead === 0 && penaltyStart(c) >= 0) {
-    st.pk = { round: 0, begun: -1, ball: 0, kicked: false, counted: false };
+    st.pk = { round: 0, begun: -1, ball: 0, kicked: false, counted: false, shots: [] };
     clear();
     return;
   }

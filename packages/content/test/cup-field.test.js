@@ -118,12 +118,14 @@ test('[锦标-2] 智能裁判官 takes a ball near it: dragged in and gone, then
   const c = field({}, ref);
   c.level.routes[0].start = c.level.routes[0].end = { row: 4, col: 5 };
   const w = createWorld(c, { seed: 4, players: 1 });
-  run(w, c, 2);
+  const casts = run(w, c, 2).filter((e) => e.type === 'cast');
   const b = ballOf(w), d = /** @type {Unit} */ (w.units.find((u) => u.key === 'ref'));
   assert.ok(b.ball?.ref, 'taken at once: 1 tile away');
+  assert.deepEqual([...casts], [{ type: 'cast', id: d.id, n: 1 }], 'taking it is its first ability');
   run(w, c, secondsToFrames(0.3));
   assert.ok(b.hidden && Math.abs(b.x - d.x) < 1e-9, 'dragged to its centre, gone');
-  for (let i = 0; i < 60 && b.hidden; i++) run(w, c, 1);
+  for (let i = 0; i < 60 && b.hidden; i++) casts.push(...run(w, c, 1).filter((e) => e.type === 'cast'));
+  assert.deepEqual(casts.map((e) => e.n), [1, 2], 'shooting it out its second');
   const { s, v } = slideOf(b), v0 = 450 * 1.35 * 0.01;
   assert.ok(!b.hidden && s && s.vx >= 0, 'back and shot into its right half');
   assert.ok(v <= v0 + 1e-9 && v > v0 - 0.5, `at the ball's force × 1.35: ${v}`);

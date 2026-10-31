@@ -1,8 +1,8 @@
 // Presentation events, version 4 (ADR 0053; version 2 adds a skill starting or ending, version 3 an element burst, version 4 a heal, version 5 a projectile launched, version 6 a player down and back, version 7 a cost request and its answer, version 8 a wave beginning, a predefined unit coming
-// into effect or leaving, a co-op stage beginning and settled, an enemy's 直击 bolt and explosion, and the end of the battle, version 9 an attack's wind-up in frames, version 10 a story told: 波次-8, version 11 堡垒守御's phases and a facility's level: 守御-1, 守御-3, version 12 a 炼金单元 thrown: 技能-13, version 14 a goal in 阵地足球, a 阵地足球锦标 penalty round and its lightning: 足球-5, 锦标-4, 锦标-2): what happened in a frame, for the renderer and the sound. They flow from
+// into effect or leaving, a co-op stage beginning and settled, an enemy's 直击 bolt and explosion, and the end of the battle, version 9 an attack's wind-up in frames, version 10 a story told: 波次-8, version 11 堡垒守御's phases and a facility's level: 守御-1, 守御-3, version 12 a 炼金单元 thrown: 技能-13, version 14 a goal in 阵地足球, a 阵地足球锦标 penalty round and its lightning: 足球-5, 锦标-4, 锦标-2, version 15 a unit casting an ability: 渲染-3, 锦标-2): what happened in a frame, for the renderer and the sound. They flow from
 // the simulation to the screen only; the simulation never reads them back.
 
-export const EVENTS_VERSION = 14;
+export const EVENTS_VERSION = 15;
 
 /** The goal a `score` event names (足球-5): ours (the other side scores) or theirs (we score). */
 export const SCORE_GOAL = Object.freeze({ ours: 0, theirs: 1 });
@@ -47,6 +47,8 @@ export const EVENT_FIELDS = Object.freeze({
   // 超强对流's lightning on a ball (锦标-2): the ball's id, the phase (THUNDER_PHASE in @aue/sim: 0 the warning, 1 the
   // bolt, 2 its burning over)
   thunder: Object.freeze(['id', 'phase']),
+  // a unit casting its n-th ability (渲染-3): the 智能裁判官 taking a ball (1) and shooting it out (2), 锦标-2
+  cast: Object.freeze(['id', 'n']),
 });
 
 /** @typedef {{ type: keyof typeof EVENT_FIELDS, [field: string]: string | number }} PresentationEvent */
