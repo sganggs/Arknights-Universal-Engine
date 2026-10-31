@@ -327,7 +327,7 @@ IG-S-2 中关卡把 `invincible` 改为 20，把 `AtkUp` 的 `damage_resistance`
 
 ### 敌能-38 普通攻击附带的元素损伤
 
-天赋 `epdamage`、`empty`、`EpDamage`、`combat`、`attack`，blackboard 里只有 `attack@ep_damage_ratio`，以及内容补上的 `el` 和 `cross` 时，普通攻击每次命中附加攻击力 × 该倍率的元素损伤（元素-2）。多出来的键不是这项能力，关卡仍因它不完整而拒绝（关卡-2）。`ep_damage_ratio`（没有 `attack@`）不是这个形状。带内容标记 `pulse` 的见敌能-47；没有这个标记的，包括同时又写了 `el` 的，仍不完整。
+天赋 `epdamage`、`empty`、`EpDamage`、`combat`、`attack`，blackboard 里只有 `attack@ep_damage_ratio`，以及内容补上的 `el` 和 `cross` 时，普通攻击每次命中附加攻击力 × 该倍率的元素损伤（元素-2）。多出来的键不是这项能力，关卡仍因它不完整而拒绝（关卡-2）。`ep_damage_ratio`（没有 `attack@`）不是这个形状。带内容标记 `pulse` 的见敌能-47；没有这个标记的，包括同时又写了 `el` 的，仍不完整。同名 `combat` 里「巨大的丑东西」的形状见敌能-124。
 
 - **元素**：种类不在敌人数据里。内容按敌人把 `el` 补进这项天赋，编号与元素-1、爆发事件的 `el` 相同：1 神经、2 侵蚀、3 灼燃、4 凋亡、5 狂躁。没有 `el`，或 `el` 不是 1 到 5 的整数，这项能力不完整，攻击也不附加元素损伤。
 - **周围四格**：`cross` 为 1 时，这一下是十字溅射（敌能-26），周围格与目标受到相同的伤害，元素损伤也不打折。没有 `cross` 时只打命中的目标。
@@ -1351,4 +1351,16 @@ R-11突击动力装甲（`enemy_1256_lyacpa`）、R-11a突击动力装甲（`ene
 - **不做**：只改普通攻击（敌能-2 的 `attack`）。技能伤害不走这一下。这四名的 `boomb` 仍按敌能-86 没有行为。投手同一句里的「无法被阻挡」「不会攻击飞行单位」和攻击优先度是另一条，这里不实现；铁头的页面没有这三句。
 
 - 来源：[PRTS「铁头前锋」oldid=380518](https://prts.wiki/index.php?title=%E9%93%81%E5%A4%B4%E5%89%8D%E9%94%8B&oldid=380518)「攻击<设施>时攻击倍率提升至150%」「对【折叠式堡垒模块】造成更高伤害」；[PRTS「“一往无前”铁头前锋」oldid=380519](https://prts.wiki/index.php?title=%E2%80%9C%E4%B8%80%E5%BE%80%E6%97%A0%E5%89%8D%E2%80%9D%E9%93%81%E5%A4%B4%E5%89%8D%E9%94%8B&oldid=380519)「攻击<设施>时攻击倍率提升至150%」；[PRTS「长臂投手」oldid=380514](https://prts.wiki/index.php?title=%E9%95%BF%E8%87%82%E6%8A%95%E6%89%8B&oldid=380514)「攻击<设施>时攻击倍率提升至200%」；[PRTS「“精准制导”长臂投手」oldid=380515](https://prts.wiki/index.php?title=%E2%80%9C%E7%B2%BE%E5%87%86%E5%88%B6%E5%AF%BC%E2%80%9D%E9%95%BF%E8%87%82%E6%8A%95%E6%89%8B&oldid=380515)「攻击<设施>时攻击倍率提升至200%」；数据：act1multi_fortress_rm01 的 enemy_4009_murgby / _2 的 enhance.atk_scale 1.5、atk 1600 / 1750，enemy_4010_mubsbl / _2 的 enhance.atk_scale 2、atk 700 / 800。设施即这五类、没有第六个装置为推断 INF-0700；「提升至」换成这一下的倍率、闪避与无敌仍为 0 为推断 INF-0701
+
+### 敌能-124 「巨大的丑东西」第一形态的攻击
+
+「巨大的丑东西」（`enemy_1512_mcmstr`，攻击方式 `ALL`）的天赋 `combat`，数据里只有 `attack@mcmstr_rage_attack.atk_scale`（IG-DF-1 的记录是 3.5，数据库级别 0 是 3.0），没有别的敌人用这个键。`combat` 这个名字还有敌能-38 的元素命中等别的形状，仍是同一个行为，按形状分开：恰好是这个倍率加内容补上的 `radius`（页面的 2.5）才是这一项，少一个或多一个键都不算（关卡-2）。
+
+- **被阻挡**：近战，只打阻挡者，攻击力 × `attack@mcmstr_rage_attack.atk_scale`（这关 350%），不溅射。
+- **未被阻挡**：从 `radius` + 0.25（敌人攻击-1）以内它能选中的我方单位里按索敌-5 取 1 名：不选飞行单位（默认的选择不对空），地面敌人也不选起飞的单位（阻挡-2）。主目标受到攻击力 100% 的物理普通伤害，主目标所在格及周围八格上的其他我方单位受到同样数值的物理溅射伤害，飞行单位也算（敌能-26 的九宫格）。攻击方式是 `ALL`，不按攻击-3 发射投射物，前摇结束时立即命中（推断 INF-0703）。
+- 数据的攻击半径是 0，不拿它当攻击距离。
+- **沉默**：关卡记录里它免疫沉默。
+- **不在本条**：首次被击倒后的重生、自爆和大祭司形态（`reborn`、`bomb[reborning]`、`bird_run`），以及砍伐（`cut_tree`，关卡里没有巨蕈和木桩）。
+
+- 来源：[PRTS「“巨大的丑东西”」oldid=384625](https://prts.wiki/index.php?title=%E2%80%9C%E5%B7%A8%E5%A4%A7%E7%9A%84%E4%B8%91%E4%B8%9C%E8%A5%BF%E2%80%9D&oldid=384625)「未被阻挡时，可对半径2.5范围内的1名非飞行我方单位进行远程攻击，对目标及其周围8格内的所有我方单位造成攻击力100%的物理伤害」「※远程攻击对主目标造成物理普通伤害，对溅射目标造成物理溅射伤害，可溅射飞行单位」「被阻挡时进行近战攻击，造成攻击力350%的物理伤害」「被阻挡时进行近战攻击，造成攻击力300%的物理伤害」；数据：关卡 act1multi_fortress_rm01 的 enemy_1512_mcmstr（applyWay ALL、rangeRadius 0、combat 的 attack@mcmstr_rage_attack.atk_scale 3.5、immune silence），enemy_database（17759cc8）级别 0 的 attack@mcmstr_rage_attack.atk_scale 3.0。不发射投射物和攻击距离的算法为推断 INF-0703
 
