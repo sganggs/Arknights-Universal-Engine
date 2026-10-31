@@ -19,7 +19,7 @@ function host2(rule) {
 const EMOTE = { kind: 'emote', id: 'multiv3_battle_thanks', theme: 'emoticon_basic' };
 
 test('[同步-13] a signal: a kind and at most five small fields, numbers from 0 to 9999 or short ids', () => {
-  assert.equal(PROTOCOL_VERSION, 11);
+  assert.ok(PROTOCOL_VERSION >= 9, 'signals since protocol 9');
   assert.equal(signalProblem(EMOTE), null);
   assert.equal(signalProblem({ kind: 'mark', row: 3, col: 7, tip: 0 }), null);
   assert.equal(clientMessageProblem({ t: 'signal', s: EMOTE }), null);

@@ -70,9 +70,9 @@ test('[足球-14] a tile whose blackboard says landball is one of our half a bal
 
 test('[锦标-7] a 锦标 stage reads its sides\' names and the event\'s relics, each with the stage that unlocks it, its runes as seat runes', () => {
   const runes = [{ key: 'env_system_new', blackboard: [{ key: 'key', value: 0, valueStr: 'env_v074_football_cup_mgr' }, { key: 'move_speed', value: 1.2, valueStr: null }] }];
-  const sel = { professionMask: 639 }, unlock = (/** @type {string} */ stageId, /** @type {string} */ name, /** @type {string} */ desc) => ({ stageId, selfTeamName: '罗德岛队', enemyTeamName: '敌方', unlockBuffName: name, unlockBuffDesc: desc });
+  const sel = { professionMask: 639 }, unlock = (/** @type {string} */ stageId, /** @type {string} */ name, /** @type {string} */ desc) => ({ stageId, selfTeamName: '罗德岛队', enemyTeamName: '敌方', selfTeamIcon: 'cup_teamicon_1', enemyTeamIcon: 'cup_teamicon_2', unlockBuffName: name, unlockBuffDesc: desc });
   const event = {
-    stage: { stageId: 'cup_01', selfTeamName: '罗德岛队', enemyTeamName: '业余组', unlockBuffName: null, unlockBuffDesc: null },
+    stage: { stageId: 'cup_01', selfTeamName: '罗德岛队', enemyTeamName: '业余组', selfTeamIcon: 'cup_teamicon_1', enemyTeamIcon: 'cup_teamicon_3', unlockBuffName: null, unlockBuffDesc: null },
     stages: [unlock('cup_s01', '体能充沛', '所有干员的再部署时间-30%'), unlock('cup_s02', '技艺精湛', '所有干员的初始技力+10')],
     relics: [
       { id: 'cup_relic_01', description: '所有干员的再部署时间-30%', runes: [{ key: 'char_respawntime_mul', selector: sel, blackboard: [{ key: 'scale', value: 0.7, valueStr: null }] }] },
@@ -81,6 +81,7 @@ test('[锦标-7] a 锦标 stage reads its sides\' names and the event\'s relics,
   };
   const cup = /** @type {any} */ (footballField(FIELD, { options: { maxPlayTime: 120 }, runes, event }, COOP, []).football).cup;
   assert.deepEqual(cup.sides, { ours: '罗德岛队', theirs: '业余组' });
+  assert.deepEqual(cup.icons, { ours: 'cup_teamicon_1', theirs: 'cup_teamicon_3' }, 'their team icons');
   assert.deepEqual(cup.relics, [
     { id: 'cup_relic_01', name: '体能充沛', text: '所有干员的再部署时间-30%', unlockedBy: 'cup_s01', runes: [{ key: 'char_respawntime_mul', professions: 639, board: [['scale', 0.7]] }] },
     { id: 'cup_relic_02', name: '技艺精湛', text: '所有干员的初始技力+10', unlockedBy: 'cup_s02', runes: [{ key: 'env_gbuff_new', professions: 639, board: [['key', 'modify_sp[born]'], ['sp', 10]] }] },

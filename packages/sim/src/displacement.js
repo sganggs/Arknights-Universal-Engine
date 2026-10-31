@@ -10,6 +10,7 @@ import { statsOf } from './attrs.js';
 import { release } from './blocking.js';
 import { tileAt } from './level.js';
 import { displace } from './routes.js';
+import { turnLR } from './lr.js';
 import { crossable } from './paths.js';
 import { dealDamage } from './damage.js';
 import { FRICTION, STOP_SPEED, HARD_FRAMES } from './constants.js';
@@ -173,6 +174,8 @@ export function push(w, c, t, force, o) {
   t.slide = { vx: s.vx + a.ux * v, vy: s.vy + a.uy * v, hard: HARD_FRAMES };
   release(t);
   t.swing = null;
+  // an enemy pushed into 失衡 faces the push's source, once as it starts (敌能-90); one pulled toward it does not (INF-0680)
+  if (!o.toward) turnLR(t, o.from.x - t.x);
   if (!o.effect) step(c, t, t.slide.vx / FPS, t.slide.vy / FPS, w);
   return true;
 }

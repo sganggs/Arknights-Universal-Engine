@@ -52,6 +52,9 @@ const ATTACK_EVENTS = new Set(['attack', 'shot', 'hit', 'heal']);
  */
 export const pixelRatioOf = (device, scale) => (device || 1) * Math.min(2, Math.max(0.25, Number.isFinite(scale) ? scale : 1));
 
+/** The content keys of the units the effect pack draws as an effect (渲染-28): those with a look it has. @param {RendererOptions['effects']} pack */
+const looksOf = (pack) => new Set(Object.entries(pack?.data.by ?? {}).filter(([, E]) => E?.b && pack?.data.fx[E.b]).map(([k]) => k));
+
 /** The textures without the start and end tiles' markers when the effects draw them (渲染-12). @param {RendererOptions} o */
 const terrainTextures = (o) => (o.effects?.data.named?.tile_start ? new Map([...o.textures].filter(([k]) => !/^tile:tile_(start|end)/.test(k))) : o.textures);
 
@@ -97,7 +100,7 @@ export function createBattleRenderer(o) {
   scene.background = new THREE.Color(0x404040);
   const highlight = createHighlight(o.level), patch = highlight.patch;
   const terrain = o.kit ? createKitTerrain(o.level, o.kit, terrainTextures(o), patch) : createTerrain(o.level, o.textures, patch);
-  const units = createUnits(o.textures, o.models, o.foeDevices, o.deviceMeshes, o.flyers), field = { ...o.level, highland: o.kit?.kit.highland };
+  const units = createUnits(o.textures, o.models, o.foeDevices, o.deviceMeshes, { flyers: o.flyers, looks: looksOf(o.effects) }), field = { ...o.level, highland: o.kit?.kit.highland };
   const range = createRange(field, o.textures.get('ui:range')), marks = createTileMarks(field, o.textures.get('ui:range')), pitch = createPitchMarks(field), clock = battleClock();
   const effects = o.effects ? createEffects(o.effects, field, { skills: o.skills, seat: o.seat ?? 0 }) : null, placing = createPlacing(o.textures, o.models ?? new Map(), field);
   scene.add(terrain.object, range.object, marks.object, pitch.object, units.shadows, units.indicators, placing.object, units.object, ...(effects ? [effects.object] : []));

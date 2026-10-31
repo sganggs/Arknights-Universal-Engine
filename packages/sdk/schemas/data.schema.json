@@ -766,25 +766,10 @@
                                 ]
                               },
                               "sides": {
-                                "anyOf": [
-                                  {
-                                    "type": "object",
-                                    "properties": {
-                                      "ours": {
-                                        "type": "string",
-                                        "maxLength": 4096
-                                      },
-                                      "theirs": {
-                                        "type": "string",
-                                        "maxLength": 4096
-                                      }
-                                    },
-                                    "additionalProperties": false
-                                  },
-                                  {
-                                    "type": "null"
-                                  }
-                                ]
+                                "$ref": "#/$defs/s44"
+                              },
+                              "icons": {
+                                "$ref": "#/$defs/s44"
                               },
                               "relics": {
                                 "anyOf": [
@@ -793,7 +778,7 @@
                                       {
                                         "type": "array",
                                         "items": {
-                                          "$ref": "#/$defs/s44"
+                                          "$ref": "#/$defs/s45"
                                         },
                                         "minItems": 0,
                                         "maxItems": 8
@@ -803,7 +788,7 @@
                                         "additionalProperties": {
                                           "anyOf": [
                                             {
-                                              "$ref": "#/$defs/s44"
+                                              "$ref": "#/$defs/s45"
                                             },
                                             {
                                               "type": "null"
@@ -841,10 +826,10 @@
             "type": "object",
             "properties": {
               "NORMAL": {
-                "$ref": "#/$defs/s49"
+                "$ref": "#/$defs/s50"
               },
               "FOUR_STAR": {
-                "$ref": "#/$defs/s49"
+                "$ref": "#/$defs/s50"
               }
             },
             "additionalProperties": false
@@ -854,7 +839,7 @@
             "additionalProperties": {
               "anyOf": [
                 {
-                  "$ref": "#/$defs/s54"
+                  "$ref": "#/$defs/s55"
                 },
                 {
                   "type": "null"
@@ -1017,7 +1002,7 @@
         "maxLength": 64
       },
       "additionalProperties": {
-        "$ref": "#/$defs/s54"
+        "$ref": "#/$defs/s55"
       }
     },
     "tokens": {
@@ -1070,7 +1055,7 @@
               {
                 "type": "array",
                 "items": {
-                  "$ref": "#/$defs/s56"
+                  "$ref": "#/$defs/s57"
                 },
                 "minItems": 1,
                 "maxItems": 3
@@ -1080,7 +1065,7 @@
                 "additionalProperties": {
                   "anyOf": [
                     {
-                      "$ref": "#/$defs/s56"
+                      "$ref": "#/$defs/s57"
                     },
                     {
                       "type": "null"
@@ -3245,7 +3230,28 @@
         }
       ]
     },
-    "s47": {
+    "s44": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "ours": {
+              "type": "string",
+              "maxLength": 4096
+            },
+            "theirs": {
+              "type": "string",
+              "maxLength": 4096
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "s48": {
       "type": "object",
       "additionalProperties": {
         "anyOf": [
@@ -3268,7 +3274,7 @@
         ]
       }
     },
-    "s46": {
+    "s47": {
       "anyOf": [
         {
           "type": "array",
@@ -3289,11 +3295,11 @@
           "maxItems": 2
         },
         {
-          "$ref": "#/$defs/s47"
+          "$ref": "#/$defs/s48"
         }
       ]
     },
-    "s45": {
+    "s46": {
       "type": "object",
       "properties": {
         "key": {
@@ -3310,7 +3316,7 @@
             {
               "type": "array",
               "items": {
-                "$ref": "#/$defs/s46"
+                "$ref": "#/$defs/s47"
               },
               "minItems": 0,
               "maxItems": 32
@@ -3320,7 +3326,7 @@
               "additionalProperties": {
                 "anyOf": [
                   {
-                    "$ref": "#/$defs/s46"
+                    "$ref": "#/$defs/s47"
                   },
                   {
                     "type": "null"
@@ -3333,12 +3339,12 @@
       },
       "additionalProperties": false
     },
-    "s48": {
+    "s49": {
       "type": "object",
       "additionalProperties": {
         "anyOf": [
           {
-            "$ref": "#/$defs/s45"
+            "$ref": "#/$defs/s46"
           },
           {
             "type": "null"
@@ -3346,7 +3352,7 @@
         ]
       }
     },
-    "s44": {
+    "s45": {
       "type": "object",
       "properties": {
         "id": {
@@ -3366,13 +3372,13 @@
             {
               "type": "array",
               "items": {
-                "$ref": "#/$defs/s45"
+                "$ref": "#/$defs/s46"
               },
               "minItems": 1,
               "maxItems": 8
             },
             {
-              "$ref": "#/$defs/s48"
+              "$ref": "#/$defs/s49"
             }
           ]
         },
@@ -3390,7 +3396,7 @@
       },
       "additionalProperties": false
     },
-    "s53": {
+    "s54": {
       "anyOf": [
         {
           "type": "array",
@@ -3417,17 +3423,17 @@
         }
       ]
     },
-    "s52": {
+    "s53": {
       "anyOf": [
         {
-          "$ref": "#/$defs/s53"
+          "$ref": "#/$defs/s54"
         },
         {
           "type": "null"
         }
       ]
     },
-    "s51": {
+    "s52": {
       "type": "object",
       "properties": {
         "mods": {
@@ -3446,20 +3452,20 @@
           }
         },
         "enemy": {
-          "$ref": "#/$defs/s52"
+          "$ref": "#/$defs/s53"
         },
         "exclude": {
-          "$ref": "#/$defs/s52"
+          "$ref": "#/$defs/s53"
         }
       },
       "additionalProperties": false
     },
-    "s50": {
+    "s51": {
       "anyOf": [
         {
           "type": "array",
           "items": {
-            "$ref": "#/$defs/s51"
+            "$ref": "#/$defs/s52"
           },
           "minItems": 0,
           "maxItems": 16
@@ -3469,7 +3475,7 @@
           "additionalProperties": {
             "anyOf": [
               {
-                "$ref": "#/$defs/s51"
+                "$ref": "#/$defs/s52"
               },
               {
                 "type": "null"
@@ -3479,14 +3485,14 @@
         }
       ]
     },
-    "s49": {
+    "s50": {
       "type": "object",
       "properties": {
         "enemyMul": {
-          "$ref": "#/$defs/s50"
+          "$ref": "#/$defs/s51"
         },
         "hiddenGroups": {
-          "$ref": "#/$defs/s53"
+          "$ref": "#/$defs/s54"
         },
         "replace": {
           "type": "object",
@@ -3503,12 +3509,12 @@
           }
         },
         "unsupported": {
-          "$ref": "#/$defs/s53"
+          "$ref": "#/$defs/s54"
         },
         "talentMul": {
           "anyOf": [
             {
-              "$ref": "#/$defs/s50"
+              "$ref": "#/$defs/s51"
             },
             {
               "type": "null"
@@ -3570,13 +3576,13 @@
                 {
                   "type": "array",
                   "items": {
-                    "$ref": "#/$defs/s45"
+                    "$ref": "#/$defs/s46"
                   },
                   "minItems": 0,
                   "maxItems": 32
                 },
                 {
-                  "$ref": "#/$defs/s48"
+                  "$ref": "#/$defs/s49"
                 }
               ]
             },
@@ -3588,7 +3594,7 @@
       },
       "additionalProperties": false
     },
-    "s55": {
+    "s56": {
       "type": "object",
       "properties": {
         "key": {
@@ -3611,12 +3617,12 @@
           "maximum": 1000000
         },
         "bb": {
-          "$ref": "#/$defs/s47"
+          "$ref": "#/$defs/s48"
         }
       },
       "additionalProperties": false
     },
-    "s54": {
+    "s55": {
       "type": "object",
       "properties": {
         "name": {
@@ -3699,7 +3705,7 @@
               "additionalProperties": {
                 "anyOf": [
                   {
-                    "$ref": "#/$defs/s47"
+                    "$ref": "#/$defs/s48"
                   },
                   {
                     "type": "null"
@@ -3790,7 +3796,7 @@
                 {
                   "type": "array",
                   "items": {
-                    "$ref": "#/$defs/s55"
+                    "$ref": "#/$defs/s56"
                   },
                   "minItems": 0,
                   "maxItems": 16
@@ -3800,7 +3806,7 @@
                   "additionalProperties": {
                     "anyOf": [
                       {
-                        "$ref": "#/$defs/s55"
+                        "$ref": "#/$defs/s56"
                       },
                       {
                         "type": "null"
@@ -3818,7 +3824,7 @@
       },
       "additionalProperties": false
     },
-    "s57": {
+    "s58": {
       "type": "object",
       "properties": {
         "level": {
@@ -3914,7 +3920,7 @@
       },
       "additionalProperties": false
     },
-    "s56": {
+    "s57": {
       "type": "object",
       "properties": {
         "maxLevel": {
@@ -3930,7 +3936,7 @@
             {
               "type": "array",
               "items": {
-                "$ref": "#/$defs/s57"
+                "$ref": "#/$defs/s58"
               },
               "minItems": 1,
               "maxItems": 8
@@ -3940,7 +3946,7 @@
               "additionalProperties": {
                 "anyOf": [
                   {
-                    "$ref": "#/$defs/s57"
+                    "$ref": "#/$defs/s58"
                   },
                   {
                     "type": "null"

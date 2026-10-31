@@ -3,7 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { ANIM, DIR, SKILL_STATE } from '@aue/schema';
-import { newFigure, follow, attacked, dies, deathOver, clipAt } from '../src/figure.js';
+import { newFigure, follow, attacked, cast, dies, deathOver, clipAt } from '../src/figure.js';
 import { tinyModel, formsModel, dollModel } from './model.js';
 import { dollRoles } from '../src/roles.js';
 
@@ -36,6 +36,19 @@ test('[渲染-3] an attack starts its clip paced to land OnAttack on the hit fra
   assert.equal(f.rate, 1);
   follow(f, unit(1, ANIM.MOVE), 52);
   assert.deepEqual(at(clipAt(f, 55)), ['Move', 0.1, true]);
+});
+
+test('[渲染-3] a cast plays the model\'s Skill_<n> (any case) once at its own pace, then idles; nothing without that clip', () => {
+  const m = tinyModel(), clips = /** @type {any} */ (m.skeleton).animations;
+  clips.push({ ...clips.find((/** @type {any} */ a) => a.name === 'Start'), name: 'skill_1' });
+  const f = /** @type {import('../src/figure.js').Figure} */ (newFigure({ front: m }, unit(2, ANIM.IDLE), 0));
+  follow(f, unit(2, ANIM.IDLE), 0);
+  cast(f, 1, 10);
+  assert.deepEqual(at(clipAt(f, 13)), ['skill_1', 0.1, false]);
+  follow(f, unit(2, ANIM.IDLE), 14);
+  assert.deepEqual([f.role, at(clipAt(f, 25))], ['attack', ['Idle', 0.1, true]], 'idle in the view does not cut it; idle after it');
+  cast(f, 2, 30);
+  assert.equal(f.since, 10, 'no Skill_2: nothing');
 });
 
 test('[渲染-3] a figure that died plays its die clip once and is over after it', () => {

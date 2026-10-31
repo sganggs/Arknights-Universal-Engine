@@ -135,9 +135,11 @@ function seatRuneOf(raw, p) {
 }
 
 /**
- * A 锦标 stage's event settings (锦标-7): the two sides' names and the event's relics — each with the name and text of
- * the stage that unlocks it (matched by the relic's description), and its runes as seat runes. None outside the event.
- * @param {unknown} raw the event data the CLI reads (activity table) @returns {{ sides?: { ours: string, theirs: string }, relics?: unknown[] }}
+ * A 锦标 stage's event settings (锦标-7): the two sides' names and team icons and the event's relics — each with the name
+ * and text of the stage that unlocks it (matched by the relic's description), and its runes as seat runes. None outside
+ * the event.
+ * @param {unknown} raw the event data the CLI reads (activity table)
+ * @returns {{ sides?: { ours: string, theirs: string }, icons?: { ours: string, theirs: string }, relics?: unknown[] }}
  */
 function cupEventField(raw) {
   if (raw === undefined) return {};
@@ -150,7 +152,8 @@ function cupEventField(raw) {
       ...(by ? { unlockedBy: asString(by.stageId, `${p}.stageId`) } : {}),
       runes: asArray(field(r, 'runes', p), `${p}.relics[${i}].runes`).map((y, j) => seatRuneOf(y, `${p}.relics[${i}].runes[${j}]`)) };
   });
-  return { sides: { ours: asString(field(st, 'selfTeamName', p), `${p}.selfTeamName`), theirs: asString(field(st, 'enemyTeamName', p), `${p}.enemyTeamName`) }, relics };
+  return { sides: { ours: asString(field(st, 'selfTeamName', p), `${p}.selfTeamName`), theirs: asString(field(st, 'enemyTeamName', p), `${p}.enemyTeamName`) },
+    icons: { ours: asString(field(st, 'selfTeamIcon', p), `${p}.selfTeamIcon`), theirs: asString(field(st, 'enemyTeamIcon', p), `${p}.enemyTeamIcon`) }, relics };
 }
 
 /**

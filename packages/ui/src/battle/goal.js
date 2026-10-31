@@ -1,8 +1,12 @@
 // 阵地足球's goal banner (docs/spec/ui.md 界面-41): each time a side scores, the pack's score panel shows its side —
-// 进球！ for our goal, 失球！ for theirs — and plays its clip once, then goes.
+// 进球！ for our goal, 失球！ for theirs — and plays its clip once, then goes; the activity's sound for our goal or theirs
+// plays as it shows.
 import { refNode } from '../node.js';
 
 /** @typedef {import('./coop.js').FootballTask} FootballTask */
+
+/** The goal banner's sound banks (界面-41): our goal, theirs. */
+export const GOAL_SOUNDS = Object.freeze({ ours: 'battle.ON_COOPERATE_ALLY_SCORED', theirs: 'battle.ON_COOPERATE_ENEMY_SCORED' });
 
 /**
  * The goal banner on a UI; null without the pack's score panel. `update` with the match's score shows it when a side's
@@ -30,6 +34,7 @@ export function createGoalBanner(ui) {
       ally.active = ours;
       enemy.active = !ours;
       root.active = true;
+      ui.ctx.sound?.(ours ? GOAL_SOUNDS.ours : GOAL_SOUNDS.theirs);
       void scr.anim.play(root, parts.clip).then(() => { if (id === seq) root.active = false; });
     },
   };

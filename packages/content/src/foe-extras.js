@@ -270,6 +270,14 @@ export const FOE_EXTRAS = Object.freeze({
   enemy_1177_dufrbl_2: { talents: { epdamage: { el: 3 } }, source: `${PRTS}%E5%87%80%E6%B5%8A%E4%B9%8B%E7%84%B0&oldid=436069` },
   // 箭棘兽: 「弱点部位位于正面，背面所受伤害降低」 — its `Weakness` is of the damage from behind (敌能-91)
   enemy_1310_mhprpn_2: { talents: { Weakness: { back: 1 } }, source: `${PRTS}%E7%AE%AD%E6%A3%98%E5%85%BD&oldid=439219` },
+  // 硬甲爪兽 / 刚甲爪兽: 「【弱点】位于正面，受到来自背面的物理/法术伤害降低80%」(敌能-118). 刚甲's snapshot is the older one.
+  enemy_1306_mhtrtl: { talents: { Weakness: { back: 1 } }, source: `${PRTS}%E7%A1%AC%E7%94%B2%E7%88%AA%E5%85%BD&oldid=353755` },
+  enemy_1306_mhtrtl_2: { talents: { Weakness: { back: 1 } }, source: `${PRTS}%E5%88%9A%E7%94%B2%E7%88%AA%E5%85%BD&oldid=287747` },
+  // 棘兽: 「【弱点】位于正面，受到来自背面的物理/法术伤害降低75%」
+  enemy_1310_mhprpn: { talents: { Weakness: { back: 1 } }, source: `${PRTS}%E6%A3%98%E5%85%BD&oldid=353763` },
+  // 岩冠兽 / 坚岩冠兽: 「【弱点】位于背面，受到来自正面的物理/法术伤害降低80%」
+  enemy_1307_mhrhcr: { talents: { Weakness: { front: 1 } }, source: `${PRTS}%E5%B2%A9%E5%86%A0%E5%85%BD&oldid=353757` },
+  enemy_1307_mhrhcr_2: { talents: { Weakness: { front: 1 } }, source: `${PRTS}%E5%9D%9A%E5%B2%A9%E5%86%A0%E5%85%BD&oldid=353758` },
   // 狙击步兵组长: 天赋「不会攻击飞行单位」 (敌能-33); its 眩晕打击 is 敌能-36
   enemy_1047_sagent_2: { talents: { noFly: {} }, source: `${PRTS}%E7%8B%99%E5%87%BB%E6%AD%A5%E5%85%B5%E7%BB%84%E9%95%BF&oldid=436077` },
   // 无胄盟第三小队组长: 「普通攻击时额外造成攻击力35%的侵蚀损伤」 (敌能-38, el 2)，「普通攻击与技能不会攻击飞行单位」 (敌能-33)
@@ -344,4 +352,15 @@ export const FOE_EXTRAS = Object.freeze({
   // The same three keys on the other 补给员 are not this skill, and stay uncovered (关卡-2).
   enemy_4004_muvltr: { skills: { boomb: { soda: 1 } }, source: `${PRTS}%E8%B5%9B%E5%9C%BA%E8%A1%A5%E7%BB%99%E8%BD%A6&oldid=361382` },
   enemy_4004_muvltr_2: { skills: { boomb: { soda: 1 } }, source: `${PRTS}%E2%80%9C%E5%A4%A9%E8%BD%A6%E6%95%A3%E8%8A%B1%E2%80%9D%E8%B5%9B%E5%9C%BA%E8%A1%A5%E7%BB%99%E8%BD%A6&oldid=361313` },
+  // 敌能-117: 攻击方式 NONE is not read (敌人攻击-1), so the pages' 不进行普通攻击 (NoAttack) and 无法被阻挡 (unblockable).
+  // 诺伯特平民: 无敌，不进行攻击 — its 鉴定 (civilianTalent) is not this clause and stays uncovered
+  enemy_1313_wdfmr: { talents: { NoAttack: {} }, source: `${PRTS}%E8%AF%BA%E4%BC%AF%E7%89%B9%E5%B9%B3%E6%B0%91&oldid=353767` },
+  // 匪帮窃贼 / 匪帮窃贼头目: 无法被阻挡
+  enemy_1354_eghost: { talents: { unblockable: {} }, source: `${PRTS}%E5%8C%AA%E5%B8%AE%E7%AA%83%E8%B4%BC&oldid=353841` },
+  enemy_1354_eghost_2: { talents: { unblockable: {} }, source: `${PRTS}%E5%8C%AA%E5%B8%AE%E7%AA%83%E8%B4%BC%E5%A4%B4%E7%9B%AE&oldid=353842` },
+  // 幽灵组长: 不进行普通攻击，无法被阻挡
+  enemy_1026_aghost: { talents: { NoAttack: {}, unblockable: {} }, source: `${PRTS}%E5%B9%BD%E7%81%B5%E7%BB%84%E9%95%BF&oldid=371392` },
+  // 天桩-甲 / 失控天桩-甲: ……不进行普通攻击，无法被阻挡 — their 自缚, 失衡免疫, 阻回 and CheckAwake are not this clause
+  enemy_1398_dhdcr: { talents: { NoAttack: {}, unblockable: {} }, source: `${PRTS}%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366637` },
+  enemy_1398_dhdcr_2: { talents: { NoAttack: {}, unblockable: {} }, source: `${PRTS}%E5%A4%B1%E6%8E%A7%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366638` },
 });

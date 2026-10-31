@@ -2,7 +2,7 @@
 // begins, the goal banner each time a side scores.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createUi, createBanner, createGoalBanner } from '../src/index.js';
+import { createUi, createBanner, createGoalBanner, GOAL_SOUNDS } from '../src/index.js';
 import { fakeDocument, fakeHost } from './dom.js';
 
 /** @typedef {import('../src/node.js').PackNode} PackNode */
@@ -17,10 +17,10 @@ const HUD = {
   coopStage: { panel: '@info/container_conventional_mode', clip: 'show', football: { panel: '@info/container_soccer_mode', clip: 'soccer', trainingClip: 'soccerTr' } },
   coopScore: { ally: '@panel_root/group_ally', enemy: '@panel_root/group_enemy', clip: 'goal' },
 };
-const setup = (withScore = true) => {
+const setup = (withScore = true, /** @type {((bank: string) => void) | undefined} */ sound = undefined) => {
   const pack = { version: 1, ref: [1920, 1080], sprites: {}, clips: { show: fade(4), soccer: fade(4), soccerTr: fade(5), goal },
     screens: { 'coop.stage': STAGE, ...(withScore ? { 'coop.score': SCORE } : {}) }, hud: withScore ? HUD : { coopStage: HUD.coopStage } };
-  const ui = createUi({ pack: /** @type {any} */ (pack), host: fakeHost(fakeDocument()) });
+  const ui = createUi({ pack: /** @type {any} */ (pack), host: fakeHost(fakeDocument()), sound });
   ui.resize(1920, 1080);
   return ui;
 };
@@ -55,4 +55,15 @@ test('[界面-41] 阵地足球: 进球！ for our goal, 失球！ for theirs, ea
   assert.equal(root.active, true, 'still on: the same score');
   g.update(null);
   assert.equal(createGoalBanner(setup(false)), null, 'no banner without the pack’s');
+});
+
+test('[界面-41] 阵地足球: the goal banner plays the activity’s goal sound as it shows — ours, then theirs —, none for the first score', () => {
+  /** @type {string[]} */
+  const heard = [];
+  const g = /** @type {NonNullable<ReturnType<typeof createGoalBanner>>} */ (createGoalBanner(setup(true, (b) => heard.push(b))));
+  g.update({ home: 0, away: 0, left: 300 });
+  g.update({ home: 1, away: 0, left: 290 });
+  g.update({ home: 1, away: 1, left: 280 });
+  assert.deepEqual(heard, [GOAL_SOUNDS.ours, GOAL_SOUNDS.theirs]);
+  assert.deepEqual(GOAL_SOUNDS, { ours: 'battle.ON_COOPERATE_ALLY_SCORED', theirs: 'battle.ON_COOPERATE_ENEMY_SCORED' });
 });

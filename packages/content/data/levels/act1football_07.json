@@ -7034,6 +7034,10 @@
           "ours": "罗德岛队",
           "theirs": "直球队"
         },
+        "icons": {
+          "ours": "act1football_teamicon_1",
+          "theirs": "act1football_teamicon_6"
+        },
         "relics": [
           {
             "id": "act1football_relic_01",

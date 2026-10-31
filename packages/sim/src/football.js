@@ -239,9 +239,12 @@ export function kickoffWait(w, c, u) {
   const f = c.level.football, st = w.football;
   if (!f || !st || u.ball || !(isCup(c) ? isPlayerKey(c, u.key) : drawnPlayer(f, st, u.key))) return;
   // it ticks this frame too (状态-3): free on the frame the wait is over
-  const left = st.kick + secondsToFrames(f.wait) - w.frame + 1;
+  const left = waitOver(f, st) - w.frame + 1;
   if (left > 0) addBuff(u, makeBuff({ key: 'kickoff', src: u.id, left, flags: { kickoff: true, root: true, noAttack: true } }));
 }
+
+/** The frame the players' wait after the last kickoff is over (足球-6). @param {FootballRules} f @param {FootballState} st */
+export const waitOver = (f, st) => st.kick + secondsToFrames(f.wait);
 
 /** A unit leaves the field quietly: no knockdown, no life lost (足球-5, 足球-7). @param {World} w @param {Unit} u */
 function leave(w, u) {
