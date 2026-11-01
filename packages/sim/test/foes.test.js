@@ -83,6 +83,23 @@ test('[敌能-2] targets and attack hooks change whom an enemy attacks and how',
   assert.equal(e.hp, 1000);
 });
 
+test('[敌能-2] [索敌-5] a rank hook puts a candidate ahead of a newer one: 特殊优先级 before 仇恨值', () => {
+  /** @param {boolean} ranked */
+  const first = (ranked) => {
+    const { c, w } = arena({ applyWay: 'RANGED', rangeRadius: 3 }, {
+      pick: { rank: (/** @type {any} */ _ctx, /** @type {Unit} */ u) => (u.key === 'sniper' ? 0 : 1) },
+    });
+    c.enemies.foe.talents = ranked ? { pick: {} } : {};
+    foe(w, c, 1, 4);
+    const s = op(w, c, 'sniper', 0, 3), g = op(w, c, 'guard', 1, 2);
+    const at = run(w, c, 3).filter((x) => x.type === 'attack').map((x) => x.target);
+    return { at, s, g };
+  };
+  const plain = first(false), ranked = first(true);
+  assert.deepEqual(plain.at, [plain.g.id], 'without it, the one created later');
+  assert.deepEqual(ranked.at, [ranked.s.id], 'ranked 0 ahead of the newer guard');
+});
+
 test('[敌能-3] a delayed explosion: after its delay, the operators and neutral units within its radius, flying ones only if it reaches the air', () => {
   const { c, w } = arena({}, {
     blow: { death: (/** @type {any} */ ctx) => ctx.blast({ x: 2, y: 1, radius: 1.5, delay: 1, air: false, sourced: false, type: 'phys', amount: 300, status: { key: 'cold', seconds: 10 } }) },
