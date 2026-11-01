@@ -220,7 +220,8 @@ export const FOE_EXTRAS = Object.freeze({
   enemy_1204_msfhu: { talents: { hitCount: { arts: 1, true: 1 } }, source: `${PRTS}%E9%9D%92%E7%93%B7%E8%8C%B6%E5%99%A8&oldid=397896` },
   enemy_1204_msfhu_2: { talents: { hitCount: { arts: 1, true: 1 } }, source: `${PRTS}%E5%BD%A9%E7%93%B7%E8%8C%B6%E5%99%A8&oldid=365782` },
   // 新硎: 因坠落以外的原因. 沉沙's page says 死亡后, so a fall still spawns (敌能-44).
-  enemy_1207_sfji_2: { talents: { DeadSpawn: { fall: 0 } }, source: `${PRTS}%E6%96%B0%E7%A1%8E&oldid=381907` },
+  // 攻击力+80%（失去所有【断刃】后失效）: `blade` marks the read page; 山雪鬼's same-shaped `AtkUp` has none (敌能-149).
+  enemy_1207_sfji_2: { talents: { DeadSpawn: { fall: 0 }, AtkUp: { blade: 1 } }, source: `${PRTS}%E6%96%B0%E7%A1%8E&oldid=381907` },
   // 矛头 / 灯盘: 无法被阻挡，不进行普通攻击，具有特殊生命值机制 (the data has no talent for it)
   enemy_1208_msfji: { talents: { hitCount: {} }, source: `${PRTS}%E9%93%9C%E7%9F%9B%E5%A4%B4&oldid=365776` },
   enemy_1208_msfji_2: { talents: { hitCount: {} }, source: `${PRTS}%E9%93%81%E7%9F%9B%E5%A4%B4&oldid=365775` },
@@ -469,4 +470,6 @@ export const FOE_EXTRAS = Object.freeze({
     skills: { WildCalling: { page: 1 }, FearCage: { init_sp: 0, sp_recovery_per_sec: 1 } },
     source: `${PRTS}%E6%89%8E%E7%BD%97%EF%BC%8C%E2%80%9C%E7%8B%BC%E4%B9%8B%E4%B8%BB%E2%80%9D&oldid=365712`,
   },
+  // “复仇者”: 生命值不高于50%时：攻击力+180% (敌能-8). `low` marks the read page; “火与钢” has the same keys and none (敌能-149).
+  enemy_1539_reid: { talents: { AtkUp: { low: 1 } }, source: `${PRTS}%E2%80%9C%E5%A4%8D%E4%BB%87%E8%80%85%E2%80%9D&oldid=354327` },
 });
