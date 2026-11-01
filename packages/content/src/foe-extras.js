@@ -363,4 +363,8 @@ export const FOE_EXTRAS = Object.freeze({
   // 天桩-甲 / 失控天桩-甲: ……不进行普通攻击，无法被阻挡 — their 自缚, 失衡免疫, 阻回 and CheckAwake are not this clause
   enemy_1398_dhdcr: { talents: { NoAttack: {}, unblockable: {} }, source: `${PRTS}%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366637` },
   enemy_1398_dhdcr_2: { talents: { NoAttack: {}, unblockable: {} }, source: `${PRTS}%E5%A4%B1%E6%8E%A7%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366638` },
+  // “邪魔的利刃” / “邪魔的利刃”，游荡者: 对位于【国度】中的单位的造成伤害时攻击倍率提升至250% (敌能-141). `page` marks the two
+  // read pages; 无垠回荡克雷松 has the same DamageUp { atk_scale } and no marker.
+  enemy_2048_smgrd: { talents: { DamageUp: { page: 1 } }, source: `${PRTS}%E2%80%9C%E9%82%AA%E9%AD%94%E7%9A%84%E5%88%A9%E5%88%83%E2%80%9D&oldid=354395` },
+  enemy_2049_smgrd2: { talents: { DamageUp: { page: 1 } }, source: `${PRTS}%E2%80%9C%E9%82%AA%E9%AD%94%E7%9A%84%E5%88%A9%E5%88%83%E2%80%9D%EF%BC%8C%E6%B8%B8%E8%8D%A1%E8%80%85&oldid=354396` },
 });

@@ -112,17 +112,28 @@ export const pickTarget = (w, c, op) => targetsOf(w, c, op)[0] ?? null;
  * @typedef {{ type: import('./types.js').DamageType, amount: number, times: number, element: string, ep: number, splash?: import('./types.js').Splash | null,
  *   aftershock?: number, chain?: import('./types.js').Chain | null, ranged?: boolean, hitStatus?: { key: import('./status.js').StatusKey, seconds: number, value?: number, prob?: number } | null,
  *   hitDebuff?: { seconds: number, mods: Record<string, number> }, displace?: { pull: boolean, force: number, along?: boolean },
- *   skill?: boolean, hit?: 'splash' | 'chain' | 'aftershock', mark?: number, frozen?: number, packed?: { cnt: number, atk: number }, aftershocks?: number, ignoreDef?: number, ignoreSelect?: boolean }} Load
+ *   skill?: boolean, hit?: 'splash' | 'chain' | 'aftershock', mark?: number, frozen?: number, packed?: { cnt: number, atk: number }, aftershocks?: number, ignoreDef?: number, ignoreSelect?: boolean,
+ *   vsBuff?: { key: string, scale: number } }} Load
  */
+
+/**
+ * `vsBuff.scale` on a target that holds a buff of `vsBuff.key` as the hit is worked out, otherwise 1 (敌能-141: a hit on
+ * a unit in 【国度】). @param {Load} load @param {Unit} t
+ */
+function vsBuffMul(load, t) {
+  const v = load.vsBuff;
+  return v && t.buffs.some((b) => b.key === v.key) ? v.scale : 1;
+}
 
 /**
  * A hit's damage, with where it comes from (钩子-3, the names of Stronghold's content): an attack's hit on its target,
  * on one splashed or jumped to; an aftershock is a splash and no attack's hit; whether the skill made it; a projectile's.
- * Its amount × `frozen` on a target 冻结 as the hit is worked out (敌能-27).
+ * Its amount × `frozen` on a target 冻结 as the hit is worked out (敌能-27), × `vsBuff` on a target holding that buff
+ * (敌能-141); both before the target's defences.
  * @param {Load} load @param {Unit} t @returns {import('./damage.js').Damage}
  */
 function damageOf(load, t) {
-  const amount = load.frozen && statsOf(t).flags.freeze ? load.amount * load.frozen : load.amount;
+  const amount = (load.frozen && statsOf(t).flags.freeze ? load.amount * load.frozen : load.amount) * vsBuffMul(load, t);
   const how = load.hit, d = /** @type {import('./damage.js').Damage} */ ({ type: load.type, amount, isAttack: how !== 'aftershock', isSkill: !!load.skill, isProjectile: !!load.ranged,
     ...(load.ignoreDef ? { defIgnorePct: load.ignoreDef } : {}), ...(load.ignoreSelect ? { ignoreSelect: true } : {}) });
   if (how === 'splash' || how === 'aftershock') d.isSplash = true;
@@ -265,6 +276,8 @@ const loadOf = (a, mods) => ({
   ep: (mods.ep ?? 0) + (mods.epScale ? statsOf(a).atk * mods.epScale : 0),
   ...(mods.hitStatus ? { hitStatus: mods.hitStatus } : {}), ...(mods.hitDebuff ? { hitDebuff: mods.hitDebuff } : {}), ...(mods.displace ? { displace: mods.displace } : {}), ...(mods.skill ? { skill: true } : {}), ...(mods.mark ? { mark: mods.mark } : {}),
   ...(mods.frozen ? { frozen: mods.frozen } : {}), ...(mods.ignoreDef ? { ignoreDef: mods.ignoreDef } : {}),
+  // 敌能-141. Left off every other load, so their shots hash as before.
+  ...(mods.vsBuff ? { vsBuff: mods.vsBuff } : {}),
   ...(mods.splash ? { splash: mods.splash } : {}),
   ...(mods.ignoreSelect ? { ignoreSelect: true } : {}),
 });

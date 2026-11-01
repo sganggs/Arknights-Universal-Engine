@@ -860,10 +860,12 @@
  * tiles per second, and what it carries — the damage type and amount, hits, 元素损伤 ('' and 0 for none); a boomerang
  * (职业-12) its way back's speed and, on its way back, `ret` 1; `held` 1 while content holds it where it arrived.
  * `skillHit` 1 is a skill projectile (敌能-83): arrival deals what it carries as a skill hit, not an attack, then
- * applies `hitStatus`. Absent on every other shot, so a shot that is not one still hashes the same.
+ * applies `hitStatus`. Absent on every other shot, so a shot that is not one still hashes the same. `vsBuff` is the
+ * 倍率 its hit takes on a target holding that buff (敌能-141), absent the same way.
  * @typedef {{ src: number, target: number, sx: number, sy: number, speed: number, type: DamageType, amount: number, times: number, element: string, ep: number,
  *   splash?: Splash | null, aftershock?: number, chain?: Chain | null, hitStatus?: { key: import('./status.js').StatusKey, seconds: number } | null,
- *   skill?: boolean, skillHit?: number, back?: number, ret?: number, held?: number, mark?: number, frozen?: number, ignoreDef?: number }} Shot
+ *   skill?: boolean, skillHit?: number, back?: number, ret?: number, held?: number, mark?: number, frozen?: number, ignoreDef?: number,
+ *   vsBuff?: { key: string, scale: number } }} Shot
  */
 
 /**

@@ -12,7 +12,7 @@ import { dealDamage, heal, setHp, knockDown } from './damage.js';
 import { dealEp } from './elements.js';
 import { selectable, sortAllies, friendly, evadesGround, stealthed } from './targeting.js';
 import { tileOf } from './body.js';
-import { tileAt } from './level.js';
+import { tileAt, buildableFor } from './level.js';
 import { board, alight, detour, wayKeys, becomeFlyer, becomeGround, displace, legsOf } from './routes.js';
 import { draw } from './rng.js';
 import { release } from './blocking.js';
@@ -181,6 +181,8 @@ export const BOLT_RADIUS = 0.3;
  * @property {(t: Unit, p: Payload) => void} hurl throws a homing skill projectile (敌能-83). Its speed is an enemy
  *   projectile's (攻击-3). `amount` is frozen as given. Arrival deals that as a skill hit, not an attack, then `status`
  *   when the target is still up
+ * @property {(row: number, col: number) => boolean} deployable whether the tile at (row, col) is a 可部署位: on the map,
+ *   its 部署类型 MELEE, RANGED or ALL (部署-1), whoever stands on it (敌能-141)
  */
 
 /**
@@ -247,6 +249,16 @@ function defaultAlly(c, u) {
 }
 
 /**
+ * A 可部署位 (敌能-141): a tile on the map a melee or a ranged operator may be deployed on by its 部署类型 (部署-1). Units
+ * on it do not matter.
+ * @param {Content} c @param {number} row @param {number} col
+ */
+function deployableAt(c, row, col) {
+  const t = tileAt(c.level, row, col);
+  return buildableFor(t, 'MELEE') || buildableFor(t, 'RANGED');
+}
+
+/**
  * The context's `bolt` (敌能-4): a direct bolt from the enemy, and its event. Kept out of contextOf for its line budget.
  * @param {World} w @param {Unit} e @param {Parameters<FoeContext['bolt']>[0]} b
  */
@@ -305,6 +317,7 @@ function contextOf(w, c, e, of) {
     ...blightContext(w, c, e),
     ground: () => { becomeGround(e); },
     defaultAlly: (u) => defaultAlly(c, u),
+    deployable: (row, col) => deployableAt(c, row, col),
     departed: () => readDeparted(w, ab, name),
     ...barrelContext(w, ab),
     ...footballContext(w, c, e),
