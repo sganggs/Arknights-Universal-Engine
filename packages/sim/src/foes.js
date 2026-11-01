@@ -32,6 +32,7 @@ import { placeTasting, tickTastings } from './tasting.js';
 import { readDeparted } from './exits.js';
 import { grantLootCards } from './loot.js';
 import { footballContext } from './football.js';
+import { bumpedHigh, seenBump } from './hitwall.js';
 
 /** @typedef {import('./types.js').World} World @typedef {import('./types.js').Content} Content @typedef {import('./types.js').Unit} Unit */
 /** @typedef {import('./types.js').EnemyDef} EnemyDef @typedef {import('./types.js').Blast} Blast @typedef {import('./types.js').Bolt} Bolt */
@@ -73,6 +74,8 @@ export const BOLT_RADIUS = 0.3;
  *   (敌能-38); an enemy no ability asks about keeps no count
  * @property {boolean} unblocked its block ended since its last turn
  * @property {boolean} fell it fell into a 地穴 (地图-4)
+ * @property {() => boolean} bumpedHigh a 失衡 slide of its stopped against a 高地 tile since its last turn's `tick`
+ *   (位移-3, 敌能-150); the first call starts the note, so a collision before it does not count
  * @property {boolean} ready a skill's cooldown is over
  * @property {() => void} use a skill was used: its cooldown starts again — one with a cooldown below 0 is not ready again
  * @property {(seconds: number) => number} frames seconds as whole frames (时间-2)
@@ -279,6 +282,7 @@ function contextOf(w, c, e, of) {
     get taken() { if (!Object.hasOwn(ab, '@taken')) ab['@taken'] = 0; return ab['@taken']; },
     unblocked: (ab['@unblocked'] ?? 0) === 1,
     fell: (ab['@fell'] ?? 0) === 1,
+    bumpedHigh: () => bumpedHigh(ab),
     ready: skill !== null && (ab[`${name}.cd`] ?? 0) <= 0,
     use: () => { if (skill) ab[`${name}.cd`] = skill.cooldown < 0 ? ONCE : secondsToFrames(skill.cooldown); },
     frames: secondsToFrames,
@@ -543,6 +547,7 @@ export function foeTick(w, c, e) {
   ab['@hurt'] = e.hp < (ab['@hp'] ?? e.hp) ? 1 : 0;
   ab['@unblocked'] = (ab['@blocked'] ?? 0) === 1 && blocked === 0 ? 1 : 0;
   each(w, c, e, 'tick', (b, ctx) => b.tick?.(ctx));
+  seenBump(ab);
   for (const s of defOf(c, e).skills ?? []) if ((ab[`${s.key}.cd`] ?? 0) > 0) ab[`${s.key}.cd`]--;
   ab['@hp'] = e.hp;
   ab['@blocked'] = e.blockedBy >= 0 ? 1 : 0;

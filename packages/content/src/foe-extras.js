@@ -363,4 +363,8 @@ export const FOE_EXTRAS = Object.freeze({
   // 天桩-甲 / 失控天桩-甲: ……不进行普通攻击，无法被阻挡 — their 自缚, 失衡免疫, 阻回 and CheckAwake are not this clause
   enemy_1398_dhdcr: { talents: { NoAttack: {}, unblockable: {} }, source: `${PRTS}%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366637` },
   enemy_1398_dhdcr_2: { talents: { NoAttack: {}, unblockable: {} }, source: `${PRTS}%E5%A4%B1%E6%8E%A7%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366638` },
+  // 雪孩子 / 雪顽童: 与高地碰撞时若自身处于失衡状态，对自身造成5000真实伤害，随后的5秒内不会再次触发上述伤害 — the 5000 is the
+  // data's hitWall.value, the 5 s (`rearm`) only the page's (敌能-150). 直立小雪怪 shares the talent and gets no `rearm`.
+  enemy_10138_xdsnow: { talents: { hitWall: { rearm: 5 } }, source: `${PRTS}%E9%9B%AA%E5%AD%A9%E5%AD%90&oldid=373740` },
+  enemy_10138_xdsnow_2: { talents: { hitWall: { rearm: 5 } }, source: `${PRTS}%E9%9B%AA%E9%A1%BD%E7%AB%A5&oldid=373742` },
 });

@@ -762,6 +762,8 @@
  * @property {boolean} [unharmful] it costs no life at the goal (目标-1)
  * @property {Record<string, number>} ab an enemy's ability state (敌能-2): cooldowns, marks, what it saw last turn;
  *   `@taken` counts accepted hits once an ability of its asks (敌能-38); absent otherwise, and never on an operator
+ *   (`@highBump`, 敌能-150: a 失衡 slide of its stopped against high ground, 1 until its turn's abilities saw it; kept
+ *   the same way, only once an ability of its asks)
  * @property {SkillState | null} skill its skill, null when it has none (技能-1)
  * @property {Record<string, number>} ep element values below their maximum, by element (元素-1); none recorded is at its maximum
  * @property {number} paid the cost its deployment took, 0 for enemies (撤退-1)
