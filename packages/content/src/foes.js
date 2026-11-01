@@ -26,6 +26,7 @@ import { ballBehaviors, ballAura, ballBoom, ballBoomTick, PHYSIC_KEYS } from './
 import { pitchBehaviors, spotAura } from './pitch.js';
 import { lostLifeBehaviors } from './lostlife.js';
 import { bristleBehaviors, weaknessOwns } from './bristle.js';
+import { crowdBehaviors } from './crowd.js';
 import { boarBehaviors, boarOwns, boarRush, boarFirst, boarTick, boarSpawn, boarHit } from './boar.js';
 import { flameBehaviors } from './flame.js';
 import { footballerBehaviors, rebornShape, noPeriodic, KICK_SKILLS } from './footballers.js';
@@ -316,6 +317,7 @@ export const foeBehaviors = Object.freeze({
   ...pitchBehaviors,
   ...lostLifeBehaviors,
   ...bristleBehaviors,
+  ...crowdBehaviors,
   ...boarBehaviors,
   ...flameBehaviors,
   Rush,

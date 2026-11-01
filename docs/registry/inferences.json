@@ -4758,5 +4758,12 @@
     "statement": "阵地足球与阵地足球锦标的横幅音效在横幅出现时播放：阵地足球的「进球！」「失球！」配 battle.ON_COOPERATE_ALLY_SCORED / ENEMY_SCORED；锦标的比赛开场配 MATCHSTART、点球开场配 PENALTYKICK_BANNER、「平局！」配 DRAW、「进球！」「成功！」配 WINSCORE、「失球！」配 LOSESCORE、「本方点球」「对方点球」配 PENALTYKICK、PENALTYKICK_OTHER",
     "basis": "audio_data.json 有这些音效库，库名与片段名（act1football_b_ui_matchstart、_draw、_winscore、_losescore、_penaltykick、_penaltykick_banner；act1multi_b_ui_winscore、_losescore）与横幅一一对应，但由游戏代码在什么时机播放没有资料；按名字配给对应的横幅，在横幅出现时播放；「成功！」（挡下对方点球）对我方有利，配 WINSCORE",
     "status": "待查证"
+  },
+  {
+    "id": "INF-0681",
+    "clause": "敌能-119",
+    "statement": "我方干员按列分左右：它所在列左边各列为左，右边各列为右，同一列不算；只数在场、生命大于 0 的干员，不数召唤物和装置；一样多保持当前面向。每一帧在它的回合之后转，盖过敌能-90 的转向；受控制时也转。圆仔的「最多」和驮兽补给员的「较多」按同一条做。",
+    "basis": "页面写「始终面向我方干员数量最多的方向（相同时维持当前方向）」「未被阻挡时，始终面向我方干员数量较多的方向（相同数量则保持当前方向）」，没有写左右怎么分、召唤物算不算、在什么时刻转、受控制时转不转。左右按列沿用作战机制 §3.2.2 的方位划分；只有左右两种朝向，「最多」与「较多」都是比左右两边。",
+    "status": "待查证"
   }
 ]
