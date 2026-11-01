@@ -48,6 +48,7 @@ import { spearBehaviors, spearOwns } from './spear.js';
 import { catapultBehaviors, catapultOwns } from './catapult.js';
 import { plantBehaviors, plantOwns } from './plant.js';
 import { companionBehaviors, companionOwns } from './companion.js';
+import { castBehaviors, castOwns } from './castroles.js';
 import { crystalBehaviors, crystalOwns } from './crystal.js';
 import { chargeBehaviors, chargeOwns, chargeShape, chargeRush } from './charge.js';
 import { bottleBehaviors, bottleOwns } from './firebottle.js';
@@ -351,6 +352,7 @@ export const foeBehaviors = Object.freeze({
   ...catapultBehaviors,
   ...plantBehaviors,
   ...companionBehaviors,
+  ...castBehaviors,
   ...crystalBehaviors,
   ...chargeBehaviors,
   ...bottleBehaviors,
@@ -433,6 +435,8 @@ export const FOE_NEEDS = Object.freeze({
   ChargeAttack: Object.freeze(['page']),
   // The page marker of the three read 锋盔 pages (敌能-78). The rest of the shape is rebornOwns.
   reborn: Object.freeze(['page']),
+  // 主角 / 反派阵营角色's page marker (敌能-128): 命定的主角 / 命定的反派 have the same shapes and no saved page. castOwns has the rest.
+  inside: Object.freeze(['page']), read: Object.freeze(['page']),
   // 出场无敌的页面标记（敌能-79）。「寒灾」有 duration，没有 page。致命一击的伤害类型同样只在页面上。
   invincible: Object.freeze(['page']), CriticalHit: Object.freeze(['arts']),
   // The read shotbuff pages (敌能-81). Ammunition is not required: 甜品商 has the marker and no rounds.
@@ -462,7 +466,7 @@ const cartBoom = (k, bb) => k === 'boom' && cartShape(bb);
  * The shape checks of the shared names (关卡-2): each says whether a blackboard of its names is the shape its behaviour
  * understands, and passes every other name. In a list, so that each family adds one entry, not one more `&&`.
  */
-const SHAPE_OWNERS = Object.freeze([rebornShape, boarOwns, elementHitOwns, takeOffOwns, wineOwns, whipOwns, bornBugsOwns, radioOwns, shieldOwns, punchOwns, passiveOwns, defdownOwns, knightOwns, blinkOwns, healAuraOwns, vampireOwns, chargeAttackOwns, rebornOwns, faustOwns, shotbuffOwns, bornCarOwns, stunAttackOwns, bombdOwns, evadeOwns, carnivalOwns, heteroOwns, pompeiiOwns, ninjaOwns, spearOwns, catapultOwns, plantOwns, companionOwns, crystalOwns, chargeOwns, bottleOwns, broOwns, avalancheOwns, crossOwns, absentOwns, weaknessOwns]);
+const SHAPE_OWNERS = Object.freeze([rebornShape, boarOwns, elementHitOwns, takeOffOwns, wineOwns, whipOwns, bornBugsOwns, radioOwns, shieldOwns, punchOwns, passiveOwns, defdownOwns, knightOwns, blinkOwns, healAuraOwns, vampireOwns, chargeAttackOwns, rebornOwns, faustOwns, shotbuffOwns, bornCarOwns, stunAttackOwns, bombdOwns, evadeOwns, carnivalOwns, heteroOwns, pompeiiOwns, ninjaOwns, spearOwns, catapultOwns, plantOwns, companionOwns, crystalOwns, chargeOwns, bottleOwns, broOwns, avalancheOwns, crossOwns, absentOwns, weaknessOwns, castOwns]);
 
 /** Shapes whole in themselves, whatever FOE_NEEDS lists for their name (关卡-2). @type {readonly ((k: string, bb: Record<string, unknown>) => boolean)[]} */
 const WHOLE_SHAPES = Object.freeze([nestPulseOwns, cartBoom, noPeriodic, (k, bb) => k === 'boom' && ballBoom(bb), (k, bb) => k === 'Shield' && heteroShield(bb), (k, bb) => k === 'defdown' && acidShape(bb),

@@ -19,12 +19,15 @@ const REBORN_KEYS = new Set(['duration', 'page']);
 const holding = (u) => u.buffs.some((b) => b.key === WEAK);
 
 /**
- * The duration-only 重生 the three read pages describe (敌能-78). Any other `reborn` shape is not this talent.
+ * The duration-only 重生 the read pages describe (敌能-78, 敌能-128): no `hp_ratio`. 主角阵营角色's also has `invincible`,
+ * its 「进入0s无敌」 — 敌能-18's 无敌 after the rebirth —, only as a number; the 锋盔 have none. Any other `reborn` shape is
+ * not this talent.
  * @param {Record<string, unknown>} bb
  */
 function durationOnly(bb) {
   if (typeof bb.duration !== 'number' || typeof bb.page !== 'number') return false;
-  for (const k of Object.keys(bb)) if (!REBORN_KEYS.has(k)) return false;
+  if (bb.invincible !== undefined && typeof bb.invincible !== 'number') return false;
+  for (const k of Object.keys(bb)) if (!REBORN_KEYS.has(k) && k !== 'invincible') return false;
   return true;
 }
 
@@ -84,7 +87,8 @@ const AtkDesWeaken = Object.freeze({
 
 /**
  * 重生 (敌能-78): the first fatal hit stays, at full HP — there is no `hp_ratio` — for `duration` seconds of 敌能-18's
- * reviving. A blackboard this shape does not know does nothing, so an unread `reborn` is not revived if it is left on.
+ * reviving. 主角阵营角色's (敌能-128) is the same, then `invincible` s of 无敌 as 敌能-18's (0: none). A blackboard
+ * this shape does not know does nothing, so an unread `reborn` is not revived if it is left on.
  * @type {FoeBehavior}
  */
 const reborn = Object.freeze({

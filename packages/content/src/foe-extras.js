@@ -143,6 +143,10 @@ export const FOE_EXTRAS = Object.freeze({
   enemy_1148_dssbr_2: { talents: { epdamage: { el: 1 } }, source: `${PRTS}%E5%AF%8C%E8%90%A5%E5%85%BB%E7%9A%84%E6%BB%91%E5%8A%A8%E8%80%85&oldid=353446` },
   // 骇笑看客: 普通攻击附带自身攻击力20%的神经损伤
   enemy_2009_csaudc: { talents: { combat: { el: 1 } }, source: `${PRTS}%E9%AA%87%E7%AC%91%E7%9C%8B%E5%AE%A2&oldid=354182` },
+  // 主角阵营角色 / 反派阵营角色: 「攻击附带神经损伤」, 主角's 「首次被击倒后进行持续3s的重生，恢复100%生命值并进入0s无敌」 (敌能-128).
+  // `page` marks the read pages: 命定的主角 / 命定的反派 have the same shapes and stay uncovered (关卡-2).
+  enemy_10098_crhro: { talents: { inside: { page: 1 }, reborn: { page: 1 } }, skills: { read: { page: 1 } }, source: `${PRTS}%E4%B8%BB%E8%A7%92%E9%98%B5%E8%90%A5%E8%A7%92%E8%89%B2&oldid=354169` },
+  enemy_10099_crvln: { talents: { inside: { page: 1 } }, skills: { read: { page: 1 } }, source: `${PRTS}%E5%8F%8D%E6%B4%BE%E9%98%B5%E8%90%A5%E8%A7%92%E8%89%B2&oldid=354171` },
   // 绯红歌伶: 普通攻击附带自身攻击力20%的神经损伤 (AttackSpeedUp is entirely in the data)
   enemy_2010_csdcr: { talents: { attack: { el: 1 } }, source: `${PRTS}%E7%BB%AF%E7%BA%A2%E6%AD%8C%E4%BC%B6&oldid=354183` },
   // 灼热源石虫/炽焰源石虫: 攻击造成法术伤害，并附加自身攻击力100%的灼燃损伤

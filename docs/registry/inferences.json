@@ -4758,5 +4758,26 @@
     "statement": "阵地足球与阵地足球锦标的横幅音效在横幅出现时播放：阵地足球的「进球！」「失球！」配 battle.ON_COOPERATE_ALLY_SCORED / ENEMY_SCORED；锦标的比赛开场配 MATCHSTART、点球开场配 PENALTYKICK_BANNER、「平局！」配 DRAW、「进球！」「成功！」配 WINSCORE、「失球！」配 LOSESCORE、「本方点球」「对方点球」配 PENALTYKICK、PENALTYKICK_OTHER",
     "basis": "audio_data.json 有这些音效库，库名与片段名（act1football_b_ui_matchstart、_draw、_winscore、_losescore、_penaltykick、_penaltykick_banner；act1multi_b_ui_winscore、_losescore）与横幅一一对应，但由游戏代码在什么时机播放没有资料；按名字配给对应的横幅，在横幅出现时播放；「成功！」（挡下对方点球）对我方有利，配 WINSCORE",
     "status": "待查证"
+  },
+  {
+    "id": "INF-0750",
+    "clause": "敌能-128",
+    "statement": "主角阵营角色、反派阵营角色只在摄影区域内成立的部分在现有关卡里不发生：主角攻击半径+2，反派二连击，两名可以攻击并优先攻击对方阵营、对其造成攻击力 500% 的伤害，以及技能入戏（read）。天赋 inside 的 atk_scale_normal、atk_scale_crvln、atk_scale_crhro、ability_range_forward_extend、attack_speed 只属于这些部分，引擎不读；read 有行为但从不发动，不占用攻击间隔。",
+    "basis": "两页把这些都写在摄影区域内：天赋栏「位于摄影区域范围内时，……」，入戏「仅首次进入摄影区域后触发：阅读台本2s，随后进入状态」。packages/content/data/levels 与 docs/spec 没有摄影区域（与 INF-0482 同一读法），也没有这两名。数据的键没有页面上的名字：atk_scale_crvln、atk_scale_crhro 的 5 对得上「攻击力500%」，ability_range_forward_extend 的 2 对得上「攻击半径+2」，read 的 duration 2 对得上「阅读台本2s」；attack_speed 1 与二连击是什么关系没有资料。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-0751",
+    "clause": "敌能-128",
+    "statement": "神经损伤在摄影区域外也附加：普通攻击的每一击，在这一击的伤害之后，附加当时攻击力 × inside 的 attack@ep_damage_ratio（两名都是 0.15）的神经损伤（元素-1 的 id 1），内容不补 el。被闪避的一击照样附加；目标无敌或正在爆发时不受（元素-2），中立单位不受。",
+    "basis": "两页的能力栏把「攻击附带神经损伤」单列一条，天赋栏把「攻击附加攻击力15%的神经损伤」另起一行，都没有写摄影区域；数据却把倍率放在天赋 inside 里，名字像是只在区域内。术语释义 oldid=401060 写了先结算伤害后结算元素损伤、中立单位不会受到元素损伤；页面没有写被闪避的一击，元素-2 的结算不看闪避。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-0752",
+    "clause": "敌能-128",
+    "statement": "主角阵营角色的重生沿用敌能-78：第一次生命归 0 时留下（被上下文的 remove 设为 0、坠落也算），清掉 Buff，生命在当时回到 100%，duration（3）秒无敌、不能被选中、不可阻挡、不行动，结束时技能冷却回到初始冷却。reborn 的 invincible 是敌能-18 的重生结束后的无敌秒数，0 即不加，大于 0 时再加这么多秒。第二次生命归 0 离场；走到终点不重生；天赋不可沉默。",
+    "basis": "页面「首次被击倒后进行持续3s的重生，恢复100%生命值并进入0s无敌」，与敌能-78 锋盔三页的「首次被击倒后，进行持续5s的重生（回复100%生命值）」是同一件事，只多了 0s 无敌；“复仇者”的页面同样把敌能-18 的 invincible 写作「并获得0s无敌」。数据只有 duration 3 与 invincible 0，没有 hp_ratio。页面没有写重生期间的旗帜、清 Buff、冷却、走到终点和被移除；两名免疫沉默（attributes.silenceImmune）。",
+    "status": "待查证"
   }
 ]
