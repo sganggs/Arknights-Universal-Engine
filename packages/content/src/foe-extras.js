@@ -377,4 +377,11 @@ export const FOE_EXTRAS = Object.freeze({
   enemy_2023_sypult: { talents: { Attack: { page: 1 } }, source: `${PRTS}%E6%8A%95%E5%97%A3%E8%82%B2%E6%AF%8D&oldid=436691` },
   // 雪怪小队凿冰人 (敌能-27): 计算伤害时若目标正在受冻结影响，攻击倍率提高至250%
   enemy_1069_icebrk: { talents: { atkup: { page: 1 } }, source: `${PRTS}%E9%9B%AA%E6%80%AA%E5%B0%8F%E9%98%9F%E5%87%BF%E5%86%B0%E4%BA%BA&oldid=436845` },
+  // 雪怪小队一族 (敌能-27, 敌能-153): 攻击持有冻结的单位时，攻击倍率（攻击力）提高至150%（破冰者300%）, the data's atk_scale
+  enemy_1064_snsbr: { talents: { atkup: { page: 1 } }, source: `${PRTS}%E9%9B%AA%E6%80%AA%E5%B0%8F%E9%98%9F&oldid=375683` },
+  enemy_1065_snwolf: { talents: { atkup: { page: 1 } }, source: `${PRTS}%E9%9C%9C%E7%89%99&oldid=353275` },
+  enemy_1065_snwolf_2: { talents: { atkup: { page: 1 } }, source: `${PRTS}%E9%9C%9C%E9%94%90&oldid=287261` },
+  enemy_1066_snbow: { talents: { atkup: { page: 1 } }, source: `${PRTS}%E9%9B%AA%E6%80%AA%E7%8B%99%E5%87%BB%E6%89%8B&oldid=367681` },
+  enemy_1066_snbow_2: { talents: { atkup: { page: 1 } }, source: `${PRTS}%E9%9B%AA%E6%80%AA%E7%8B%99%E5%87%BB%E6%89%8B%E7%BB%84%E9%95%BF&oldid=287263` },
+  enemy_1069_icebrk_2: { talents: { atkup: { page: 1 } }, source: `${PRTS}%E9%9B%AA%E6%80%AA%E5%B0%8F%E9%98%9F%E7%A0%B4%E5%86%B0%E8%80%85&oldid=353284` },
 });
