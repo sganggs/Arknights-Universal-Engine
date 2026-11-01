@@ -4,8 +4,9 @@
 
 import { elements } from '@aue/sim';
 import { nestBuffOwns, nestPulseOwns, nestPulseTick, nestPulseUp } from './nest.js';
+import { rageShape, rageTargets, rageAttack } from './mechmonster.js';
 
-/** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior */
+/** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').FoeContext} FoeContext @typedef {import('@aue/sim').skills.AttackMods} AttackMods */
 
 /** Talent names whose simple ratio blackboard is this ability (敌能-38). */
 const ELEMENT_NAMES = new Set(['epdamage', 'empty', 'EpDamage', 'combat', 'attack']);
@@ -46,11 +47,12 @@ function speedShape(bb) {
 /**
  * Whether a talent of this name, with this blackboard, is an ability this file understands (敌能-38, 敌能-47).
  * `EpDamage` with `pulse` is the nest pulse, not the on-hit element. `Buff` is the nest 抵抗 only in its shape.
+ * 「巨大的丑东西」's `combat` is its first form's attack (敌能-124).
  * Any other name is not this family's concern: the caller still asks FOE_NEEDS.
  * @param {string} name @param {Record<string, unknown>} bb
  */
 export function elementHitOwns(name, bb) {
-  if (ELEMENT_NAMES.has(name)) return elementShape(bb) || nestPulseOwns(name, bb) || erodeShape(bb);
+  if (ELEMENT_NAMES.has(name)) return elementShape(bb) || nestPulseOwns(name, bb) || erodeShape(bb) || (name === 'combat' && rageShape(bb));
   if (name === 'AttackSpeedUp') return speedShape(bb);
   if (name === 'Buff') return nestBuffOwns(bb);
   return true;
@@ -59,18 +61,21 @@ export function elementHitOwns(name, bb) {
 /**
  * The element hit (敌能-38). No `el`, or a blackboard this is not, and the attack is unchanged — never a default 凋亡.
  * `cross` 1 is the four neighbouring tiles (敌能-26), the element damage unscaled.
- * @type {FoeBehavior}
+ * @param {FoeContext} ctx @param {AttackMods} mods @returns {AttackMods}
  */
+function elementAttack(ctx, mods) {
+  const bb = ctx.bb;
+  if ((!elementShape(bb) && !erodeShape(bb)) || typeof bb.el !== 'number') return mods;
+  const el = elements.ELEMENTS[bb.el - 1];
+  if (!el) return mods;
+  const ep = ctx.stats(ctx.self).atk * bb['attack@ep_damage_ratio'];
+  const hit = { ...mods, element: el, ep };
+  return bb.cross === 1 ? { ...hit, cross: true, splashScale: 1 } : hit;
+}
+
+/** The element hit and what else lives on its names (敌能-38, 敌能-47, 敌能-107). @type {FoeBehavior} */
 const onHit = Object.freeze({
-  attack: (ctx, mods) => {
-    const bb = ctx.bb;
-    if ((!elementShape(bb) && !erodeShape(bb)) || typeof bb.el !== 'number') return mods;
-    const el = elements.ELEMENTS[bb.el - 1];
-    if (!el) return mods;
-    const ep = ctx.stats(ctx.self).atk * bb['attack@ep_damage_ratio'];
-    const hit = { ...mods, element: el, ep };
-    return bb.cross === 1 ? { ...hit, cross: true, splashScale: 1 } : hit;
-  },
+  attack: elementAttack,
   // The nest pulse lives on this same behaviour (敌能-47), and 注亡拟嗣's 自缚 and loss (敌能-107). Any other blackboard
   // of these names does neither.
   spawn: (ctx) => {
@@ -116,7 +121,14 @@ const AttackSpeedUp = Object.freeze({
   },
 });
 
+/** `combat`: the element hit, and on its own shape 「巨大的丑东西」's first-form attack (敌能-124). @type {FoeBehavior} */
+const combat = Object.freeze({
+  ...onHit,
+  targets: rageTargets,
+  attack: (ctx, mods) => (rageShape(ctx.bb) ? rageAttack(ctx, mods) : elementAttack(ctx, mods)),
+});
+
 /** The behaviours of this file, by talent name. @type {Readonly<Record<string, FoeBehavior>>} */
 export const elementHitBehaviors = Object.freeze({
-  epdamage: onHit, empty: onHit, EpDamage: onHit, combat: onHit, attack: onHit, AttackSpeedUp,
+  epdamage: onHit, empty: onHit, EpDamage: onHit, combat, attack: onHit, AttackSpeedUp,
 });
