@@ -397,7 +397,7 @@ export const FOE_EXTRAS = Object.freeze({
   enemy_1217_rescar_2: { talents: { shotbuff: { page: 1, melee: 1 } }, skills: { BornCar: { max: 3 } }, source: `${PRTS}%E5%AF%BB%E8%B7%AF%E8%80%85%E7%9F%A5%E5%90%8D%E7%94%9C%E5%93%81%E5%95%86&oldid=381093` },
   // 迷路的巨像: 眩晕击 throws a stone (敌能-83). `page` marks this page; 配重投石机 has the same data and no page.
   enemy_2003_rockman: { skills: { StunAttack: { page: 1 } }, source: `${PRTS}%E8%BF%B7%E8%B7%AF%E7%9A%84%E5%B7%A8%E5%83%8F&oldid=354366` },
-  // 弑君者: the 0.5s is on the page, not in the blackboard (敌能-84). 卢西恩 shares { dist } and gets no marker.
+  // 弑君者: the 0.5s is on the page, not in the blackboard (敌能-84). 卢西恩 shares { dist }; its row adds the 不祥幻影 (敌能-156).
   enemy_1502_crowns: { skills: { blink: { glide: 0.5 } }, source: `${PRTS}%E5%BC%91%E5%90%9B%E8%80%85(%E6%95%8C%E6%96%B9)&oldid=361341` },
   // 赛场补给车 / “天车散花”赛场补给车: 爆炸汽水布设 (敌能-86). `soda` marks the two pages that describe the bottle.
   // The same three keys on the other 补给员 are not this skill, and stay uncovered (关卡-2).
@@ -494,4 +494,12 @@ export const FOE_EXTRAS = Object.freeze({
   enemy_2023_sypult: { talents: { Attack: { page: 1 } }, source: `${PRTS}%E6%8A%95%E5%97%A3%E8%82%B2%E6%AF%8D&oldid=436691` },
   // 雪怪小队凿冰人 (敌能-27): 计算伤害时若目标正在受冻结影响，攻击倍率提高至250%
   enemy_1069_icebrk: { talents: { atkup: { page: 1 } }, source: `${PRTS}%E9%9B%AA%E6%80%AA%E5%B0%8F%E9%98%9F%E5%87%BF%E5%86%B0%E4%BA%BA&oldid=436845` },
+  // 鼎沸 / 飘香 (敌能-129): `page` marks the talent `aoe` of the two read pages. 卢西恩's and 不祥幻影's skill `aoe` has the
+  // same two numbers, and a shape check cannot tell a talent from a skill (敌能-156).
+  enemy_10054_cjhot: { talents: { aoe: { page: 1 } }, source: `${PRTS}%E9%BC%8E%E6%B2%B8&oldid=381805` },
+  enemy_10054_cjhot_2: { talents: { aoe: { page: 1 } }, source: `${PRTS}%E9%A3%98%E9%A6%99&oldid=381806` },
+  // 卢西恩，“猩红血钻” / 不祥幻影 (敌能-156): 普通攻击额外附加……神经损伤 (`el` 1, 敌能-38), the skill's 半径2 (`radius`), and
+  // 卢西恩's 闪现: 在0.5s内 (`glide`, as 弑君者's) and the 不祥幻影 it leaves (`enemy_key`).
+  enemy_2016_csphtm: { talents: { combat: { el: 1 } }, skills: { blink: { glide: 0.5, enemy_key: 'enemy_2017_csphts' }, aoe: { radius: 2 } }, source: `${PRTS}%E5%8D%A2%E8%A5%BF%E6%81%A9%EF%BC%8C%E2%80%9C%E7%8C%A9%E7%BA%A2%E8%A1%80%E9%92%BB%E2%80%9D&oldid=354378` },
+  enemy_2017_csphts: { talents: { combat: { el: 1 } }, skills: { aoe: { radius: 2 } }, source: `${PRTS}%E4%B8%8D%E7%A5%A5%E5%B9%BB%E5%BD%B1&oldid=354186` },
 });
