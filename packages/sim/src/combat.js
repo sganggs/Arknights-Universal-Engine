@@ -268,6 +268,12 @@ function afterDamage(w, c, h) {
 const atkOf = (a, pct) => (pct ? computeStats({ base: a.base, buffs: [...a.buffs, makeBuff({ key: 'attackBonus', mods: { atkPct: pct } })] }).atk : statsOf(a).atk);
 
 /**
+ * 敌能-141's `vsBuff` on a load, left off every other load so their shots hash as before. Outside loadOf, which has no
+ * room for one more branch. @param {AttackMods} mods
+ */
+const vsBuffOf = (mods) => (mods.vsBuff ? { vsBuff: mods.vsBuff } : {});
+
+/**
  * What an attack carries to each target (攻击-2): its type, the attack × 攻击力倍率 (the attack's × the attacker's, 伤害-6),
  * hits, 元素损伤. @param {Unit} a @param {AttackMods} mods @returns {Load}
  */
@@ -276,8 +282,7 @@ const loadOf = (a, mods) => ({
   ep: (mods.ep ?? 0) + (mods.epScale ? statsOf(a).atk * mods.epScale : 0),
   ...(mods.hitStatus ? { hitStatus: mods.hitStatus } : {}), ...(mods.hitDebuff ? { hitDebuff: mods.hitDebuff } : {}), ...(mods.displace ? { displace: mods.displace } : {}), ...(mods.skill ? { skill: true } : {}), ...(mods.mark ? { mark: mods.mark } : {}),
   ...(mods.frozen ? { frozen: mods.frozen } : {}), ...(mods.ignoreDef ? { ignoreDef: mods.ignoreDef } : {}),
-  // 敌能-141. Left off every other load, so their shots hash as before.
-  ...(mods.vsBuff ? { vsBuff: mods.vsBuff } : {}),
+  ...vsBuffOf(mods),
   ...(mods.splash ? { splash: mods.splash } : {}),
   ...(mods.ignoreSelect ? { ignoreSelect: true } : {}),
 });
