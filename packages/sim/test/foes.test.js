@@ -68,6 +68,19 @@ test('[敌能-2] hooks: spawn, tick seeing hurt and unblocked, death; state per 
   assert.deepEqual(seen, [['spawn', 2], ['zap', 15, 3], ['hurt', 20], ['unblocked', 21], ['zap', 45, 3], ['death', 51]], 'ready 0.5 s after spawning, then 1 s after use');
 });
 
+test('[敌能-157] readyOf: another of its skills, by name, is ready once its own cooldown is over; a name it has no skill of is not', () => {
+  /** @type {[number, boolean, boolean, boolean][]} */
+  const seen = [];
+  const { c, w } = arena({ skills: [{ key: 'a', cooldown: 1, initCooldown: 0, bb: {} }, { key: 'b', cooldown: 1, initCooldown: 0.5, bb: {} }] }, {
+    a: { tick: (/** @type {any} */ ctx) => { seen.push([ctx.frame, ctx.readyOf('b'), ctx.readyOf('a'), ctx.readyOf('nope')]); } },
+  });
+  foe(w, c, 1, 3);
+  run(w, c, 20);
+  const first = seen[0][0];
+  assert.deepEqual(seen.filter(([, b]) => b).map(([f]) => f - first)[0], 15, "b's 0.5 s first cooldown is 15 frames");
+  assert.ok(seen.every(([, , a, nope]) => a && !nope), 'a ready all along; no skill of that name is never ready');
+});
+
 test('[敌能-2] targets and attack hooks change whom an enemy attacks and how', () => {
   const { c, w } = arena({ applyWay: 'MELEE' }, {
     far: {

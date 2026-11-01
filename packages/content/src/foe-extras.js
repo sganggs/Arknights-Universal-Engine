@@ -366,4 +366,10 @@ export const FOE_EXTRAS = Object.freeze({
   enemy_1398_dhdcr_2: { talents: { NoAttack: {}, unblockable: {} }, source: `${PRTS}%E5%A4%B1%E6%8E%A7%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366638` },
   // “复仇者”: 生命值不高于50%时：攻击力+180% (敌能-8). `low` marks the read page; “火与钢” has the same keys and none (敌能-149).
   enemy_1539_reid: { talents: { AtkUp: { low: 1 } }, source: `${PRTS}%E2%80%9C%E5%A4%8D%E4%BB%87%E8%80%85%E2%80%9D&oldid=354327` },
+  // 锏 (敌能-157): 第一形态 拥有抵抗 (敌能-27's Resist); 速杀 在0.5s内向下个检查点方向瞬移1.5格 (`glide`, as 弑君者's, 敌能-84). `page`
+  // marks the read page on `Reborn`: “领袖” and “酒神” have the same `duration` and `invincible` and none.
+  enemy_1525_blkswb: {
+    talents: { Resist: {}, Reborn: { page: 1 } }, skills: { Blink: { glide: 0.5 }, Blink2: { glide: 0.5 } },
+    source: `${PRTS}%E9%94%8F%28%E6%95%8C%E6%96%B9%29&oldid=287951`,
+  },
 });

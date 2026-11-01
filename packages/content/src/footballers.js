@@ -6,6 +6,7 @@
 // team does beyond that is teams.js's.
 import { KIND } from '@aue/schema';
 import { beginRevival, endRebirth, avengerBehaviors } from './avenger.js';
+import { maceReborn, maceFatal, maceRebornTick } from './mace.js';
 import { MARK, RAGE, DRIBBLE, dist2, anyOf, openGoalTile, clearGoalTile, forwards, nearBall, kickless, teamBehaviors } from './teams.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').FoeContext} FoeContext @typedef {import('@aue/sim').Unit} Unit */
@@ -270,12 +271,19 @@ export const playerReborn = (bb) => typeof bb.duration === 'number' && !('hp_rat
 
 /**
  * `Reborn` by its shape (敌能-18, 足球-9): a player's — a `duration` only — every knockdown, its HP back to the maximum
- * and `duration` seconds of 敌能-18's reviving; another the avenger's, once, at `hp_ratio`.
+ * and `duration` seconds of 敌能-18's reviving; another the avenger's, once, at `hp_ratio`. 锏's — `duration` and
+ * `invincible` with its page marker — goes first to mace.js (敌能-157), so it is not taken for a player's.
  * @type {FoeBehavior}
  */
 const Reborn = Object.freeze({
-  fatal: (ctx) => (playerReborn(ctx.bb) ? beginRevival(ctx, 1) : avengerBehaviors.Reborn.fatal?.(ctx) ?? false),
-  tick: (ctx) => { endRebirth(ctx); },
+  fatal: (ctx) => {
+    if (maceReborn(ctx.bb)) return maceFatal(ctx);
+    return playerReborn(ctx.bb) ? beginRevival(ctx, 1) : avengerBehaviors.Reborn.fatal?.(ctx) ?? false;
+  },
+  tick: (ctx) => {
+    if (maceReborn(ctx.bb)) maceRebornTick(ctx);
+    else endRebirth(ctx);
+  },
 });
 
 /** Whether a `Reborn` has a shape it understands (敌能-18, 足球-9): the avenger's `hp_ratio`, or a player's. @param {string} k @param {Record<string, unknown>} bb */
