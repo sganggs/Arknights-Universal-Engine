@@ -135,8 +135,10 @@ function teamPlayers(football, spawned) {
 }
 
 /**
- * The enemies a level's waves and branches spawn (关卡-2, 守御-6) — in 阵地足球 every team's players (足球-6) —, and
- * those their abilities bring in turn (a split, a summon, a rebirth as another: an enemy key in a blackboard, 敌能-22).
+ * The enemies that appear at this difficulty (关卡-2): SPAWN keys of the waves and branches after `level_enemy_replace`,
+ * 阵地足球's players those spawns may draw (足球-6) when the table has them, and enemies their ability blackboards name
+ * that the table has (敌能-22), and theirs in turn. An enemy only in `enemyDbRefs`, never reached this way, does not
+ * appear and is not counted.
  * @param {any[]} waves @param {Record<string, any[]> | undefined} branches @param {Record<string, any>} enemies the level's records
  * @param {import('@aue/sim').FootballRules} [football]
  */
