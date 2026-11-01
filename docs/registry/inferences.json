@@ -4758,5 +4758,61 @@
     "statement": "阵地足球与阵地足球锦标的横幅音效在横幅出现时播放：阵地足球的「进球！」「失球！」配 battle.ON_COOPERATE_ALLY_SCORED / ENEMY_SCORED；锦标的比赛开场配 MATCHSTART、点球开场配 PENALTYKICK_BANNER、「平局！」配 DRAW、「进球！」「成功！」配 WINSCORE、「失球！」配 LOSESCORE、「本方点球」「对方点球」配 PENALTYKICK、PENALTYKICK_OTHER",
     "basis": "audio_data.json 有这些音效库，库名与片段名（act1football_b_ui_matchstart、_draw、_winscore、_losescore、_penaltykick、_penaltykick_banner；act1multi_b_ui_winscore、_losescore）与横幅一一对应，但由游戏代码在什么时机播放没有资料；按名字配给对应的横幅，在横幅出现时播放；「成功！」（挡下对方点球）对我方有利，配 WINSCORE",
     "status": "待查证"
+  },
+  {
+    "id": "INF-0830",
+    "clause": "敌能-136",
+    "statement": "灼藤、灼芯在每个回合开始时点燃半径 ignite（0.5）内的卷心籽、卷心草：圆心距离不大于半径，在场、不是中立单位、没有消失、不在空中。点燃给它一个没有结束时间的 Buff，一只只有一份；此后一直处于燃烧状态，点燃它的灼藤离场或被击倒也不变。",
+    "basis": "页面只写「可以点燃半径0.5范围内的卷心籽/卷心草（不可对空）」「可以被灼藤/灼芯点燃进入燃烧状态」，没写什么时候检查、燃烧状态持续多久。游戏数据 battle/buff_template_data.json 的 enemy_ftzlc[on_fire] 在卷心籽持有 enemy_ftsjc[burn_mark] 时触发技能 onfire，不成功则直接 SwitchMode 1，没有切回的节点，所以按一直有效；检查的时刻按敌人能力的 tick（每帧，敌能-2）。不点燃中立单位是上下文 allies 的范围，页面没有中立的卷心籽。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-0831",
+    "clause": "敌能-136",
+    "statement": "灼藤、灼芯被沉默时照样点燃；卷心籽、卷心草被沉默时照样被点燃，沉默只在它们被击倒时挡住死亡爆炸。",
+    "basis": "点燃写在灼藤、灼芯的天赋栏，「天赋&能力」栏标题的提示「如无特殊说明，天赋默认不可沉默」，enemy_handbook_table 的 abilityList 里灼藤、灼芯两条的 textFormat 是 NORMAL；卷心籽一侧，enemy_ftzlc[on_fire] 在触发技能 onfire 不成功时直接 SwitchMode 1，模式照样切换。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-0832",
+    "clause": "敌能-136",
+    "statement": "卷心草的死亡爆炸与卷心籽相同：延迟 0.4 秒，不波及飞行单位，有来源。",
+    "basis": "卷心草的页面（oldid 365426）只写「点燃状态下死亡时对半径1.25范围内的我方单位造成攻击力200%的法术溅射伤害（可被沉默）」，没写延迟和对空；卷心籽的页面（oldid 375979）写「爆炸半径1.25，延迟0.4秒……无视迷彩，不可对空」。两者的 boom 都只有 atk_scale 2，图鉴的能力文字相同。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-0833",
+    "clause": "敌能-136",
+    "statement": "灼藤的【首次攻击增益】同灼芯，每 0.1 秒提升一次。两者都从出场起计：第一次在出场 0.1 秒后，满 n 个 0.1 秒时攻击力直接乘算 + add_max_atk × min(0.1n, time) ÷ time，到 time 秒为止。",
+    "basis": "灼芯的页面（oldid 406825）写「每0.1秒提升1次」，灼藤的页面（oldid 376257）只写「攻击力在50s内线性提升至+200%」，两者的 pow 黑板完全相同。游戏数据 enemy_ftsjc[first_attack] 每次触发把 time_spend 加上 interval，攻击力取 add_max_atk ÷ time × time_spend（不超过 add_max_atk），公式类型 MULTIPLIER（数值计算顺序的直接乘算）；interval 不在数据表里，第一次触发是否等一个间隔、从什么时刻起计也没有写。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-0834",
+    "clause": "敌能-136",
+    "statement": "首次成功攻击指普通攻击的主目标这一下掉了生命（landed 的 dealt 大于 0）。被闪避、落空、打在无敌单位上或被护盾、屏障吸到 0 的不算：增益不失效，下一次攻击仍有九宫格溅射和 attack@ep_damage_ratio 的灼燃。溅射打到的其他单位不算。",
+    "basis": "页面「于首次成功攻击后失效」没说什么算成功。游戏数据 enemy_ftsjc[first_attack_finish] 在 ON_OUTPUT_ATK_OR_HEAL 时结束增益，这个事件对闪避的一下是否触发没有资料。按引擎已有的读法：敌能-44 新硎的「每次成功攻击后」是伤害大于 0 的命中（推断 INF-0345），敌能-53 的成功攻击是打掉了生命的那一下（推断 INF-0412）。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-0835",
+    "clause": "敌能-136",
+    "statement": "灼藤、灼芯晕眩、冻结、沉睡或不能行动时，攻击力照样提升。",
+    "basis": "页面没写提升会停；增益是天赋（不可沉默），游戏数据 enemy_ftsjc[first_attack] 是按时间触发的 Buff，没有受控制时暂停的节点。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-0836",
+    "clause": "敌能-136",
+    "statement": "增益期间的九宫格溅射打到格内的中立单位：受到伤害，不受灼燃损伤。",
+    "basis": "页面写「其他我方单位」。引擎的九宫格（敌能-8、敌能-26）打格内的我方单位和中立单位，这里沿用；敌能-82 糖果车的自爆则按「我方单位」不含中立（推断 INF-0590），两种读法不同。中立单位不受元素损伤见术语释义的灼燃损伤「中立单位不会受到元素损伤」（元素-2）。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-0837",
+    "clause": "敌能-136",
+    "statement": "技能 onfire 没有行为：引擎里燃烧状态就是点燃的 Buff。游戏数据里点燃时触发 onfire 会打断卷心籽当前的动作，以及灼藤提升到低于一半、一半但未满、满加成时的三种特效，都不做。",
+    "basis": "onfire 的黑板为空、冷却 0、技力消耗 0；页面没有技能栏，也没写点燃会打断什么。enemy_ftzlc[on_fire] 的 TriggerEnemySkill 带 _interruptCurAbility，打断的是什么动作没有资料；特效只是表现。",
+    "status": "待查证"
   }
 ]

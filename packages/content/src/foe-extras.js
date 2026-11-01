@@ -363,4 +363,11 @@ export const FOE_EXTRAS = Object.freeze({
   // 天桩-甲 / 失控天桩-甲: ……不进行普通攻击，无法被阻挡 — their 自缚, 失衡免疫, 阻回 and CheckAwake are not this clause
   enemy_1398_dhdcr: { talents: { NoAttack: {}, unblockable: {} }, source: `${PRTS}%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366637` },
   enemy_1398_dhdcr_2: { talents: { NoAttack: {}, unblockable: {} }, source: `${PRTS}%E5%A4%B1%E6%8E%A7%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366638` },
+  // 敌能-136. 卷心籽: 燃烧状态：死亡爆炸（爆炸半径1.25，延迟0.4秒，造成攻击力200%法术溅射伤害，无视迷彩，不可对空）.
+  // `kindle` marks a seed's boom: it goes off only once lit. 卷心草's page gives no delay nor 对空: 卷心籽's (INF-0832).
+  enemy_10065_ftzlc: { talents: { boom: { radius: 1.25, delay: 0.4, arts: 1, air: 0, sourced: 1, kindle: 1 } }, source: `${PRTS}%E5%8D%B7%E5%BF%83%E7%B1%BD&oldid=375979` },
+  enemy_10065_ftzlc_2: { talents: { boom: { radius: 1.25, delay: 0.4, arts: 1, air: 0, sourced: 1, kindle: 1 } }, source: `${PRTS}%E5%8D%B7%E5%BF%83%E8%8D%89&oldid=365426` },
+  // 灼藤 / 灼芯: ……造成100%的法术溅射伤害 (`splash`)……可以点燃半径0.5范围内的卷心籽/卷心草（不可对空） (`ignite`)
+  enemy_10067_ftsjc: { talents: { pow: { splash: 1, ignite: 0.5 } }, source: `${PRTS}%E7%81%BC%E8%97%A4&oldid=376257` },
+  enemy_10067_ftsjc_2: { talents: { pow: { splash: 1, ignite: 0.5 } }, source: `${PRTS}%E7%81%BC%E8%8A%AF&oldid=406825` },
 });
