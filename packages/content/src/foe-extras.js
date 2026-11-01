@@ -151,7 +151,10 @@ export const FOE_EXTRAS = Object.freeze({
   // 控潮术师/领潮员/术师快艇: 目标及其周围四格, 攻击力80%的侵蚀损伤. `cross` 1 is that splash (敌能-26).
   enemy_1161_tidmag: { talents: { EpDamage: { el: 2, cross: 1 } }, source: `${PRTS}%E6%8E%A7%E6%BD%AE%E6%9C%AF%E5%B8%88&oldid=365951` },
   enemy_1161_tidmag_2: { talents: { EpDamage: { el: 2, cross: 1 } }, source: `${PRTS}%E9%A2%86%E6%BD%AE%E5%91%98&oldid=353468` },
-  enemy_1162_magmot: { talents: { EpDamage: { el: 2, cross: 1 } }, source: `${PRTS}%E6%9C%AF%E5%B8%88%E5%BF%AB%E8%89%87&oldid=353469` },
+  // 术师快艇 also (DeathRattle, 敌能-133): 死亡0.8s后在0.2边长正方形范围内随机位置以自身路径召唤1个控潮术师
+  enemy_1162_magmot: { talents: { EpDamage: { el: 2, cross: 1 }, DeathRattle: { delay: 0.8, offset_bound: 0.1 } }, source: `${PRTS}%E6%9C%AF%E5%B8%88%E5%BF%AB%E8%89%87&oldid=353469` },
+  // 领潮员快艇 (敌能-133): the same 侵蚀 cross (敌能-38); 不会攻击飞行单位 (noFly, 敌能-33); 死亡0.8s后在以自身为中心0.2边长正方形范围内……召唤1个领潮员
+  enemy_1162_magmot_2: { talents: { EpDamage: { el: 2, cross: 1 }, DeathRattle: { delay: 0.8, offset_bound: 0.1 }, noFly: {} }, source: `${PRTS}%E9%A2%86%E6%BD%AE%E5%91%98%E5%BF%AB%E8%89%87&oldid=395668` },
   // 骨海漂流体: 攻击附加相当于攻击力20%的侵蚀损伤
   enemy_2021_syfish: { talents: { EpDamage: { el: 2 } }, source: `${PRTS}%E9%AA%A8%E6%B5%B7%E6%BC%82%E6%B5%81%E4%BD%93&oldid=354187` },
   // 掠海漂移体: 侵蚀 is 敌能-38; Float's 近地悬浮 is 敌能-48; noFly is 不会攻击飞行单位 (敌能-33).

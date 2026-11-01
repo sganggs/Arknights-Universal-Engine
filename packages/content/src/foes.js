@@ -54,7 +54,7 @@ import { bottleBehaviors, bottleOwns } from './firebottle.js';
 import { broBehaviors, broOwns, broShield } from './bigbro.js';
 import { avalancheBehaviors, avalancheOwns } from './avalanche.js';
 import { crossBehaviors, crossOwns } from './crossroad.js';
-import { absentBehaviors, absentOwns } from './absent.js';
+import { absentBehaviors, absentOwns, sedanShape } from './absent.js';
 import { tyrantBehaviors } from './tyrant.js';
 import { pengBehaviors } from './peng.js';
 import { bombardBehaviors } from './bombard.js';
@@ -441,6 +441,9 @@ export const FOE_NEEDS = Object.freeze({
   StunAttack: Object.freeze(['page']),
   // 沸血的标记在这里（敌能-71）。`buff` 的两种形状各带自己的标记，由 knightOwns 认（敌能-71 的 page、敌能-85 的 zeal）。
   enhance: Object.freeze(['page']),
+  // The boats' 0.8 s and 0.2 square are not in the data; FOE_EXTRAS gives them to 术师快艇 and 领潮员快艇 only (敌能-133).
+  // 水手重艇 and 水手长重艇 have the same `enemy_key` shape and no numbers, so they stay uncovered. The sedan's `attack@cnt` is whole (WHOLE_SHAPES, 敌能-116).
+  DeathRattle: Object.freeze(['delay', 'offset_bound']),
 });
 
 /**
@@ -466,14 +469,14 @@ const SHAPE_OWNERS = Object.freeze([rebornShape, boarOwns, elementHitOwns, takeO
 
 /** Shapes whole in themselves, whatever FOE_NEEDS lists for their name (关卡-2). @type {readonly ((k: string, bb: Record<string, unknown>) => boolean)[]} */
 const WHOLE_SHAPES = Object.freeze([nestPulseOwns, cartBoom, noPeriodic, (k, bb) => k === 'boom' && ballBoom(bb), (k, bb) => k === 'Shield' && heteroShield(bb), (k, bb) => k === 'defdown' && acidShape(bb),
-  (k, bb) => k === 'rush' && chargeShape(bb), (k, bb) => k === 'Shield' && broShield(bb)]);
+  (k, bb) => k === 'rush' && chargeShape(bb), (k, bb) => k === 'Shield' && broShield(bb), (k, bb) => k === 'DeathRattle' && sedanShape(bb)]);
 
 /** FOE_NEEDS's keys all numbers, a `Boom` with `heal_scale` its page marker (敌能-58). @param {string} k @param {Record<string, unknown>} bb */
 const needsMet = (k, bb) => (healBoom(k, bb) ? typeof bb.page === 'number' : (FOE_NEEDS[/** @type {keyof typeof FOE_NEEDS} */ (k)] ?? []).every((n) => typeof bb[n] === 'number'));
 
 /**
  * Whether an ability has what its behaviour needs (关卡-2). A shared talent name only counts when its blackboard is the
- * shape that behaviour understands (敌能-38, 敌能-47, 敌能-63, 敌能-65, 敌能-66, 敌能-67, 敌能-68, 敌能-70, 敌能-71, 敌能-73, 敌能-74, 敌能-75, 敌能-77, 敌能-78, 敌能-79, 敌能-81, 敌能-82, 敌能-83, 敌能-85, 敌能-86, 敌能-118) — an `aura` only with 敌能-28's stack cap (敌能-45), as a ball's (足球-2) or a 守门位's (足球-13); anything else
+ * shape that behaviour understands (敌能-38, 敌能-47, 敌能-63, 敌能-65, 敌能-66, 敌能-67, 敌能-68, 敌能-70, 敌能-71, 敌能-73, 敌能-74, 敌能-75, 敌能-77, 敌能-78, 敌能-79, 敌能-81, 敌能-82, 敌能-83, 敌能-85, 敌能-86, 敌能-118, 敌能-133) — an `aura` only with 敌能-28's stack cap (敌能-45), as a ball's (足球-2) or a 守门位's (足球-13); anything else
  * stays incomplete. The nest pulse does not need `el`: the page names 神经损伤. A `Boom` with `heal_scale` needs its page
  * marker (敌能-58). The candy cart's `boom` needs no death-blast radius or delay (敌能-82). A ball's `boom` (足球-16),
  * 异质源石虫's `Shield` (敌能-102) and 酸液源石虫's `defdown` (敌能-101) are whole by their shapes.
