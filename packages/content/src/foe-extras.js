@@ -363,4 +363,11 @@ export const FOE_EXTRAS = Object.freeze({
   // 天桩-甲 / 失控天桩-甲: ……不进行普通攻击，无法被阻挡 — their 自缚, 失衡免疫, 阻回 and CheckAwake are not this clause
   enemy_1398_dhdcr: { talents: { NoAttack: {}, unblockable: {} }, source: `${PRTS}%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366637` },
   enemy_1398_dhdcr_2: { talents: { NoAttack: {}, unblockable: {} }, source: `${PRTS}%E5%A4%B1%E6%8E%A7%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366638` },
+  // 扎罗，“狼之主” (敌能-148): 【远古威慑】：自身1.5半径范围内的我方单位攻击速度-50; 第二形态 进行远程攻击，普通攻击为2连击，攻击范围半径1.25;
+  // 技力槽 0/55，自动回复（1.0SP/s）. `page` marks the read page on `Passive` and `WildCalling`; 依然“狼之主” gets none of these.
+  enemy_1535_wlfmster: {
+    talents: { Passive: { page: 1 }, Reborn: { range_radius: 1.5, attack_speed: -50 }, Passive2: { range_radius: 1.25, times: 2 } },
+    skills: { WildCalling: { page: 1 }, FearCage: { init_sp: 0, sp_recovery_per_sec: 1 } },
+    source: `${PRTS}%E6%89%8E%E7%BD%97%EF%BC%8C%E2%80%9C%E7%8B%BC%E4%B9%8B%E4%B8%BB%E2%80%9D&oldid=365712`,
+  },
 });
