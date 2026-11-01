@@ -363,4 +363,8 @@ export const FOE_EXTRAS = Object.freeze({
   // 天桩-甲 / 失控天桩-甲: ……不进行普通攻击，无法被阻挡 — their 自缚, 失衡免疫, 阻回 and CheckAwake are not this clause
   enemy_1398_dhdcr: { talents: { NoAttack: {}, unblockable: {} }, source: `${PRTS}%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366637` },
   enemy_1398_dhdcr_2: { talents: { NoAttack: {}, unblockable: {} }, source: `${PRTS}%E5%A4%B1%E6%8E%A7%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366638` },
+  // 赏金猎人弩手 / 赏金猎人弩手队长: 赏金攫取 (敌能-151). `page` marks the two read pages; 赛场无赖射手 has the same
+  // `{cost}` and no saved page, so it stays uncovered (关卡-2).
+  enemy_1340_bthtbw: { skills: { PowerHit: { page: 1 } }, source: `${PRTS}%E8%B5%8F%E9%87%91%E7%8C%8E%E4%BA%BA%E5%BC%A9%E6%89%8B&oldid=355359` },
+  enemy_1340_bthtbw_2: { skills: { PowerHit: { page: 1 } }, source: `${PRTS}%E8%B5%8F%E9%87%91%E7%8C%8E%E4%BA%BA%E5%BC%A9%E6%89%8B%E9%98%9F%E9%95%BF&oldid=355360` },
 });
