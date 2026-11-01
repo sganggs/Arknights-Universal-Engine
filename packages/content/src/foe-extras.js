@@ -442,4 +442,10 @@ export const FOE_EXTRAS = Object.freeze({
   // 陷落雪祀 (敌能-142): 普通攻击会在3个目标间跳跃并附带4.5s寒冷；【反自然馈赠】. `page` marks the read page on both;
   // 空洞雪祀 has the same keys and no page, so both of its abilities stay uncovered (关卡-2).
   enemy_2050_smsha: { talents: { Attack: { page: 1 } }, skills: { ChainBuff: { page: 1 } }, source: `${PRTS}%E9%99%B7%E8%90%BD%E9%9B%AA%E7%A5%80&oldid=354397` },
+  // 泥岩 (敌能-143): 沉睡免疫; 敌能-66's barrier (可吸收16500法术伤害) and 刷新屏障 by the page marker; 增益最多叠加6层; 占据 by
+  // the marker, so that 冬灵血巫's unmarked `occupy` of the same { sp } stays uncovered
+  enemy_1511_mdrock: {
+    talents: { SleepImmune: {}, shield: { page: 1 }, charge: { layers: 6 } }, skills: { RefreshShield: { page: 1 }, occupy: { page: 1 } },
+    source: `${PRTS}%E6%B3%A5%E5%B2%A9%28%E6%95%8C%E6%96%B9%29&oldid=378890`,
+  },
 });
