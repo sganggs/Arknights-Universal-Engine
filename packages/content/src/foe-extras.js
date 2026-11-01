@@ -369,4 +369,7 @@ export const FOE_EXTRAS = Object.freeze({
   // 天桩-甲 / 失控天桩-甲: ……不进行普通攻击，无法被阻挡 — their 自缚, 失衡免疫, 阻回 and CheckAwake are not this clause
   enemy_1398_dhdcr: { talents: { NoAttack: {}, unblockable: {} }, source: `${PRTS}%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366637` },
   enemy_1398_dhdcr_2: { talents: { NoAttack: {}, unblockable: {} }, source: `${PRTS}%E5%A4%B1%E6%8E%A7%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366638` },
+  // 量产巨像 / 改进型量产巨像: 占用2个阻挡数. The number is not in the enemy data (敌能-120). Weak is the beam and gets no behaviour.
+  enemy_1240_ltgint: { talents: { blockSlots: { block: 2 } }, source: `${PRTS}%E9%87%8F%E4%BA%A7%E5%B7%A8%E5%83%8F&oldid=353633` },
+  enemy_1240_ltgint_2: { talents: { blockSlots: { block: 2 } }, source: `${PRTS}%E6%94%B9%E8%BF%9B%E5%9E%8B%E9%87%8F%E4%BA%A7%E5%B7%A8%E5%83%8F&oldid=371221` },
 });
