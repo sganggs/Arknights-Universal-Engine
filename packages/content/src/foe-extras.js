@@ -363,4 +363,6 @@ export const FOE_EXTRAS = Object.freeze({
   // 天桩-甲 / 失控天桩-甲: ……不进行普通攻击，无法被阻挡 — their 自缚, 失衡免疫, 阻回 and CheckAwake are not this clause
   enemy_1398_dhdcr: { talents: { NoAttack: {}, unblockable: {} }, source: `${PRTS}%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366637` },
   enemy_1398_dhdcr_2: { talents: { NoAttack: {}, unblockable: {} }, source: `${PRTS}%E5%A4%B1%E6%8E%A7%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366638` },
+  // “墓碑”: 远程攻击对目标及其周围八格的我方单位造成攻击力40%的物理伤害 — the 3×3 is the page's; the 40% is the data's atkdown (敌能-139)
+  enemy_2008_flking: { talents: { atkdown: { square: 1 } }, source: `${PRTS}%E2%80%9C%E5%A2%93%E7%A2%91%E2%80%9D&oldid=367181` },
 });
