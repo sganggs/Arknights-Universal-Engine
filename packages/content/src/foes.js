@@ -48,6 +48,7 @@ import { lancerBehaviors, knightShape, knightRush } from './lancer.js';
 import { evadeBehaviors, evadeOwns } from './evade.js';
 import { carnivalBehaviors, carnivalOwns, danceAura } from './carnival.js';
 import { heteroBehaviors, heteroOwns, heteroShield } from './heteroslime.js';
+import { heteroBeastBehaviors, heteroBeastOwns } from './heterobeast.js';
 import { pompeiiBehaviors, pompeiiOwns } from './pompeii.js';
 import { ninjaBehaviors, ninjaOwns } from './ninja.js';
 import { spearBehaviors, spearOwns } from './spear.js';
@@ -364,6 +365,7 @@ export const foeBehaviors = Object.freeze({
   ...evadeBehaviors,
   ...carnivalBehaviors,
   ...heteroBehaviors,
+  ...heteroBeastBehaviors,
   ...pompeiiBehaviors,
   ...ninjaBehaviors,
   ...spearBehaviors,
@@ -496,7 +498,7 @@ const cartBoom = (k, bb) => k === 'boom' && cartShape(bb);
  * The shape checks of the shared names (关卡-2): each says whether a blackboard of its names is the shape its behaviour
  * understands, and passes every other name. In a list, so that each family adds one entry, not one more `&&`.
  */
-const SHAPE_OWNERS = Object.freeze([rebornShape, boarOwns, elementHitOwns, takeOffOwns, wineOwns, whipOwns, bornBugsOwns, radioOwns, shieldOwns, punchOwns, passiveOwns, defdownOwns, knightOwns, blinkOwns, healAuraOwns, vampireOwns, chargeAttackOwns, rebornOwns, faustOwns, shotbuffOwns, bornCarOwns, stunAttackOwns, bombdOwns, evadeOwns, carnivalOwns, heteroOwns, pompeiiOwns, ninjaOwns, spearOwns, catapultOwns, plantOwns, companionOwns, crystalOwns, chargeOwns, bottleOwns, broOwns, avalancheOwns, crossOwns, absentOwns, weaknessOwns, mechOwns, nucleusOwns, castOwns, aoeOwns, combatOwns, designerOwns]);
+const SHAPE_OWNERS = Object.freeze([rebornShape, boarOwns, elementHitOwns, takeOffOwns, wineOwns, whipOwns, bornBugsOwns, radioOwns, shieldOwns, punchOwns, passiveOwns, defdownOwns, knightOwns, blinkOwns, healAuraOwns, vampireOwns, chargeAttackOwns, rebornOwns, faustOwns, shotbuffOwns, bornCarOwns, stunAttackOwns, bombdOwns, evadeOwns, carnivalOwns, heteroOwns, pompeiiOwns, ninjaOwns, spearOwns, catapultOwns, plantOwns, companionOwns, crystalOwns, chargeOwns, bottleOwns, broOwns, avalancheOwns, crossOwns, absentOwns, weaknessOwns, mechOwns, nucleusOwns, castOwns, aoeOwns, combatOwns, designerOwns, heteroBeastOwns]);
 
 /** Shapes whole in themselves, whatever FOE_NEEDS lists for their name (关卡-2). @type {readonly ((k: string, bb: Record<string, unknown>) => boolean)[]} */
 const WHOLE_SHAPES = Object.freeze([nestPulseOwns, cartBoom, noPeriodic, (k, bb) => k === 'boom' && ballBoom(bb), (k, bb) => k === 'Shield' && heteroShield(bb), (k, bb) => k === 'defdown' && acidShape(bb),
@@ -508,7 +510,7 @@ const needsMet = (k, bb) => (healBoom(k, bb) ? typeof bb.page === 'number' : (FO
 
 /**
  * Whether an ability has what its behaviour needs (关卡-2). A shared talent name only counts when its blackboard is the
- * shape that behaviour understands (敌能-38, 敌能-47, 敌能-63, 敌能-65, 敌能-66, 敌能-67, 敌能-68, 敌能-70, 敌能-71, 敌能-73, 敌能-74, 敌能-75, 敌能-77, 敌能-78, 敌能-79, 敌能-81, 敌能-82, 敌能-83, 敌能-85, 敌能-86, 敌能-118, 敌能-122, 敌能-124, 敌能-125, 敌能-127, 敌能-128, 敌能-129, 敌能-131, 敌能-132, 敌能-133) — an `aura` only with 敌能-28's stack cap (敌能-45), as a ball's (足球-2) or a 守门位's (足球-13); anything else
+ * shape that behaviour understands (敌能-38, 敌能-47, 敌能-63, 敌能-65, 敌能-66, 敌能-67, 敌能-68, 敌能-70, 敌能-71, 敌能-73, 敌能-74, 敌能-75, 敌能-77, 敌能-78, 敌能-79, 敌能-81, 敌能-82, 敌能-83, 敌能-85, 敌能-86, 敌能-118, 敌能-122, 敌能-124, 敌能-125, 敌能-127, 敌能-128, 敌能-129, 敌能-131, 敌能-132, 敌能-133, 敌能-135) — an `aura` only with 敌能-28's stack cap (敌能-45), as a ball's (足球-2) or a 守门位's (足球-13); anything else
  * stays incomplete. The nest pulse does not need `el`: the page names 神经损伤. A `Boom` with `heal_scale` needs its page
  * marker (敌能-58). The candy cart's `boom` needs no death-blast radius or delay (敌能-82). A ball's `boom` (足球-16),
  * 异质源石虫's `Shield` (敌能-102) and 酸液源石虫's `defdown` (敌能-101) are whole by their shapes. `{ atk_scale }`'s
