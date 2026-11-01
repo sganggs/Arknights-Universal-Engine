@@ -363,4 +363,6 @@ export const FOE_EXTRAS = Object.freeze({
   // 天桩-甲 / 失控天桩-甲: ……不进行普通攻击，无法被阻挡 — their 自缚, 失衡免疫, 阻回 and CheckAwake are not this clause
   enemy_1398_dhdcr: { talents: { NoAttack: {}, unblockable: {} }, source: `${PRTS}%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366637` },
   enemy_1398_dhdcr_2: { talents: { NoAttack: {}, unblockable: {} }, source: `${PRTS}%E5%A4%B1%E6%8E%A7%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366638` },
+  // 杰斯顿·威廉姆斯 (敌能-146): `page` marks its four abilities. enemy_5055_dqkill has the same data and no read page.
+  enemy_1516_jakill: { talents: { reborn: { page: 1 }, enhance: { page: 1 } }, skills: { ironsandstorm: { page: 1 }, armorpiercing: { page: 1 } }, source: `${PRTS}%E6%9D%B0%E6%96%AF%E9%A1%BF%C2%B7%E5%A8%81%E5%BB%89%E5%A7%86%E6%96%AF&oldid=367674` },
 });

@@ -4,6 +4,7 @@
 // enemy is knocked down (敌能-2). The drone's blast is the `death` hook. They act only through the context (ADR 0055).
 
 import { KIND } from '@aue/sim';
+import { wardenEnhance } from './jakill.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').FoeContext} FoeContext @typedef {import('@aue/sim').Unit} Unit */
 
@@ -40,12 +41,13 @@ function exact(bb, keys) {
 
 /**
  * Whether a talent of this name, with this blackboard, is this family's (敌能-71, 敌能-85). Any other name is not
- * this family's concern.
+ * this family's concern. 杰斯顿·威廉姆斯's `enhance` passes too: it only holds the numbers its `reborn` reads (敌能-146),
+ * and the layers below stay on the boiling shape.
  * @param {string} name @param {Record<string, unknown> | null | undefined} bb
  */
 export function knightOwns(name, bb) {
   if (name === 'buff') return exact(bb, ARMOUR_KEYS) || exact(bb, ZEAL_KEYS);
-  if (name === 'enhance') return exact(bb, BLOOD_KEYS);
+  if (name === 'enhance') return exact(bb, BLOOD_KEYS) || wardenEnhance(bb);
   return true;
 }
 
@@ -100,7 +102,7 @@ const buff = Object.freeze({ spawn: arm, death: zealBlast });
 const enhance = Object.freeze({
   down(ctx, dead) {
     const bb = ctx.bb;
-    if (!knightOwns('enhance', bb) || dead.base.neutral === true) return;
+    if (!exact(bb, BLOOD_KEYS) || dead.base.neutral === true) return;
     ctx.addBuff(ctx.self, { key: BLOOD, rule: 'stack', stacks: 1, maxStacks: bb.max_stack_cnt, left: -1, mods: { atkPct: bb.atk, aspd: bb.attack_speed } });
   },
 });

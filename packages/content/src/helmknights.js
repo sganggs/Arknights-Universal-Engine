@@ -5,6 +5,7 @@
 import { FPS } from '@aue/math';
 import { targeting } from '@aue/sim';
 import { beginRebirth, endRebirth } from './avenger.js';
+import { wardenReborn, wardenSpawn, wardenFatal, wardenTick, wardenTargets, wardenAttack } from './jakill.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').FoeContext} FoeContext @typedef {import('@aue/sim').Unit} Unit */
 
@@ -29,13 +30,13 @@ function durationOnly(bb) {
 }
 
 /**
- * Whether a talent of this name, with this blackboard, is the 锋盔 重生 (敌能-78). Any other name is not this
- * family's concern: the caller still asks FOE_NEEDS.
+ * Whether a talent of this name, with this blackboard, is the 锋盔 重生 (敌能-78) or 杰斯顿·威廉姆斯's (敌能-146). Any other
+ * name is not this family's concern: the caller still asks FOE_NEEDS.
  * @param {string} name @param {Record<string, unknown>} bb
  */
 export function rebornOwns(name, bb) {
   if (name !== 'reborn') return true;
-  return durationOnly(bb);
+  return durationOnly(bb) || wardenReborn(bb);
 }
 
 /** 索敌-5 hatred, without the blocker-first step the page declines (敌能-78). @param {FoeContext} ctx @param {Unit} u */
@@ -84,12 +85,16 @@ const AtkDesWeaken = Object.freeze({
 
 /**
  * 重生 (敌能-78): the first fatal hit stays, at full HP — there is no `hp_ratio` — for `duration` seconds of 敌能-18's
- * reviving. A blackboard this shape does not know does nothing, so an unread `reborn` is not revived if it is left on.
+ * reviving. 杰斯顿·威廉姆斯's shape is its two forms (敌能-146, jakill.js), whose hooks pass every other shape by. A
+ * blackboard neither knows does nothing, so an unread `reborn` is not revived if it is left on.
  * @type {FoeBehavior}
  */
 const reborn = Object.freeze({
-  fatal: (ctx) => (durationOnly(ctx.bb) ? beginRebirth(ctx, 1) : false),
-  tick: (ctx) => { if (durationOnly(ctx.bb)) endRebirth(ctx); },
+  spawn: wardenSpawn,
+  fatal: (ctx) => (durationOnly(ctx.bb) ? beginRebirth(ctx, 1) : wardenFatal(ctx)),
+  tick: (ctx) => { if (durationOnly(ctx.bb)) endRebirth(ctx); else wardenTick(ctx); },
+  targets: wardenTargets,
+  attack: wardenAttack,
 });
 
 /** The behaviours of this file, by talent or skill name. @type {Readonly<Record<string, FoeBehavior>>} */
