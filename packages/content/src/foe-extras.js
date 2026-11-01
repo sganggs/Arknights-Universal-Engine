@@ -81,6 +81,10 @@ export const FOE_EXTRAS = Object.freeze({
   // 游击队迫击炮兵/组长: 炮弹能对目标及其周围八格的我方单位造成伤害
   enemy_1082_soticn: { talents: { Shell: {} }, source: `${PRTS}%E6%B8%B8%E5%87%BB%E9%98%9F%E8%BF%AB%E5%87%BB%E7%82%AE%E5%85%B5&oldid=436975` },
   enemy_1082_soticn_2: { talents: { Shell: {} }, source: `${PRTS}%E6%B8%B8%E5%87%BB%E9%98%9F%E8%BF%AB%E5%87%BB%E7%82%AE%E5%85%B5%E7%BB%84%E9%95%BF&oldid=436976` },
+  // 帝国炮火先兆者 / 中枢先兆者: 静态刚体，普通攻击向目标所在位置发射一枚于3秒后命中的弹道 (敌能-130). Static is 敌能-37's.
+  // DelayShell's 3 s and 1.2 are the behaviour's own (artillery.js), so its blackboard is empty. The data has neither.
+  enemy_1112_emppnt: { talents: { Static: {}, DelayShell: {} }, source: `${PRTS}%E5%B8%9D%E5%9B%BD%E7%82%AE%E7%81%AB%E5%85%88%E5%85%86%E8%80%85&oldid=379217` },
+  enemy_1112_emppnt_2: { talents: { Static: {}, DelayShell: {} }, source: `${PRTS}%E5%B8%9D%E5%9B%BD%E7%82%AE%E7%81%AB%E4%B8%AD%E6%9E%A2%E5%85%88%E5%85%86%E8%80%85&oldid=414106` },
   // 萨卡兹积怨者/恶咒者: 可同时攻击2个目标，造成近战途径伤害
   enemy_1074_dbskar: { talents: { Targets: { n: 2, direct: 1 } }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E7%A7%AF%E6%80%A8%E8%80%85&oldid=436411` },
   enemy_1074_dbskar_2: { talents: { Targets: { n: 2, direct: 1 } }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E6%81%B6%E5%92%92%E8%80%85&oldid=436402` },
