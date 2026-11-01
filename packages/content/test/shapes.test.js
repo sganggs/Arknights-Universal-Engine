@@ -217,19 +217,25 @@ test('[敌能-153] liberty: 术师囚犯 liberated attacks attack@max_target tar
 });
 
 /**
- * Every record of every shipped level file, with its extras as levelAt reads it, passes these checks (关卡-2): so this
- * clause takes no talent or skill out of a shipped level, and no level assembles, refuses or lists otherwise because of
- * it, whatever else covers or uncovers their abilities.
+ * Every enemy a shipped level spawns at a difficulty — the records levelAt checks (关卡-2), with their extras — passes
+ * these checks: so this clause takes no talent or skill out of a shipped level, and no level assembles, refuses or lists
+ * otherwise because of it, whatever else covers or uncovers their abilities. A level its runes refuse is refused before
+ * its enemies are read; a row only in a level's reference table is not spawned.
  */
-test('[敌能-153] every talent and skill of every shipped level\'s enemies passes these checks: no shipped level loses one', () => {
+test('[敌能-153] every talent and skill of the enemies each shipped level spawns passes these checks: no shipped level loses one', () => {
   let read = 0;
-  for (const [id, raw] of Object.entries(LEVELS)) {
-    for (const [key, rec] of Object.entries(/** @type {Record<string, EnemyDef>} */ (raw.enemies))) {
-      const e = withFoeExtras(key, rec);
-      const abilities = [...Object.entries(e.talents ?? {}), ...(e.skills ?? []).map((s) => /** @type {[string, Record<string, unknown>]} */ ([s.key, s.bb]))];
-      for (const [name, bb] of abilities) {
-        read++;
-        assert.ok(sharedShapeOwns(name, bb ?? {}), `${id}: ${key}'s ${name} ${JSON.stringify(bb)}`);
+  for (const id of Object.keys(LEVELS)) {
+    for (const d of /** @type {const} */ (['NORMAL', 'FOUR_STAR'])) {
+      /** @type {string[]} */
+      let keys;
+      try { keys = Object.keys(levelAt(id, d).enemies); } catch (err) { assert.match(String(err), /runes not supported yet/, `${id} ${d}`); continue; }
+      for (const key of keys) {
+        const e = withFoeExtras(key, /** @type {EnemyDef} */ (LEVELS[/** @type {keyof typeof LEVELS} */ (id)].enemies[key]));
+        const abilities = [...Object.entries(e.talents ?? {}), ...(e.skills ?? []).map((s) => /** @type {[string, Record<string, unknown>]} */ ([s.key, s.bb]))];
+        for (const [name, bb] of abilities) {
+          read++;
+          assert.ok(sharedShapeOwns(name, bb ?? {}), `${id} ${d}: ${key}'s ${name} ${JSON.stringify(bb)}`);
+        }
       }
     }
   }
