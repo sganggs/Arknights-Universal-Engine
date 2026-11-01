@@ -300,6 +300,9 @@ export const FOE_EXTRAS = Object.freeze({
   enemy_4019_mugold: { talents: { physic: { score: 3 } }, source: `${PRTS}%E8%87%B3%E7%BA%AF%E6%BA%90%E7%9F%B3%E7%90%83&oldid=437059` },
   // 净浊之焰: 「…攻击力100%灼燃损伤」 (敌能-38, el 3; its blast is 敌能-93)
   enemy_1177_dufrbl_2: { talents: { epdamage: { el: 3 } }, source: `${PRTS}%E5%87%80%E6%B5%8A%E4%B9%8B%E7%84%B0&oldid=436069` },
+  // 心虚设计师 / 顺从内心的设计师: 「受到来自正面的物理/法术伤害-80%」 — their lowercase `weakness` is 敌能-118's front (敌能-132)
+  enemy_10097_crshd: { talents: { weakness: { front: 1 } }, source: `${PRTS}%E5%BF%83%E8%99%9A%E8%AE%BE%E8%AE%A1%E5%B8%88&oldid=354167` },
+  enemy_10097_crshd_2: { talents: { weakness: { front: 1 } }, source: `${PRTS}%E9%A1%BA%E4%BB%8E%E5%86%85%E5%BF%83%E7%9A%84%E8%AE%BE%E8%AE%A1%E5%B8%88&oldid=354168` },
   // 箭棘兽: 「弱点部位位于正面，背面所受伤害降低」 — its `Weakness` is of the damage from behind (敌能-91)
   enemy_1310_mhprpn_2: { talents: { Weakness: { back: 1 } }, source: `${PRTS}%E7%AE%AD%E6%A3%98%E5%85%BD&oldid=439219` },
   // 硬甲爪兽 / 刚甲爪兽: 「【弱点】位于正面，受到来自背面的物理/法术伤害降低80%」(敌能-118). 刚甲's snapshot is the older one.
