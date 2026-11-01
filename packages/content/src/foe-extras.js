@@ -363,4 +363,9 @@ export const FOE_EXTRAS = Object.freeze({
   // 天桩-甲 / 失控天桩-甲: ……不进行普通攻击，无法被阻挡 — their 自缚, 失衡免疫, 阻回 and CheckAwake are not this clause
   enemy_1398_dhdcr: { talents: { NoAttack: {}, unblockable: {} }, source: `${PRTS}%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366637` },
   enemy_1398_dhdcr_2: { talents: { NoAttack: {}, unblockable: {} }, source: `${PRTS}%E5%A4%B1%E6%8E%A7%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366638` },
+  // 腐败骑士 / 凋零骑士 (敌能-145): `page` marks the two read pages — 并驾骑士 and the other 凋零骑士 have the same data and
+  // stay uncovered (关卡-2). `partner` is the knight whose 死亡/进入终点 raises the rage; `n` is 爆炸箭's 最多3个 targets;
+  // `Targets` is 凋零骑士's 最多同时攻击2个目标 (敌能-27).
+  enemy_1513_dekght: { talents: { aoe: { page: 1 }, triggerrage: { page: 1, partner: 'enemy_1513_dekght_2' } }, skills: { ChargeAttack: { page: 1 } }, source: `${PRTS}%E8%85%90%E8%B4%A5%E9%AA%91%E5%A3%AB&oldid=361377` },
+  enemy_1513_dekght_2: { talents: { Targets: { n: 2 }, triggerrage: { page: 1, partner: 'enemy_1513_dekght' } }, skills: { TripleAttack: { n: 3 } }, source: `${PRTS}%E5%87%8B%E9%9B%B6%E9%AA%91%E5%A3%AB&oldid=361330` },
 });

@@ -3,6 +3,7 @@
 // at once, the 冰原术师's 寒霜一击, 抵抗, and the 冰原猎人's two attacks. They act only through the context (ADR 0055).
 
 import { SPLASH, splashAoe, pulseAoe, cauldronSpawn, cauldronTick } from './cauldron.js';
+import { knightCross } from './rotknights.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').FoeContext} FoeContext @typedef {import('@aue/sim').Unit} Unit */
 
@@ -35,13 +36,14 @@ const taunt = Object.freeze({
 /**
  * `aoe` by its shape. 爆破攻坚手 (敌能-26): its attack hits the target and, at `attack@bsthmr_range.atk_scale` of it, the
  * other units on the four tiles next to the target's (a cross; ground units only). 鼎沸 and 飘香 (敌能-129): the pulse in
- * cauldron.js. Any other blackboard of the name does nothing, and stays uncovered (关卡-2).
+ * cauldron.js. 腐败骑士 (敌能-145): the same cross at its own share, in rotknights.js. Any other blackboard of the name
+ * does nothing, and stays uncovered (关卡-2).
  * @type {FoeBehavior}
  */
 const aoe = Object.freeze({
   spawn: (ctx) => { if (pulseAoe(ctx.bb)) cauldronSpawn(ctx); },
   tick: (ctx) => { if (pulseAoe(ctx.bb)) cauldronTick(ctx); },
-  attack: (ctx, mods) => (splashAoe(ctx.bb) ? { ...mods, cross: true, splashScale: ctx.bb[SPLASH] } : mods),
+  attack: (ctx, mods) => (splashAoe(ctx.bb) ? { ...mods, cross: true, splashScale: ctx.bb[SPLASH] } : knightCross(ctx, mods)),
 });
 
 /** 迫击炮兵 (敌能-26): its shell hits the target and every unit on the eight tiles around the target's, alike. @type {FoeBehavior} */

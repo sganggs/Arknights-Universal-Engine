@@ -3,8 +3,10 @@
 // uncovered (关卡-2) and does nothing. The pulse is the whole talent row of the two pages: no normal attack, 停顿免疫, and
 // each second arts damage and 灼燃损伤 on the units in its attack range. It is a talent, so silence does not stop it
 // (如无特殊说明，天赋默认不可沉默). It acts only through the context (ADR 0055).
+// A third shape, 腐败骑士's with its page marker, is 敌能-145's cross (rotknights.js).
 
 import { constants } from '@aue/sim';
+import { knightAoe } from './rotknights.js';
 
 /** @typedef {import('@aue/sim').FoeContext} FoeContext */
 
@@ -29,11 +31,11 @@ export const splashAoe = (bb) => exactly(bb, [SPLASH]);
 export const pulseAoe = (bb) => exactly(bb, PULSE_KEYS);
 
 /**
- * Whether an `aoe` blackboard is a shape the engine knows (敌能-26, 敌能-129). Any other name is not this check's: the
- * caller still asks FOE_NEEDS (关卡-2).
+ * Whether an `aoe` blackboard is a shape the engine knows (敌能-26, 敌能-129, 敌能-145). Any other name is not this
+ * check's: the caller still asks FOE_NEEDS (关卡-2).
  * @param {string} name @param {Record<string, unknown>} bb
  */
-export const aoeOwns = (name, bb) => name !== 'aoe' || splashAoe(bb) || pulseAoe(bb);
+export const aoeOwns = (name, bb) => name !== 'aoe' || splashAoe(bb) || pulseAoe(bb) || knightAoe(bb);
 
 /** Gives a buff once; it is given again only if something took it away. @param {FoeContext} ctx @param {import('@aue/sim').buffs.BuffInit} init */
 function keep(ctx, init) {
