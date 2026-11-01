@@ -363,4 +363,6 @@ export const FOE_EXTRAS = Object.freeze({
   // 天桩-甲 / 失控天桩-甲: ……不进行普通攻击，无法被阻挡 — their 自缚, 失衡免疫, 阻回 and CheckAwake are not this clause
   enemy_1398_dhdcr: { talents: { NoAttack: {}, unblockable: {} }, source: `${PRTS}%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366637` },
   enemy_1398_dhdcr_2: { talents: { NoAttack: {}, unblockable: {} }, source: `${PRTS}%E5%A4%B1%E6%8E%A7%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366638` },
+  // “帝国的甲胄”: 回忆里的誓死 — 持续5.85秒的【轰炸区域】，延迟1.33秒后……此后每0.53秒重复一次 (敌能-137); the data has only times 8
+  enemy_10027_vtsk: { skills: { Appear: { duration: 5.85, delay: 1.33, interval: 0.53 } }, source: `${PRTS}%E2%80%9C%E5%B8%9D%E5%9B%BD%E7%9A%84%E7%94%B2%E8%83%84%E2%80%9D&oldid=377746` },
 });
