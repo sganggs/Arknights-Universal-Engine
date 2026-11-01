@@ -73,6 +73,37 @@ test('[关卡-1] enemies: level 0, then the level the level asks for, then its o
   assert.deepEqual(over.skills, [3], 'skills given still replace the list');
 });
 
+test('[关卡-1] an enemy only in enemyDbRefs is exported, its level and overwrittenData applied; one its abilities name is too', () => {
+  const lv = makeLevel();
+  lv.enemyDbRefs.push({ id: 'enemy_ref', level: 1, useDb: true, overwrittenData: { attributes: { maxHp: wrap(2000) } } });
+  const summoned = { attributes: { atk: wrap(700) }, talentBlackboard: [{ key: 'summon.enemy_key', value: 0, valueStr: 'enemy_extra' }] };
+  const database = { enemies: [...db().enemies, entry('enemy_ref', [summoned]), entry('enemy_extra')] };
+  const s = /** @type {any} */ (extractLevel({ id: 'lv', level: lv, enemyDb: database, commit: 'c' }));
+  assert.deepEqual([s.enemies.enemy_ref.maxHp, s.enemies.enemy_ref.atk, s.enemies.enemy_ref.talents.summon.enemy_key], [2000, 700, 'enemy_extra'], 'level 1\'s ATK, the ref\'s HP');
+  assert.equal(s.enemies.enemy_extra.name, 'enemy_extra', 'named by the ref-only enemy, still exported');
+  assert.deepEqual(Object.keys(s.enemies), ['e_a', 'e_b', 'e_c', 'e_d', 'enemy_extra', 'enemy_ref']);
+});
+
+test('[波次-6] [关卡-1] regenerated levels: a device skill level of 1 is omitted, and a refs-only enemy keeps the level\'s override', () => {
+  const read = (/** @type {string} */ id) => JSON.parse(readFileSync(new URL(`../../content/data/levels/${id}.json`, import.meta.url), 'utf8'));
+  const towers = read('act1multi_07').level.predefines.filter((/** @type {any} */ p) => p.key === 'trap_014_tower');
+  assert.deepEqual(towers.map((/** @type {any} */ p) => [p.alias, p.mainSkillLvl ?? 1]), [
+    ['trap_014_tower#1', 2], ['trap_014_tower#2', 2], ['trap_014_tower#3', 2], ['trap_014_tower#4', 2],
+    ['trap_014_tower#5', 3], ['trap_014_tower#6', 1], ['trap_014_tower#7', 3], ['trap_014_tower#8', 1], ['trap_014_tower#9', 1],
+  ]);
+  assert.ok(towers.filter((/** @type {any} */ p) => (p.mainSkillLvl ?? 1) === 1).every((/** @type {any} */ p) => !('mainSkillLvl' in p)));
+  const gym = read('act1multi_fortress_rm01').level.predefines.filter((/** @type {any} */ p) => p.key === 'trap_209_mufrbs');
+  assert.deepEqual(gym.map((/** @type {any} */ p) => [p.alias, p.mainSkillLvl ?? 1]), [['trap_209_mufrbs#1', 2], ['trap_209_mufrbs#2', 2], ['trap_209_mufrbs#4', 1]]);
+  assert.equal('mainSkillLvl' in gym[2], false);
+  const rm05 = read('act1multi_rm05').level.predefines.filter((/** @type {any} */ p) => p.key === 'trap_014_tower');
+  assert.ok(rm05.length === 6 && rm05.every((/** @type {any} */ p) => p.mainSkillLvl === 2));
+  assert.ok(read('act1multi_01').level.predefines.every((/** @type {any} */ p) => !('mainSkillLvl' in p)));
+  const illus = read('act1multi_02').enemies;
+  assert.deepEqual([illus.enemy_1324_wdsdw.name, illus.enemy_1324_wdsdw.maxHp, illus.enemy_1324_wdsdw.atk, illus.enemy_1324_wdsdw.talents], ['萨卡兹悖谬裂变学徒', 9000, 500, undefined]);
+  assert.deepEqual([illus.enemy_1324_wdsdw_2.name, illus.enemy_1324_wdsdw_2.maxHp, illus.enemy_1324_wdsdw_2.atk, illus.enemy_1324_wdsdw_2.talents], ['萨卡兹悖谬裂变术师', 12000, 500, undefined]);
+  assert.deepEqual([read('act1multi_tr01').enemies.enemy_4007_murino.maxHp, read('act1multi_tr01').enemies.enemy_4007_murino.atk], [2000, 700], 'the ref\'s overwrittenData, not the database\'s 45000 and 1800');
+});
+
 test('[关卡-2] a difficulty\'s runes: hidden groups enabled and disabled, the life point, enemy multipliers with their filters, replacements', () => {
   const runes = makeLevel().runes;
   assert.deepEqual(difficultyOf(runes, 'NORMAL'), { hiddenGroups: ['normal', 'both'], enemyMul: [{ mods: { atk: 2 }, exclude: ['e_a'] }], replace: {}, unsupported: [] });

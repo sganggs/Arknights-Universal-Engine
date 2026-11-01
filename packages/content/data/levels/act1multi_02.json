@@ -8672,6 +8672,50 @@
         }
       ],
       "shared": true
+    },
+    "enemy_1324_wdsdw": {
+      "name": "萨卡兹悖谬裂变学徒",
+      "maxHp": 9000,
+      "atk": 500,
+      "def": 200,
+      "res": 50,
+      "moveSpeed": 0.5,
+      "baseAttackTime": 5,
+      "rangeRadius": 0,
+      "applyWay": "NONE",
+      "motion": "WALK",
+      "massLevel": 5,
+      "levelType": "NORMAL",
+      "lifePointReduce": 1,
+      "immune": [
+        "stun",
+        "silence",
+        "sleep",
+        "freeze",
+        "levitate"
+      ]
+    },
+    "enemy_1324_wdsdw_2": {
+      "name": "萨卡兹悖谬裂变术师",
+      "maxHp": 12000,
+      "atk": 500,
+      "def": 250,
+      "res": 60,
+      "moveSpeed": 0.5,
+      "baseAttackTime": 5,
+      "rangeRadius": 0,
+      "applyWay": "NONE",
+      "motion": "WALK",
+      "massLevel": 5,
+      "levelType": "NORMAL",
+      "lifePointReduce": 1,
+      "immune": [
+        "stun",
+        "silence",
+        "sleep",
+        "freeze",
+        "levitate"
+      ]
     }
   },
   "devices": {}
