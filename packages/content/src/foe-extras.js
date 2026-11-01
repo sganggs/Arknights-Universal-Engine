@@ -363,4 +363,7 @@ export const FOE_EXTRAS = Object.freeze({
   // 天桩-甲 / 失控天桩-甲: ……不进行普通攻击，无法被阻挡 — their 自缚, 失衡免疫, 阻回 and CheckAwake are not this clause
   enemy_1398_dhdcr: { talents: { NoAttack: {}, unblockable: {} }, source: `${PRTS}%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366637` },
   enemy_1398_dhdcr_2: { talents: { NoAttack: {}, unblockable: {} }, source: `${PRTS}%E5%A4%B1%E6%8E%A7%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366638` },
+  // 吉兆飞鳞 (敌能-147): `parrot` marks this page's seven abilities, which 噩兆飞鳞 shares with no saved page; NoAttack is its
+  // 近地悬浮，不进行普通攻击 (敌能-117's marker).
+  enemy_10045_parrot: { talents: { M0SpeedUp: { parrot: 1 }, ThrowEnemy: { parrot: 1 }, M1SpeedUp: { parrot: 1 }, Stun: { parrot: 1 }, Mode: { parrot: 1 }, StateController: { parrot: 1 }, NoAttack: {} }, skills: { ThrowEnemy: { parrot: 1 } }, source: `${PRTS}%E5%90%89%E5%85%86%E9%A3%9E%E9%B3%9E&oldid=401248` },
 });
