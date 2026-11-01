@@ -14,6 +14,7 @@ import { grantSummons, endSummons } from './summons.js';
 import { restartCharge } from './modes.js';
 import { talentSkillEnd, talentSkillStart } from './talentfx.js';
 import { openSkillText, closeSkillText, healSkillAllies } from './skilltext.js';
+import { openSkillText2, tickSkillText2, closeSkillText2 } from './skilltext2.js';
 
 /** @typedef {import('./types.js').World} World @typedef {import('./types.js').Unit} Unit @typedef {import('./types.js').Content} Content */
 /** @typedef {import('./types.js').SkillDef} SkillDef @typedef {import('./types.js').SkillState} SkillState */
@@ -126,8 +127,11 @@ const defOf = (c, op) => /** @type {SkillDef} */ (c.operators[op.key].skill);
  * The blackboard a skill's behaviour reads (技能-5, 技能-10): the record's — without `cost` for a skill that costs it to
  * start, whose `cost` is the price, not cost it gives.
  * @param {SkillDef} def @returns {Record<string, number>}
+ * @param {Content} c
  */
-function bbOf(def) {
+function bbOf(def, c) {
+  // 技能-15: a cost gained bit by bit from the plain `cost` is not also gained at the start — unless the id has a behaviour of its own (技能-6), as 技能-15 then does nothing
+  if (def.extra?.costGain?.plain && behaviorOf(c, def.id) === GENERIC) return Object.fromEntries(Object.entries(def.bb).filter(([k]) => k !== 'cost'));
   return def.spend ? Object.fromEntries(Object.entries(def.bb).filter(([k]) => k !== 'cost')) : def.bb;
 }
 /** @param {Content} c @param {string} id @returns {SkillBehavior} */
@@ -138,7 +142,7 @@ const behaviorOf = (c, id) => (c.behaviors?.skills && Object.hasOwn(c.behaviors.
  * @param {World} w @param {Content} c @param {Unit} op @returns {{ kind: SkillKind, seconds: number, ctx: SkillContext }}
  */
 function timingOf(w, c, op) {
-  const def = defOf(c, op), ctx = { ...actorContext(w, c, op, bbOf(def)), kind: kindOf(def), extra: def.extra?.mods ?? {} };
+  const def = defOf(c, op), ctx = { ...actorContext(w, c, op, bbOf(def, c)), kind: kindOf(def), extra: def.extra?.mods ?? {} };
   const t = behaviorOf(c, def.id).timing?.(ctx) ?? null;
   return { kind: t?.kind ?? ctx.kind, seconds: t?.seconds ?? def.duration, ctx: { ...ctx, kind: t?.kind ?? ctx.kind } };
 }
@@ -155,6 +159,7 @@ export function endSkill(w, c, op, reason = 'duration') {
   const st = /** @type {SkillState} */ (op.skill);
   // 技能-14: the end burst still sees the skill's range, and a tied barrier is this skill's, so both go before the buff does.
   closeSkillText(w, c, op, reason);
+  closeSkillText2(w, c, op, reason);
   behaviorOf(c, st.id).end?.(contextOf(w, c, op), reason);
   removeBuff(op, 'spendAtk');
   removeBuff(op, 'skillFlags');
@@ -213,6 +218,7 @@ export function activate(w, c, op, reason = 'auto', free = false) {
   behaviorOf(c, st.id).start?.(contextOf(w, c, op));
   holdFlags(op, def, kind);
   openSkillText(w, c, op);
+  openSkillText2(w, c, op);
   if (def.alchemy) throwAlchemy(w, c, op, def.alchemy);
   grantSummons(w, c, op, 'start');
   emit(w, 'skillStart', { unit: op, reason });
@@ -296,6 +302,7 @@ export function tickSkill(w, c, op) {
   if (!st) return;
   if (st.active && st.dur > 0 && st.at < w.frame && --st.dur === 0) endSkill(w, c, op);
   if (st.active) behaviorOf(c, st.id).tick?.(contextOf(w, c, op));
+  if (st.active) tickSkillText2(w, c, op);
   if (!statsOf(op).flags.noSp) timeSp(st, statsOf(op).spRecovery);
   if (canStart(c, op, 'AUTO') && affords(w, c, op) && triggerOf(w, c, op) === 'ready') activate(w, c, op);
 }

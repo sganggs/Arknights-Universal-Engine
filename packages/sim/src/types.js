@@ -135,6 +135,12 @@
  * 技能-14, read from other sentences: `counter` while the skill runs, a `barrier` gained as it starts, `bursts` at the
  * start or the end, `selfStun` when it ends, `allyHeal` for a friendly unit. `hitScale` `'attack'` means a plain
  * `atk_scale` belongs to the counter or the burst, so the attack's scale is `attack@atk_scale`.
+ * 技能-15: no new attacks while it runs (`stopAttack`; its first `seconds` only, when given) or for `seconds` once it ends
+ * (`stopAfter`); `costGain`, `cost` each `every` seconds while it runs, `steps` times (`plain`: those are the blackboard's
+ * own `interval` and `cost`, so that `cost` is not also gained at the start); `selfLoss`, HP lost as it starts (`ratio` of
+ * its HP, or of its maximum with `ofMax`); `opening`, what it does to enemies as it starts — those in its attack range
+ * (`most`: the first that many it would attack), or those it blocks — a hit of `scale` × its attack, then statuses. An
+ * opening hit's plain `atk_scale` is claimed by `hitScale` too.
  * @typedef {{ mods?: Record<string, number>, flags?: Record<string, boolean>, attack?: { blocked?: boolean, more?: number, times?: number, type?: DamageType,
  *   hitStatus?: { key: import('./status.js').StatusKey, seconds: number, prob?: number }, hitDebuff?: { seconds: number, mods: Record<string, number> },
  *   selfHeal?: number, element?: import('./elements.js').Element, epScale?: number,
@@ -145,6 +151,9 @@
  *   bursts?: { at: 'start' | 'end', scale: number, type: DamageType, where: 'attack' | 'cells', range?: Cell[] }[],
  *   selfStun?: { seconds: number },
  *   allyHeal?: { scale: number, all?: boolean, others?: boolean, on: 'attack' | 'start', below?: number, range?: Cell[] },
+ *   stopAttack?: { seconds?: number }, stopAfter?: { seconds: number }, costGain?: { every: number, cost: number, steps: number, plain?: boolean },
+ *   selfLoss?: { ratio: number, ofMax?: boolean },
+ *   opening?: { where: 'attack' | 'blocked', most?: number, hit?: { scale: number, type: DamageType }, status: { key: import('./status.js').StatusKey, seconds: number }[] }[],
  *   hitScale?: 'attack' }} SkillExtra
  */
 /**
