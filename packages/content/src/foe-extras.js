@@ -363,4 +363,7 @@ export const FOE_EXTRAS = Object.freeze({
   // 天桩-甲 / 失控天桩-甲: ……不进行普通攻击，无法被阻挡 — their 自缚, 失衡免疫, 阻回 and CheckAwake are not this clause
   enemy_1398_dhdcr: { talents: { NoAttack: {}, unblockable: {} }, source: `${PRTS}%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366637` },
   enemy_1398_dhdcr_2: { talents: { NoAttack: {}, unblockable: {} }, source: `${PRTS}%E5%A4%B1%E6%8E%A7%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366638` },
+  // 纠缠藤蔓 (敌能-140): 拥有抵抗 is 敌能-27's Resist. `page` marks this page on 致幻缠绕 and on Weak: 古老藤蔓 has the same
+  // data and no page read, and the other stun-only StunAttack users have none either, so they stay uncovered (关卡-2).
+  enemy_2052_smgia: { talents: { Weak: { page: 1 }, Resist: {} }, skills: { StunAttack: { page: 1 } }, source: `${PRTS}%E7%BA%A0%E7%BC%A0%E8%97%A4%E8%94%93&oldid=355929` },
 });
