@@ -6,6 +6,7 @@ import { tinyContent } from '@aue/testkit';
 import { KIND } from '@aue/schema';
 import { createWorld, step, stateHash, takeSnapshot, restoreSnapshot } from '../src/index.js';
 import { makeEnemy, makeOperator } from '../src/units.js';
+import { makeDevice } from '../src/units.js';
 import { foeSpawn, BOLT_RADIUS } from '../src/foes.js';
 import { addBuff, makeBuff } from '../src/buffs.js';
 
@@ -323,4 +324,24 @@ test('[敌能-86] a blast with all hits every unit in the radius, enemies includ
   assert.equal(near.hp, 90);
   assert.equal(far.hp, 100);
   assert.equal(e.hp, 990);
+});
+
+test('[敌能-151] the context\'s device: a device unit, and an operator unit whose record is a 装置 — profession TRAP, or a 装置类 summon; not an operator, another summon or an enemy', () => {
+  /** @type {Unit[]} */
+  const units = [];
+  /** @type {boolean[]} */
+  const seen = [];
+  const { c, w } = arena({ talents: { probe: {} } }, {
+    probe: { tick: (/** @type {any} */ ctx) => { if (seen.length === 0) seen.push(...units.map((u) => ctx.device(u))); } },
+  });
+  c.operators.trap = { ...c.operators.guard, profession: 'TRAP' };
+  c.operators.drone = { ...c.operators.sniper, summon: { device: true } };
+  c.operators.pet = { ...c.operators.sniper, summon: { device: false } };
+  c.devices = { box: { name: 'box', maxHp: 100, atk: 0, def: 0, res: 0, blockCnt: 0, baseAttackTime: 1, aspd: 100, tauntLevel: 0, massLevel: 0, talentBb: {} } };
+  const box = makeDevice(w, c, { alias: 'box#1', key: 'box', hidden: false, row: 1, col: 1, dir: 'UP' });
+  w.units.push(box);
+  const e = foe(w, c, 1, 4);
+  units.push(box, op(w, c, 'trap', 1, 2), op(w, c, 'drone', 0, 4), op(w, c, 'guard', 1, 3), op(w, c, 'pet', 2, 4), e);
+  run(w, c, 1);
+  assert.deepEqual(seen, [true, true, true, false, false, false]);
 });
