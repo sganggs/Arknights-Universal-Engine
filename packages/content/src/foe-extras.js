@@ -365,7 +365,8 @@ export const FOE_EXTRAS = Object.freeze({
   enemy_1114_rgrdmn: { talents: { vampire: { page: 1 }, noFly: {} }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E5%AE%BF%E4%B8%BB%E7%99%BE%E5%A4%AB%E9%95%BF&oldid=365976` },
   enemy_1114_rgrdmn_2: { talents: { vampire: { page: 1 }, noFly: {} }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E5%AE%BF%E4%B8%BB%E5%8D%AB%E5%B7%A2%E7%99%BE%E5%A4%AB%E9%95%BF&oldid=365977` },
   // 新生血裔 / 渴血的子裔 / 饱腹的子裔: 成功造成伤害后治疗伤害量的 220%。页面没有「不会攻击飞行单位」。
-  enemy_1360_dfello: { talents: { vampire: { page: 1 } }, source: `${PRTS}%E6%96%B0%E7%94%9F%E8%A1%80%E8%A3%94&oldid=365296` },
+  // 新生血裔's `Summon` is 敌能-63's death summon on a read page (敌能-153): 死亡后……以自身路径召唤1个血珀
+  enemy_1360_dfello: { talents: { vampire: { page: 1 }, Summon: { page: 1 } }, source: `${PRTS}%E6%96%B0%E7%94%9F%E8%A1%80%E8%A3%94&oldid=365296` },
   enemy_1228_dslime: { talents: { vampire: { page: 1 } }, source: `${PRTS}%E6%B8%B4%E8%A1%80%E7%9A%84%E5%AD%90%E8%A3%94&oldid=353607` },
   enemy_1228_dslime_2: { talents: { vampire: { page: 1 } }, source: `${PRTS}%E9%A5%B1%E8%85%B9%E7%9A%84%E5%AD%90%E8%A3%94&oldid=353608` },
   // W: the cast is 3.2 s (the page; the data has no duration). noFly is the page's normal attack. The half-HP reset is the skill, not a talent (敌能-76).
@@ -480,4 +481,17 @@ export const FOE_EXTRAS = Object.freeze({
   // `{cost}` and no saved page, so it stays uncovered (关卡-2).
   enemy_1340_bthtbw: { skills: { PowerHit: { page: 1 } }, source: `${PRTS}%E8%B5%8F%E9%87%91%E7%8C%8E%E4%BA%BA%E5%BC%A9%E6%89%8B&oldid=355359` },
   enemy_1340_bthtbw_2: { skills: { PowerHit: { page: 1 } }, source: `${PRTS}%E8%B5%8F%E9%87%91%E7%8C%8E%E4%BA%BA%E5%BC%A9%E6%89%8B%E9%98%9F%E9%95%BF&oldid=355360` },
+  // 敌能-153: one shape, two rules. `page` marks the pages that were read; the same shape elsewhere stays uncovered (关卡-2).
+  // 萨卡兹枯朽吞噬者 / 吸纳者 (敌能-30): 首次被阻挡时吞噬阻挡者，防御力大幅提升但移动速度下降
+  enemy_1271_nhkodo: { skills: { Devour: { page: 1 } }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E6%9E%AF%E6%9C%BD%E5%90%9E%E5%99%AC%E8%80%85&oldid=436421` },
+  enemy_1271_nhkodo_2: { skills: { Devour: { page: 1 } }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E6%9E%AF%E6%9C%BD%E5%90%B8%E7%BA%B3%E8%80%85&oldid=367790` },
+  // 萨卡兹骸骨鞭笞者 / 拷打者 (敌能-63): 死亡后在自身所在地块中心0.2边长正方形范围内随机位置以自身路径召唤2个血珀
+  enemy_1364_spnaxe: { talents: { Summon: { page: 1 } }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E9%AA%B8%E9%AA%A8%E9%9E%AD%E7%AC%9E%E8%80%85&oldid=365573` },
+  enemy_1364_spnaxe_2: { talents: { Summon: { page: 1 } }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E9%AA%B8%E9%AA%A8%E6%8B%B7%E6%89%93%E8%80%85&oldid=365572` },
+  // 裹骸死士 (敌能-94): 拥有40%的物理/法术闪避
+  enemy_1419_mmcike: { talents: { Evade: { page: 1 } }, source: `${PRTS}%E8%A3%B9%E9%AA%B8%E6%AD%BB%E5%A3%AB&oldid=435902` },
+  // 投嗣育母 (敌能-106): 攻击目标时在目标所在格中心0.4边长正方形范围内随机位置召唤1只注亡拟嗣
+  enemy_2023_sypult: { talents: { Attack: { page: 1 } }, source: `${PRTS}%E6%8A%95%E5%97%A3%E8%82%B2%E6%AF%8D&oldid=436691` },
+  // 雪怪小队凿冰人 (敌能-27): 计算伤害时若目标正在受冻结影响，攻击倍率提高至250%
+  enemy_1069_icebrk: { talents: { atkup: { page: 1 } }, source: `${PRTS}%E9%9B%AA%E6%80%AA%E5%B0%8F%E9%98%9F%E5%87%BF%E5%86%B0%E4%BA%BA&oldid=436845` },
 });
