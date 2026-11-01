@@ -1,10 +1,10 @@
 // Chains and zones (docs/spec/traits.md 职业-11): an attack or heal that jumps on from its first target, each jump at a
-// share of the one before; the 倍率 a trait gives targets inside (or outside) a set of tiles near the operator; the heal
-// an operator gives for damage it deals an enemy.
+// share of the one before — an enemy's attack's too (foes.md 敌能-142); the 倍率 a trait gives targets inside (or
+// outside) a set of tiles near the operator; the heal an operator gives for damage it deals an enemy.
 import { KIND } from '@aue/schema';
 import { statsOf } from './attrs.js';
 import { DEFAULT_DIR } from './dir.js';
-import { rangeKeys, inKeys, selectable, sortHealTargets, precisionKey, hostile } from './targeting.js';
+import { rangeKeys, inKeys, selectable, sortHealTargets, precisionKey, hostile, friendly } from './targeting.js';
 import { reachKeys } from './reach.js';
 
 /** @typedef {import('./types.js').World} World @typedef {import('./types.js').Content} Content @typedef {import('./types.js').Unit} Unit */
@@ -28,16 +28,24 @@ export function zoneScale(c, op, t, tr) {
 const dist2 = (a, b) => (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y);
 
 /**
+ * Whether a damage chain may jump to `u` by its side: an operator's to an enemy (职业-11); an enemy's (`side` friendly,
+ * 敌能-142) to a unit enemies attack — an operator, a neutral unit, a device of ours — but not to one that took off:
+ * the ground enemy's selection does not see it (阻挡-2).
+ * @param {Unit} u @param {Chain} ch
+ */
+const onSide = (u, ch) => (ch.side === 'friendly' ? friendly(u) && !statsOf(u).flags.liftoff : hostile(u));
+
+/**
  * The next enemy a damage chain jumps to from `at` (职业-11): a selectable enemy within the radius that the chain has
  * not reached — 迷彩 or not (INF-0290), not while 隐匿 is in effect, flying ones only when the attacker can hit them;
- * the nearest, the earlier created on a tie.
+ * the nearest, the earlier created on a tie. An enemy's chain picks on our side the same way (敌能-142).
  * @param {World} w @param {Unit} at @param {Chain} ch @param {Set<number>} seen @param {boolean} antiAir @returns {Unit | null}
  */
 function nextFoe(w, at, ch, seen, antiAir) {
   let best = null, bestD = Infinity;
   const sel = { canHitFly: antiAir, ignoreCamou: true };
   for (const u of w.units) {
-    if (!hostile(u) || u.hp <= 0 || seen.has(u.id)) continue;
+    if (!onSide(u, ch) || u.hp <= 0 || seen.has(u.id)) continue;
     const d = dist2(at, u);
     if (d <= ch.radius * ch.radius && d < bestD && selectable(u, sel)) { best = u; bestD = d; }
   }

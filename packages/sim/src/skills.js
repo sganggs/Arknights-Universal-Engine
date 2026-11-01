@@ -33,7 +33,8 @@ import { openSkillText2, tickSkillText2, closeSkillText2 } from './skilltext2.js
  * 隐匿 and 起飞, and its hits are not refused for 起飞 (敌能-55); 无敌 still stops them. `facScale` is the 攻击力倍率 in place of
  * `scale` when that hit's target is a 守御-3 facility (敌能-122). `vsBuff`: a 倍率 × `scale` on a target that holds a
  * buff of `key` as the hit is worked out (敌能-141).
- * @typedef {{ scale: number, times: number, targets: number, skill: boolean, element?: import('./elements.js').Element, ep?: number,
+ * `chain`: an enemy's jumping chain (敌能-142, the 职业-11 chain on our side).
+ * @typedef {{ scale: number, times: number, targets: number, skill: boolean, element?: import('./elements.js').Element, ep?: number, chain?: import('./types.js').Chain,
  *   type?: import('./types.js').DamageType, cross?: boolean, atkPct?: number, channel?: { hits: number, duration: number, after: number }, heal?: boolean, square?: boolean, blocked?: boolean, more?: number,
  *   hitStatus?: { key: import('./status.js').StatusKey, seconds: number, prob?: number }, mark?: number, splashScale?: number, direct?: boolean, frozen?: number, facScale?: number,
  *   hitDebuff?: { seconds: number, mods: Record<string, number> }, selfHeal?: number, epScale?: number,

@@ -439,4 +439,7 @@ export const FOE_EXTRAS = Object.freeze({
   // read pages; 无垠回荡克雷松 has the same DamageUp { atk_scale } and no marker.
   enemy_2048_smgrd: { talents: { DamageUp: { page: 1 } }, source: `${PRTS}%E2%80%9C%E9%82%AA%E9%AD%94%E7%9A%84%E5%88%A9%E5%88%83%E2%80%9D&oldid=354395` },
   enemy_2049_smgrd2: { talents: { DamageUp: { page: 1 } }, source: `${PRTS}%E2%80%9C%E9%82%AA%E9%AD%94%E7%9A%84%E5%88%A9%E5%88%83%E2%80%9D%EF%BC%8C%E6%B8%B8%E8%8D%A1%E8%80%85&oldid=354396` },
+  // 陷落雪祀 (敌能-142): 普通攻击会在3个目标间跳跃并附带4.5s寒冷；【反自然馈赠】. `page` marks the read page on both;
+  // 空洞雪祀 has the same keys and no page, so both of its abilities stay uncovered (关卡-2).
+  enemy_2050_smsha: { talents: { Attack: { page: 1 } }, skills: { ChainBuff: { page: 1 } }, source: `${PRTS}%E9%99%B7%E8%90%BD%E9%9B%AA%E7%A5%80&oldid=354397` },
 });
