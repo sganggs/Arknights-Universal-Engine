@@ -184,6 +184,24 @@ test('[敌能-29] 凋亡 on 王庭军战士\'s hits; 死亡之眼: 8 s of arts o
   assert.ok(!has(e, 'deathEye'));
 });
 
+test('[敌能-29] [敌能-2] 死亡之眼\'s cooldown waits while it channels: the next channel starts one cooldown after the last one ended, finished or stopped', () => {
+  const { c, w, es: [e] } = arena([['enemy_1275_dwlock', 1, 4]], { ops: [['guard', 1, 2]], guard: { maxEp: 1e6, def: 0, res: 0 } });
+  const cd = Math.round(c.enemies.enemy_1275_dwlock.skills.find((/** @type {any} */ s) => s.key === 'DeathEye').cooldown * 30);
+  const left = () => e.ab['DeathEye.left'] ?? 0;
+  const next = (/** @type {number} */ from) => { while (!(left() > 0) && w.frame < from + 3000) step(w, c); return w.frame - from; };
+  next(w.frame);
+  const held = e.ab['DeathEye.cd'];
+  run(w, c, 30);
+  assert.equal(e.ab['DeathEye.cd'], held, 'no cooldown while it channels');
+  while (left() > 0) step(w, c);
+  assert.equal(next(w.frame), cd, 'from the end of a finished channel');
+  run(w, c, 30);
+  status.applyStatus(e, 'stun', { seconds: 1 });
+  step(w, c);
+  assert.equal(left(), 0, 'stopped');
+  assert.equal(next(w.frame), cd, 'from the frame it stopped');
+});
+
 test('[敌能-30] 枯朽吞噬者: blocked, it devours the guard — its card locked while it stands — and turns 饱腹: 防御力 +700, 移动速度 −30%', () => {
   const { c, w, es: [e], ops: [g] } = arena([['enemy_1271_nhkodo', 1, 2]], { ops: [['guard', 1, 2]] });
   run(w, c, 3);
