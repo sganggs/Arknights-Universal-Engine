@@ -201,7 +201,7 @@ function shell(name, resist, more = {}) {
   return /** @type {any} */ ({ name, maxHp: 1000, atk: 100, def: 0, res: 0, moveSpeed: 1, talents: { Weakness: { damage_resistance: resist }, WeaknessUI: { value: 0 }, ...more } });
 }
 
-test('[敌能-118] the five are covered; a damage_resistance-only Weakness, and the designers\' weakness, stay uncovered', () => {
+test('[敌能-118] the five are covered; a damage_resistance-only Weakness, and a lowercase weakness without 敌能-132\'s front, stay uncovered', () => {
   for (const row of [...BACK, ...FRONT]) {
     const def = withFoeExtras(row.key, foe(row));
     assert.equal(def.talents?.Weakness?.[row.front ? 'front' : 'back'], 1, row.key);
