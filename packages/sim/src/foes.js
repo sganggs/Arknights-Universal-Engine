@@ -75,6 +75,8 @@ export const BOLT_RADIUS = 0.3;
  * @property {boolean} fell it fell into a 地穴 (地图-4)
  * @property {boolean} ready a skill's cooldown is over
  * @property {() => void} use a skill was used: its cooldown starts again — one with a cooldown below 0 is not ready again
+ * @property {() => void} holdCooldown its skill's cooldown does not run this turn: called while a skill that lasts runs,
+ *   or outside the mode it is bound to (敌能-2). Once a turn.
  * @property {(seconds: number) => number} frames seconds as whole frames (时间-2)
  * @property {(name: string) => Record<string, number> | null} talent another talent's blackboard
  * @property {(radius: number, sel?: import('./targeting.js').Selector) => Unit[]} foes the units it may attack within `radius` of it.
@@ -281,6 +283,8 @@ function contextOf(w, c, e, of) {
     fell: (ab['@fell'] ?? 0) === 1,
     ready: skill !== null && (ab[`${name}.cd`] ?? 0) <= 0,
     use: () => { if (skill) ab[`${name}.cd`] = skill.cooldown < 0 ? ONCE : secondsToFrames(skill.cooldown); },
+    // the turn's frame off the cooldowns comes after its tick (foeTick): one frame back is this turn held
+    holdCooldown: () => { if ((ab[`${name}.cd`] ?? 0) > 0) ab[`${name}.cd`]++; },
     frames: secondsToFrames,
     talent: (t) => defOf(c, e).talents?.[t] ?? null,
     foes: (radius, sel) => w.units.filter((u) => isFoeOf(u, e) && selectable(u, sel) && dist2(u, e) <= radius * radius),

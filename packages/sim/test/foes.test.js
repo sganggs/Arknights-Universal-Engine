@@ -68,6 +68,27 @@ test('[敌能-2] hooks: spawn, tick seeing hurt and unblocked, death; state per 
   assert.deepEqual(seen, [['spawn', 2], ['zap', 15, 3], ['hurt', 20], ['unblocked', 21], ['zap', 45, 3], ['death', 51]], 'ready 0.5 s after spawning, then 1 s after use');
 });
 
+test('[敌能-2] holdCooldown: a turn held does not count — a skill held for 10 turns after its use is ready 10 frames later; a ready one stays ready', () => {
+  /** @type {number[]} */
+  const used = [];
+  let hold = 0;
+  const { c, w } = arena({ skills: [{ key: 'zap', cooldown: 1, initCooldown: 0, bb: {} }] }, {
+    zap: { tick: (/** @type {any} */ ctx) => {
+      if (ctx.ready) { used.push(ctx.frame); ctx.use(); hold = 10; }
+      if (hold > 0) { hold--; ctx.holdCooldown(); }
+    } },
+  });
+  foe(w, c, 1, 3);
+  run(w, c, 90);
+  assert.deepEqual(used.slice(0, 3), [used[0], used[0] + 40, used[0] + 80], 'every 30 + 10 frames, not every 30');
+  const idle = arena({ skills: [{ key: 'zap', cooldown: 1, initCooldown: 0, bb: {} }] }, {
+    zap: { tick: (/** @type {any} */ ctx) => { ctx.holdCooldown(); if (ctx.ready) used.push(-ctx.frame); } },
+  });
+  const e = foe(idle.w, idle.c, 1, 3);
+  run(idle.w, idle.c, 3);
+  assert.equal(e.ab['zap.cd'], 0, 'holding a ready skill keeps it at 0');
+});
+
 test('[敌能-2] targets and attack hooks change whom an enemy attacks and how', () => {
   const { c, w } = arena({ applyWay: 'MELEE' }, {
     far: {
