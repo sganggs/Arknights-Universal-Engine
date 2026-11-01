@@ -426,4 +426,6 @@ export const FOE_EXTRAS = Object.freeze({
   // 灼藤 / 灼芯: ……造成100%的法术溅射伤害 (`splash`)……可以点燃半径0.5范围内的卷心籽/卷心草（不可对空） (`ignite`)
   enemy_10067_ftsjc: { talents: { pow: { splash: 1, ignite: 0.5 } }, source: `${PRTS}%E7%81%BC%E8%97%A4&oldid=376257` },
   enemy_10067_ftsjc_2: { talents: { pow: { splash: 1, ignite: 0.5 } }, source: `${PRTS}%E7%81%BC%E8%8A%AF&oldid=406825` },
+  // “帝国的甲胄”: 回忆里的誓死 — 持续5.85秒的【轰炸区域】，延迟1.33秒后……此后每0.53秒重复一次 (敌能-137); the data has only times 8
+  enemy_10027_vtsk: { skills: { Appear: { duration: 5.85, delay: 1.33, interval: 0.53 } }, source: `${PRTS}%E2%80%9C%E5%B8%9D%E5%9B%BD%E7%9A%84%E7%94%B2%E8%83%84%E2%80%9D&oldid=377746` },
 });
