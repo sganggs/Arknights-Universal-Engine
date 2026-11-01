@@ -35,6 +35,7 @@ import { takeDmg } from './chalice.js';
 import { unbalanceBehaviors } from './unbalance.js';
 import { floatBehaviors, takeOffOwns } from './float.js';
 import { partnerBehaviors } from './partners.js';
+import { stealthBehaviors, combatOwns } from './stealth.js';
 import { sanktaBehaviors } from './sankta.js';
 import { periodicBehaviors } from './periodic.js';
 import { blockDamageBehaviors } from './blockdamage.js';
@@ -303,6 +304,7 @@ export const foeBehaviors = Object.freeze({
   ...nestBehaviors,
   ...floatBehaviors,
   ...partnerBehaviors,
+  ...stealthBehaviors,
   ...sanktaBehaviors,
   ...periodicBehaviors,
   ...blockDamageBehaviors,
@@ -430,6 +432,8 @@ export const FOE_NEEDS = Object.freeze({
   // 深池伙友 (敌能-126): `partner` is the pages' 1.4, which the data lacks. `idle` marks the two 卫队 pages, which list no
   // skill; 深池焚毁者's `Flame` has no marker and stays uncovered (关卡-2).
   traitAbility: Object.freeze(['partner']), Flame: Object.freeze(['idle']),
+  // 流泪小子's attack stun is read only where its page was (敌能-131): the hidden enemy_2034_sythef_2 has the shape, no `page`.
+  Combat: Object.freeze(['page']),
   // 吸血 needs the page marker (敌能-75). The heal ratio is already in the enemy data; 虹吸巨刃 has it and no marker.
   vampire: Object.freeze(['page']),
   // The 3.2 s cast is the page's, not the enemy data (敌能-76). Without it the skill stays uncovered.
@@ -467,7 +471,7 @@ const cartBoom = (k, bb) => k === 'boom' && cartShape(bb);
  * The shape checks of the shared names (关卡-2): each says whether a blackboard of its names is the shape its behaviour
  * understands, and passes every other name. In a list, so that each family adds one entry, not one more `&&`.
  */
-const SHAPE_OWNERS = Object.freeze([rebornShape, boarOwns, elementHitOwns, takeOffOwns, wineOwns, whipOwns, bornBugsOwns, radioOwns, shieldOwns, punchOwns, passiveOwns, defdownOwns, knightOwns, blinkOwns, healAuraOwns, vampireOwns, chargeAttackOwns, rebornOwns, faustOwns, shotbuffOwns, bornCarOwns, stunAttackOwns, bombdOwns, evadeOwns, carnivalOwns, heteroOwns, pompeiiOwns, ninjaOwns, spearOwns, catapultOwns, plantOwns, companionOwns, crystalOwns, chargeOwns, bottleOwns, broOwns, avalancheOwns, crossOwns, absentOwns, weaknessOwns]);
+const SHAPE_OWNERS = Object.freeze([rebornShape, boarOwns, elementHitOwns, takeOffOwns, wineOwns, whipOwns, bornBugsOwns, radioOwns, shieldOwns, punchOwns, passiveOwns, defdownOwns, knightOwns, blinkOwns, healAuraOwns, vampireOwns, chargeAttackOwns, rebornOwns, faustOwns, shotbuffOwns, bornCarOwns, stunAttackOwns, bombdOwns, evadeOwns, carnivalOwns, heteroOwns, pompeiiOwns, ninjaOwns, spearOwns, catapultOwns, plantOwns, companionOwns, crystalOwns, chargeOwns, bottleOwns, broOwns, avalancheOwns, crossOwns, absentOwns, weaknessOwns, combatOwns]);
 
 /** Shapes whole in themselves, whatever FOE_NEEDS lists for their name (关卡-2). @type {readonly ((k: string, bb: Record<string, unknown>) => boolean)[]} */
 const WHOLE_SHAPES = Object.freeze([nestPulseOwns, cartBoom, noPeriodic, (k, bb) => k === 'boom' && ballBoom(bb), (k, bb) => k === 'Shield' && heteroShield(bb), (k, bb) => k === 'defdown' && acidShape(bb),
@@ -478,7 +482,7 @@ const needsMet = (k, bb) => (healBoom(k, bb) ? typeof bb.page === 'number' : (FO
 
 /**
  * Whether an ability has what its behaviour needs (关卡-2). A shared talent name only counts when its blackboard is the
- * shape that behaviour understands (敌能-38, 敌能-47, 敌能-63, 敌能-65, 敌能-66, 敌能-67, 敌能-68, 敌能-70, 敌能-71, 敌能-73, 敌能-74, 敌能-75, 敌能-77, 敌能-78, 敌能-79, 敌能-81, 敌能-82, 敌能-83, 敌能-85, 敌能-86, 敌能-118) — an `aura` only with 敌能-28's stack cap (敌能-45), as a ball's (足球-2) or a 守门位's (足球-13); anything else
+ * shape that behaviour understands (敌能-38, 敌能-47, 敌能-63, 敌能-65, 敌能-66, 敌能-67, 敌能-68, 敌能-70, 敌能-71, 敌能-73, 敌能-74, 敌能-75, 敌能-77, 敌能-78, 敌能-79, 敌能-81, 敌能-82, 敌能-83, 敌能-85, 敌能-86, 敌能-118, 敌能-131) — an `aura` only with 敌能-28's stack cap (敌能-45), as a ball's (足球-2) or a 守门位's (足球-13); anything else
  * stays incomplete. The nest pulse does not need `el`: the page names 神经损伤. A `Boom` with `heal_scale` needs its page
  * marker (敌能-58). The candy cart's `boom` needs no death-blast radius or delay (敌能-82). A ball's `boom` (足球-16),
  * 异质源石虫's `Shield` (敌能-102) and 酸液源石虫's `defdown` (敌能-101) are whole by their shapes.
