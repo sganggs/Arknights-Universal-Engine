@@ -26,6 +26,7 @@ import { ballBehaviors, ballAura, ballBoom, ballBoomTick, PHYSIC_KEYS } from './
 import { pitchBehaviors, spotAura } from './pitch.js';
 import { lostLifeBehaviors } from './lostlife.js';
 import { bristleBehaviors, weaknessOwns } from './bristle.js';
+import { crowdBehaviors } from './crowd.js';
 import { boarBehaviors, boarOwns, boarRush, boarFirst, boarTick, boarSpawn, boarHit } from './boar.js';
 import { flameBehaviors } from './flame.js';
 import { footballerBehaviors, rebornShape, noPeriodic, KICK_SKILLS } from './footballers.js';
@@ -56,6 +57,7 @@ import { avalancheBehaviors, avalancheOwns } from './avalanche.js';
 import { crossBehaviors, crossOwns } from './crossroad.js';
 import { absentBehaviors, absentOwns } from './absent.js';
 import { tyrantBehaviors } from './tyrant.js';
+import { colossusBehaviors } from './colossus.js';
 import { pengBehaviors } from './peng.js';
 import { bombardBehaviors } from './bombard.js';
 import { templarBehaviors } from './templar.js';
@@ -82,6 +84,7 @@ import { shotbuffBehaviors, shotbuffOwns } from './pathshot.js';
 import { lootBehaviors } from './loot.js';
 import { candycarBehaviors, cartShape, bornCarOwns, cartTick, cartAttack } from './candycar.js';
 import { rockmanBehaviors, stunAttackOwns } from './rockman.js';
+import { pitcherBehaviors } from './pitcher.js';
 import { FOE_EXTRAS } from './foe-extras.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').EnemyDef} EnemyDef */
@@ -309,6 +312,7 @@ export const foeBehaviors = Object.freeze({
   ...mirrorBehaviors,
   ...lancerBehaviors,
   ...tyrantBehaviors,
+  ...colossusBehaviors,
   ...c4Behaviors,
   ...glowBehaviors,
   ...helmKnightBehaviors,
@@ -318,6 +322,7 @@ export const foeBehaviors = Object.freeze({
   ...pitchBehaviors,
   ...lostLifeBehaviors,
   ...bristleBehaviors,
+  ...crowdBehaviors,
   ...boarBehaviors,
   ...flameBehaviors,
   Rush,
@@ -360,6 +365,7 @@ export const foeBehaviors = Object.freeze({
   ...avalancheBehaviors,
   ...crossBehaviors,
   ...absentBehaviors,
+  ...pitcherBehaviors,
   rush,
 });
 
@@ -444,6 +450,8 @@ export const FOE_NEEDS = Object.freeze({
   // 沸血的标记在这里（敌能-71）。`buff` 的两种形状各带自己的标记，由 knightOwns 认（敌能-71 的 page、敌能-85 的 zeal）。
   // `{ atk_scale }` is 敌能-122's: no `page`, whole by its shape (WHOLE_SHAPES), not by this list.
   enhance: Object.freeze(['page']),
+  // 量产巨像 occupies 2 block counts (敌能-120). Without `block` the page-only talent stays uncovered (关卡-2).
+  blockSlots: Object.freeze(['block']),
 });
 
 /**
