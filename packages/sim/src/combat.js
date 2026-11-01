@@ -19,7 +19,7 @@ import { traitWhiles } from './whiles.js';
 import { afterOwnHit, attacked, hitSp, caughtSp } from './riders.js';
 import { reachKeys } from './reach.js';
 import { ALLY_COLLIDER_RADIUS } from './constants.js';
-import { foeTargets, foeAttack, foeHit, foeLanded, foeCancelHit, isFoeOf } from './foes.js';
+import { foeTargets, foeRank, foeAttack, foeHit, foeLanded, foeCancelHit, isFoeOf } from './foes.js';
 import { makeBuff, addBuff, removeBuff } from './buffs.js';
 import { tileOf } from './body.js';
 import { tickSkill, beforeAttack, attackMods, afterAttack } from './skills.js';
@@ -112,17 +112,28 @@ export const pickTarget = (w, c, op) => targetsOf(w, c, op)[0] ?? null;
  * @typedef {{ type: import('./types.js').DamageType, amount: number, times: number, element: string, ep: number, splash?: import('./types.js').Splash | null,
  *   aftershock?: number, chain?: import('./types.js').Chain | null, ranged?: boolean, hitStatus?: { key: import('./status.js').StatusKey, seconds: number, value?: number, prob?: number } | null,
  *   hitDebuff?: { seconds: number, mods: Record<string, number> }, displace?: { pull: boolean, force: number, along?: boolean },
- *   skill?: boolean, hit?: 'splash' | 'chain' | 'aftershock', mark?: number, frozen?: number, packed?: { cnt: number, atk: number }, aftershocks?: number, ignoreDef?: number, ignoreSelect?: boolean }} Load
+ *   skill?: boolean, hit?: 'splash' | 'chain' | 'aftershock', mark?: number, frozen?: number, packed?: { cnt: number, atk: number }, aftershocks?: number, ignoreDef?: number, ignoreSelect?: boolean,
+ *   facScale?: number, plain?: number, atkMul?: number, vsBuff?: { key: string, scale: number } }} Load
  */
+
+/**
+ * `vsBuff.scale` on a target that holds a buff of `vsBuff.key` as the hit is worked out, otherwise 1 (敌能-141: a hit on
+ * a unit in 【国度】). @param {Load} load @param {Unit} t
+ */
+function vsBuffMul(load, t) {
+  const v = load.vsBuff;
+  return v && t.buffs.some((b) => b.key === v.key) ? v.scale : 1;
+}
 
 /**
  * A hit's damage, with where it comes from (钩子-3, the names of Stronghold's content): an attack's hit on its target,
  * on one splashed or jumped to; an aftershock is a splash and no attack's hit; whether the skill made it; a projectile's.
- * Its amount × `frozen` on a target 冻结 as the hit is worked out (敌能-27).
+ * Its amount × `frozen` on a target 冻结 as the hit is worked out (敌能-27), × `vsBuff` on a target holding that buff
+ * (敌能-141); both before the target's defences.
  * @param {Load} load @param {Unit} t @returns {import('./damage.js').Damage}
  */
 function damageOf(load, t) {
-  const amount = load.frozen && statsOf(t).flags.freeze ? load.amount * load.frozen : load.amount;
+  const amount = (load.frozen && statsOf(t).flags.freeze ? load.amount * load.frozen : load.amount) * vsBuffMul(load, t);
   const how = load.hit, d = /** @type {import('./damage.js').Damage} */ ({ type: load.type, amount, isAttack: how !== 'aftershock', isSkill: !!load.skill, isProjectile: !!load.ranged,
     ...(load.ignoreDef ? { defIgnorePct: load.ignoreDef } : {}), ...(load.ignoreSelect ? { ignoreSelect: true } : {}) });
   if (how === 'splash' || how === 'aftershock') d.isSplash = true;
@@ -257,6 +268,12 @@ function afterDamage(w, c, h) {
 const atkOf = (a, pct) => (pct ? computeStats({ base: a.base, buffs: [...a.buffs, makeBuff({ key: 'attackBonus', mods: { atkPct: pct } })] }).atk : statsOf(a).atk);
 
 /**
+ * 敌能-141's `vsBuff` on a load, left off every other load so their shots hash as before. Outside loadOf, which has no
+ * room for one more branch. @param {AttackMods} mods
+ */
+const vsBuffOf = (mods) => (mods.vsBuff ? { vsBuff: mods.vsBuff } : {});
+
+/**
  * An enemy's chain on a load (敌能-142); an operator's comes from its trait in loadFor. Absent otherwise, so no hash
  * changes. Outside loadOf, which has no room for one more branch. @param {AttackMods} mods
  */
@@ -264,17 +281,23 @@ const chainLoadOf = (mods) => (mods.chain ? { chain: mods.chain } : {});
 
 /**
  * What an attack carries to each target (攻击-2): its type, the attack × 攻击力倍率 (the attack's × the attacker's, 伤害-6),
- * hits, 元素损伤. @param {Unit} a @param {AttackMods} mods @returns {Load}
+ * hits, 元素损伤. `facScale` keeps the attack before `scale` (`plain`) and the attacker's 倍率 (`atkMul`) so a facility
+ * hit can use `facScale` in place of `scale` (敌能-122). @param {Unit} a @param {AttackMods} mods @returns {Load}
  */
-const loadOf = (a, mods) => ({
-  type: mods.type ?? a.base.dmgType, amount: atkOf(a, mods.atkPct) * mods.scale * statsOf(a).atkScaleMul, times: mods.times, element: mods.element ?? '',
-  ep: (mods.ep ?? 0) + (mods.epScale ? statsOf(a).atk * mods.epScale : 0),
-  ...(mods.hitStatus ? { hitStatus: mods.hitStatus } : {}), ...(mods.hitDebuff ? { hitDebuff: mods.hitDebuff } : {}), ...(mods.displace ? { displace: mods.displace } : {}), ...(mods.skill ? { skill: true } : {}), ...(mods.mark ? { mark: mods.mark } : {}),
-  ...(mods.frozen ? { frozen: mods.frozen } : {}), ...(mods.ignoreDef ? { ignoreDef: mods.ignoreDef } : {}),
-  ...(mods.splash ? { splash: mods.splash } : {}),
-  ...(mods.ignoreSelect ? { ignoreSelect: true } : {}),
-  ...chainLoadOf(mods),
-});
+const loadOf = (a, mods) => {
+  const plain = atkOf(a, mods.atkPct), atkMul = statsOf(a).atkScaleMul;
+  return {
+    type: mods.type ?? a.base.dmgType, amount: plain * mods.scale * atkMul, times: mods.times, element: mods.element ?? '',
+    ep: (mods.ep ?? 0) + (mods.epScale ? statsOf(a).atk * mods.epScale : 0),
+    ...(mods.hitStatus ? { hitStatus: mods.hitStatus } : {}), ...(mods.hitDebuff ? { hitDebuff: mods.hitDebuff } : {}), ...(mods.displace ? { displace: mods.displace } : {}), ...(mods.skill ? { skill: true } : {}), ...(mods.mark ? { mark: mods.mark } : {}),
+    ...(mods.frozen ? { frozen: mods.frozen } : {}), ...(mods.ignoreDef ? { ignoreDef: mods.ignoreDef } : {}),
+    ...vsBuffOf(mods),
+    ...chainLoadOf(mods),
+    ...(mods.splash ? { splash: mods.splash } : {}),
+    ...(mods.ignoreSelect ? { ignoreSelect: true } : {}),
+    ...(typeof mods.facScale === 'number' ? { facScale: mods.facScale, plain, atkMul } : {}),
+  };
+};
 
 /**
  * The units an enemy's tile splash reaches (敌能-7, 敌能-8): those it may attack on the target's tile and the four tiles
@@ -293,16 +316,29 @@ function areaOf(w, a, t, area, through = false) {
 }
 
 /**
+ * 敌能-122: a 守御-3 facility (`t.fac`) takes this attack at `facScale` in place of `scale`. The extra fields leave
+ * the load, so a projectile does not carry them into the state hash.
+ * @param {Unit} t @param {Load} load @returns {Load}
+ */
+function facilityHit(t, load) {
+  if (typeof load.facScale !== 'number') return load;
+  const { facScale, plain, atkMul, ...rest } = load;
+  if (!t.fac || typeof plain !== 'number' || typeof atkMul !== 'number') return rest;
+  return { ...rest, amount: plain * facScale * atkMul };
+}
+
+/**
  * An operator's attack against one target (职业-8, 职业-11, 职业-12, 职业-14): its amount × the trait's 倍率 for enemies
  * it does not block or its summons block, its zone's 倍率 and its funnel's, and the trait's splash, aftershock and chain;
- * an enemy's as it is.
+ * an enemy's as it is, with a facility's 倍率 already in place of `scale` (敌能-122).
  * @param {World} w @param {Content} c @param {Unit} a @param {Unit} t @param {Load} load @returns {Load}
  */
 function loadFor(w, c, a, t, load) {
-  if (a.kind !== KIND.OPERATOR) return load;
+  const hit = facilityHit(t, load);
+  if (a.kind !== KIND.OPERATOR) return hit;
   const tr = traitOf(c, a);
   return {
-    ...load, amount: load.amount * traitScale(w, c, a, t) * funnelScale(c, a, t), splash: tr.skillSplash && inSkill(a) ? tr.skillSplash : tr.splash, aftershock: tr.aftershock, chain: tr.chain,
+    ...hit, amount: hit.amount * traitScale(w, c, a, t) * funnelScale(c, a, t), splash: tr.skillSplash && inSkill(a) ? tr.skillSplash : tr.splash, aftershock: tr.aftershock, chain: tr.chain,
     ...(tr.aftershocks !== 1 ? { aftershocks: tr.aftershocks } : {}),
     ...(tr.packed ? { packed: tr.packed } : {}),
   };
@@ -764,7 +800,7 @@ export function enemyAttack(w, c, e) {
   if (e.atkCd > 0) { e.atkCd--; return swinging; }
   if (e.swing) return true;
   if (s.flags.disarmedCombat && e.blockedBy >= 0) return false;
-  const order = sortAllies(e, foeTargets(w, c, e, enemyTargets(w, e)), FPS);
+  const order = sortAllies(e, foeTargets(w, c, e, enemyTargets(w, e)), FPS, foeRank(w, c, e));
   if (order.length === 0) return swinging;
   const mods = foeAttack(w, c, e, { scale: 1, times: 1, targets: 1, skill: false });
   startSwing(w, c, e, order.slice(0, Math.max(1, mods.targets)), mods);
