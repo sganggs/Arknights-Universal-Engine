@@ -363,4 +363,8 @@ export const FOE_EXTRAS = Object.freeze({
   // 天桩-甲 / 失控天桩-甲: ……不进行普通攻击，无法被阻挡 — their 自缚, 失衡免疫, 阻回 and CheckAwake are not this clause
   enemy_1398_dhdcr: { talents: { NoAttack: {}, unblockable: {} }, source: `${PRTS}%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366637` },
   enemy_1398_dhdcr_2: { talents: { NoAttack: {}, unblockable: {} }, source: `${PRTS}%E5%A4%B1%E6%8E%A7%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366638` },
+  // 鼠王 (敌能-144): 「出场时获得可吸收14001法术伤害的屏障，该屏障存在时防御力+3000」 — `page` marks the read `shield` and
+  // `defup` (布景小丑 / 布景大师 share { dynamic }); 唱沙's cross reaches 3 tiles each way (the page's range figure);
+  // 「普通攻击和技能不会选择飞行单位作为目标」 is noFly. SandStorm (a zone) and Mark (marks only) get nothing: uncovered.
+  enemy_1509_mousek: { talents: { shield: { page: 1 }, defup: { page: 1 }, noFly: {} }, skills: { DriftSand: { arm: 3 } }, source: `${PRTS}%E9%BC%A0%E7%8E%8B&oldid=378897` },
 });
