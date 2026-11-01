@@ -363,4 +363,10 @@ export const FOE_EXTRAS = Object.freeze({
   // 天桩-甲 / 失控天桩-甲: ……不进行普通攻击，无法被阻挡 — their 自缚, 失衡免疫, 阻回 and CheckAwake are not this clause
   enemy_1398_dhdcr: { talents: { NoAttack: {}, unblockable: {} }, source: `${PRTS}%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366637` },
   enemy_1398_dhdcr_2: { talents: { NoAttack: {}, unblockable: {} }, source: `${PRTS}%E5%A4%B1%E6%8E%A7%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366638` },
+  // 泥岩 (敌能-143): 沉睡免疫; 敌能-66's barrier (可吸收16500法术伤害) and 刷新屏障 by the page marker; 增益最多叠加6层; 占据 by
+  // the marker, so that 冬灵血巫's unmarked `occupy` of the same { sp } stays uncovered
+  enemy_1511_mdrock: {
+    talents: { SleepImmune: {}, shield: { page: 1 }, charge: { layers: 6 } }, skills: { RefreshShield: { page: 1 }, occupy: { page: 1 } },
+    source: `${PRTS}%E6%B3%A5%E5%B2%A9%28%E6%95%8C%E6%96%B9%29&oldid=378890`,
+  },
 });
