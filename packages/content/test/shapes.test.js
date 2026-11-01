@@ -150,11 +150,20 @@ test('[敌能-153] Attack: 投嗣育母\'s marked brood stays; 责罚者 and 惩
   assert.equal(sharedShapeOwns('Attack', { enemy_key: 7, page: 1 }), false, 'a name, as text');
 });
 
-test('[敌能-153] atkup: 凿冰人\'s marked atk_scale stays with its frozen 倍率; the unread holders of a bare atk_scale are refused; the other shapes stay', () => {
+test('[敌能-153] atkup: 凿冰人\'s and the 雪怪小队 family\'s marked atk_scale stay with the frozen 倍率; 狂徒\'s, “盛怒”\'s and “情绪失控”\'s bare one is refused; the other shapes stay', () => {
   const breaker = shipped('act1multi_rm07', 'enemy_1069_icebrk');
   assert.deepEqual([gaps(breaker), bbOf(breaker, 'atkup')], [[], { atk_scale: 2.5, page: 1 }]);
   assert.deepEqual(gaps(shipped('act1multi_rm07', 'enemy_1193_krgbsk_2')), [], 'the [frozen] key');
-  for (const k of [1.5, 1.8]) assert.deepEqual(gaps(foe({ atkup: { atk_scale: k } })), ['atkup'], '狂徒, “盛怒”, 雪怪小队 …');
+  for (const k of [1.5, 1.8]) assert.deepEqual(gaps(foe({ atkup: { atk_scale: k } })), ['atkup'], 'a bare atk_scale without a read page');
+  /** @type {[string, number][]} */
+  const snow = [['enemy_1064_snsbr', 1.5], ['enemy_1065_snwolf', 1.5], ['enemy_1065_snwolf_2', 1.5], ['enemy_1066_snbow', 1.5], ['enemy_1066_snbow_2', 1.5], ['enemy_1069_icebrk_2', 3]];
+  for (const [key, k] of snow) {
+    const e = withFoeExtras(key, foe({ atkup: { atk_scale: k } }));
+    assert.deepEqual([gaps(e), bbOf(e, 'atkup')], [[], { atk_scale: k, page: 1 }], `${key}: its page says the same frozen 倍率`);
+  }
+  for (const key of ['enemy_1059_buster', 'enemy_1059_buster_2', 'enemy_1129_spklr', 'enemy_1129_spklr_2', 'enemy_15082_dqklr']) {
+    assert.deepEqual(gaps(withFoeExtras(key, foe({ atkup: { atk_scale: 1.8 } }))), ['atkup'], `${key}: another rule, no marker`);
+  }
   for (const bb of [{ atk_scale: '2.5', page: 1 }, { atk_scale: 2.5, page: 1, hp_ratio: 0.5 }]) assert.deepEqual(gaps(foe({ atkup: bb })), ['atkup'], JSON.stringify(bb));
   for (const bb of [{ atk: 0.5 }, { atk: 0.5, hp_ratio: 0.5 }]) assert.deepEqual(gaps(foe({ atkup: bb })), [], JSON.stringify(bb));
   const ctx = /** @type {any} */ ({ bb: { atk_scale: 1.7, page: 1 } });
