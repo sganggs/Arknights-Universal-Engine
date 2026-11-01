@@ -430,4 +430,6 @@ export const FOE_EXTRAS = Object.freeze({
   enemy_10027_vtsk: { skills: { Appear: { duration: 5.85, delay: 1.33, interval: 0.53 } }, source: `${PRTS}%E2%80%9C%E5%B8%9D%E5%9B%BD%E7%9A%84%E7%94%B2%E8%83%84%E2%80%9D&oldid=377746` },
   // “遗弃者”: 不会攻击飞行单位 (noFly, 敌能-33). Its layers and their 4 s are all in the data (atkup, checker; 敌能-138).
   enemy_2005_axetro: { talents: { noFly: {} }, source: `${PRTS}%E2%80%9C%E9%81%97%E5%BC%83%E8%80%85%E2%80%9D&oldid=365968` },
+  // “墓碑”: 远程攻击对目标及其周围八格的我方单位造成攻击力40%的物理伤害 — the 3×3 is the page's; the 40% is the data's atkdown (敌能-139)
+  enemy_2008_flking: { talents: { atkdown: { square: 1 } }, source: `${PRTS}%E2%80%9C%E5%A2%93%E7%A2%91%E2%80%9D&oldid=367181` },
 });
