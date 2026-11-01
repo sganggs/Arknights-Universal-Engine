@@ -432,4 +432,7 @@ export const FOE_EXTRAS = Object.freeze({
   enemy_2005_axetro: { talents: { noFly: {} }, source: `${PRTS}%E2%80%9C%E9%81%97%E5%BC%83%E8%80%85%E2%80%9D&oldid=365968` },
   // “墓碑”: 远程攻击对目标及其周围八格的我方单位造成攻击力40%的物理伤害 — the 3×3 is the page's; the 40% is the data's atkdown (敌能-139)
   enemy_2008_flking: { talents: { atkdown: { square: 1 } }, source: `${PRTS}%E2%80%9C%E5%A2%93%E7%A2%91%E2%80%9D&oldid=367181` },
+  // 纠缠藤蔓 (敌能-140): 拥有抵抗 is 敌能-27's Resist. `page` marks this page on 致幻缠绕 and on Weak: 古老藤蔓 has the same
+  // data and no page read, and the other stun-only StunAttack users have none either, so they stay uncovered (关卡-2).
+  enemy_2052_smgia: { talents: { Weak: { page: 1 }, Resist: {} }, skills: { StunAttack: { page: 1 } }, source: `${PRTS}%E7%BA%A0%E7%BC%A0%E8%97%A4%E8%94%93&oldid=355929` },
 });
