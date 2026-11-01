@@ -113,6 +113,13 @@ export const FOE_EXTRAS = Object.freeze({
   // 深池暗影术师/深池暗影术师队长: 不会攻击飞行单位 — its own talent, not part of 折射
   enemy_1168_dumage: { talents: { noFly: {} }, source: `${PRTS}%E6%B7%B1%E6%B1%A0%E6%9A%97%E5%BD%B1%E6%9C%AF%E5%B8%88&oldid=367785` },
   enemy_1168_dumage_2: { talents: { noFly: {} }, source: `${PRTS}%E6%B7%B1%E6%B1%A0%E6%9A%97%E5%BD%B1%E6%9C%AF%E5%B8%88%E9%98%9F%E9%95%BF&oldid=367786` },
+  // 深池伙友卫队/卫队精英 (敌能-126): 自身1.4半径范围内存在深池伙友影刃/深池伙友影刃精英时 — the 1.4 is not in the data. The
+  // pages list no skill, so the data's Flame is idle.
+  enemy_1174_duholy: { talents: { traitAbility: { partner: 1.4 } }, skills: { Flame: { idle: 1 } }, source: `${PRTS}%E6%B7%B1%E6%B1%A0%E4%BC%99%E5%8F%8B%E5%8D%AB%E9%98%9F&oldid=354251` },
+  enemy_1174_duholy_2: { talents: { traitAbility: { partner: 1.4 } }, skills: { Flame: { idle: 1 } }, source: `${PRTS}%E6%B7%B1%E6%B1%A0%E4%BC%99%E5%8F%8B%E5%8D%AB%E9%98%9F%E7%B2%BE%E8%8B%B1&oldid=354255` },
+  // 深池伙友影刃/影刃精英 (敌能-126): 自身1.4半径范围内存在深池伙友卫队/深池伙友卫队精英时. Their 隐匿 is not this row.
+  enemy_1175_dushdo: { talents: { traitAbility: { partner: 1.4 } }, source: `${PRTS}%E6%B7%B1%E6%B1%A0%E4%BC%99%E5%8F%8B%E5%BD%B1%E5%88%83&oldid=353500` },
+  enemy_1175_dushdo_2: { talents: { traitAbility: { partner: 1.4 } }, source: `${PRTS}%E6%B7%B1%E6%B1%A0%E4%BC%99%E5%8F%8B%E5%BD%B1%E5%88%83%E7%B2%BE%E8%8B%B1&oldid=353501` },
   // 呼啸骑士团 / 沸血骑士团 (敌能-71): `page` marks the six pages read — 保鲜膜骑士 and 劈柴骑士 have the same blackboards and
   // stay uncovered (关卡-2). 呼啸 also 不会攻击飞行单位.
   enemy_1101_plkght: { talents: { buff: { page: 1 }, noFly: {} }, source: `${PRTS}%E5%91%BC%E5%95%B8%E9%AA%91%E5%A3%AB%E5%9B%A2%E5%AD%A6%E5%BE%92&oldid=367224` },
@@ -259,6 +266,9 @@ export const FOE_EXTRAS = Object.freeze({
   enemy_4039_mufbse: { talents: { unblockable: {} }, source: `${PRTS}%E7%8B%82%E5%A5%94%E4%B8%B0%E7%A2%91&oldid=364869` },
   // 碎骨: 不会攻击飞行单位; 未被阻挡时榴弹（攻击力 26%，目标及周围八格，防御力下降 50% 持续 5 秒）. The flat `defdown` users get none of these.
   enemy_1500_skulsr: { talents: { defdown: { scale: 0.26, duration: 5, square: 1 }, noFly: {} }, source: `${PRTS}%E7%A2%8E%E9%AA%A8&oldid=367689` },
+  // 「巨大的丑东西」: 第一形态未被阻挡时远程攻击的半径 2.5 is the page's; the 3×3 and the blocked melee's scale need no extra (敌能-124).
+  // `page` marks its 重生 and 大祭司形态 as read; 自爆's 2.17 s and radius 3.0 are the page's (敌能-125).
+  enemy_1512_mcmstr: { talents: { combat: { radius: 2.5 }, reborn: { page: 1 }, bird_run: { page: 1 } }, skills: { 'bomb[reborning]': { delay: 2.17, radius: 3 } }, source: `${PRTS}%E2%80%9C%E5%B7%A8%E5%A4%A7%E7%9A%84%E4%B8%91%E4%B8%9C%E8%A5%BF%E2%80%9D&oldid=384625` },
   // 萨卡兹术师 / 萨卡兹术师组长: 不会攻击飞行单位 (the data has no talent). `page` marks 枷锁 as read (敌能-72); the same
   // blackboard on 萨卡兹业余术师 has no snapshot, so it stays uncovered (关卡-2).
   enemy_1022_dmage: { talents: { noFly: {} }, skills: { lasso: { page: 1 } }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E6%9C%AF%E5%B8%88&oldid=380593` },
@@ -282,6 +292,12 @@ export const FOE_EXTRAS = Object.freeze({
   // 岩冠兽 / 坚岩冠兽: 「【弱点】位于背面，受到来自正面的物理/法术伤害降低80%」
   enemy_1307_mhrhcr: { talents: { Weakness: { front: 1 } }, source: `${PRTS}%E5%B2%A9%E5%86%A0%E5%85%BD&oldid=353757` },
   enemy_1307_mhrhcr_2: { talents: { Weakness: { front: 1 } }, source: `${PRTS}%E5%9D%9A%E5%B2%A9%E5%86%A0%E5%85%BD&oldid=353758` },
+  // 圆仔: 无法被阻挡，受到来源于正面的物理和法术伤害降低80%，始终面向我方干员数量最多的方向 (敌能-118, 敌能-119)
+  enemy_2085_skzjxd: { talents: { Weakness: { front: 1 }, faceCrowd: {}, unblockable: {} }, source: `${PRTS}%E5%9C%86%E4%BB%94&oldid=361333` },
+  enemy_2085_skzjxd_2: { talents: { Weakness: { front: 1 }, faceCrowd: {}, unblockable: {} }, source: `${PRTS}%E5%9C%86%E4%BB%94&oldid=361333` },
+  // 驮兽补给员 / “胆小如鼷”驮兽补给员: 未被阻挡时，始终面向我方干员数量较多的方向；受到来自正面的物理/法术伤害-85% / -95% (敌能-119)
+  enemy_4007_murino: { talents: { Weakness: { front: 1 }, faceCrowd: { unblocked: 1 } }, source: `${PRTS}%E9%A9%AE%E5%85%BD%E8%A1%A5%E7%BB%99%E5%91%98&oldid=361396` },
+  enemy_4007_murino_2: { talents: { Weakness: { front: 1 }, faceCrowd: { unblocked: 1 } }, source: `${PRTS}%E2%80%9C%E8%83%86%E5%B0%8F%E5%A6%82%E9%BC%B7%E2%80%9D%E9%A9%AE%E5%85%BD%E8%A1%A5%E7%BB%99%E5%91%98&oldid=361323` },
   // 狙击步兵组长: 天赋「不会攻击飞行单位」 (敌能-33); its 眩晕打击 is 敌能-36
   enemy_1047_sagent_2: { talents: { noFly: {} }, source: `${PRTS}%E7%8B%99%E5%87%BB%E6%AD%A5%E5%85%B5%E7%BB%84%E9%95%BF&oldid=436077` },
   // 无胄盟第三小队组长: 「普通攻击时额外造成攻击力35%的侵蚀损伤」 (敌能-38, el 2)，「普通攻击与技能不会攻击飞行单位」 (敌能-33)
@@ -367,4 +383,11 @@ export const FOE_EXTRAS = Object.freeze({
   // 天桩-甲 / 失控天桩-甲: ……不进行普通攻击，无法被阻挡 — their 自缚, 失衡免疫, 阻回 and CheckAwake are not this clause
   enemy_1398_dhdcr: { talents: { NoAttack: {}, unblockable: {} }, source: `${PRTS}%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366637` },
   enemy_1398_dhdcr_2: { talents: { NoAttack: {}, unblockable: {} }, source: `${PRTS}%E5%A4%B1%E6%8E%A7%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366638` },
+  // 量产巨像 / 改进型量产巨像: 占用2个阻挡数. The number is not in the enemy data (敌能-120). Weak is the beam and gets no behaviour.
+  enemy_1240_ltgint: { talents: { blockSlots: { block: 2 } }, source: `${PRTS}%E9%87%8F%E4%BA%A7%E5%B7%A8%E5%83%8F&oldid=353633` },
+  enemy_1240_ltgint_2: { talents: { blockSlots: { block: 2 } }, source: `${PRTS}%E6%94%B9%E8%BF%9B%E5%9E%8B%E9%87%8F%E4%BA%A7%E5%B7%A8%E5%83%8F&oldid=371221` },
+  // 长臂投手 / 「精准制导」长臂投手: 无法被阻挡 (敌能-69's unblockable), 不会攻击飞行单位 (敌能-33's noFly) and the 攻击优先度
+  // (敌能-123's moduleFirst). The 200% against 设施 is not these markers. 铁头前锋's pages say none of the three (敌能-121).
+  enemy_4010_mubsbl: { talents: { unblockable: {}, noFly: {}, moduleFirst: {} }, source: `${PRTS}%E9%95%BF%E8%87%82%E6%8A%95%E6%89%8B&oldid=380514` },
+  enemy_4010_mubsbl_2: { talents: { unblockable: {}, noFly: {}, moduleFirst: {} }, source: `${PRTS}%E2%80%9C%E7%B2%BE%E5%87%86%E5%88%B6%E5%AF%BC%E2%80%9D%E9%95%BF%E8%87%82%E6%8A%95%E6%89%8B&oldid=380515` },
 });
