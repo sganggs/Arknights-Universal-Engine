@@ -3,7 +3,7 @@
 // rebirth, bomb, 大祭司 form and 砍伐 have no behaviour here and do nothing.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createWorld, step, attrs, status, bus, KIND } from '@aue/sim';
+import { createWorld, step, attrs, status, bus, buffs, KIND } from '@aue/sim';
 import { tinyContent, oneWave, spawnAt } from '@aue/testkit';
 import { skeletonContent } from '../src/index.js';
 import { withFoeExtras, uncoveredAbilities } from '../src/foes.js';
@@ -76,12 +76,14 @@ test('[敌能-124] [关卡-2] the fortress record takes the page radius and its 
   assert.deepEqual(uncoveredAbilities([named({ combat: { [RAGE]: 3.5 } })]), ['combat']);
 });
 
-test('[敌能-124] [敌人攻击-1] blocked: the blocker alone at 350%, no splash, no shot', () => {
+test('[敌能-124] [敌人攻击-1] blocked: the blocker alone at 350%, even under 迷彩; no splash, no shot', () => {
   const box = stand([['guard', 1, 3], ['sniper', 0, 3]], { tune: (c) => { c.operators.guard.blockCnt = 3; } });
   const g = operatorAt(box.w, 3, 1), s = operatorAt(box.w, 3, 0);
   box.e.x = 3;
   step(box.w, box.c);
   assert.equal(box.e.blockedBy, g.id);
+  // 迷彩 keeps the blocker out of every selection but its blocked enemy's (敌人攻击-1); the sniper is in reach.
+  buffs.addBuff(g, buffs.makeBuff({ key: 'camo', flags: { camou: true } }));
   const ev = strike(box);
   const hits = hitsOf(ev, box.e.id);
   assert.deepEqual(hits.map((h) => [h.target, h.damage]), [[g.id, 800 * 3.5]]);
@@ -114,4 +116,26 @@ test('[敌能-124] [敌人攻击-1] a ground unit beyond 2.5 + 0.25, or only a f
   const ev = strike(box);
   assert.equal(ev.some((x) => x.type === 'attack' && x.id === box.e.id), false);
   assert.deepEqual([s.hp, bird.hp], [s.maxHp, bird.maxHp]);
+});
+
+test('[敌能-124] [敌人攻击-1] the reach is 2.5 + 0.25: a ground unit 2.69 tiles away is attacked', () => {
+  const box = stand([['sniper', 0, 3]], { x: 0.5 });
+  const s = operatorAt(box.w, 3, 0);
+  const d = Math.hypot(s.x - box.e.x, s.y - box.e.y);
+  assert.ok(d > 2.5 && d <= 2.75, String(d));
+  const ev = strike(box);
+  assert.deepEqual(ev.filter((x) => x.type === 'attack' && x.id === box.e.id).map((x) => x.target), [s.id]);
+  assert.deepEqual(hitsOf(ev, box.e.id).map((h) => [h.target, h.damage]), [[s.id, 800]]);
+});
+
+test('[敌能-124] [阻挡-2] a ground enemy does not select 起飞: the next unit is the main target; 起飞 alone, no attack', () => {
+  const lift = (/** @type {Unit} */ u) => buffs.addBuff(u, buffs.makeBuff({ key: 'lift', flags: { liftoff: true } }));
+  const box = stand([['sniper', 0, 3], ['side', 1, 4]]);
+  const s = operatorAt(box.w, 3, 0), side = operatorAt(box.w, 4, 1);
+  lift(s);
+  const ev = strike(box);
+  assert.deepEqual(ev.filter((x) => x.type === 'attack' && x.id === box.e.id).map((x) => x.target), [side.id]);
+  const alone = stand([['sniper', 0, 3]]);
+  lift(operatorAt(alone.w, 3, 0));
+  assert.equal(strike(alone).some((x) => x.type === 'attack' && x.id === alone.e.id), false);
 });
