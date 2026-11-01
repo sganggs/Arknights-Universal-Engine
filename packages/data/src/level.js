@@ -215,6 +215,18 @@ function cardsField(raw, frags) {
 }
 
 /**
+ * The enemy keys a level's table holds (关卡-1): spawns of the waves and branches, the difficulty replacements,
+ * 阵地足球's players (足球-6), and every `enemyDbRefs` id. One the waves never spawn is still in the table; coverage
+ * counts only the enemies that appear (关卡-2). Abilities that name further enemies are added by `withSummoned` (敌能-22).
+ * @param {string[]} spawned @param {Record<string, { replace: Record<string, string> }>} difficulties
+ * @param {{ football?: unknown }} football @param {Map<string, unknown>} refs @returns {string[]}
+ */
+function enemyKeys(spawned, difficulties, football, refs) {
+  const replaced = Object.values(difficulties).flatMap((d) => Object.values(d.replace));
+  return [...new Set([...spawned, ...replaced, ...footballPlayers(football), ...refs.keys()])].toSorted();
+}
+
+/**
  * A whole level (关卡-1…关卡-5): `id` names it in the content.
  * @param {{ id: string, level: unknown, enemyDb: unknown, handbook?: unknown, commit: string, view?: { vector: unknown, source: string }, stage?: unknown,
  *   missions?: unknown, charTable?: unknown, coop?: unknown, cupEvent?: unknown }} input
@@ -235,7 +247,7 @@ export function extractLevel({ id, level, enemyDb, handbook, commit, view, stage
   const football = footballField(tiles, { options: field(lv, 'options', 'level'), globalBuffs: lv.globalBuffs, runes: lv.runes, event: cupEvent }, coop, missions, (k) => refs.has(k));
   const frags = [...waves.flatMap((w) => w.fragments), ...Object.values(branches).flat()];
   const spawned = frags.flatMap((f) => f.actions.filter((a) => a.type === 'SPAWN').map((a) => a.key));
-  const keys = [...new Set([...spawned, ...Object.values(difficulties).flatMap((d) => Object.values(d.replace)), ...footballPlayers(football)])].toSorted();
+  const keys = enemyKeys(spawned, difficulties, football, refs);
   const shared = sharedEnemies(runes);
   const enemies = withSummoned(keys, (k) => ({ ...enemyOf(enemyDb, k, refs.get(k)), ...damageTypeOf(handbook, k), ...(shared.has(k) ? { shared: true } : {}) }));
   return {

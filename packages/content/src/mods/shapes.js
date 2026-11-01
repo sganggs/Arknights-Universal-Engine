@@ -181,7 +181,7 @@ const levelBody = obj({
   id: str, code: str, name: str, width: int(1, 64), height: int(1, 64), bgm: str, view: list(num(), 0, 16),
   options: obj({ characterLimit: int(0, 99), costIncreaseTime: num(0.01, 3600), initialCost: int(0, 999), maxCost: int(0, 999), maxLifePoint: int(1, 999), moveMultiplier: num(0.01, 100) }),
   tiles: list(list(tile, 1, 64), 1, 64), routes: list(route, 0, 4096), waves: list(obj({ preDelay: num(0, 3600), postDelay: num(0, 3600), maxWait: num(-1, 1e6), fragments: list(fragment, 0, 64) }, { tag: int(0, 99), penalty: bool }), 0, 256),
-  predefines: list(obj({ key: str, alias: str, row: int(0, 63), col: int(0, 63), dir: oneOf('UP', 'DOWN', 'LEFT', 'RIGHT'), hidden: bool }, { build }), 0, 256),
+  predefines: list(obj({ key: str, alias: str, row: int(0, 63), col: int(0, 63), dir: oneOf('UP', 'DOWN', 'LEFT', 'RIGHT'), hidden: bool }, { build, mainSkillLvl: int(1, 10) }), 0, 256),
   stages: list(obj({ alias: str, goal: int(0, 1e6), objective: oneOf('protect', 'target', 'survive', 'tower'), rest: int(0, 3600), time: int(0, 36000), task: dict(str, 8) }, { advanced: int(0, 1e6), enemy: str }), 0, 16),
 }, {
   blockEdges: list(obj({ row: int(0, 63), col: int(0, 63), dir: oneOf('UP', 'DOWN', 'LEFT', 'RIGHT'), mask: oneOf('WALK_ONLY') }), 0, 1024),

@@ -30,7 +30,8 @@
  */
 /**
  * A predefined unit (波次-6): its tile and facing when the data gives them; a predefined operator's training (波次-7).
- * @typedef {{ alias: string, key: string, hidden: boolean, row?: number, col?: number, dir?: string, build?: import('@aue/schema').Build }} Predefine
+ * A predefined device's initial skill level is written only when it is not the default 1.
+ * @typedef {{ alias: string, key: string, hidden: boolean, row?: number, col?: number, dir?: string, mainSkillLvl?: number, build?: import('@aue/schema').Build }} Predefine
  */
 /**
  * A device's record (关卡-6, 装置-1): its name, attributes and its talents' blackboard; its side when it is the enemies'
