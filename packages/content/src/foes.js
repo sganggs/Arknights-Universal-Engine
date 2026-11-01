@@ -34,6 +34,7 @@ import { runnerBehaviors } from './runners.js';
 import { takeDmg } from './chalice.js';
 import { unbalanceBehaviors } from './unbalance.js';
 import { floatBehaviors, takeOffOwns } from './float.js';
+import { partnerBehaviors } from './partners.js';
 import { sanktaBehaviors } from './sankta.js';
 import { periodicBehaviors } from './periodic.js';
 import { blockDamageBehaviors } from './blockdamage.js';
@@ -301,6 +302,7 @@ export const foeBehaviors = Object.freeze({
   ...blightBehaviors,
   ...nestBehaviors,
   ...floatBehaviors,
+  ...partnerBehaviors,
   ...sanktaBehaviors,
   ...periodicBehaviors,
   ...blockDamageBehaviors,
@@ -425,6 +427,9 @@ export const FOE_NEEDS = Object.freeze({
   lasso: Object.freeze(['page']),
   // 梅菲斯特's page marker. 荷谟伊英雄 and 歌者 share the talent name and do not have it (敌能-74).
   healaura: Object.freeze(['field']),
+  // 深池伙友 (敌能-126): `partner` is the pages' 1.4, which the data lacks. `idle` marks the two 卫队 pages, which list no
+  // skill; 深池焚毁者's `Flame` has no marker and stays uncovered (关卡-2).
+  traitAbility: Object.freeze(['partner']), Flame: Object.freeze(['idle']),
   // 吸血 needs the page marker (敌能-75). The heal ratio is already in the enemy data; 虹吸巨刃 has it and no marker.
   vampire: Object.freeze(['page']),
   // The 3.2 s cast is the page's, not the enemy data (敌能-76). Without it the skill stays uncovered.

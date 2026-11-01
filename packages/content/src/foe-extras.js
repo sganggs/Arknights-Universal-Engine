@@ -113,6 +113,13 @@ export const FOE_EXTRAS = Object.freeze({
   // 深池暗影术师/深池暗影术师队长: 不会攻击飞行单位 — its own talent, not part of 折射
   enemy_1168_dumage: { talents: { noFly: {} }, source: `${PRTS}%E6%B7%B1%E6%B1%A0%E6%9A%97%E5%BD%B1%E6%9C%AF%E5%B8%88&oldid=367785` },
   enemy_1168_dumage_2: { talents: { noFly: {} }, source: `${PRTS}%E6%B7%B1%E6%B1%A0%E6%9A%97%E5%BD%B1%E6%9C%AF%E5%B8%88%E9%98%9F%E9%95%BF&oldid=367786` },
+  // 深池伙友卫队/卫队精英 (敌能-126): 自身1.4半径范围内存在深池伙友影刃/深池伙友影刃精英时 — the 1.4 is not in the data. The
+  // pages list no skill, so the data's Flame is idle.
+  enemy_1174_duholy: { talents: { traitAbility: { partner: 1.4 } }, skills: { Flame: { idle: 1 } }, source: `${PRTS}%E6%B7%B1%E6%B1%A0%E4%BC%99%E5%8F%8B%E5%8D%AB%E9%98%9F&oldid=354251` },
+  enemy_1174_duholy_2: { talents: { traitAbility: { partner: 1.4 } }, skills: { Flame: { idle: 1 } }, source: `${PRTS}%E6%B7%B1%E6%B1%A0%E4%BC%99%E5%8F%8B%E5%8D%AB%E9%98%9F%E7%B2%BE%E8%8B%B1&oldid=354255` },
+  // 深池伙友影刃/影刃精英 (敌能-126): 自身1.4半径范围内存在深池伙友卫队/深池伙友卫队精英时. Their 隐匿 is not this row.
+  enemy_1175_dushdo: { talents: { traitAbility: { partner: 1.4 } }, source: `${PRTS}%E6%B7%B1%E6%B1%A0%E4%BC%99%E5%8F%8B%E5%BD%B1%E5%88%83&oldid=353500` },
+  enemy_1175_dushdo_2: { talents: { traitAbility: { partner: 1.4 } }, source: `${PRTS}%E6%B7%B1%E6%B1%A0%E4%BC%99%E5%8F%8B%E5%BD%B1%E5%88%83%E7%B2%BE%E8%8B%B1&oldid=353501` },
   // 呼啸骑士团 / 沸血骑士团 (敌能-71): `page` marks the six pages read — 保鲜膜骑士 and 劈柴骑士 have the same blackboards and
   // stay uncovered (关卡-2). 呼啸 also 不会攻击飞行单位.
   enemy_1101_plkght: { talents: { buff: { page: 1 }, noFly: {} }, source: `${PRTS}%E5%91%BC%E5%95%B8%E9%AA%91%E5%A3%AB%E5%9B%A2%E5%AD%A6%E5%BE%92&oldid=367224` },
