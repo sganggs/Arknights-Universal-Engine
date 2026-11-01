@@ -440,7 +440,7 @@ export const FOE_NEEDS = Object.freeze({
   C4: Object.freeze(['atk_scale', 'range_radius', 'cast']),
   // 点灯骑士 has the same three numbers and no saved page (敌能-77).
   ChargeAttack: Object.freeze(['page']),
-  // The page marker of the three read 锋盔 pages (敌能-78). The rest of the shape is rebornOwns.
+  // The page marker of the read pages: the three 锋盔 (敌能-78) and 「巨大的丑东西」 (敌能-125). The rest of the shape is rebornOwns.
   reborn: Object.freeze(['page']),
   // 出场无敌的页面标记（敌能-79）。「寒灾」有 duration，没有 page。致命一击的伤害类型同样只在页面上。
   invincible: Object.freeze(['page']), CriticalHit: Object.freeze(['arts']),

@@ -12,7 +12,7 @@ import { beginRebirth, endRebirth } from './avenger.js';
 const WEAK = 'atkDesWeaken';
 /** Current ATK compared at this step (属性-1): 0.001, the same precision a HP ratio uses (索敌-3). */
 const ATK_STEP = 0.001;
-/** Keys a read 锋盔 `reborn` may hold. `page` is the page marker; unread `{ duration }` users do not have it (关卡-2). */
+/** Keys a read `reborn` may hold — 锋盔's, and 「巨大的丑东西」's (敌能-125). `page` is the page marker; unread `{ duration }` users do not have it (关卡-2). */
 const REBORN_KEYS = new Set(['duration', 'page']);
 
 /** Whether this unit already holds 【锋盔削弱】. A queued second copy is still that effect (状态-2). @param {Unit} u */

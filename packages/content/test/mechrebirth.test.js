@@ -2,7 +2,7 @@
 // then the 大祭司 form. The record is act1multi_fortress_rm01's; 砍伐 still has no behaviour.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createWorld, step, attrs, status, damage, KIND } from '@aue/sim';
+import { createWorld, step, attrs, status, damage, targeting, KIND } from '@aue/sim';
 import { tinyContent, oneWave, spawnAt } from '@aue/testkit';
 import { skeletonContent } from '../src/index.js';
 import { withFoeExtras, uncoveredAbilities } from '../src/foes.js';
@@ -33,6 +33,7 @@ function stand(seats, x = 2) {
   for (const op of Object.values(c.operators)) Object.assign(op, { cost: 0, atk: 0, def: 0, res: 0, maxHp: 1e5 });
   c.operators.bird = { ...c.operators.sniper, name: 'bird', motion: 'FLY' };
   c.operators.far = { ...c.operators.sniper, name: 'far' };
+  c.operators.edge = { ...c.operators.guard, name: 'edge' };
   const w = createWorld(c, { seed: 1, players: 1 });
   step(w, c);
   const e = /** @type {Unit} */ (w.units.find((u) => u.kind === KIND.ENEMY));
@@ -80,22 +81,25 @@ test('[敌能-125] [关卡-2] the fortress record takes the page marks and the b
   assert.deepEqual(uncoveredAbilities([named({}, bomb({ stun: 0, atk_scale: 0 }))]), ['bomb[reborning]']);
 });
 
-test('[敌能-125] [敌能-78] the first knockdown: full HP, 10 s it cannot be selected; the blast 2.17 s in, flyers too, 25 s stun', () => {
-  const { c, w, e } = stand([['sniper', 0, 2], ['bird', 2, 2], ['far', 0, 3]], 0);
-  const near = operatorAt(w, 2, 0), bird = operatorAt(w, 2, 2), far = operatorAt(w, 3, 0);
+test('[敌能-125] [敌能-78] the first knockdown: full HP, 10 s it cannot be selected; the blast 2.17 s in, radius 3.0, flyers too, 25 s stun', () => {
+  const { c, w, e } = stand([['sniper', 0, 2], ['bird', 2, 2], ['far', 0, 3], ['edge', 1, 3]], 0);
+  const near = operatorAt(w, 2, 0), bird = operatorAt(w, 2, 2), far = operatorAt(w, 3, 0), edge = operatorAt(w, 3, 1);
+  assert.deepEqual([edge, far].map((u) => Math.hypot(u.x - e.x, u.y - e.y)), [3, Math.hypot(3, 1)]);
   const f = knock(w, c, e);
   assert.equal(w.units.includes(e), true);
   assert.equal(e.hp, e.maxHp);
-  assert.equal(attrs.statsOf(e).invincible, true);
+  assert.deepEqual([attrs.statsOf(e).invincible, targeting.selectable(e)], [true, false]);
   const ev = until(w, c, f + BLAST);
   assert.deepEqual(ev.filter((x) => x.type === 'blast').map((x) => [x.f - f, x.x, x.y]), [[BLAST, 0, 1]]);
   const hits = ev.filter((x) => x.type === 'hit' && x.id === e.id);
-  assert.deepEqual(hits.map((h) => [h.target, h.damage]).toSorted((a, b) => a[0] - b[0]), [[near.id, 1200], [bird.id, 1200]].toSorted((a, b) => a[0] - b[0]));
-  assert.equal(far.hp, far.maxHp, '3.2 tiles away');
-  for (const u of [near, bird]) assert.equal(attrs.statsOf(u).flags.stun, true);
+  assert.deepEqual(hits.map((h) => [h.target, h.damage]).toSorted((a, b) => a[0] - b[0]),
+    [[near.id, 1200], [bird.id, 1200], [edge.id, 1200]].toSorted((a, b) => a[0] - b[0]), 'exactly 3.0 away is in');
+  assert.equal(far.hp, far.maxHp, '3.16 away is out');
+  for (const u of [near, bird, edge]) assert.equal(attrs.statsOf(u).flags.stun, true);
   const stun = near.buffs.find((b) => b.key === 'stun');
   assert.ok(stun && stun.left > 25 * 30 - 3 && stun.left <= 25 * 30);
   assert.equal(until(w, c, f + REBIRTH - 1).some((x) => x.type === 'blast'), false, 'once');
+  assert.deepEqual([attrs.statsOf(e).invincible, targeting.selectable(e)], [true, false], 'still in its rebirth');
 });
 
 test('[敌能-125] the rebirth over: the 大祭司 form, no attack, unblockable, 1300 true damage each second; the second knockdown is final', () => {
@@ -110,11 +114,12 @@ test('[敌能-125] the rebirth over: the 大祭司 form, no attack, unblockable,
   assert.deepEqual([s.flags.noAttack, s.flags.unblockable], [true, true]);
   assert.notEqual(e.blockedBy, g.id);
   e.atkCd = 0;
-  const later = until(w, c, f + REBIRTH + 30);
+  assert.equal(targeting.selectable(e), true, 'the 大祭司 can be selected');
+  const later = until(w, c, f + REBIRTH + 90);
   assert.equal(later.some((x) => x.type === 'attack' && x.id === e.id), false);
   const losses = later.filter((x) => x.type === 'hit' && x.target === e.id);
-  assert.deepEqual(losses.map((x) => [x.f - f, x.damage]), [[REBIRTH + 30, 1300]]);
-  assert.equal(e.hp, e.maxHp - 1300);
+  assert.deepEqual(losses.map((x) => [x.f - f, x.damage]), [[REBIRTH + 30, 1300], [REBIRTH + 60, 1300], [REBIRTH + 90, 1300]]);
+  assert.equal(e.hp, e.maxHp - 3 * 1300);
   knock(w, c, e);
   assert.equal(w.units.includes(e), false);
 });
