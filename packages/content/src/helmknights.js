@@ -12,19 +12,22 @@ import { beginRebirth, endRebirth } from './avenger.js';
 const WEAK = 'atkDesWeaken';
 /** Current ATK compared at this step (属性-1): 0.001, the same precision a HP ratio uses (索敌-3). */
 const ATK_STEP = 0.001;
-/** Keys a read 锋盔 `reborn` may hold. `page` is the page marker; unread `{ duration }` users do not have it (关卡-2). */
+/** Keys a read `reborn` may hold — 锋盔's, and 「巨大的丑东西」's (敌能-125). `page` is the page marker; unread `{ duration }` users do not have it (关卡-2). */
 const REBORN_KEYS = new Set(['duration', 'page']);
 
 /** Whether this unit already holds 【锋盔削弱】. A queued second copy is still that effect (状态-2). @param {Unit} u */
 const holding = (u) => u.buffs.some((b) => b.key === WEAK);
 
 /**
- * The duration-only 重生 the three read pages describe (敌能-78). Any other `reborn` shape is not this talent.
+ * The duration-only 重生 the read pages describe (敌能-78, 敌能-128): no `hp_ratio`. 主角阵营角色's also has `invincible`,
+ * its 「进入0s无敌」 — 敌能-18's 无敌 after the rebirth —, only as a number; the 锋盔 have none. Any other `reborn` shape is
+ * not this talent.
  * @param {Record<string, unknown>} bb
  */
 function durationOnly(bb) {
   if (typeof bb.duration !== 'number' || typeof bb.page !== 'number') return false;
-  for (const k of Object.keys(bb)) if (!REBORN_KEYS.has(k)) return false;
+  if (bb.invincible !== undefined && typeof bb.invincible !== 'number') return false;
+  for (const k of Object.keys(bb)) if (!REBORN_KEYS.has(k) && k !== 'invincible') return false;
   return true;
 }
 
@@ -84,7 +87,8 @@ const AtkDesWeaken = Object.freeze({
 
 /**
  * 重生 (敌能-78): the first fatal hit stays, at full HP — there is no `hp_ratio` — for `duration` seconds of 敌能-18's
- * reviving. A blackboard this shape does not know does nothing, so an unread `reborn` is not revived if it is left on.
+ * reviving. 主角阵营角色's (敌能-128) is the same, then `invincible` s of 无敌 as 敌能-18's (0: none). A blackboard
+ * this shape does not know does nothing, so an unread `reborn` is not revived if it is left on.
  * @type {FoeBehavior}
  */
 const reborn = Object.freeze({

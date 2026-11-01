@@ -3,6 +3,7 @@
 // behaviour leaves this shape alone, so the skill reads it, as `Devour` reads `Stronger`. They act only through the
 // context (ADR 0055).
 import { spyShape } from './devourers.js';
+import { toxinShape } from './nucleus.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').FoeContext} FoeContext */
 
@@ -31,11 +32,12 @@ export function barrelSkill(bb) {
 
 /**
  * Whether this name and blackboard are one this family finishes (关卡-2). Talent `1` is the spy's when `ammo` is a
- * number (敌能-31) or the barrel. `BlockedBoom` needs the whole blackboard. Any other name is not this family's concern.
+ * number (敌能-31) or the barrel; it is also the 孽生者's toxin numbers, which their talent `0` reads (敌能-127).
+ * `BlockedBoom` needs the whole blackboard. Any other name is not this family's concern.
  * @param {string} name @param {Record<string, unknown>} bb
  */
 export function wineOwns(name, bb) {
-  if (name === '1') return spyShape(bb) || barrelTalent(bb);
+  if (name === '1') return spyShape(bb) || barrelTalent(bb) || toxinShape(bb);
   if (name === 'BlockedBoom') return barrelSkill(bb);
   return true;
 }
