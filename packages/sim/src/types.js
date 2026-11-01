@@ -575,8 +575,9 @@
  */
 /**
  * A chain (职业-11): at most `max` targets in all, each jump at `scale` × the one before; a damage chain jumps to the
- * nearest enemy within `radius`, a heal chain to an operator among `cells` around the current target.
- * @typedef {{ max: number, scale: number, radius: number, cells: Cell[] | null }} Chain
+ * nearest enemy within `radius`, a heal chain to an operator among `cells` around the current target. `side` `friendly`
+ * (an enemy's, 敌能-142) jumps to operators, neutral units and our devices instead.
+ * @typedef {{ max: number, scale: number, radius: number, cells: Cell[] | null, side?: 'friendly' }} Chain
  */
 /**
  * A splash (职业-8): every other enemy within `radius` tiles of the target (only those on the ground when `ground`)

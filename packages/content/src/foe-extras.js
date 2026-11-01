@@ -363,4 +363,7 @@ export const FOE_EXTRAS = Object.freeze({
   // 天桩-甲 / 失控天桩-甲: ……不进行普通攻击，无法被阻挡 — their 自缚, 失衡免疫, 阻回 and CheckAwake are not this clause
   enemy_1398_dhdcr: { talents: { NoAttack: {}, unblockable: {} }, source: `${PRTS}%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366637` },
   enemy_1398_dhdcr_2: { talents: { NoAttack: {}, unblockable: {} }, source: `${PRTS}%E5%A4%B1%E6%8E%A7%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366638` },
+  // 陷落雪祀 (敌能-142): 普通攻击会在3个目标间跳跃并附带4.5s寒冷；【反自然馈赠】. `page` marks the read page on both;
+  // 空洞雪祀 has the same keys and no page, so both of its abilities stay uncovered (关卡-2).
+  enemy_2050_smsha: { talents: { Attack: { page: 1 } }, skills: { ChainBuff: { page: 1 } }, source: `${PRTS}%E9%99%B7%E8%90%BD%E9%9B%AA%E7%A5%80&oldid=354397` },
 });

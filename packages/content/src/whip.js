@@ -5,6 +5,7 @@
 
 import { guardShape, digIn } from './stonecutter.js';
 import { stonesShape, broodShape, catapultAttack } from './catapult.js';
+import { snowShape, snowAttack } from './snowpriest.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior */
 /** @typedef {import('@aue/sim').FoeContext} FoeContext */
@@ -47,7 +48,7 @@ function summonShape(bb) {
  * @param {string} name @param {Record<string, unknown>} bb
  */
 export function whipOwns(name, bb) {
-  if (name === 'Attack') return attackShape(bb) || guardShape(bb) || stonesShape(bb) || broodShape(bb);
+  if (name === 'Attack') return attackShape(bb) || guardShape(bb) || stonesShape(bb) || broodShape(bb) || snowShape(bb);
   if (name === 'Summon') return summonShape(bb);
   return true;
 }
@@ -83,6 +84,7 @@ function onLeave(ctx) {
 /**
  * 未被阻挡时 the shot is × `attack@ranged_atk_scale`. Blocked, the engine already hits only the blocker at ×1. 固海凿石者's
  * shape digs in before its first attack (敌能-87, stonecutter.js); 自制投石机's and 投嗣育母's are catapult.js's (敌能-106).
+ * 陷落雪祀's chain and 寒冷 are snowpriest.js's (敌能-142).
  */
 const Attack = Object.freeze(/** @type {FoeBehavior} */ ({
   targets: (ctx, cands) => catapultAttack.targets?.(ctx, cands) ?? cands,
@@ -92,6 +94,7 @@ const Attack = Object.freeze(/** @type {FoeBehavior} */ ({
   attack: (ctx, mods) => {
     const bb = bbOf(ctx);
     if (guardShape(bb)) return digIn(ctx, mods);
+    if (snowShape(bb)) return snowAttack(ctx, mods);
     if (!attackShape(bb) || ctx.blocked) return mods;
     return { ...mods, scale: mods.scale * /** @type {number} */ (bb['attack@ranged_atk_scale']) };
   },
