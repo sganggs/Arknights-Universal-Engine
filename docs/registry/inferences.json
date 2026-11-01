@@ -4758,5 +4758,12 @@
     "statement": "阵地足球与阵地足球锦标的横幅音效在横幅出现时播放：阵地足球的「进球！」「失球！」配 battle.ON_COOPERATE_ALLY_SCORED / ENEMY_SCORED；锦标的比赛开场配 MATCHSTART、点球开场配 PENALTYKICK_BANNER、「平局！」配 DRAW、「进球！」「成功！」配 WINSCORE、「失球！」配 LOSESCORE、「本方点球」「对方点球」配 PENALTYKICK、PENALTYKICK_OTHER",
     "basis": "audio_data.json 有这些音效库，库名与片段名（act1football_b_ui_matchstart、_draw、_winscore、_losescore、_penaltykick、_penaltykick_banner；act1multi_b_ui_winscore、_losescore）与横幅一一对应，但由游戏代码在什么时机播放没有资料；按名字配给对应的横幅，在横幅出现时播放；「成功！」（挡下对方点球）对我方有利，配 WINSCORE",
     "status": "待查证"
+  },
+  {
+    "id": "INF-0820",
+    "clause": "敌能-135",
+    "statement": "异质裂兽与异质裂兽·α的特殊屏障在没有矿工游击队的关卡里一直存在，不会失去能力：屏障期间的嘲讽等级 +1、攻击速度、恐惧与沉睡免疫和减伤从出场起一直生效，屏障量没有作用。减伤对所有不是矿工游击队造成的物理、法术伤害都生效：干员、召唤物、装置、中立单位造成的，来源在迷彩或隐匿中的，以及无来源的伤害。",
+    "basis": "两页写屏障「仅吸收来源于矿工游击队造成的物理伤害」，能力栏写「被<矿工游击队>攻击数次后失去能力」；引擎的关卡里没有矿工游击队（enemy_3010_mcreep），屏障不会被消耗，敌能-102 的异质源石虫按同样的读法（INF-0669）。减伤写「受到非来源于矿工游击队的物理/法术伤害-50%」，没有单独写无来源的伤害，也没有按来源的状态区分；敌能-102 引的异质源石虫页面写明「无来源或来源非矿工游击队」，这里读作同一件事。",
+    "status": "待查证"
   }
 ]
