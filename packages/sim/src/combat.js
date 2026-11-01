@@ -19,7 +19,7 @@ import { traitWhiles } from './whiles.js';
 import { afterOwnHit, attacked, hitSp, caughtSp } from './riders.js';
 import { reachKeys } from './reach.js';
 import { ALLY_COLLIDER_RADIUS } from './constants.js';
-import { foeTargets, foeAttack, foeHit, foeLanded, foeCancelHit, isFoeOf } from './foes.js';
+import { foeTargets, foeRank, foeAttack, foeHit, foeLanded, foeCancelHit, isFoeOf } from './foes.js';
 import { makeBuff, addBuff, removeBuff } from './buffs.js';
 import { tileOf } from './body.js';
 import { tickSkill, beforeAttack, attackMods, afterAttack } from './skills.js';
@@ -775,7 +775,7 @@ export function enemyAttack(w, c, e) {
   if (e.atkCd > 0) { e.atkCd--; return swinging; }
   if (e.swing) return true;
   if (s.flags.disarmedCombat && e.blockedBy >= 0) return false;
-  const order = sortAllies(e, foeTargets(w, c, e, enemyTargets(w, e)), FPS);
+  const order = sortAllies(e, foeTargets(w, c, e, enemyTargets(w, e)), FPS, foeRank(w, c, e));
   if (order.length === 0) return swinging;
   const mods = foeAttack(w, c, e, { scale: 1, times: 1, targets: 1, skill: false });
   startSwing(w, c, e, order.slice(0, Math.max(1, mods.targets)), mods);
