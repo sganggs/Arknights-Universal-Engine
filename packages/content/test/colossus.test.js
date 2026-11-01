@@ -90,11 +90,10 @@ const listed = (list, name) => (list ?? []).includes(name);
 test('[敌能-120] the level record has no blockCnt; block 2 is a separate talent; Weak stays uncovered', () => {
   const raw = levelAt('act1multi_fortress_rm01', 'NORMAL');
   for (const key of KEYS) fileShape(raw.enemies[key], key);
-  const mass = record(MASS).talents;
-  const next = record(NEXT).talents;
-  if (!mass || !next) throw new Error('talents');
-  assert.deepEqual(mass.Weak, { def: -1000, magic_resistance: -50 });
-  assert.deepEqual(next.Weak, { def: -1200, magic_resistance: -50 });
+  // the level's own records: the content's leaves out an ability it cannot run once another enemy's same name has a
+  // behaviour (关卡-8), and this Weak stays uncovered either way
+  assert.deepEqual(raw.enemies[MASS].talents?.Weak, { def: -1000, magic_resistance: -50 });
+  assert.deepEqual(raw.enemies[NEXT].talents?.Weak, { def: -1200, magic_resistance: -50 });
   assert.equal(record(MASS).def, 1200);
   assert.equal(record(MASS).res, 50);
   assert.equal(record(NEXT).def, 1400);
