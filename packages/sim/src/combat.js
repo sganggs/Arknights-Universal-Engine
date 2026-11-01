@@ -257,6 +257,12 @@ function afterDamage(w, c, h) {
 const atkOf = (a, pct) => (pct ? computeStats({ base: a.base, buffs: [...a.buffs, makeBuff({ key: 'attackBonus', mods: { atkPct: pct } })] }).atk : statsOf(a).atk);
 
 /**
+ * An enemy's chain on a load (敌能-142); an operator's comes from its trait in loadFor. Absent otherwise, so no hash
+ * changes. Outside loadOf, which has no room for one more branch. @param {AttackMods} mods
+ */
+const chainLoadOf = (mods) => (mods.chain ? { chain: mods.chain } : {});
+
+/**
  * What an attack carries to each target (攻击-2): its type, the attack × 攻击力倍率 (the attack's × the attacker's, 伤害-6),
  * hits, 元素损伤. @param {Unit} a @param {AttackMods} mods @returns {Load}
  */
@@ -267,8 +273,7 @@ const loadOf = (a, mods) => ({
   ...(mods.frozen ? { frozen: mods.frozen } : {}), ...(mods.ignoreDef ? { ignoreDef: mods.ignoreDef } : {}),
   ...(mods.splash ? { splash: mods.splash } : {}),
   ...(mods.ignoreSelect ? { ignoreSelect: true } : {}),
-  // an enemy's chain (敌能-142); an operator's comes from its trait in loadFor. Absent otherwise, so no hash changes.
-  ...(mods.chain ? { chain: mods.chain } : {}),
+  ...chainLoadOf(mods),
 });
 
 /**
