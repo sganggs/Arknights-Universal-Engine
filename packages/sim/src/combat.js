@@ -274,6 +274,12 @@ const atkOf = (a, pct) => (pct ? computeStats({ base: a.base, buffs: [...a.buffs
 const vsBuffOf = (mods) => (mods.vsBuff ? { vsBuff: mods.vsBuff } : {});
 
 /**
+ * An enemy's chain on a load (敌能-142); an operator's comes from its trait in loadFor. Absent otherwise, so no hash
+ * changes. Outside loadOf, which has no room for one more branch. @param {AttackMods} mods
+ */
+const chainLoadOf = (mods) => (mods.chain ? { chain: mods.chain } : {});
+
+/**
  * What an attack carries to each target (攻击-2): its type, the attack × 攻击力倍率 (the attack's × the attacker's, 伤害-6),
  * hits, 元素损伤. `facScale` keeps the attack before `scale` (`plain`) and the attacker's 倍率 (`atkMul`) so a facility
  * hit can use `facScale` in place of `scale` (敌能-122). @param {Unit} a @param {AttackMods} mods @returns {Load}
@@ -286,6 +292,7 @@ const loadOf = (a, mods) => {
     ...(mods.hitStatus ? { hitStatus: mods.hitStatus } : {}), ...(mods.hitDebuff ? { hitDebuff: mods.hitDebuff } : {}), ...(mods.displace ? { displace: mods.displace } : {}), ...(mods.skill ? { skill: true } : {}), ...(mods.mark ? { mark: mods.mark } : {}),
     ...(mods.frozen ? { frozen: mods.frozen } : {}), ...(mods.ignoreDef ? { ignoreDef: mods.ignoreDef } : {}),
     ...vsBuffOf(mods),
+    ...chainLoadOf(mods),
     ...(mods.splash ? { splash: mods.splash } : {}),
     ...(mods.ignoreSelect ? { ignoreSelect: true } : {}),
     ...(typeof mods.facScale === 'number' ? { facScale: mods.facScale, plain, atkMul } : {}),
@@ -384,11 +391,12 @@ export function impact(w, c, src, t, load) {
 
 /**
  * A damage chain's jumps after its first target was hit (职业-11): each next enemy takes the hits at the chain's share
- * of the one before.
+ * of the one before. An enemy's chain (敌能-142) jumps to our side and reaches flying units: an enemy page's header note
+ * says attacks 「默认可对空」, and an enemy has no trait to say otherwise.
  * @param {World} w @param {Content} c @param {Unit | null} src @param {Unit} t @param {Load} load
  */
 function jumpHits(w, c, src, t, load) {
-  const ch = /** @type {import('./types.js').Chain} */ (load.chain), antiAir = !src || traitOf(c, src).antiAir;
+  const ch = /** @type {import('./types.js').Chain} */ (load.chain), antiAir = ch.side === 'friendly' || !src || traitOf(c, src).antiAir;
   let amount = load.amount;
   for (const u of chainOf(w, c, t, ch, { heals: false, antiAir })) {
     amount *= ch.scale;
