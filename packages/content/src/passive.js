@@ -2,6 +2,9 @@
 // and 龙卷风's wind share this object: a second behaviour under the same name would replace one of them. Any other blackboard stays uncovered
 // (关卡-2) and these hooks do nothing with it. They act only through the context (ADR 0055).
 
+// 家族灭迹人's shape (敌能-154) is covered and no hook here acts on it: eraser.js says why.
+import { eraserShape } from './eraser.js';
+
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior */
 /** @typedef {import('@aue/sim').FoeContext} FoeContext */
 /** @typedef {import('@aue/sim').Unit} Unit */
@@ -59,7 +62,7 @@ const windShape = (bb) => exactKeys(bb, WIND_KEYS) && num(bb.radius);
  */
 export function passiveOwns(name, bb) {
   if (name !== 'Passive') return true;
-  return seedShape(bb) || armorShape(bb) || windShape(bb);
+  return seedShape(bb) || armorShape(bb) || windShape(bb) || eraserShape(bb);
 }
 
 /** 血珀: the four flags at once, then 10% of max HP as 生命流失 every second, the first a second after it appears. @param {FoeContext} ctx */
