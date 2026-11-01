@@ -363,4 +363,6 @@ export const FOE_EXTRAS = Object.freeze({
   // 天桩-甲 / 失控天桩-甲: ……不进行普通攻击，无法被阻挡 — their 自缚, 失衡免疫, 阻回 and CheckAwake are not this clause
   enemy_1398_dhdcr: { talents: { NoAttack: {}, unblockable: {} }, source: `${PRTS}%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366637` },
   enemy_1398_dhdcr_2: { talents: { NoAttack: {}, unblockable: {} }, source: `${PRTS}%E5%A4%B1%E6%8E%A7%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366638` },
+  // “遗弃者”: 不会攻击飞行单位 (noFly, 敌能-33). Its layers and their 4 s are all in the data (atkup, checker; 敌能-138).
+  enemy_2005_axetro: { talents: { noFly: {} }, source: `${PRTS}%E2%80%9C%E9%81%97%E5%BC%83%E8%80%85%E2%80%9D&oldid=365968` },
 });
