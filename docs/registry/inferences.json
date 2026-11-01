@@ -4758,5 +4758,12 @@
     "statement": "阵地足球与阵地足球锦标的横幅音效在横幅出现时播放：阵地足球的「进球！」「失球！」配 battle.ON_COOPERATE_ALLY_SCORED / ENEMY_SCORED；锦标的比赛开场配 MATCHSTART、点球开场配 PENALTYKICK_BANNER、「平局！」配 DRAW、「进球！」「成功！」配 WINSCORE、「失球！」配 LOSESCORE、「本方点球」「对方点球」配 PENALTYKICK、PENALTYKICK_OTHER",
     "basis": "audio_data.json 有这些音效库，库名与片段名（act1football_b_ui_matchstart、_draw、_winscore、_losescore、_penaltykick、_penaltykick_banner；act1multi_b_ui_winscore、_losescore）与横幅一一对应，但由游戏代码在什么时机播放没有资料；按名字配给对应的横幅，在横幅出现时播放；「成功！」（挡下对方点球）对我方有利，配 WINSCORE",
     "status": "待查证"
+  },
+  {
+    "id": "INF-1020",
+    "clause": "敌能-2",
+    "statement": "初始冷却为负（数据的 −1）的技能出现时就已就绪，按 0 帧算；重置技能冷却（resetSkills）时也一样。冷却为负的「只用一次」只管用过之后。",
+    "basis": "负数不是一段时间，换不成帧（时间-2）。数据里初始冷却为负的只有萨卡兹枯朽战车、尖端萨卡兹枯朽战车与改装排污车的 PollutedRangedAtk，敌能-46 写它是攻击回复的技能：页面技力槽 2/2，第一次攻击就是技能，行为不读冷却；敌能-46 的测试记录也是按初始冷却 0 组装的，按 0 算时这些敌人与那些记录行为相同。",
+    "status": "待查证"
   }
 ]

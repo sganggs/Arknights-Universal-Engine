@@ -68,6 +68,30 @@ test('[敌能-2] hooks: spawn, tick seeing hurt and unblocked, death; state per 
   assert.deepEqual(seen, [['spawn', 2], ['zap', 15, 3], ['hurt', 20], ['unblocked', 21], ['zap', 45, 3], ['death', 51]], 'ready 0.5 s after spawning, then 1 s after use');
 });
 
+test('[敌能-2] an initCooldown below 0 (the data\'s −1) is ready on its first turn, and again after resetSkills; a cooldown below 0 still uses it once', () => {
+  /** @param {number} init */
+  const zaps = (init) => {
+    /** @type {any[]} */
+    const seen = [];
+    let first = -1;
+    const { c, w } = arena({ skills: [{ key: 'zap', cooldown: -1, initCooldown: init, bb: {} }] }, {
+      zap: {
+        tick: (/** @type {any} */ ctx) => {
+          if (first < 0) first = ctx.frame;
+          if (ctx.ready) { seen.push(['zap', ctx.frame - first]); ctx.use(); }
+          if (ctx.frame - first === 30) ctx.resetSkills();
+        },
+      },
+    });
+    foe(w, c, 1, 3);
+    run(w, c, 90);
+    return seen;
+  };
+  assert.deepEqual(zaps(-1), [['zap', 0], ['zap', 31]], 'ready at once, used once, ready the turn after the reset');
+  assert.deepEqual(zaps(-1), zaps(0), 'as an initCooldown of 0');
+  assert.deepEqual(zaps(0.5), [['zap', 15], ['zap', 45]], 'a positive initCooldown still counts its 15 frames, from spawning and from the reset');
+});
+
 test('[敌能-2] targets and attack hooks change whom an enemy attacks and how', () => {
   const { c, w } = arena({ applyWay: 'MELEE' }, {
     far: {
