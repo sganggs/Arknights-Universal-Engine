@@ -472,4 +472,8 @@ export const FOE_EXTRAS = Object.freeze({
   },
   // “复仇者”: 生命值不高于50%时：攻击力+180% (敌能-8). `low` marks the read page; “火与钢” has the same keys and none (敌能-149).
   enemy_1539_reid: { talents: { AtkUp: { low: 1 } }, source: `${PRTS}%E2%80%9C%E5%A4%8D%E4%BB%87%E8%80%85%E2%80%9D&oldid=354327` },
+  // 雪孩子 / 雪顽童: 与高地碰撞时若自身处于失衡状态，对自身造成5000真实伤害，随后的5秒内不会再次触发上述伤害 — the 5000 is the
+  // data's hitWall.value, the 5 s (`rearm`) only the page's (敌能-150). 直立小雪怪 shares the talent and gets no `rearm`.
+  enemy_10138_xdsnow: { talents: { hitWall: { rearm: 5 } }, source: `${PRTS}%E9%9B%AA%E5%AD%A9%E5%AD%90&oldid=373740` },
+  enemy_10138_xdsnow_2: { talents: { hitWall: { rearm: 5 } }, source: `${PRTS}%E9%9B%AA%E9%A1%BD%E7%AB%A5&oldid=373742` },
 });
