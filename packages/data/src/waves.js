@@ -149,12 +149,22 @@ export function hiddenGroupsOf(runesRaw, difficulty) {
 export const predefinedOperator = (list, o, key) => list === 'characterInsts' && !!o.position && typeof o.position === 'object' && (!o.alias || key.startsWith('char_'));
 
 /**
+ * A predefined device's initial skill level (波次-6). 1 is the default and is omitted, so a level whose devices all
+ * start at 1 stays byte-identical. Operators keep theirs on `build.skillLevel` (波次-7), not on this field.
+ * @param {Record<string, unknown>} o @param {string} p @returns {{ mainSkillLvl?: number }}
+ */
+function deviceSkillLevel(o, p) {
+  const lvl = asInt(o.mainSkillLvl ?? 1, `${p}.mainSkillLvl`, 1, 10);
+  return lvl === 1 ? {} : { mainSkillLvl: lvl };
+}
+
+/**
  * The predefined units (波次-6): the character and token instances that have an alias, with their key, whether they
- * start hidden, and their tile and facing when the data gives them; and the predefined operators (波次-7): the
- * character instances with a tile that have no alias or are operators, by their alias (else their key), with their
- * training (`build`).
+ * start hidden, and their tile and facing when the data gives them; a token's initial skill level when it is not 1;
+ * and the predefined operators (波次-7): the character instances with a tile that have no alias or are operators, by
+ * their alias (else their key), with their training (`build`).
  * @param {unknown} raw level.predefines
- * @returns {{ alias: string, key: string, hidden: boolean, row?: number, col?: number, dir?: string, build?: ReturnType<typeof levelBuild> }[]}
+ * @returns {{ alias: string, key: string, hidden: boolean, row?: number, col?: number, dir?: string, mainSkillLvl?: number, build?: ReturnType<typeof levelBuild> }[]}
  */
 export function predefinesOf(raw) {
   if (raw === null || raw === undefined) return [];
@@ -166,7 +176,8 @@ export function predefinesOf(raw) {
     if (!o.alias && !operator) return [];
     return [{ alias: o.alias ? asString(o.alias, `${p}.alias`) : key, key, hidden: o.hidden === true,
       ...(pos ? { row: asInt(field(pos, 'row', `${p}.position`), `${p}.position.row`, 0, 99), col: asInt(field(pos, 'col', `${p}.position`), `${p}.position.col`, 0, 99) } : {}),
-      ...(typeof o.direction === 'string' ? { dir: o.direction } : {}), ...(operator ? { build: levelBuild(o, p) } : {}) }];
+      ...(typeof o.direction === 'string' ? { dir: o.direction } : {}), ...(k === 'tokenInsts' ? deviceSkillLevel(o, p) : {}),
+      ...(operator ? { build: levelBuild(o, p) } : {}) }];
   }));
 }
 
