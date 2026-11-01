@@ -91,6 +91,11 @@ export const FOE_EXTRAS = Object.freeze({
   // 冰原术师/队长: 拥有抵抗，可同时攻击2个目标
   enemy_1192_krgscr: { talents: { Targets: { n: 2 }, Resist: {} }, source: `${PRTS}%E5%86%B0%E5%8E%9F%E6%9C%AF%E5%B8%88&oldid=435602` },
   enemy_1192_krgscr_2: { talents: { Targets: { n: 2 }, Resist: {} }, source: `${PRTS}%E5%86%B0%E5%8E%9F%E6%9C%AF%E5%B8%88%E9%98%9F%E9%95%BF&oldid=435603` },
+  // 萨卡兹百夫长: 可最多同时攻击2个目标，造成近战途径伤害，不会攻击飞行单位 (敌能-134)
+  enemy_1501_demonk: { talents: { Targets: { n: 2, direct: 1 }, noFly: {} }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E7%99%BE%E5%A4%AB%E9%95%BF&oldid=413934` },
+  // “独轮车玩具”: 最多同时攻击2个目标 (敌能-134). No `direct` and no `noFly`: the page names neither. Its 结晶 range is
+  // not here, as the engine's levels have no 结晶.
+  enemy_10018_sgrobh: { talents: { Targets: { n: 2 } }, source: `${PRTS}%E2%80%9C%E7%8B%AC%E8%BD%AE%E8%BD%A6%E7%8E%A9%E5%85%B7%E2%80%9D&oldid=354028` },
   // 冰原狂战士队长: 拥有抵抗
   enemy_1193_krgbsk_2: { talents: { Resist: {} }, source: `${PRTS}%E5%86%B0%E5%8E%9F%E7%8B%82%E6%88%98%E5%A3%AB%E9%98%9F%E9%95%BF&oldid=435599` },
   // 冰原猎人队长: ①被阻挡时进行近战途径攻击 ②未被阻挡时进行远程途径攻击，优先攻击防御力最低的我方单位
