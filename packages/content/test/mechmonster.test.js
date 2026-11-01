@@ -1,6 +1,6 @@
 // 「巨大的丑东西」's first-form attack (docs/spec/foes.md 敌能-124): blocked, the blocker at the data's 350%; not
 // blocked, one ground unit within the page's 2.5 and its 3×3 at 100%. The record is act1multi_fortress_rm01's; its
-// rebirth, bomb, 大祭司 form and 砍伐 have no behaviour here and do nothing.
+// rebirth, blast and 大祭司 form are 敌能-125's (mechrebirth.test.js), and 砍伐 has no behaviour.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createWorld, step, attrs, status, bus, buffs, KIND } from '@aue/sim';
