@@ -435,4 +435,8 @@ export const FOE_EXTRAS = Object.freeze({
   // 纠缠藤蔓 (敌能-140): 拥有抵抗 is 敌能-27's Resist. `page` marks this page on 致幻缠绕 and on Weak: 古老藤蔓 has the same
   // data and no page read, and the other stun-only StunAttack users have none either, so they stay uncovered (关卡-2).
   enemy_2052_smgia: { talents: { Weak: { page: 1 }, Resist: {} }, skills: { StunAttack: { page: 1 } }, source: `${PRTS}%E7%BA%A0%E7%BC%A0%E8%97%A4%E8%94%93&oldid=355929` },
+  // “邪魔的利刃” / “邪魔的利刃”，游荡者: 对位于【国度】中的单位的造成伤害时攻击倍率提升至250% (敌能-141). `page` marks the two
+  // read pages; 无垠回荡克雷松 has the same DamageUp { atk_scale } and no marker.
+  enemy_2048_smgrd: { talents: { DamageUp: { page: 1 } }, source: `${PRTS}%E2%80%9C%E9%82%AA%E9%AD%94%E7%9A%84%E5%88%A9%E5%88%83%E2%80%9D&oldid=354395` },
+  enemy_2049_smgrd2: { talents: { DamageUp: { page: 1 } }, source: `${PRTS}%E2%80%9C%E9%82%AA%E9%AD%94%E7%9A%84%E5%88%A9%E5%88%83%E2%80%9D%EF%BC%8C%E6%B8%B8%E8%8D%A1%E8%80%85&oldid=354396` },
 });
