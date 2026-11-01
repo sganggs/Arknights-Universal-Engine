@@ -9,7 +9,7 @@ import { beginRebirth, endRebirth } from './avenger.js';
 import { liberate } from './prisoners.js';
 import { isSkillAttack } from './charged.js';
 
-/** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').FoeContext} FoeContext */
+/** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').FoeContext} FoeContext @typedef {import('@aue/sim').Unit} Unit */
 
 /** 狱警形态's RES, from its appearance until the rebirth clears every buff (敌能-146). No other family uses the key. */
 const WARDEN = 'warden';
@@ -77,7 +77,7 @@ function killerMods(ctx) {
   return n ? { atkFlat: n.atk, defFlat: n.def, batFlat: n.base_attack_time, moveFlat: n.move_speed } : {};
 }
 
-/** 狱警形态 from its appearance (敌能-146). @type {NonNullable<FoeBehavior['spawn']>} */
+/** 狱警形态 from its appearance (敌能-146). @param {FoeContext} ctx @returns {void} */
 export function wardenSpawn(ctx) {
   if (wardenReborn(ctx.bb)) keep(ctx, WARDEN, guardMods(ctx));
 }
@@ -88,7 +88,7 @@ export const wardenFatal = (ctx) => wardenReborn(ctx.bb) && beginRebirth(ctx, 1)
 /**
  * Each turn (敌能-146): the rebirth ends as 敌能-18's; until it has, 狱警形态's buff stays. From the frame it has ended,
  * 杀手形态 — every prisoner on the field liberated, once — and its buff stays (INF-0931, INF-0935, INF-0937).
- * @type {NonNullable<FoeBehavior['tick']>}
+ * @param {FoeContext} ctx @returns {void}
  */
 export function wardenTick(ctx) {
   if (!wardenReborn(ctx.bb)) return;
@@ -105,7 +105,7 @@ export function wardenTick(ctx) {
 
 /**
  * Whom it attacks (敌能-146): 狱警形态 never a flyer, its skill neither (INF-0932); 杀手形态 only what blocks it (INF-0936).
- * @type {NonNullable<FoeBehavior['targets']>}
+ * @param {FoeContext} ctx @param {Unit[]} cands @returns {Unit[]}
  */
 export function wardenTargets(ctx, cands) {
   if (!wardenReborn(ctx.bb)) return cands;
