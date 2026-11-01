@@ -5,9 +5,12 @@
 // { dist } alone, its data without those, stays uncovered (关卡-2). The 1s 不可阻挡 is the page's duration, not a blackboard key.
 // 魔球帮's players (cup.md 锦标-3): { min_dist, max_dist, blink_cd }, a jump toward the ball or its target now and then.
 // 裹骸死士 (敌能-96): `Blink` { max_hp_ratio, dist }, once below that share of its HP and blocked, at once `dist` on.
+// 锏's 速杀 (敌能-157): `Blink` in its first form and `Blink2` in its second, { atk_scale, dist, glide } — `glide` the
+// page's 0.5 s, as 弑君者's —: a cooldown, the crown's slip and glide, then the hat's hit 0.3 s on, twice in the second form.
 import { hypot } from '@aue/math';
 import { onItsOwn } from './footballers.js';
 import { dist2, nearBallTarget } from './teams.js';
+import { maceSecond, maceReviving, maceFree, maceCast } from './mace.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior */
 /** @typedef {import('@aue/sim').FoeContext} FoeContext */
@@ -46,6 +49,10 @@ const teamShape = (bb) => shape(bb, TEAM_KEYS, TEAM_KEYS);
 const crownShape = (bb) => shape(bb, CROWN_KEYS, CROWN_KEYS);
 /** @param {Record<string, unknown>} bb */
 const skullShape = (bb) => shape(bb, SKULL_KEYS, SKULL_KEYS);
+/** 锏 (敌能-157). `glide` is the page's seconds: 路加萨尔古斯's `Blink` has the other two keys and no page. */
+const MACE_KEYS = new Set(['atk_scale', 'dist', 'glide']);
+/** @param {Record<string, unknown>} bb */
+const maceShape = (bb) => shape(bb, MACE_KEYS, MACE_KEYS);
 
 /** 卢西恩 (敌能-156): the crown's two numbers and the enemy it leaves, by key — both only on its page. */
 const SHADE_KEYS = new Set(['dist', 'glide', 'enemy_key']);
@@ -59,12 +66,13 @@ const shadeShape = (bb) => shape(bb, CROWN_KEYS, SHADE_KEYS) && typeof bb.enemy_
 export const blinkedNow = (ctx) => ctx.self.buffs.some((b) => b.key === 'blinkSlip' && b.left === ctx.frames(SLIP_S));
 
 /**
- * Whether a behaviour of this name is one of these blinks, when the name is blink or Blink (敌能-73, 敌能-84, 敌能-96,
- * 敌能-156, 锦标-3). Any other name is not this family's concern.
+ * Whether a behaviour of this name is one of these blinks, when the name is blink, Blink or Blink2 (敌能-73, 敌能-84,
+ * 敌能-96, 敌能-156, 敌能-157, 锦标-3). Any other name is not this family's concern.
  * @param {string} name @param {Record<string, unknown>} bb
  */
 export function blinkOwns(name, bb) {
-  if (name === 'Blink') return skullShape(bb);
+  if (name === 'Blink') return skullShape(bb) || maceShape(bb);
+  if (name === 'Blink2') return maceShape(bb);
   return name !== 'blink' || hatShape(bb) || crownShape(bb) || teamShape(bb) || shadeShape(bb);
 }
 
@@ -199,8 +207,57 @@ function skullBlink(ctx) {
   if (to) ctx.place(to.x, to.y);
 }
 
-/** `Blink` (敌能-96). @type {FoeBehavior} */
-const Blink = Object.freeze({ tick: (ctx) => { if (skullShape(ctx.bb)) skullBlink(ctx); } });
+/**
+ * 锏's 速杀 starting (敌能-157): it is cast (cooldown, the attack's turn), slips the block for 1 s, notes the unit that
+ * blocked it for the hit 0.3 s on and glides `dist` toward its course over `glide` s where it may stand there.
+ * @param {FoeContext} ctx
+ */
+function maceBegin(ctx) {
+  maceCast(ctx);
+  ctx.addBuff(ctx.self, { key: 'blinkSlip', flags: { unblockable: true }, left: ctx.frames(SLIP_S) });
+  noteBlocker(ctx);
+  const to = destination(ctx);
+  if (to) startGlide(ctx, to, ctx.bb.glide);
+}
+
+/**
+ * 速杀's ③ (敌能-157): 0.3 s after the trigger, the unit that blocked it takes the attack it has then × `atk_scale` as
+ * physical skill damage, `times` hits; none once it has left or has no HP. @param {FoeContext} ctx @param {number} times
+ */
+function maceStrike(ctx, times) {
+  const due = ctx.state.get('due');
+  if (!(due > 0) || ctx.frame < due) return;
+  ctx.state.set('due', 0);
+  const t = ctx.unit(ctx.state.get('who')), amount = ctx.bb.atk_scale * ctx.stats(ctx.self).atk;
+  for (let i = 0; i < times && t && t.hp > 0; i++) ctx.dealDamage(t, { type: 'phys', amount, isAttack: false, isSkill: true });
+}
+
+/**
+ * 锏's 速杀 (敌能-157), `second` for `Blink2`: in its own form, ready, blocked and free, it starts; a glide under way goes
+ * on and the hit lands — twice in the second form —; the rebirth stops both (「中止当前行动」).
+ * @param {FoeContext} ctx @param {boolean} second
+ */
+function maceBlink(ctx, second) {
+  if (maceReviving(ctx)) {
+    if (ctx.state.get('n') > 0) ctx.state.set('n', 0);
+    if (ctx.state.get('due') > 0) ctx.state.set('due', 0);
+    return;
+  }
+  if (maceSecond(ctx) === second && ctx.ready && ctx.blocked && maceFree(ctx)) maceBegin(ctx);
+  glide(ctx);
+  maceStrike(ctx, second ? 2 : 1);
+}
+
+/** `Blink` (敌能-96, 敌能-157): 裹骸死士's, or 锏's first form's 速杀. @type {FoeBehavior} */
+const Blink = Object.freeze({
+  tick: (ctx) => {
+    if (skullShape(ctx.bb)) skullBlink(ctx);
+    else if (maceShape(ctx.bb)) maceBlink(ctx, false);
+  },
+});
+
+/** `Blink2` (敌能-157): 锏's second form's 速杀. @type {FoeBehavior} */
+const Blink2 = Object.freeze({ tick: (ctx) => { if (maceShape(ctx.bb)) maceBlink(ctx, true); } });
 
 /**
  * 闪现 (敌能-73, 敌能-84, 敌能-156). A hat's attack only fills the bar. A crown's attack, and 卢西恩's, is ordinary and adds
@@ -231,4 +288,4 @@ const ShiftImmune = Object.freeze({
 });
 
 /** @type {Readonly<Record<string, FoeBehavior>>} */
-export const blinkBehaviors = Object.freeze({ blink, Blink, ShiftImmune });
+export const blinkBehaviors = Object.freeze({ blink, Blink, ShiftImmune, Blink2 });

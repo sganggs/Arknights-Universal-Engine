@@ -6,6 +6,7 @@ import { KIND } from '@aue/schema';
 import { statsOf } from './attrs.js';
 import { addBuff, removeBuff, makeBuff, retune, setLeft, setBaseMaxHp, removeTagged } from './buffs.js';
 import { setAmmo } from './skills.js';
+import { setSp } from './sp.js';
 import { inflict } from './status.js';
 import { launch } from './swing.js';
 import { dealDamage, heal, setHp, knockDown } from './damage.js';
@@ -83,6 +84,8 @@ export const BOLT_RADIUS = 0.3;
  * @property {() => boolean} bumpedHigh a 失衡 slide of its stopped against a 高地 tile since its last turn's `tick`
  *   (位移-3, 敌能-150); the first call starts the note, so a collision before it does not count
  * @property {boolean} ready a skill's cooldown is over
+ * @property {(name: string) => boolean} readyOf whether another of its skills, by name, is ready — its cooldown over —; false for
+ *   a name it has no skill of (敌能-157)
  * @property {() => void} use a skill was used: its cooldown starts again — one with a cooldown below 0 is not ready again
  * @property {() => void} holdCooldown its skill's cooldown does not run this turn: called while a skill that lasts runs,
  *   or outside the mode it is bound to (敌能-2). Once a turn.
@@ -152,6 +155,8 @@ export const BOLT_RADIUS = 0.3;
  *   (路线-2, 敌能-48); a unit that is not flying is left as it is
  * @property {(u: Unit) => number} ammoOf shots left on a unit's running ammo skill, otherwise 0 (敌能-49, 技能-4)
  * @property {(u: Unit, n: number) => void} spendAmmo takes that many shots, not below 0, and does not end the skill (敌能-49)
+ * @property {(u: Unit) => void} clearSp a unit's SP to 0 (技能-2); a running skill goes on, a unit without a skill is left as
+ *   it is (敌能-157)
  * @property {(u: Unit, key: string, frames: number, mods: Record<string, number>) => void} renew sets that buff's frames
  *   left and replaces its modifiers; adds it when the unit has none (敌能-49)
  * @property {() => Unit[]} ours operators and our devices still on the field (敌能-49)
@@ -359,12 +364,13 @@ function contextOf(w, c, e, of) {
  * @param {World} w @param {Content} c @param {Unit} e @param {Record<string, number>} ab
  * @returns {Pick<FoeContext, 'setHp' | 'resetSkills' | 'onWay' | 'detour' | 'release' | 'placeDevice' | 'summon' | 'draw' | 'remove'
  *   | 'devour' | 'carryOff' | 'putBack' | 'unlock' | 'lockCost' | 'sealCard' | 'lend' | 'around' | 'enemies' | 'fly' | 'attackAgain' | 'ammoOf' | 'spendAmmo' | 'renew' | 'ours' | 'place' | 'steady' | 'behind'
- *   | 'course' | 'open' | 'planted' | 'summonNext' | 'grantLoot' | 'hurl'>}
+ *   | 'course' | 'open' | 'planted' | 'summonNext' | 'grantLoot' | 'hurl' | 'clearSp' | 'readyOf'>}
  */
 function lateContext(w, c, e, ab) {
   return {
     setHp: (t, hp) => { setHp(t, hp); },
     resetSkills: () => { for (const s of defOf(c, e).skills ?? []) ab[`${s.key}.cd`] = firstCooldown(s); },
+    readyOf: (name) => (defOf(c, e).skills ?? []).some((s) => s.key === name) && (ab[`${name}.cd`] ?? 0) <= 0,
     onWay: (u) => wayKeys(c, e).includes(keyAt(c.level, u.x, u.y)),
     detour: (row, col) => { detour(c, e, row, col); },
     release: () => { release(e); },
@@ -386,6 +392,7 @@ function lateContext(w, c, e, ab) {
     spendAmmo: (u, n) => { const st = u.skill; if (st && ammoLeft(c, u) > 0) setAmmo(st, st.ammo - n); },
     renew: (u, key, frames, mods) => { renewBuff(e, u, key, frames, mods); },
     ours: () => w.units.filter(ourUnit),
+    clearSp: (u) => { if (u.skill) setSp(u.skill, 0); },
     ...moveMembers(w, c, e, ab),
   };
 }
