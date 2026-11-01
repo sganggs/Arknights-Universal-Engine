@@ -428,4 +428,6 @@ export const FOE_EXTRAS = Object.freeze({
   enemy_10067_ftsjc_2: { talents: { pow: { splash: 1, ignite: 0.5 } }, source: `${PRTS}%E7%81%BC%E8%8A%AF&oldid=406825` },
   // “帝国的甲胄”: 回忆里的誓死 — 持续5.85秒的【轰炸区域】，延迟1.33秒后……此后每0.53秒重复一次 (敌能-137); the data has only times 8
   enemy_10027_vtsk: { skills: { Appear: { duration: 5.85, delay: 1.33, interval: 0.53 } }, source: `${PRTS}%E2%80%9C%E5%B8%9D%E5%9B%BD%E7%9A%84%E7%94%B2%E8%83%84%E2%80%9D&oldid=377746` },
+  // “遗弃者”: 不会攻击飞行单位 (noFly, 敌能-33). Its layers and their 4 s are all in the data (atkup, checker; 敌能-138).
+  enemy_2005_axetro: { talents: { noFly: {} }, source: `${PRTS}%E2%80%9C%E9%81%97%E5%BC%83%E8%80%85%E2%80%9D&oldid=365968` },
 });
