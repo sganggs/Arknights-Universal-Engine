@@ -4758,5 +4758,12 @@
     "statement": "阵地足球与阵地足球锦标的横幅音效在横幅出现时播放：阵地足球的「进球！」「失球！」配 battle.ON_COOPERATE_ALLY_SCORED / ENEMY_SCORED；锦标的比赛开场配 MATCHSTART、点球开场配 PENALTYKICK_BANNER、「平局！」配 DRAW、「进球！」「成功！」配 WINSCORE、「失球！」配 LOSESCORE、「本方点球」「对方点球」配 PENALTYKICK、PENALTYKICK_OTHER",
     "basis": "audio_data.json 有这些音效库，库名与片段名（act1football_b_ui_matchstart、_draw、_winscore、_losescore、_penaltykick、_penaltykick_banner；act1multi_b_ui_winscore、_losescore）与横幅一一对应，但由游戏代码在什么时机播放没有资料；按名字配给对应的横幅，在横幅出现时播放；「成功！」（挡下对方点球）对我方有利，配 WINSCORE",
     "status": "待查证"
+  },
+  {
+    "id": "INF-0790",
+    "clause": "敌能-132",
+    "statement": "心虚设计师、顺从内心的设计师的正面减伤从出场起一直在，直到离场；晕眩、冻结、沉睡与失衡都不去掉它，没有单独的持续时间。",
+    "basis": "两页的天赋只写「受到来自正面的物理/法术伤害-80%」，能力栏写「减少来自正面的物理/法术伤害」，都没有写开始、结束、持续时间或被控制时失效。岩冠兽、坚岩冠兽的同一项按 INF-0675 从出场起一直在。两名的数据 silenceImmune 为 true，沉默对它们不生效（状态-7）。",
+    "status": "待查证"
   }
 ]
