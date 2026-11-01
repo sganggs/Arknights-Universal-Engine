@@ -98,18 +98,24 @@ test('[敌能-123] without the marker the raw box is not a candidate: the operat
   assert.equal(firstTarget(w, c, e), sniper.id);
 });
 
-test('[敌能-123] a unit on a facility comes first, then the facilities, then the rest, whatever was deployed last', () => {
-  const { c, w, e } = bring(rm[PITCH]);
+test('[敌能-123] a unit on a facility comes first, then the facilities, then the rest, ahead of 仇恨值', () => {
+  // The unit on the platform has the lowest taunt and the one deployed last the highest, the facilities sit at −1 in
+  // between: 仇恨值 alone would put them the other way round.
+  const { c, w, e } = bring(rm[PITCH], (box) => {
+    box.operators.sniper.tauntLevel = -2;
+    box.operators.far = { ...box.operators.sniper, name: 'far', tauntLevel: 2 };
+  });
   const platform = facility(w, c, PLATFORM, [0, 2], 1);
   const on = deploy(w, c, 'sniper', 0, 2);
   assert.deepEqual([Math.round(on.x), Math.round(on.y)], [platform.x, platform.y]);
   const built = facility(w, c, WORK, [1, 4], 1);
-  const last = deploy(w, c, 'sniper', 2, 3);
-  assert.equal(firstTarget(w, c, e), on.id, 'on the platform');
+  const last = deploy(w, c, 'far', 2, 3);
+  assert.notEqual(last.id, on.id);
+  assert.deepEqual([on, platform, built, last].map((u) => attrs.statsOf(u).taunt), [-2, -1, -1, 2]);
+  assert.equal(firstTarget(w, c, e), on.id, 'on the platform, though its taunt is the lowest');
   on.hp = 0;
   const next = firstTarget(w, c, e);
-  assert.ok([platform.id, built.id].includes(next), 'a facility before the operator deployed last');
-  assert.notEqual(next, last.id);
+  assert.ok([platform.id, built.id].includes(next), 'a facility before the taunt-2 operator deployed last');
 });
 
 test('[敌能-123] a facility out of reach is not a candidate; a built one in reach still comes first', () => {
