@@ -191,11 +191,11 @@ test('[敌能-158] the name\'s other 49 users of Passive are not this shape, wit
   assert.equal(translatorShape({ phy_max_count: 4, magic_max_count: 4 }), false, 'the data alone');
 });
 
-test('[敌能-158] [状态-7] [位移-1] 原始形态 from spawn: no attack, 失衡免疫, five immunities, the two counts at the data\'s numbers', () => {
+test('[敌能-158] [状态-7] [位移-1] 原始形态 from spawn: no attack, 失衡免疫, six immunities, the two counts at the data\'s numbers', () => {
   const box = open(rec(ALPHA, { Passive: { phy_max_count: 3, magic_max_count: 5 } })), e = box.e;
   const origin = /** @type {import('@aue/sim').Buff} */ (buffOf(e, 'translator'));
   assert.equal(origin.act, 'translator');
-  assert.deepEqual(Object.keys(origin.flags), ['noAttack', 'noDisplace', 'immune:stun', 'immune:sleep', 'immune:freeze', 'immune:levitate', 'immune:fear']);
+  assert.deepEqual(Object.keys(origin.flags), ['noAttack', 'noDisplace', 'immune:stun', 'immune:sleep', 'immune:cold', 'immune:freeze', 'immune:levitate', 'immune:fear']);
   assert.deepEqual([PHYS, ARTS].map((k) => [buffOf(e, k)?.value, buffOf(e, k)?.n]), [[3, 0], [5, 0]], 'the counts follow the blackboard');
   for (const k of /** @type {const} */ (['stun', 'sleep', 'freeze', 'levitate', 'fear'])) status.applyStatus(e, k, { seconds: 5 });
   const s = attrs.statsOf(e);
@@ -236,7 +236,7 @@ test('[敌能-158] [伤害-8] [伤害-10] every hit that reaches its 伤判 is c
   assert.deepEqual([e.hp, counts(e)], [2420, [4, 1]], 'one count full: neither counts more');
 });
 
-test('[敌能-158] [元素-2] [元素-4] 元素损伤 still builds up; damage the engine deals without the content is not cancelled', () => {
+test('[敌能-158] [元素-2] [元素-4] 元素损伤 still builds up; a damage call that passes no content is not cancelled (the engine\'s own damage carries it, 伤害-8)', () => {
   const box = open(rec()), e = box.e;
   assert.equal(elements.dealEp(box.w, e, 'FIRE', 100, null), 90, '损伤抵抗 10');
   assert.equal(e.ep.FIRE, 910);
@@ -395,22 +395,24 @@ test('[敌能-158] [阻挡-1] a block and a full count seen at the same turn: bl
   assert.equal(formOf(quiet.e), 2, 'silenced: the change still comes');
 });
 
-test('[敌能-158] [状态-7] [状态-5] [状态-6] a stun held off in 原始形态 takes hold once the form begins; 寒冷 is not held off, and two colds still freeze it then', () => {
+test('[敌能-158] [状态-7] [状态-5] [状态-6] a stun and a cold held off in 原始形态 take hold once the form begins; two colds stay colds while it is immune to freezing', () => {
   const box = open(rec()), e = box.e;
   status.applyStatus(e, 'stun', { seconds: 10 });
   status.applyStatus(e, 'cold', { seconds: 10 });
   const s = attrs.statsOf(e);
-  assert.deepEqual([s.flags.stun, s.disabled, s.aspd], [undefined, false, 70], 'the stun waits; the cold\'s −30 is already there');
+  assert.deepEqual([s.flags.stun, s.disabled, s.aspd], [undefined, false, 100], 'the stun and the cold\'s −30 wait');
   changeBy(box, 'phys', 4);
   assert.equal(formOf(e), 1);
-  assert.deepEqual([attrs.statsOf(e).flags.stun, attrs.statsOf(e).disabled], [true, true], 'the immunity went with 原始形态');
-  // 状态-6 looks only at the data's 冻结免疫: the pair becomes a freeze, whose flag waits like the stun
+  assert.deepEqual([attrs.statsOf(e).flags.stun, attrs.statsOf(e).disabled, attrs.statsOf(e).aspd], [true, true, 70], 'the immunities went with 原始形态');
+  // 状态-6 with the buff's 冻结免疫 (INF-1151): two colds stay colds; they do not pair by themselves after the change
   const two = open(rec()), t = two.e;
   status.applyStatus(t, 'cold', { seconds: 10 });
   status.applyStatus(t, 'cold', { seconds: 10 });
-  assert.deepEqual([t.buffs.some((b) => b.key === 'freeze'), attrs.statsOf(t).flags.freeze, attrs.statsOf(t).disabled], [true, undefined, false], 'a freeze, held off');
+  assert.deepEqual([t.buffs.filter((b) => b.key === 'cold').length, t.buffs.some((b) => b.key === 'freeze')], [2, false], 'two colds, no freeze');
   changeBy(two, 'arts', 4);
-  assert.deepEqual([formOf(t), attrs.statsOf(t).flags.freeze, attrs.statsOf(t).disabled], [2, true, true], 'frozen once the form begins');
+  assert.deepEqual([formOf(t), t.buffs.some((b) => b.key === 'freeze'), attrs.statsOf(t).disabled], [2, false, false], 'still no freeze once the form begins');
+  status.applyStatus(t, 'cold', { seconds: 10 });
+  assert.deepEqual([attrs.statsOf(t).flags.freeze, attrs.statsOf(t).disabled], [true, true], 'the next cold pairs: frozen');
 });
 
 test('[敌能-158] [属性-4] 寻仇者形态 is physical whatever the record\'s type; its anger waits for the form', () => {

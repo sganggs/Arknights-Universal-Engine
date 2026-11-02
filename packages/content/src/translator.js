@@ -23,8 +23,8 @@ const FORM = 'translatorForm';
 /** 寻仇者形态's attack while below half its HP. */
 const ANGER = 'translatorAnger';
 
-/** 失衡免疫 (位移-1) and the page's immunities that have a flag (状态-7); 寒冷 has none (状态-5). */
-const ORIGIN_FLAGS = Object.freeze({ noAttack: true, noDisplace: true, 'immune:stun': true, 'immune:sleep': true, 'immune:freeze': true, 'immune:levitate': true, 'immune:fear': true });
+/** 失衡免疫 (位移-1) and the page's six immunities (状态-7; 寒冷's flag holds off its −30 too, 状态-5). */
+const ORIGIN_FLAGS = Object.freeze({ noAttack: true, noDisplace: true, 'immune:stun': true, 'immune:sleep': true, 'immune:cold': true, 'immune:freeze': true, 'immune:levitate': true, 'immune:fear': true });
 
 /** The forms, in the page's order: ① 寻仇者 ② 特战术师 ③ 幽灵. 0 is none yet. */
 const FUCHOU = 1, SHUSHI = 2, YOULING = 3;
