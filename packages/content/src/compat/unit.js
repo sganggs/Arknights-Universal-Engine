@@ -16,7 +16,7 @@ const FPS = 30;
 
 /**
  * A buff as a kit sees it: its key, the status it is (Stronghold's name), who gave it, its data, the seconds left, its
- * modifiers (which a kit may replace: the holder's HP keeps its ratio, 属性-4), flags and shield.
+ * modifiers (which a kit may replace: the holder's HP keeps its ratio, 属性-4), flags, barrier and 护盾 layers.
  */
 export class ShBuff {
   /** @param {ShBattle} b @param {Unit} holder @param {Buff} buff */
@@ -34,6 +34,8 @@ export class ShBuff {
   get flags() { return this.buff.flags; }
   get shield() { return this.buff.shield; }
   set shield(v) { damage.setShield(this.holder, this.buff, v); }
+  /** Its 护盾 layers left (伤害-8): 年's kit counts the broken ones. */
+  get shieldHits() { return this.buff.shieldHits; }
   get value() { return this.buff.value; }
   /** The unit that gave it, or null. */
   get source() { return this.b.unitById(this.buff.src); }
