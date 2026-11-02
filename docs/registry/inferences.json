@@ -6263,5 +6263,19 @@
     "statement": "保留方式的移动结束元素爆发时，只去掉爆发 Buff（连同它带的灼燃的法术抗性降低、狂躁的攻击速度提升、凋亡与狂躁每秒的效果）；爆发开始时给的晕眩（神经）、阻回与静默（凋亡）和侵蚀的防御力降低是别的 Buff，照常保留：晕眩、阻回、静默到原来的时间结束，防御力降低一直在。",
     "basis": "保留方式保留 Buff（部署-9、DIF-0034）；元素-4 的这几项在引擎里是单独的状态或 Buff，不是爆发 Buff 的一部分。数据（buff_template_data）里神经给干员的 stun（ep_break_sanity_char）和侵蚀的 ep_water_def_down（ep_break_water_char）不是派生 Buff（_isDerivedBuff 为 false），不随爆发 Buff 结束；灼燃的 ep_fire_magic_res_down（ep_break_fire_char）与凋亡的 sp_loss、ep_break_dark[damage]（ep_break_dark_char）连同它们的上一级都是派生 Buff（_isDerivedBuff、_finishDerivedBuffIfParentFinish 为 true），随爆发 Buff 结束。sp_loss 下的 sp_loss[decrease_sp] 带 SP_RECOVER_STOPPED 与 SKILL_NOT_ACTIVATABLE（PRTS「异常效果」oldid=422666 的表：阻回、静默），所以官方的结构里凋亡给干员的阻回与静默随爆发一起结束；这里它们是没有标记的状态，按保留方式留到原来的时间，是否也应去掉待查。狂躁正相反：攻击速度提升 ep_break_anger_char[attack_speed] 与每秒的真实伤害（ON_BUFF_TRIGGER）在 ep_break_anger_char 上，ep_break_anger 给它时不是派生 Buff（_isDerivedBuff 为 false），所以官方的结构里它们不随爆发 Buff 结束；这里它们在爆发 Buff 上（元素-4「爆发期间」），随它结束，是否应留到原来的时间同样待查。",
     "status": "待查证"
+  },
+  {
+    "id": "INF-1180",
+    "clause": "兼容-4",
+    "statement": "kit 的路线点（`waypoints`）按引擎的地面流场给出（寻路-1、寻路-2），没有 Stronghold 自己加的「可阻挡地面优先」：等长的路线里，Stronghold 的指向改走经过近战干员不能部署的地面格（地板、出怪点、保护目标、深水区等）更少、深水区不更多的一条，引擎只用官方的指向。地穴（地图-4）的代价与视线、封闭的格边（地图-2）照引擎的规则。所以 kit 读到的点可能与 Stronghold 的不同；起点能不能到终点只在封闭的格边上不同：引擎里格边可以把一格隔开，Stronghold 没有格边。",
+    "basis": "Stronghold v0.3.1 的 server/sim/grid.js：waypoints 沿 flowField 的 next 走到终点，起点与终点都算，起点就是终点时只有起点，到不了为 null；next 取官方指针，除非偏好指针的路线经过的不可阻挡格（近战干员不能部署的地面格）严格更少、深水区不更多；这条偏好来自它的试玩反馈（头注释写明 user playtest #2、GitHub #375），官方客户端（Torappu.Battle.SPFA）只有官方指针，引擎的平滑沿用的就是它（INF-0028）。两边的 SPFA 距离相同（偏好只在等长时改父格），所以除了引擎才有的封闭格边，是否为空两边相同；地穴的一步代价 1000000 也只改距离。在只有道路与高台的地图上两边的点逐位相同，有地板时引擎的点与 Stronghold 的官方指针相同（packages/content/test/compat-waypoints.test.js）。固定提交里唯一的调用者酒神的 kit 只看结果是否为空。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-1181",
+    "clause": "兼容-4",
+    "statement": "kit 的路线点与 `findPath` 一样用关卡自己的地块：引擎每帧所用的地图里，建成的液压式高台（守御-5）和阻挡路线的装置（寻路-1）所在格是类障碍物地块，路线点不算它们。它们只给走出那一格的一步加代价 1000，不改哪些格走得到，所以路线点是否为空不受影响；点可能与敌人此刻实际走的不同。Stronghold 的 `ignoreObstacles` 因此不改结果。",
+    "basis": "引擎的 step 每帧按 facilities.js 的 fieldContent 给出带这些格的地图（守御-5、寻路-1），这些格多了 obstacle（高台另改高低与可部署，流场不读这两项），passable 不变；兼容层的网格在开局时按内容的关卡建好（兼容-4「网格」），findPath 与 groundPathTiles 也只用关卡的地块。Stronghold 里 setObstacle 放置的障碍物由它的装置内容放置（射击台等的 BLOCK 不可通行，阻隔工事的 crate 代价 1000、挡视线），固定提交的干员 kit 都不调用 setObstacle，兼容层也没有（缺口）。酒神的 kit 只看结果是否为空。",
+    "status": "待查证"
   }
 ]
