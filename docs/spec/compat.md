@@ -59,6 +59,7 @@ kit 在战斗里看到的是 Stronghold 的战斗对象；兼容层用引擎的�
 - **技能说明的命中效果**：带 kit 规格的技能，攻击不带引擎从技能说明读出的限时减益、自身回复、元素损伤和推拉（技能-9），这些由 kit 自己实现。
 - **技能与技力**：kit 读引擎的技能状态：有没有技能、技能的类型（kit 写明的优先，否则 技能-1 的分类）、是否在运行。kit 给技力按 Stronghold 的规则：持续型技能（持续、弹药、开关）运行中或阻回时不给；kit 标为无视阻回的（Stronghold 的 `'init'` 与写明的例外）照给（技能-2）；都到技力条上限为止。kit 写的技能说明本身还不运行，技能仍按引擎自己的（技能-1…技能-9）。
 - **一次攻击的档案**：`beforeAttack` 的上下文带这次攻击的档案（`profile`，Stronghold 的 effectiveProfile 的副本，只属于这次攻击）。kit 改了它的 `atkScale`，这次攻击的倍率按改后与原来之比改变（引擎的 `scale`，钩子-3）；改了它的 `afterHit`，这次攻击（含它的投射物）的命中调用改后的，别的攻击照旧（引擎的 `mark`）。
+- **阻挡事件与无视禁疗**：引擎的 `blocked`（钩子-6）给 kit 的上下文同 Stronghold，`blocker`、`enemy` 换成上面的单位样子。kit 自己发出的 `blocked`（固定提交里是酒神的 kit：牢笼阻挡本格的敌人时，`op-phatm2.js`）按引擎的事件发出：单位换回引擎的单位，kit 的处理函数照样看到 kit 的单位，引擎和原生的处理函数看到引擎的单位。kit 特性的 `healThrough(治疗者, 目标)` 回答为真时（同 Stronghold，不必是布尔值），这名治疗者对这个目标无视禁疗（伤害-13，职业-6 的 `healThrough`）：引擎的普通攻击治疗会选它，格子上需要治疗的友方（`injuredAlliesInKeys`）也留下它，kit 自己的治疗（`heal`）也不因禁疗无效。只读 kit 的特性，同 Stronghold 从单位的档案读（技能说明的攻击覆盖不算）。kit 给召唤物的禁疗（Stronghold 的 `noHeal` 标记）在这里是不被友方治疗（`noAllyHeal`，见上），同样不挡；Stronghold 不越过特性的「无法被友方治疗」，引擎里两者是同一个标记，这里也越过。
 
 - 来源：设计决定，见 [ADR 0012](../adr/0012-stronghold-compatible-core.md)、[ADR 0057](../adr/0057-hook-bus-and-timers.md)；增益的刷新规则、技力的锁、内容错误的隔离、棋子整局一份取自 Stronghold 的 `server/sim/Battle.js`、`buffs.js`、`skills.js`（GPL-3.0-or-later）；固定版本对照里推进之王的 kit 原样载入，在小关卡中光环、自身加成、阻挡时的特性、「粉碎」的技力与二次部署按其说明生效，同一局跑两次每帧状态相同（`packages/content/test/compat-battle.test.js`）
 

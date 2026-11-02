@@ -42,9 +42,9 @@ function profileFn(p, name, skillOn) {
 
 /**
  * The trait behaviour of a branch that has kits (职业-6): a kit's say, through its profile, on whether its operator may
- * attack now (`canAttack`) and what a turn without a target does (`storeEnergy`: an energy stored); a kit trait with its
- * own `install` owns the branch's deployment effects — its trait buff and upkeep (Stronghold's profession install gives
- * way to it). An operator
+ * attack now (`canAttack`) and what a turn without a target does (`storeEnergy`: an energy stored), which allies it heals
+ * through their 禁疗 (`healThrough`); a kit trait with its own `install` owns the branch's deployment effects — its trait
+ * buff and upkeep (Stronghold's profession install gives way to it). An operator
  * without a kit, or a kit without them, leaves these to the engine.
  * @type {Readonly<import('@aue/sim').TraitBehavior>}
  */
@@ -65,6 +65,16 @@ export const KIT_TRAIT_BEHAVIOR = Object.freeze({
     const r = pieceOf(ctx.self), fn = r ? profileFn(r.p, 'skipEnemy', !!r.p.skill?.active) : null, e = r?.b.unitOf(target);
     if (!r || !fn || !e) return undefined;
     return !!r.b.safe(() => fn(e), 'profile.skipEnemy', r.p);
+  },
+  /**
+   * An ally the kit heals through its 禁疗 (伤害-13): its trait's `healThrough(healer, ally)` (Stronghold's profile
+   * healThrough: 凯尔希 on her Mon3tr) — the kit trait's only, as Stronghold reads it from the unit's profile.
+   * @param {any} ctx @param {Unit} target
+   */
+  healThrough(ctx, target) {
+    const r = pieceOf(ctx.self), fn = r?.p.kit?.trait?.healThrough, a = r?.b.unitOf(target);
+    if (!r || typeof fn !== 'function' || !a) return undefined;
+    return !!r.b.safe(() => fn(r.p, a), 'profile.healThrough', r.p);
   },
   /** A kit trait with an `install` of its own takes the place of the branch's (Stronghold's profession install). @param {any} ctx */
   own(ctx) {

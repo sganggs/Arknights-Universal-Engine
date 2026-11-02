@@ -2,7 +2,7 @@
 // the enemies on tiles or within a radius that an ability may select (索敌-2), the unit on a tile, the enemies a unit
 // blocks; damage (伤害-7, 元素-2), healing (伤害-11), 生命流失 (伤害-10), retreat (撤退-1) and 移动 (部署-9). The battle's methods
 // (battle.js) call these; units are the kits' (unit.js).
-import { KIND, attrs, body, constants, damage, traits, elements, deck, blocking, routes, paths, sp, targeting, moveOperator, canMoveTo } from '@aue/sim';
+import { KIND, attrs, body, constants, damage, traits, elements, deck, blocking, routes, paths, sp, targeting, moveOperator, canMoveTo, healsThrough, healHow } from '@aue/sim';
 import { absoluteRangeKeys, canTargetEnemy } from './sh/targeting.js';
 import { bodyInKeys, bodyInRange } from './sh/body.js';
 import { localOrder } from './sh/dir.js';
@@ -108,9 +108,13 @@ export function alliesInGrid(b, unit) {
   return b.allies().filter((a) => !a.hidden && body.bodyKeys(a, g).some((k) => keys.has(k)) && b.allySelectable(a, unit));
 }
 
+/** Whether `healer` heals ally `a` through its 禁疗 (伤害-13: its kit trait's `healThrough`, 职业-6). @param {ShBattle} b @param {ShUnit | null} healer @param {ShUnit} a */
+const through = (b, healer, a) => !!healer?.u && healsThrough(b.w, b.c, healer.u, /** @type {Unit} */ (a.u));
+
 /**
  * The allies on the tile keys a healer may heal that need it — HP below the maximum (or, with `element`, 元素损伤 taken) —,
- * the lowest HP ratio first; one under 禁疗 or no ally may heal only for itself.
+ * the lowest HP ratio first; one under 禁疗 or no ally may heal only for itself, or for a healer that heals it through
+ * them (伤害-13).
  * @param {ShBattle} b @param {Iterable<number> | null | undefined} keys @param {ShUnit | null} healer @param {boolean} [element]
  */
 export function injuredAlliesInKeys(b, keys, healer, element = false) {
@@ -119,7 +123,7 @@ export function injuredAlliesInKeys(b, keys, healer, element = false) {
   const out = b.allies().filter((a) => {
     const s = attrs.statsOf(/** @type {Unit} */ (a.u));
     if (a.hidden || !body.bodyKeys(a, g).some((k) => set.has(k))) return false;
-    if (a !== healer && (s.flags.healFree || s.flags.noAllyHeal)) return false;
+    if (a !== healer && (s.flags.healFree || s.flags.noAllyHeal) && !through(b, healer, a)) return false;
     return a.hp < s.maxHp - 1e-6 || (element && Object.keys(/** @type {Unit} */ (a.u).ep ?? {}).length > 0);
   });
   return out.map((a, i) => ({ a, i })).sort((x, y) => x.a.hpRatio - y.a.hpRatio || x.i - y.i).map((x) => x.a);
@@ -196,7 +200,8 @@ export function dealDamage(b, source, target, dmg) {
 }
 
 /**
- * A heal (伤害-11); its `heal` event shows the kit's options (Stronghold's `opts`: `regen`, `self`, `tags`, …).
+ * A heal (伤害-11); its `heal` event shows the kit's options (Stronghold's `opts`: `regen`, `self`, `tags`, …). A source
+ * that heals the target through its 禁疗 heals it through them (伤害-13).
  * @param {ShBattle} b @param {ShUnit | null} source @param {ShUnit} target @param {number} amount @param {Record<string, any>} [opts]
  */
 export function heal(b, source, target, amount, opts) {
@@ -204,7 +209,7 @@ export function heal(b, source, target, amount, opts) {
   const before = b.healOpts;
   b.healOpts = opts && typeof opts === 'object' ? opts : {};
   try {
-    return damage.heal(b.w, source?.u ?? null, target.u, Number(amount) || 0);
+    return damage.heal(b.w, source?.u ?? null, target.u, Number(amount) || 0, source?.u ? healHow(b.w, b.c, source.u, target.u) : undefined);
   } finally {
     b.healOpts = before;
   }

@@ -111,7 +111,7 @@
 
 没有行为的技能用通用效果（技能-5）。内容代码不能直接写单位字段，由 lint 检查（ADR 0045）。
 
-行为接口有版本号（`BEHAVIOR_API_VERSION`，现为第 5 版；第 4 版加了特性行为的 `canAttack` 与 `store`，第 5 版加了特性行为的 `skip` 与技能行为的 `range`，职业-6、技能-8）。第 3 版起，结束时做的事还会得到技能结束的原因（同 `skillEnd` 事件：`duration`、`instant`、`ammo`、`stopped`、`move`，钩子-3）。上下文成员：`self`、`bb`、`frame`、`stats`、`addBuff`、`removeBuff`、`applyStatus`、`dealDamage`、`dealEp`、`heal`、`gainCost`，技能的上下文另有 `kind` 和（第 2 版起）`extra`（说明加上的修饰器，技能-9）；行为造成的伤害击杀敌人时算干员的击杀（职业-5）。成员有增减就是新版本，由契约测试检查。
+行为接口有版本号（`BEHAVIOR_API_VERSION`，现为第 6 版；第 4 版加了特性行为的 `canAttack` 与 `store`，第 5 版加了特性行为的 `skip` 与技能行为的 `range`，职业-6、技能-8；第 6 版加了特性行为的 `healThrough`，伤害-13）。第 3 版起，结束时做的事还会得到技能结束的原因（同 `skillEnd` 事件：`duration`、`instant`、`ammo`、`stopped`、`move`，钩子-3）。上下文成员：`self`、`bb`、`frame`、`stats`、`addBuff`、`removeBuff`、`applyStatus`、`dealDamage`、`dealEp`、`heal`、`gainCost`，技能的上下文另有 `kind` 和（第 2 版起）`extra`（说明加上的修饰器，技能-9）；行为造成的伤害击杀敌人时算干员的击杀（职业-5）。成员有增减就是新版本，由契约测试检查。
 
 - 来源：设计决定，见 [ADR 0055](../adr/0055-sdk-prepared-now-built-after-mvp.md)、[ADR 0046](../adr/0046-versioned-interfaces.md)；生命回复（skcom_heal_self）「立即恢复最大生命的{heal_scale}」见数据：skill_table
 

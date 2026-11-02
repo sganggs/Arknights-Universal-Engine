@@ -228,7 +228,7 @@ test('[职业-6] [技能-6] the behaviour interface, version 3: a skill’s and 
   });
   run(w, c, 2, [deploy('guard', 1, 1)]);
   foe(1, 2);
-  assert.equal(BEHAVIOR_API_VERSION, 5);
+  assert.equal(BEHAVIOR_API_VERSION, 6);
   assert.deepEqual(got, [['trait', [...CONTEXT_MEMBERS]], ['skill', [...SKILL_CONTEXT_MEMBERS]], ['end', 'instant']]);
   assert.deepEqual(SKILL_CONTEXT_MEMBERS.filter((k) => !CONTEXT_MEMBERS.includes(k)), ['kind', 'extra']);
 });
