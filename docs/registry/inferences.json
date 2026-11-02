@@ -5451,5 +5451,26 @@
     "statement": "占据在引擎里从不释放：场上没有留声机（trap_014_tower 没有装置说明，放置它的关卡不能组装，装置-3），没有可夺取的对象就不释放、不占攻击间隔，冷却停在就绪；按敌能-88、敌能-100、敌能-116 的做法算作已覆盖。冬灵血巫、冬灵血巫大师同形的天赋 occupy 没有页面标记，仍未覆盖。",
     "basis": "页面写「选择全场范围内距离自身最近的1台未处于敌方占领状态的L-44\"留声机\"，直接夺取其控制权」，没有写场上没有留声机时是否释放，技能栏也没有标注需要目标。act1multi_rm05 的装置 trap_014_tower（L-44\"留声机\"）不在内容的装置说明里。冬灵血巫的页面写死亡爆炸「同时清空范围内L-44\"留声机\"的SP并夺取其控制权」，是另一项能力，黑板同样是 { sp: -1 }。",
     "status": "待查证"
+  },
+  {
+    "id": "INF-1120",
+    "clause": "兼容-4",
+    "statement": "kit 的屏障或护盾层把一次伤害整个吸收（剩下 0）时，这一下不扣除生命，也没有 `damaged`（伤害-7 第 9 步只在剩下的伤害大于 0 时有）：kit 的 `damaged` 处理函数看不到它，兼容层不补发。",
+    "basis": "Stronghold v0.3.1 的 server/sim/damage.js dealDamage 在 absorbShields 之后总是调用 applyHpLoss，后者以剩下的量（可以是 0）发 damaged；hpDamage 两边都只在剩下大于 0 时发。固定提交里靠被整个吸收的那一下的 kit：林「计出万全」在 damaged 里把琉璃璧补满（`!(c.amount > 0)`），「韬光」对它也抽技力；斥罪「荆棘环身」对它也反击；年 PRO-X 每破一层护盾的攻防与技力在 damaged 里算，S2「铜印」的反击也在 damaged 里；机械师 S2 的屏障被打破（超额防护把那一下改成 0）后，爆发和新的屏障在 damaged 里给。这里它们要等下一次扣除生命的伤害，或者不发生。以 0 补发要引擎在伤判之后另有一个事件，不在本条。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-1121",
+    "clause": "兼容-4",
+    "statement": "kit 的屏障或护盾层用完、按 伤害-8 由引擎去掉时，不调用 kit 给这个增益的 `onRemove`；kit 自己去掉它（`removeBuff`）时才调用（兼容-4）。",
+    "basis": "Stronghold v0.3.1 的 server/sim/damage.js absorbShields 用 battle._removeBuffAt(target, i) 去掉用完的增益，它的 callRemove 默认为真，于是调用 onRemove。引擎去掉增益时不执行行为（状态-1：移除不是到期），伤判里也没有回到兼容层的回调。固定提交里受影响的：闪灵 S2、夜莺 S2 的屏障（op-shining.js grantBarrier）在最后一个被打破时由 onRemove 去掉防御力、法术抗性的加成，这里加成到它自己的时间结束；机械师 S2 的屏障被打破时由 onRemove 记下，S2 的破裂效果因此不发生（它也要 INF-1120 的 damaged）。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-1122",
+    "clause": "兼容-4",
+    "statement": "kit 给的持久（`persist`）屏障与护盾层，单位每次部署时按 kit 给的量重新给上，不是离场时剩下的。",
+    "basis": "兼容层记下的持久增益是 kit 给的说明，部署时重新造（兼容-4「部署」）。Stronghold v0.3.1 的 server/sim/battle/deploy.js 在单位离场时留下持久的增益对象本身，下次部署接着用，剩下的屏障量和层数也跟着留下。固定提交的 72 个干员 kit 都不给持久的屏障或护盾层。",
+    "status": "待查证"
   }
 ]

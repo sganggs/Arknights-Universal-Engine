@@ -9,6 +9,7 @@ import { withGrid } from './grid.js';
 import { ShUnit } from './unit.js';
 import { STATUS_NAME, ELEMENT_NAME, statusKeyOf, modsOf, flagsOf, buffKeyOf } from './mods.js';
 import { KIT_BUFF, hooksOf, runHook } from './buffhooks.js';
+import { shieldOf, raiseMerged } from './shields.js';
 import { STAND_INS, giveStandIn } from './standins.js';
 import { ShProjectiles } from './projectiles.js';
 import * as field from './field.js';
@@ -372,10 +373,12 @@ export class ShBattle {
     const h = hooksOf(spec);
     const b = buffs.makeBuff({ key: spec.key, src: spec.source?.u?.id ?? -1, rule: /** @type {any} */ (RULES[spec.refresh] ?? 'queue'), mods: modsOf(spec.mods),
       flags: flagsOf(spec.flags), stacks: spec.stacks ?? 1, maxStacks: spec.maxStacks ?? 1, left: framesLeft(spec.duration),
-      ...(h ? { act: KIT_BUFF, every: h.every, fixed: true } : {}) });
+      ...(h ? { act: KIT_BUFF, every: h.every, fixed: true } : {}),
+      // its barrier, layers and their type (shields.js; after the flags: they may come with the one that keeps them spent)
+      ...shieldOf(spec) });
     if (spec.data !== undefined) this.buffData.set(b, spec.data);
     if (h) this.buffHooks.set(b, h.hooks);
-    buffs.addBuff(u, b);
+    raiseMerged(u, buffs.addBuff(u, b), b, spec.refresh);
   }
 
   /**
