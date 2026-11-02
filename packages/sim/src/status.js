@@ -8,6 +8,7 @@ import { liftoffRefused } from './targeting.js';
 import { makeBuff, addBuff, removeBuff, consumeStack, count, decayRate } from './buffs.js';
 import { emit, hasHook } from './bus.js';
 import { noteFear, noteAttract } from './induce.js';
+import { heldBefore, announce, palsyKept } from './hookmore.js';
 
 /** @typedef {import('./types.js').Unit} Unit @typedef {import('./types.js').Buff} Buff */
 /** @typedef {import('./attrs.js').Stats} Stats */
@@ -156,16 +157,27 @@ export function applyStatus(target, key, o = {}) {
 /**
  * A status in a battle (状态-5, 钩子-3): refused for 起飞 before the event (阻挡-2); then the `beforeStatus` event — a
  * handler may cancel it, change its frames (−1 for no end; none left cancels it) or its strength (the status's value) —
- * then the status. Taking off inside the handler does not cancel it: the check already passed.
+ * then the status, and the `statusApplied` event when it took hold (钩子-5). Taking off inside the handler does not
+ * cancel it: the check already passed.
  * @param {import('./types.js').World} w @param {Unit} target @param {StatusKey} key @param {StatusOptions} [o] @returns {Buff | null}
  */
 export function inflict(w, target, key, o = {}) {
   if (liftoffRefused(o.src ?? null, target)) return null;
-  if (!hasHook(w, 'beforeStatus')) return giveStatus(target, key, o);
+  if (!hasHook(w, 'beforeStatus')) return given(w, target, key, o);
   const k = emit(w, 'beforeStatus', { source: o.src ?? null, target, status: key, frames: framesOf(o), strength: o.value, cancel: false });
   const frames = Number.isFinite(k.frames) ? Math.trunc(k.frames) : framesOf(o);
   if (k.cancel || target.hp <= 0 || (frames <= 0 && frames !== -1)) return null;
-  return giveStatus(target, key, { ...o, frames, seconds: undefined, value: k.strength });
+  return given(w, target, key, { ...o, frames, seconds: undefined, value: k.strength });
+}
+
+/**
+ * A battle's status given (状态-5), then its `statusApplied` event when it took hold (钩子-5): `entered` compares with
+ * the statuses held just before, after any `beforeStatus` handler.
+ * @param {import('./types.js').World} w @param {Unit} target @param {StatusKey} key @param {StatusOptions} o @returns {Buff | null}
+ */
+function given(w, target, key, o) {
+  const had = heldBefore(w, target);
+  return announce(w, target, o.src ?? null, had, giveStatus(target, key, o));
 }
 
 /** 麻痹 loses a layer every this many frames at a 综合抵抗衰减率 of 1 (状态-8: 10 s). */
@@ -192,14 +204,15 @@ const palsyDecay = {
 export const STATUS_BEHAVIORS = Object.freeze({ palsy: palsyDecay });
 
 /**
- * 麻痹 at an enemy's attack (状态-8): when its 麻痹 takes effect, one layer goes, the enemy gets 0.5 s of 麻痹震颤 and
- * the attack is interrupted. Returns whether it was.
- * @param {Unit} e
+ * 麻痹 at an enemy's attack (状态-8): when its 麻痹 takes effect, one layer goes — unless, in a battle `w`, a handler of
+ * the `palsyTrigger` event keeps it (钩子-5) —, the enemy gets 0.5 s of 麻痹震颤 and the attack is interrupted.
+ * Returns whether it was.
+ * @param {Unit} e @param {import('./types.js').World} [w]
  */
-export function palsyInterrupts(e) {
+export function palsyInterrupts(e, w) {
   const b = e.kind === KIND.ENEMY && statsOf(e).flags.palsy ? e.buffs.find((x) => x.key === 'palsy') : undefined;
   if (!b) return false;
-  consumeStack(e, b);
+  if (!w || !palsyKept(w, e, b)) consumeStack(e, b);
   applyStatus(e, 'palsyShake', { frames: PALSY_SHAKE_FRAMES });
   return true;
 }

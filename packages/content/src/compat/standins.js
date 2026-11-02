@@ -1,7 +1,8 @@
 // Stronghold's statuses that have no counterpart among the official abnormal effects, so none in the engine's catalogue
 // (状态-5), as the compatibility layer's stand-ins (docs/spec/compat.md 兼容-4): a buff of the status's own key with
 // Stronghold's modifiers that keeps the strongest value (状态-2 `max`, its value as its data), given after the same
-// `beforeStatus` event (钩子-3) as the engine's statuses — a handler may cancel it or change its frames or its value.
+// `beforeStatus` event (钩子-3) as the engine's statuses — a handler may cancel it or change its frames or its value —
+// and followed by the same `statusApplied` (钩子-5).
 import { secondsToFrames } from '@aue/math';
 import { bus, buffs } from '@aue/sim';
 
@@ -32,6 +33,16 @@ export function giveStandIn(b, target, key, o) {
   if (k.cancel || u.hp <= 0 || (frames <= 0 && frames !== -1) || !Number.isFinite(v)) return false;
   const buff = buffs.makeBuff({ key, src: src ? src.id : -1, rule: 'max', value: v, mods: s.mods(v), left: frames });
   b.buffData.set(buff, { value: v });
+  const entered = !u.buffs.some((x) => x.key === key);
   buffs.addBuff(u, buff);
+  announce(b, { source: src, target: u, status: key, frames, strength: v, entered });
   return true;
+}
+
+/**
+ * A stand-in that took hold: the `statusApplied` event the engine's statuses have (钩子-5), when it has a handler.
+ * @param {ShBattle} b @param {{ source: Unit | null, target: Unit, status: string, frames: number, strength: number, entered: boolean }} k
+ */
+function announce(b, k) {
+  if (bus.hasHook(b.w, 'statusApplied')) bus.emit(b.w, 'statusApplied', k);
 }

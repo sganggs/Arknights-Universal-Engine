@@ -38,6 +38,7 @@ import { sameTargetStep, attackerHit, critScale, powerAttack, ammoChance } from 
 import { timedAttack, attackEnded } from './talenttime.js';
 import { lowestArts } from './talentfoe.js';
 import { palsyCut, epOnHit, healDotOn } from './talentelem.js';
+import { strikes, swingLost } from './hookmore.js';
 
 /** @typedef {import('./types.js').World} World @typedef {import('./types.js').Unit} Unit @typedef {import('./types.js').Content} Content */
 /** @typedef {import('./types.js').Cell} Cell @typedef {import('./attrs.js').Stats} Stats */
@@ -444,12 +445,14 @@ function deliverAll(w, c, a, sw, heals) {
  * that answer it, 职业-29); the locked
  * targets still on the field and alive take it — out of range or not — as hits, a healer's heals (职业-2), or the
  * projectiles a ranged attacker launches; then an operator's skill counts the attack (技能-2, 技能-4).
+ * Before 麻痹 is looked at, an enemy's sends `enemyAttackStart`, whose handlers may cancel it (钩子-5).
  * @param {World} w @param {Content} c @param {Unit} a
  */
 function land(w, c, a) {
   const sw = /** @type {Swing} */ (a.swing);
   a.swing = null;
-  if (palsyInterrupts(a)) { a.anim = ANIM.IDLE; palsyCut(w, c, a); return; }
+  if (!strikes(w, a, sw)) { a.anim = ANIM.IDLE; return; }
+  if (palsyInterrupts(a, w)) { a.anim = ANIM.IDLE; palsyCut(w, c, a); return; }
   const op = a.kind === KIND.OPERATOR, heals = op && (healerNow(c, a) || !!sw.mods.heal);
   if (op) attackEnded(w, a);
   const reached = deliverAll(w, c, a, sw, !!heals);
@@ -555,7 +558,7 @@ function advanceSwing(w, c, a) {
   sw.wind--;
   sw.since++;
   if (sw.wind <= 0) { land(w, c, a); return; }
-  if (sw.since >= PALSY_CUT_FRAMES && palsyInterrupts(a)) { a.swing = null; a.anim = ANIM.IDLE; palsyCut(w, c, a); }
+  if (sw.since >= PALSY_CUT_FRAMES && palsyInterrupts(a, w)) { a.swing = null; a.anim = ANIM.IDLE; palsyCut(w, c, a); }
 }
 
 /**
@@ -792,7 +795,7 @@ function takeHold(e) {
 export function enemyAttack(w, c, e) {
   const s = statsOf(e);
   // 恐惧 cancels a swing already under way, unlike 战栗 (状态-10, INF-0293). It is not one of the eight 阻止攻击 flags.
-  if (s.disabled || s.atk <= 0 || e.hidden || s.flags.noAttack || s.flags.fear) { e.swing = null; return false; }
+  if (swingLost(e, s)) { e.swing = null; return false; }
   const swinging = e.swing !== null;
   if (e.swing) advanceSwing(w, c, e);
   takeAgain(e);

@@ -87,3 +87,14 @@ kit 为技能写的说明（Stronghold 的 SkillSpec）接到引擎的技能运�
 - **对局内容**：有 kit 的干员用 kit：它的记录去掉天赋部分（天赋由 kit 施加；傀儡师替身的不攻击与光环也去掉，替身的范围保留，职业-16），它的队伍天赋不由引擎再给；kit 的每局挂接与技能行为（兼容-4、兼容-5）加进内容。内容记下固定提交与所用的 kit（按角色 id 排序），这一项计入内容哈希（同步-10）：两端载入的 kit 不同，就不开局。
 
 - 来源：设计决定，见 [ADR 0058](../adr/0058-stronghold-kits-in-matches.md)、[ADR 0010](../adr/0010-import-mapping-table.md)；固定提交里 72 个文件各自导出它那名干员的 kit；载入推进之王后，她的对局内容不含天赋字段，部署后由 kit 给出两项天赋（`packages/content/test/compat-match.test.js`）；2026-10-15 的第二次全量对照（当时的对照是 v0.2.4）中 65 个 kit 的所有技能与 Stronghold 一致；其余 7 个各自的差异都来自已登记的差异（DIF-0001、DIF-0023、DIF-0030、DIF-0032、DIF-0033、DIF-0035、DIF-0036），按用户的决定记下预期差异后启用——72 个全部启用。钉到 v0.3.1 后重跑：这 7 条预期差异一行未变；澄闪三个技能的普通攻击在 Stronghold 侧多出一记不乘浮游倍率的本体伤害（DIF-0037，职业-12），记下后 72 个仍全部启用（`packages/content/test/compat-diff.test.js`）；kit 自己实现模组：固定提交里 op-crosly.js「the trait and both modules (EXE-X 弑君刃, EXE-Y 木炭画)」以 `trait:crosly:lonely` 实现 EXE-Y「周围四格没有友方干员时攻击力+10%」，op-shwaz.js 实现 ARC-Y、op-lin.js 实现 PLX-Y、op-mantra.js 实现 PRI-X
+
+### 兼容-7 kit 的状态生效、敌人出手与麻痹事件
+
+钩子-5 的三个事件给 kit 的上下文同 Stronghold：
+
+- **`statusApplied`**：`source`、`target` 是 kit 看到的单位（兼容-4）；`status` 用 Stronghold 的名字（`bind`、`resist`、`tremble`；敌人施加的寒冷、冻结也是 `cold`、`freeze`）；`duration` 为秒（剩余帧数 × 1/30，无期限为 `Infinity`）——抵抗与重量在引擎里按衰减率缩短状态（状态-3、状态-5），不在这个数里，Stronghold 的是施加时乘过的（抵抗见 DIF-0006）；`value` 为数值；`entered` 同引擎。免疫的目标也发（钩子-5），Stronghold 免疫时不施加，也就不发（DIF-0012）。兼容层代用的状态（`defDown`，兼容-4）生效后同样发，`entered` 为施加前目标没有这个键的增益。
+- **`enemyAttackStart`**：`enemy` 和 `targets` 是 kit 看到的单位。kit 在这里让敌人晕眩、倒下（或 钩子-5 列出的别的情形）时，这次攻击取消。
+- **`palsyTrigger`**：`enemy`；`buff` 是 kit 看到的麻痹增益（层数、剩余时间……，兼容-4）；`keep` 直接读写引擎的上下文，设为是时这一层不消耗。
+- 固定版本（v0.3.1）的 72 个干员 kit 里，酒神的「堕梦」用 `enemyAttackStart`，真言的「噤声限域」用 `palsyTrigger` 和 `keep`；`statusApplied` 干员 kit 不用：Stronghold 里用它的是棋子 kit、驻防的代码（盟约）和把它转给敌人能力的 `content/enemies.js`，兼容层都不载入。Stronghold 让内容把已有的状态当作新进入的选项（`reenter`，棋子 kit 缇缇）不提供。
+
+- 来源：设计决定，见 [ADR 0057](../adr/0057-hook-bus-and-timers.md)（事件名沿用 Stronghold 的，兼容层把上下文转成它的形状）；上下文的字段与含义取自 Stronghold v0.3.1 的 `docs/SIM.md` §5、`server/sim/battle/status.js`、`server/sim/ai.js`（GPL-3.0-or-later）；固定版本里真言、酒神的 kit 原样载入，在小关卡中：麻痹打断敌人的攻击时真言的「噤声限域」按她当前的攻击力造成元素伤害，几率取 1 时不消耗那一层、取 0 时消耗；敌人的攻击落下时，酒神攻击范围内的敌人受到「堕梦」的神经损伤，它引起的爆发打断这次攻击（`packages/content/test/compat-morehooks.test.js`）
