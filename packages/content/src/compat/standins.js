@@ -1,10 +1,10 @@
 // Stronghold's statuses that have no counterpart among the official abnormal effects, so none in the engine's catalogue
 // (状态-5), as the compatibility layer's stand-ins (docs/spec/compat.md 兼容-4): a buff of the status's own key with
 // Stronghold's modifiers that keeps the strongest value (状态-2 `max`, its value as its data), given after the same
-// 反隐 is no abnormal effect either (PRTS 异常效果: 隐匿免疫, an immunity; its old flag is unused): its stand-in carries
-// the engine's own 反隐 flag (索敌-2) and keeps the longer time, as Stronghold refreshes a status.
 // `beforeStatus` event (钩子-3) as the engine's statuses — a handler may cancel it or change its frames or its value —
 // and followed by the same `statusApplied` (钩子-5).
+// 反隐 is no abnormal effect either (PRTS 异常效果: 隐匿免疫, an immunity; its old flag is unused): its stand-in carries
+// the engine's own 反隐 flag (索敌-2) and keeps the longer time, as Stronghold refreshes a status.
 import { secondsToFrames } from '@aue/math';
 import { bus, buffs } from '@aue/sim';
 
