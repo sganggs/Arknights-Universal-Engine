@@ -255,8 +255,8 @@
     "id": "INF-0037",
     "clause": "元素-3",
     "statement": "元素爆发造成的伤害不能被闪避。",
-    "basis": "PRTS「元素」只说爆发「通常造成无来源的伤害」，没有提闪避。爆发伤害不是攻击；Stronghold（server/sim/damage.js resolveBurst）同样设为 canDodge: false。",
-    "status": "待查证"
+    "basis": "PRTS「元素」只说爆发「通常造成无来源的伤害」，没有提闪避。爆发伤害不是攻击；Stronghold（server/sim/damage.js resolveBurst）同样设为 canDodge: false。 —— 已推翻：ArknightsGameData 17759cc8 battle/buff_template_data.json 里爆发的伤害都是 NoSourceDamage，_ignoreCancelReasonMask 为 NONE，什么取消都不免（干员的 ep_break_water_char、ep_break_fire_char、ep_break_sanity_char、ep_break_anger_char 和凋亡每秒的 periodic_magic_damage；其他单位的 ep_break_sanity_enemy、ep_break_water_enemy、ep_break_fire_enemy 和 periodic_element_damage）。同是 NoSourceDamage 的 logos_s_1、entlec_a[damage] 写 MISS 等；虎狼丸 kormr_t[attack] 的 MISS 就是 character_table char_4220_kormr 的天赋「黑色猎犬·I」至「黑色猎犬·VI」的「无视闪避的斩击」。元素-3 改为按伤害类型照常闪避（元素-4 列出各元素）；爆发的伤害算近战途径改记为 INF-1160。",
+    "status": "已推翻"
   },
   {
     "id": "INF-0038",
@@ -6241,6 +6241,13 @@
     "clause": "状态-7",
     "statement": "冻结免疫只让冻结的标记 freeze 不生效：带着它的冻结 Buff 留在列表里，友方冻结的法术抗性 −15 在免疫期间照常计入。",
     "basis": "PRTS「异常效果」oldid=422666 写「术语冻结的法抗增减为Buff效果，非异常效果冻结本身的效果」，而异常免疫只让异常效果不生效。游戏数据 battle/buff_template_data.json 的 c2e_freeze[holder] 只在持有者的 FROZEN 生效时建派生的 c2e_freeze、不生效时结束它，这可能说明 −15 也随冻结的标记；但 −15 在哪个 Buff 上不在数据里（两者都从 Buff 数据库读取）。本条不改冻结，沿用原来的做法。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-1160",
+    "clause": "元素-3",
+    "statement": "爆发造成的伤害不是弹道的，按 伤害-12 算近战途径：近战物理闪避（dodgeMelee）也闪避侵蚀给干员的 800 点物理伤害。",
+    "basis": "数据的 NoSourceDamage 只有伤害类型（_damageType）和攻击类型（_attackType），没有伤害途径，爆发的伤害存成哪种途径没有写明。PRTS「作战机制」oldid=428460「判定机制意外举例」的「因陀罗闪榴莲针」写远近「用两位二进制数存储，无是00(0)，近战是01(1)，远程是10(2)」，判定时「用检测条件与远近数据进行“与”运算，之后看是否有变化，无变化则认为是近战」，阿的伤害「伤害类型为00（无），01&00=00，无变化，所以被认成了近战，于是触发了闪避」，又「有弹道的攻击固定为10，无弹道的攻击固定为01」：爆发的伤害不论存成没有途径（00）还是没有弹道（01），近战的闪避判定都把它认作近战。",
     "status": "待查证"
   }
 ]

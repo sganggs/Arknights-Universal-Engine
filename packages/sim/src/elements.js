@@ -144,12 +144,13 @@ export function epRegenAll(w) {
 }
 
 /**
- * Burst damage (元素-4): 无来源, credited to the burst's source (伤害-7 `sourceless`), cannot be dodged; dealt with the
- * content, so the target's 伤判 runs the content's behaviours on it as on any hit (伤害-8).
+ * Burst damage (元素-4): 无来源, credited to the burst's source (伤害-7 `sourceless`); dodged as any hit of its type (元素-3:
+ * the official bursts deal it with no cancellation mask), with no source whose hit rate or `ignoreDodgePhys` could count;
+ * dealt with the content, so the target's 伤判 runs the content's behaviours on it as on any hit (伤害-8).
  * @param {World} w @param {Unit} u @param {import('./types.js').DamageType} type @param {number} amount
  * @param {{ src: Unit | null, c: Content | undefined }} by the burst's source and the content
  */
-const burstHit = (w, u, type, amount, by) => { dealDamage(w, by.src, u, { type, amount, canDodge: false, sourceless: true }, by.c); };
+const burstHit = (w, u, type, amount, by) => { dealDamage(w, by.src, u, { type, amount, sourceless: true }, by.c); };
 
 /** The source of a burst buff while it is on the field, or null. @param {World} w @param {Buff} b */
 const sourceOf = (w, b) => (b.src >= 0 ? w.units.find((x) => x.id === b.src) ?? null : null);
