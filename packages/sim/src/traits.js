@@ -8,7 +8,7 @@ import { makeBuff, addBuff, removeBuff } from './buffs.js';
 import { inflict } from './status.js';
 import { dealDamage, heal } from './damage.js';
 import { draw } from './rng.js';
-import { dealEp } from './elements.js';
+import { dealEpFrom } from './elements.js';
 import { vsDamage, vsHeal, vsEp } from './vs.js';
 import { afterOwnHit } from './riders.js';
 import { talentKill, talentDealt, dotOnHit } from './talentfx.js';
@@ -199,7 +199,7 @@ export function actorContext(w, c, op, bb) {
     removeBuff: (t, key) => { removeBuff(t, key); },
     applyStatus: (t, key, o) => { inflict(w, t, key, { ...o, src: op }); },
     dealDamage: (t, dmg) => creditedDamage(w, c, op, t, dmg),
-    dealEp: (t, el, amount) => dealEp(w, t, el, amount * vsEp(w, c, op, t), op),
+    dealEp: (t, el, amount) => dealEpFrom(w, t, el, amount * vsEp(w, c, op, t), { src: op, c }),
     heal: (t, amount) => heal(w, op, t, amount * vsHeal(w, c, op, t)),
     gainCost: (n) => { gainCost(w, c, op.owner, n); },
   };
@@ -260,7 +260,7 @@ export function traitDeploy(w, c, op) {
 export function traitHit(w, c, op, target) {
   const t = traitOf(c, op);
   if (t.hitStatus && target.hp > 0) inflict(w, target, t.hitStatus.key, { seconds: t.hitStatus.seconds + (t.hitStatus.key === 'sluggish' ? t.hitStatusPlus : 0), src: op, ...(t.hitStatus.value !== undefined ? { value: t.hitStatus.value } : {}) });
-  t.onHit.forEach((h, i) => { if ((h.when !== 'beyondRange' || !inBaseRange(c, op, target)) && (h.during === undefined || w.frame - op.born < secondsToFrames(h.during))) talentHit(w, op, target, { h, i }); });
+  t.onHit.forEach((h, i) => { if ((h.when !== 'beyondRange' || !inBaseRange(c, op, target)) && (h.during === undefined || w.frame - op.born < secondsToFrames(h.during))) talentHit(w, c, op, target, { h, i }); });
   behaviorOf(c, op)?.hit?.(contextOf(w, c, op), target);
 }
 
@@ -275,10 +275,10 @@ function inBaseRange(c, op, t) {
  * unit, for one that says so): once on each enemy for a
  * `first` one — the target keeps a buff `seen:<operator id>:<n>` without an end —; at its chance (one draw) when it has
  * one; its status (状态-5), or its modifiers for its seconds as a buff `talentHit:<operator id>:<n>`, the time starting
- * again at each hit; its damage over time (dotOnHit).
- * @param {World} w @param {Unit} op @param {Unit} target @param {{ h: import('./types.js').TalentHit, i: number }} at
+ * again at each hit; its damage over time (dotOnHit); its 元素损伤, with the content for a burst it sets off (伤害-8).
+ * @param {World} w @param {Content} c @param {Unit} op @param {Unit} target @param {{ h: import('./types.js').TalentHit, i: number }} at
  */
-function talentHit(w, op, target, { h, i }) {
+function talentHit(w, c, op, target, { h, i }) {
   if (target.hp <= 0 || (h.when === 'unblocked' && target.blockedBy >= 0)) return;
   if (h.first) {
     const seen = `seen:${op.id}:${i}`;
@@ -293,7 +293,7 @@ function talentHit(w, op, target, { h, i }) {
     addBuff(target, makeBuff({ key, src: op.id, left: secondsToFrames(h.debuff.seconds), mods: h.debuff.mods }));
   }
   if (h.dot) dotOnHit(op, target, h.dot, i);
-  if (h.ep && target.hp > 0) dealEp(w, target, /** @type {import('./elements.js').Element} */ (h.ep.el), h.ep.amount, op);
+  if (h.ep && target.hp > 0) dealEpFrom(w, target, /** @type {import('./elements.js').Element} */ (h.ep.el), h.ep.amount, { src: op, c });
 }
 
 /**

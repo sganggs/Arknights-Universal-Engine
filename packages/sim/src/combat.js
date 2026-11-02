@@ -26,7 +26,7 @@ import { tickSkill, beforeAttack, attackMods, afterAttack } from './skills.js';
 import { skillCounter } from './skilltext.js';
 import { palsyInterrupts, inflict } from './status.js';
 import { draw } from './rng.js';
-import { dealEp, rampageAttack, restoreEp } from './elements.js';
+import { dealEpFrom, rampageAttack, restoreEp } from './elements.js';
 import { mayAttack, healsNow, healerNow, inSkill, skillIdle, holdFrames, modeMods, releaseEnergy, healOrder, funnelScale, fortressTargets, fortressSplash } from './modes.js';
 import { traitOf, traitOfDef, traitTargets, traitHit, traitKill, traitDealt, traitAsk, traitSkip, summonHeld, dollNow } from './traits.js';
 import { timingOf, windupFrames, shoots, launch, flyShots, boomerangOut, PALSY_CUT_FRAMES } from './swing.js';
@@ -227,7 +227,7 @@ function oneHit(w, c, src, t, load) {
   if (op) traitDealt(w, c, op, t, { dmg, taken: dealt });
   if (dealt > 0) afterDamage(w, c, { src, t, dealt, ranged: !!load.ranged });
   if (op && alive && t.hp <= 0) traitKill(w, c, op, t);
-  if (el && load.ep > 0) dealEp(w, t, el, load.ep * vsEp(w, c, src, t), src);
+  if (el && load.ep > 0) dealEpFrom(w, t, el, load.ep * vsEp(w, c, src, t), { src, c });
   if (alive && t.hp > 0) hitEffects(w, t, load, src);
   if (op && alive) traitHit(w, c, op, t);
   ridesOn(w, c, { src, t, load }, dmg, dealt);

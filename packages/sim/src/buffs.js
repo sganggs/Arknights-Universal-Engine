@@ -13,9 +13,10 @@ import { statsOf, maxHpOf } from './attrs.js';
  */
 
 /**
- * What a buff does on its triggers, when it ends, and during its own 伤判 (伤害-8), by key. Its expiry gets the content,
- * so damage it deals takes the content's part of the path (tags, buff behaviours) as the hits of abilities do.
- * @typedef {{ tick?: (w: World, u: Unit, b: Buff) => void, expire?: (w: World, u: Unit, b: Buff, c?: import('./types.js').Content) => void, take?: (w: World, u: Unit, b: Buff, amount: number, hit: TakeHit) => number }} Behavior
+ * What a buff does on its triggers, when it ends, and during its own 伤判 (伤害-8), by key. Its triggers and its expiry
+ * get the content, so damage they deal takes the content's part of the path (tags, buff behaviours) as the hits of
+ * abilities do.
+ * @typedef {{ tick?: (w: World, u: Unit, b: Buff, c?: import('./types.js').Content) => void, expire?: (w: World, u: Unit, b: Buff, c?: import('./types.js').Content) => void, take?: (w: World, u: Unit, b: Buff, amount: number, hit: TakeHit) => number }} Behavior
  */
 
 /** @typedef {Partial<Buff> & { key: string }} BuffInit */
@@ -178,14 +179,14 @@ export function removeTagged(u, key, tag) {
 export const decayRate = (b, statusRes) => (b.resist ? b.decay / statusRes : b.decay);
 
 /**
- * Advances a buff's triggers by `step` frames of progress and runs each trigger that comes due (状态-4).
- * @param {World} w @param {Unit} u @param {Buff} b @param {number} step @param {Behavior | undefined} beh
+ * Runs each trigger of a buff that its progress has made due (状态-4), while the buff is still on the unit; each trigger
+ * gets the content, as the expiry does.
+ * @param {World} w @param {Unit} u @param {Buff} b @param {Behavior | undefined} beh @param {import('./types.js').Content} [c]
  */
-function advance(w, u, b, step, beh) {
-  b.acc += step;
+function runDue(w, u, b, beh, c) {
   while (b.acc >= b.every) {
     b.acc -= b.every;
-    beh?.tick?.(w, u, b);
+    beh?.tick?.(w, u, b, c);
     if (!u.buffs.includes(b)) return;
   }
 }
@@ -202,7 +203,10 @@ export function tickUnitBuffs(w, u, behaviors, c) {
   for (const b of list) {
     if (!u.buffs.includes(b)) continue;
     const rate = decayRate(b, statusRes), act = b.act || b.key, beh = Object.hasOwn(behaviors, act) ? behaviors[act] : undefined;
-    if (b.every > 0) advance(w, u, b, b.fixed ? 1 : rate, beh);
+    if (b.every > 0) {
+      b.acc += b.fixed ? 1 : rate;
+      runDue(w, u, b, beh, c);
+    }
     if (b.left < 0 || !u.buffs.includes(b)) continue;
     b.left -= rate;
     if (b.left > 0) continue;
