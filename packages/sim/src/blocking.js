@@ -10,6 +10,7 @@ import { BLOCK_RADIUS_SQ } from './constants.js';
 import { friendly } from './targeting.js';
 import { sameGround } from './works.js';
 import { makeBuff, addBuff, setLeft, removeBuff } from './buffs.js';
+import { emit, hasHook } from './bus.js';
 
 /** @typedef {import('./types.js').World} World @typedef {import('./types.js').Unit} Unit @typedef {import('./types.js').Content} Content */
 /** @typedef {import('./attrs.js').Stats} Stats */
@@ -144,8 +145,8 @@ function radiusSq(os, flying) {
 
 /**
  * Blocks an enemy if it can be (阻挡-1): of the units that may take it and whose own block radius it is inside —
- * (dx² + dy²) < r², r² from 常量-3 for that unit — the nearest, the earliest created of equals. Returns whether the
- * enemy is blocked.
+ * (dx² + dy²) < r², r² from 常量-3 for that unit — the nearest, the earliest created of equals. A new block is announced
+ * once it has taken hold (钩子-6: `blocked`); a handler may let the enemy go again. Returns whether the enemy is blocked.
  * @param {World} w @param {Content} c @param {Unit} e
  */
 export function tryBlock(w, c, e) {
@@ -164,7 +165,8 @@ export function tryBlock(w, c, e) {
   e.blockedAt = w.frame;
   turnLR(e, best.x - e.x);
   deployOffset(w, best, e);
-  return true;
+  if (hasHook(w, 'blocked')) emit(w, 'blocked', { blocker: best, enemy: e });
+  return e.blockedBy >= 0;
 }
 
 /**

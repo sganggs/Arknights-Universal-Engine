@@ -75,6 +75,17 @@ const SHAPES = {
   beforeStatus: (b, k) => ({ source: sh(b, k.source), target: sh(b, k.target), status: STATUS_NAME[k.status] ?? k.status,
     get duration() { return k.frames < 0 ? Infinity : k.frames * TICK; }, set duration(v) { k.frames = v === Infinity ? -1 : secondsToFrames(Math.max(0, Number(v) || 0)); },
     get value() { return k.strength; }, set value(v) { k.strength = v; }, get cancel() { return k.cancel; }, set cancel(v) { k.cancel = v; } }),
+  blocked: (b, k) => ({ blocker: sh(b, k.blocker), enemy: sh(b, k.enemy) }),
+};
+
+/**
+ * A kit's own emit of an engine event, as the engine's context (兼容-4): its units back to the engine's, so that every
+ * handler — a kit's through SHAPES, the engine's or a native one — sees the shape it expects. Stronghold's 酒神 kit
+ * sends `blocked` when its 牢笼 blocks the enemies on its tile (钩子-6: a block content makes sends none itself).
+ * @type {Record<string, (ctx: Record<string, any>) => Record<string, any>>}
+ */
+const KIT_EMITS = {
+  blocked: (ctx) => ({ blocker: ctx.blocker?.u ?? null, enemy: ctx.enemy?.u ?? null }),
 };
 
 /**
@@ -213,8 +224,12 @@ export class ShBattle {
   offOwner(owner) { bus.offOwner(this.w, owner); }
   /** @param {string} name */
   hasHook(name) { return bus.hasHook(this.w, name); }
-  /** A custom event. @param {string} name @param {Record<string, any>} ctx */
-  emit(name, ctx) { return bus.emit(this.w, name, ctx); }
+  /** A custom event, or an engine event a kit sends itself (KIT_EMITS). @param {string} name @param {Record<string, any>} ctx */
+  emit(name, ctx) {
+    if (!Object.hasOwn(KIT_EMITS, name)) return bus.emit(this.w, name, ctx);
+    bus.emit(this.w, name, KIT_EMITS[name](ctx));
+    return ctx;
+  }
 
   /** @param {number} seconds @param {(b: ShBattle, s: any) => void} fn @param {{ owner?: unknown }} [o] */
   after(seconds, fn, o = {}) {

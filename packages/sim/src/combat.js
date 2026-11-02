@@ -38,6 +38,7 @@ import { sameTargetStep, attackerHit, critScale, powerAttack, ammoChance } from 
 import { timedAttack, attackEnded } from './talenttime.js';
 import { lowestArts } from './talentfoe.js';
 import { palsyCut, epOnHit, healDotOn } from './talentelem.js';
+import { healable, healHow } from './healthrough.js';
 
 /** @typedef {import('./types.js').World} World @typedef {import('./types.js').Unit} Unit @typedef {import('./types.js').Content} Content */
 /** @typedef {import('./types.js').Cell} Cell @typedef {import('./attrs.js').Stats} Stats */
@@ -55,15 +56,16 @@ export function rangeCell(op, off) {
 /**
  * What an operator's normal attack can target, in the official order (索敌-1…索敌-3, 职业-1, 职业-2, 职业-12, 职业-14).
  * One that heals now: the operators in range that are not at full HP (or, restoring element values, have element
- * damage) and not under 禁疗, by 生命比例升序. Otherwise the selectable enemies with a tile in range (flying ones only
- * with 可对空) and, when the trait prefers them, the enemies it blocks wherever they stand, flying or not (阻挡-4), and,
- * when the trait reaches them, those its own summons block — ordered by the trait's filters.
+ * damage) and not under 禁疗 — unless it heals them through it (伤害-13) —, by 生命比例升序. Otherwise the selectable
+ * enemies with a tile in range (flying ones only with 可对空) and, when the trait prefers them, the enemies it blocks
+ * wherever they stand, flying or not (阻挡-4), and, when the trait reaches them, those its own summons block — ordered by
+ * the trait's filters.
  * @param {World} w @param {Content} c @param {Unit} op @returns {Unit[]}
  */
 export function targetsOf(w, c, op) {
   const grid = { rows: c.level.height, cols: c.level.width }, d = c.operators[op.key], t = traitOfDef(d);
   const keys = reachKeys(c, op);
-  if (healsNow(c, op)) return healOrder(c, op, w.units.filter((u) => u.kind === KIND.OPERATOR && u.hp > 0 && inKeys(u, keys, grid) && !statsOf(u).flags.healFree && !statsOf(u).flags.noAllyHeal));
+  if (healsNow(c, op)) return healOrder(c, op, w.units.filter((u) => u.kind === KIND.OPERATOR && u.hp > 0 && inKeys(u, keys, grid) && healable(w, c, op, u)));
   const held = (/** @type {Unit} */ u) => t.blockedFirst && u.blockedBy === op.id, air = t.idleAirOnly && !inSkill(op), sleep = t.hurtSleeping;
   const any = { canHitFly: true, canHitSleep: sleep, canHitStealth: t.seeStealth }, sel = { canHitFly: t.antiAir || !!dollNow(c, op)?.antiAir, canHitSleep: sleep, canHitStealth: t.seeStealth };
   const bySummon = t.summonBlocked ? summonHeld(w, op) : () => false, skip = talentSkip(c, op, traitSkip(w, c, op));
@@ -408,7 +410,7 @@ function jumpHits(w, c, src, t, load) {
  * A healer's heals on one target (职业-2, 职业-11, 职业-12), then a heal chain's on each operator it jumps to, at the
  * chain's share of the one before; each heal also restores element values by the trait's share of it (× its talents' on
  * a ground unit, 职业-31), gives the one healed its talents' SP for it (职业-25) and leaves their heal over time (职业-29);
- * what the talents give for any heal is the heal hook's (职业-33).
+ * what the talents give for any heal is the heal hook's (职业-33). One it heals through 禁疗 is healed through it (伤害-13).
  * @param {World} w @param {Content} c @param {Unit} a @param {Unit} t @param {{ load: Load, jumps: Unit[] }} how
  */
 function heals(w, c, a, t, how) {
@@ -416,7 +418,7 @@ function heals(w, c, a, t, how) {
   let amount = how.load.amount;
   for (const u of [t, ...how.jumps]) {
     for (let k = 0; k < how.load.times; k++) {
-      w.events.push({ type: 'heal', id: a.id, target: u.id, amount: heal(w, a, u, amount * vsHeal(w, c, a, u)) });
+      w.events.push({ type: 'heal', id: a.id, target: u.id, amount: heal(w, a, u, amount * vsHeal(w, c, a, u), healHow(w, c, a, u)) });
       if (ep > 0 && !statsOf(u).flags.healFree) restoreEp(u, amount * ep * epHealMul(c, a, u));
       talentSp(w, c, a, 'heal', u);
       healDotOn(c, a, u);
