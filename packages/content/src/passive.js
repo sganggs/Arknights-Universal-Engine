@@ -4,6 +4,8 @@
 
 // 家族灭迹人's shape (敌能-154) is covered and no hook here acts on it: eraser.js says why.
 import { eraserShape } from './eraser.js';
+// 转译基底's shape (敌能-158): each hook below hands it to translator.js and does nothing else with it.
+import { translatorShape, translatorSpawn, translatorTick, translatorTargets, translatorAttack } from './translator.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior */
 /** @typedef {import('@aue/sim').FoeContext} FoeContext */
@@ -62,11 +64,12 @@ const windShape = (bb) => exactKeys(bb, WIND_KEYS) && num(bb.radius);
  */
 export function passiveOwns(name, bb) {
   if (name !== 'Passive') return true;
-  return seedShape(bb) || armorShape(bb) || windShape(bb) || eraserShape(bb);
+  return seedShape(bb) || armorShape(bb) || windShape(bb) || eraserShape(bb) || translatorShape(bb);
 }
 
 /** 血珀: the four flags at once, then 10% of max HP as 生命流失 every second, the first a second after it appears. @param {FoeContext} ctx */
 function seedSpawn(ctx) {
+  if (translatorShape(bbOf(ctx))) { translatorSpawn(ctx); return; }
   if (windShape(bbOf(ctx))) ctx.addBuff(ctx.self, { key: 'tornado', flags: { ...WIND_FLAGS } });
   if (!seedShape(bbOf(ctx))) return;
   ctx.addBuff(ctx.self, { key: 'dseed', flags: { ...SEED_FLAGS } });
@@ -90,6 +93,7 @@ function windTick(ctx) {
 /** @param {FoeContext} ctx */
 function seedTick(ctx) {
   const bb = bbOf(ctx);
+  if (translatorShape(bb)) { translatorTick(ctx); return; }
   if (windShape(bb)) { windTick(ctx); return; }
   if (!seedShape(bb)) return;
   const due = ctx.state.get('due');
@@ -105,6 +109,7 @@ function seedTick(ctx) {
  * @param {FoeContext} ctx @param {Unit[]} cands @returns {Unit[]}
  */
 function armorTargets(ctx, cands) {
+  if (translatorShape(bbOf(ctx))) return translatorTargets(ctx, cands);
   if (!armorShape(bbOf(ctx)) || !ctx.blocked) return cands;
   const b = ctx.blocker();
   return b && cands.includes(b) ? [b] : [];
@@ -117,6 +122,7 @@ function armorTargets(ctx, cands) {
  */
 function armorAttack(ctx, mods) {
   const bb = bbOf(ctx);
+  if (translatorShape(bb)) return translatorAttack(ctx, mods);
   if (!armorShape(bb)) return mods;
   if (ctx.blocked) return { ...mods, direct: true, targets: 1 };
   const scale = /** @type {number} */ (bb['attack@ranged.atk_scale']);
