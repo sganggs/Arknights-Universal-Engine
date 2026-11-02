@@ -5,7 +5,7 @@ import { FPS, secondsToFrames } from '@aue/math';
 import { KIND } from '@aue/schema';
 import { statsOf } from './attrs.js';
 import { liftoffRefused } from './targeting.js';
-import { makeBuff, addBuff, count, retune } from './buffs.js';
+import { makeBuff, addBuff, count, retune, removeBuff } from './buffs.js';
 import { inflict } from './status.js';
 import { dealDamage } from './damage.js';
 import { loseSp } from './sp.js';
@@ -252,4 +252,16 @@ export const BURST_BEHAVIORS = Object.freeze(Object.fromEntries(ELEMENTS.map((el
 export function rampageAttack(u) {
   const b = u.buffs.find((x) => x.key === burstKey('ANGER'));
   if (b) count(b, 1);
+}
+
+/**
+ * A 移动 that keeps the rest (部署-9) still starts the element values afresh: it is a retreat and a deployment (PRTS
+ * 术语释义 移动), and a deployed unit has every value at its maximum and no burst (元素-1, INF-1170). A burst under way
+ * ends: its buff, the 爆发冷却 with what it carries (元素-3), is removed rather than expired; the buffs the burst gave
+ * at its start stay with the others (INF-1171).
+ * @param {Unit} u
+ */
+export function resetElements(u) {
+  for (const b of u.buffs.filter(isBurst)) removeBuff(u, b);
+  u.ep = {};
 }

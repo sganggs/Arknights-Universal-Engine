@@ -243,8 +243,9 @@ function mayMove(b, unit, r, c) {
 
 /**
  * Stronghold's moveRedeploy: a living ally's 移动 (部署-9) that keeps its buffs, skill and HP, as Stronghold's does
- * (DIF-0034); where it may not (mayMove), false and nothing changes. `clearSp`: its SP emptied first, unless a timed
- * skill runs. A new deployment of its piece (`deploySeq`).
+ * (DIF-0034) — unlike the pinned Stronghold, not its element values or a burst; where it may not (mayMove), false and
+ * nothing changes. `clearSp`: its SP emptied first, unless a timed skill runs. A new deployment of its piece
+ * (`deploySeq`).
  * @param {ShBattle} b @param {ShUnit} unit @param {number} r @param {number} c @param {{ clearSp?: boolean }} [o]
  */
 export function moveRedeploy(b, unit, r, c, o = {}) {

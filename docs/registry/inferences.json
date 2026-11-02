@@ -6249,5 +6249,19 @@
     "statement": "爆发造成的伤害不是弹道的，按 伤害-12 算近战途径：近战物理闪避（dodgeMelee）也闪避侵蚀给干员的 800 点物理伤害。",
     "basis": "数据的 NoSourceDamage 只有伤害类型（_damageType）和攻击类型（_attackType），没有伤害途径，爆发的伤害存成哪种途径没有写明。PRTS「作战机制」oldid=428460「判定机制意外举例」的「因陀罗闪榴莲针」写远近「用两位二进制数存储，无是00(0)，近战是01(1)，远程是10(2)」，判定时「用检测条件与远近数据进行“与”运算，之后看是否有变化，无变化则认为是近战」，阿的伤害「伤害类型为00（无），01&00=00，无变化，所以被认成了近战，于是触发了闪避」，又「有弹道的攻击固定为10，无弹道的攻击固定为01」：爆发的伤害不论存成没有途径（00）还是没有弹道（01），近战的闪避判定都把它认作近战。",
     "status": "待查证"
+  },
+  {
+    "id": "INF-1170",
+    "clause": "部署-9",
+    "statement": "保留方式的移动（内容的特殊设置）不保留元素值：发 deploy 事件之前，每种元素的元素值回到最大值，正在进行的元素爆发结束——爆发 Buff 去掉，不算到期，它带的效果随之结束；之后的元素损伤照常结算。移动到它所在的格（原地移动）也一样。",
+    "basis": "PRTS「术语释义」oldid=401060 移动：「本质上为一次特殊的撤退-再部署行为」，「除非具有特殊设置，否则执行移动行为时：不会继承任何Buff、技能状态」，留下的只有按比例的生命；部署的单位每种元素值初始为最大值（元素-1）。内容的特殊设置保留的是 Buff、技能状态和生命，元素值不在其中，所以按再部署回到最大值。元素爆发在数据里是一个 Buff（ep_breakbuff_table.elementBuffs：ep_break_sanity 等），它是元素值的爆发冷却（元素-3：期间元素值不变，结束时回到最大值），随元素值一起重新开始；不然移动后元素值满了却仍被锁住。页面没有直接写移动时元素值与爆发怎样。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-1171",
+    "clause": "部署-9",
+    "statement": "保留方式的移动结束元素爆发时，只去掉爆发 Buff（连同它带的灼燃的法术抗性降低、狂躁的攻击速度提升、凋亡与狂躁每秒的效果）；爆发开始时给的晕眩（神经）、阻回与静默（凋亡）和侵蚀的防御力降低是别的 Buff，照常保留：晕眩、阻回、静默到原来的时间结束，防御力降低一直在。",
+    "basis": "保留方式保留 Buff（部署-9、DIF-0034）；元素-4 的这几项在引擎里是单独的状态或 Buff，不是爆发 Buff 的一部分。数据（buff_template_data）里神经给干员的 stun（ep_break_sanity_char）和侵蚀的 ep_water_def_down（ep_break_water_char）不是派生 Buff（_isDerivedBuff 为 false），不随爆发 Buff 结束；灼燃的 ep_fire_magic_res_down（ep_break_fire_char）与凋亡的 sp_loss、ep_break_dark[damage]（ep_break_dark_char）连同它们的上一级都是派生 Buff（_isDerivedBuff、_finishDerivedBuffIfParentFinish 为 true），随爆发 Buff 结束。sp_loss 下的 sp_loss[decrease_sp] 带 SP_RECOVER_STOPPED 与 SKILL_NOT_ACTIVATABLE（PRTS「异常效果」oldid=422666 的表：阻回、静默），所以官方的结构里凋亡给干员的阻回与静默随爆发一起结束；这里它们是没有标记的状态，按保留方式留到原来的时间，是否也应去掉待查。狂躁正相反：攻击速度提升 ep_break_anger_char[attack_speed] 与每秒的真实伤害（ON_BUFF_TRIGGER）在 ep_break_anger_char 上，ep_break_anger 给它时不是派生 Buff（_isDerivedBuff 为 false），所以官方的结构里它们不随爆发 Buff 结束；这里它们在爆发 Buff 上（元素-4「爆发期间」），随它结束，是否应留到原来的时间同样待查。",
+    "status": "待查证"
   }
 ]
