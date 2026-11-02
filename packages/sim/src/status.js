@@ -57,6 +57,9 @@ export const STATUS = Object.freeze({
   // 1000000: the page keeps every attract until it ends and states no cap (状态-11, INF-0296). Independent needs a cap.
   attract: status({ rule: 'independent', maxStacks: 1_000_000, flags: { attract: true }, resist: true }),
   disarmedCombat: status({ flags: { disarmedCombat: true } }),
+  // 缴械 does nothing while the unit is 无敌, 强制缴械 holds through it: disarm.js reads the two (状态-12).
+  disarm: status({ flags: { disarm: true } }),
+  forceDisarm: status({ flags: { forceDisarm: true } }),
   palsy: status({ rule: 'stack', maxStacks: 3, resist: true, flags: { palsy: true }, every: 1 }),
   palsyShake: status({ flags: { palsyShake: true } }),
   invincible: status({ flags: { invincible: true } }),

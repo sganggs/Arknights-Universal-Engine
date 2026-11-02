@@ -2,8 +2,8 @@
 // keys (状态-5) and elements with their bursts' buffs (元素-1, 元素-3), both ways. Modifier keys are the same in both (the engine took Stronghold's names, ADR 0012); one
 // the engine does not know stays on the buff and changes nothing.
 
-/** Stronghold's flags → the engine's. @type {Readonly<Record<string, string>>} */
-const FLAG = Object.freeze({ invulnerable: 'invincible', bind: 'root', noHeal: 'noAllyHeal', tremble: 'disarmedCombat' });
+/** Stronghold's flags → the engine's (反隐 `reveal` is the engine's `unstealth`, 索敌-2). @type {Readonly<Record<string, string>>} */
+const FLAG = Object.freeze({ invulnerable: 'invincible', bind: 'root', noHeal: 'noAllyHeal', tremble: 'disarmedCombat', reveal: 'unstealth' });
 
 /** Stronghold's status names → the engine's. @type {Readonly<Record<string, string>>} */
 const STATUS_KEY = Object.freeze({ bind: 'root', resist: 'buffres', tremble: 'disarmedCombat' });
