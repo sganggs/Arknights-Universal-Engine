@@ -7,7 +7,7 @@ import { KIND } from '@aue/schema';
 import { statsOf } from './attrs.js';
 import { makeBuff, addBuff, removeBuff, setLeft, retune, setStacks, count } from './buffs.js';
 import { dealDamage, heal } from './damage.js';
-import { dealEp, restoreEp } from './elements.js';
+import { dealEpFrom, restoreEp } from './elements.js';
 import { inflict } from './status.js';
 import { on } from './bus.js';
 import { reachKeys } from './reach.js';
@@ -75,11 +75,12 @@ export function burstDotOn(op, t, d) {
 
 /**
  * 元素损伤 over time from a hit (职业-29: 波卜): at once, then each second for `seconds`, 元素损伤 of the element of
- * `scale` × the operator's attack (buff `epDot:<operator id>`, act `epDot`, the time starting again).
- * @param {World} w @param {Unit} op @param {Unit} t @param {{ el: string, scale: number, seconds: number }} d
+ * `scale` × the operator's attack (buff `epDot:<operator id>`, act `epDot`, the time starting again). With the content,
+ * for the damage of a burst it sets off (伤害-8).
+ * @param {World} w @param {Content} c @param {Unit} op @param {Unit} t @param {{ el: string, scale: number, seconds: number }} d
  */
-export function epDotOn(w, op, t, d) {
-  dealEp(w, t, /** @type {Element} */ (d.el), statsOf(op).atk * d.scale, op);
+export function epDotOn(w, c, op, t, d) {
+  dealEpFrom(w, t, /** @type {Element} */ (d.el), statsOf(op).atk * d.scale, { src: op, c });
   const key = `epDot:${op.id}`, b = t.buffs.find((x) => x.key === key), left = secondsToFrames(d.seconds) + 1;
   if (b) { setLeft(b, left); return; }
   addBuff(t, makeBuff({ key, act: 'epDot', src: op.id, value: d.scale, tag: d.el, every: FPS, fixed: true, left }));
@@ -89,20 +90,21 @@ export function epDotOn(w, op, t, d) {
  * The behaviours of these talents' buffs (职业-29), each needing its operator on the field with HP: `burstDot` deals
  * the target elemental damage while it is in the burst of its element, and goes when it is not; `epDot` deals its
  * 元素损伤; `healDot` heals and restores element values (its value and `n` the heal and the restored amount a layer).
+ * The damage and 元素损伤 with the content, as a trigger gets it (伤害-8).
  * @returns {Record<string, import('./buffs.js').Behavior>}
  */
 export function elementBehaviors() {
   /** @param {World} w @param {Buff} b */
   const srcOf = (w, b) => w.units.find((x) => x.id === b.src && x.hp > 0) ?? null;
   return {
-    burstDot: { tick: (w, u, b) => {
+    burstDot: { tick: (w, u, b, c) => {
       const op = srcOf(w, b);
       if (!op || !u.buffs.some((x) => x.key === `burst:${b.tag}`)) { removeBuff(u, b); return; }
-      dealDamage(w, op, u, { type: 'elemental', amount: statsOf(op).atk * b.value, sourceless: true });
+      dealDamage(w, op, u, { type: 'elemental', amount: statsOf(op).atk * b.value, sourceless: true }, c);
     } },
-    epDot: { tick: (w, u, b) => {
+    epDot: { tick: (w, u, b, c) => {
       const op = srcOf(w, b);
-      if (op) dealEp(w, u, /** @type {Element} */ (b.tag), statsOf(op).atk * b.value, op);
+      if (op) dealEpFrom(w, u, /** @type {Element} */ (b.tag), statsOf(op).atk * b.value, { src: op, c });
     } },
     healDot: { tick: (w, u, b) => {
       if (statsOf(u).flags.healFree) return;
@@ -116,7 +118,8 @@ export function elementBehaviors() {
 /**
  * At the start of an operator's turn (职业-29): each `pulses` every `every` seconds from its deployment, on the enemies
  * it blocks (`blocked`) or those with a tile in its attack range that can be selected (`range`, 迷彩 and flight no
- * matter): 元素损伤 of `ep.scale` × its attack, then arts damage of `arts` × it (sourceless), then the status.
+ * matter): 元素损伤 of `ep.scale` × its attack, then arts damage of `arts` × it (sourceless), then the status. Both with
+ * the content (伤害-8).
  * @param {World} w @param {Content} c @param {Unit} op
  */
 export function pulseTurn(w, c, op) {
@@ -127,8 +130,8 @@ export function pulseTurn(w, c, op) {
     const foes = w.units.filter((u) => hostile(u) && u.hp > 0 && !u.hidden
       && (p.who === 'blocked' ? u.blockedBy === op.id : inRange(c, op, u) && selectable(u, { canHitFly: true, ignoreCamou: true })));
     for (const e of foes) {
-      if (p.ep) dealEp(w, e, /** @type {Element} */ (p.ep.el), statsOf(op).atk * p.ep.scale, op);
-      if (p.arts && e.hp > 0) dealDamage(w, op, e, { type: 'arts', amount: statsOf(op).atk * p.arts, sourceless: true });
+      if (p.ep) dealEpFrom(w, e, /** @type {Element} */ (p.ep.el), statsOf(op).atk * p.ep.scale, { src: op, c });
+      if (p.arts && e.hp > 0) dealDamage(w, op, e, { type: 'arts', amount: statsOf(op).atk * p.arts, sourceless: true }, c);
       if (p.status && e.hp > 0) inflict(w, e, /** @type {import('./status.js').StatusKey} */ (p.status.key), { seconds: p.status.seconds, src: op });
     }
   }

@@ -282,10 +282,10 @@ export function dotOnHit(op, target, d, i) {
   addBuff(target, makeBuff({ key, src: op.id, left, every: FPS, fixed: true, value: d.amount ?? (d.scale ?? 0) * statsOf(op).atk, act: 'talentDot' }));
 }
 
-/** The engine's behaviour of a talent's damage over time (职业-25): each second its arts damage. */
+/** The engine's behaviour of a talent's damage over time (职业-25): each second its arts damage, with the content (伤害-8). */
 export const TALENT_BEHAVIORS = Object.freeze({
-  talentDot: { tick: (/** @type {World} */ w, /** @type {Unit} */ u, /** @type {import('./types.js').Buff} */ b) => {
+  talentDot: { tick: (/** @type {World} */ w, /** @type {Unit} */ u, /** @type {import('./types.js').Buff} */ b, /** @type {Content | undefined} */ c) => {
     const src = w.units.find((x) => x.id === b.src && x.hp > 0) ?? null;
-    dealDamage(w, src, u, { type: 'arts', amount: b.value, sourceless: true });
+    dealDamage(w, src, u, { type: 'arts', amount: b.value, sourceless: true }, c);
   } },
 });

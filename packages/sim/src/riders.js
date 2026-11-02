@@ -4,7 +4,7 @@
 import { KIND } from '@aue/schema';
 import { statsOf } from './attrs.js';
 import { makeBuff, addBuff, retune } from './buffs.js';
-import { dealEp } from './elements.js';
+import { dealEpFrom } from './elements.js';
 import { gainSp } from './sp.js';
 import { setHp } from './damage.js';
 import { traitOf, creditedDamage } from './traits.js';
@@ -32,7 +32,7 @@ const burstOf = (u, el) => u.buffs.some((b) => b.key === `burst:${el}`);
 export function afterOwnHit(w, c, op, t, hit) {
   if (op.kind !== KIND.OPERATOR || (hit.dmg.tags ?? []).includes(RIDER)) return;
   const tr = traitOf(c, op), r = tr.epRider, b = tr.burstHit;
-  if (r && hit.taken > 0 && (!r.arts || hit.dmg.type === 'arts')) dealEp(w, t, r.el, hit.taken * r.ratio * vsEp(w, c, op, t), op);
+  if (r && hit.taken > 0 && (!r.arts || hit.dmg.type === 'arts')) dealEpFrom(w, t, r.el, hit.taken * r.ratio * vsEp(w, c, op, t), { src: op, c });
   if (b && t.hp > 0 && burstOf(t, b.el)) creditedDamage(w, c, op, t, { type: 'elemental', amount: statsOf(op).atk * b.scale, tags: [RIDER] });
   if (tr.extraArts > 0 && hit.dmg.isAttack && t.hp > 0) creditedDamage(w, c, op, t, { type: 'arts', amount: statsOf(op).atk * tr.extraArts, tags: [RIDER] });
   chargedRider(w, c, op, t);

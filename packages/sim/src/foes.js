@@ -10,7 +10,7 @@ import { setSp } from './sp.js';
 import { inflict } from './status.js';
 import { launch } from './swing.js';
 import { dealDamage, heal, setHp, knockDown } from './damage.js';
-import { dealEp } from './elements.js';
+import { dealEpFrom } from './elements.js';
 import { selectable, sortAllies, friendly, evadesGround, stealthed } from './targeting.js';
 import { tileOf } from './body.js';
 import { tileAt, buildableFor } from './level.js';
@@ -311,7 +311,7 @@ function contextOf(w, c, e, of) {
     removeBuff: (t, key, tag) => { if (tag === undefined) removeBuff(t, key); else removeTagged(t, key, tag); },
     applyStatus: (t, key, o) => { inflict(w, t, /** @type {any} */ (key), { ...o, src: e }); },
     dealDamage: (t, dmg) => dealDamage(w, e, t, dmg, c),
-    dealEp: (t, el, amount) => dealEp(w, t, /** @type {any} */ (el), amount, e),
+    dealEp: (t, el, amount) => dealEpFrom(w, t, /** @type {any} */ (el), amount, { src: e, c }),
     heal: (t, amount) => heal(w, e, t, amount),
     gainCost: () => {},
     state: { get: (k) => ab[`${name}.${k}`] ?? 0, set: (k, v) => { ab[`${name}.${k}`] = v; } },
