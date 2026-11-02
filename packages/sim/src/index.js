@@ -51,6 +51,7 @@ export { BEHAVIOR_API_VERSION, CONTEXT_MEMBERS, SKILL_CONTEXT_MEMBERS } from './
 export { hashNumbers, HASH_START, contentHash, canonicalJson } from './hash.js';
 export { teamFits } from './aura.js';
 export { reserveIds } from './units.js';
+export { healJump } from './chain.js';
 
 /** @typedef {import('./types.js').Content} Content */
 /** @typedef {import('./types.js').DeviceDef} DeviceDef */

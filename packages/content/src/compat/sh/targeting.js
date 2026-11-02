@@ -1,9 +1,8 @@
 // Stands in for Stronghold's server/sim/targeting.js (兼容-2): the names its operator kits import — the range keys, a
 // unit's tile key, whether an ability may select an enemy and the order of an ability's candidates, by the engine's own
-// rules (索敌-1…索敌-3, 体积-1); the rest still gaps.
+// rules (索敌-1…索敌-3, 体积-1), and the 仇恨值 order of two units (kitstubs.js, 兼容-4).
 import { targeting, body, attrs, routes } from '@aue/sim';
 import { COLS, ROWS } from '../grid.js';
-import { gap } from './gap.js';
 
 /**
  * The keys of the tiles a facing-RIGHT grid of [dRow, dCol] covers from tile (r, c) facing `d`, stretched `extend`
@@ -74,4 +73,4 @@ export function sortEnemyTargets(battle, attacker, cands, priority) {
   return cands;
 }
 
-export const aggroCmp = gap('targeting.aggroCmp');
+export { aggroCmp } from '../kitstubs.js';

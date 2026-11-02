@@ -1,6 +1,7 @@
 // Stands in for Stronghold's server/sim/ai.js (兼容-2): the names its operator kits import — a unit's attack profile now
 // (its trait's, compat/unit.js, with its running skill spec's attack and targeting, as Stronghold's effectiveProfile) and
-// the targets an attack of it would take (acquireTargets); the rest still gaps.
+// the targets an attack of it would take (acquireTargets); a heal chain's next jump and an attack with a profile of the
+// kit's (kitstubs.js, 兼容-4); the rest still gaps.
 import { traits } from '@aue/sim';
 import { gap } from './gap.js';
 import { sortEnemyTargets } from './targeting.js';
@@ -36,8 +37,7 @@ export function acquireTargets(b, u, prof) {
   return n >= cands.length ? cands : cands.slice(0, n);
 }
 
-export const chainHealNext = gap('ai.chainHealNext');
-export const performAttack = gap('ai.performAttack');
+export { chainHealNext, performAttack } from '../kitstubs.js';
 export const attackCountdown = gap('ai.attackCountdown');
 
 /** The targeting keys a skill spec may override. */

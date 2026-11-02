@@ -12,7 +12,7 @@ import { MAPPING, mappedUrl } from '../src/compat/mapping.js';
 import { loadUnderGrid, withGrid } from '../src/compat/grid.js';
 import { recordOf, defOf, gridOf } from '../src/compat/records.js';
 import { CompatGap } from '../src/compat/sh/gap.js';
-import * as targeting from '../src/compat/sh/targeting.js';
+import * as ai from '../src/compat/sh/ai.js';
 import { rotateOffset, toLocal, dirFromDelta, offsetTile, frontOf, normDir } from '../src/compat/sh/dir.js';
 import { loadTraining, statsAt, moduleAt } from '../src/operators.js';
 import { withKitTrait } from '../src/compat/kits.js';
@@ -55,7 +55,7 @@ test('[兼容-2] the table: an engine module goes to its stand-in, content loads
 test('[兼容-2] the pinned oracle’s 72 operator kits load unchanged; a name the layer does not provide yet throws when called', () => {
   assert.equal(kits.length, 72);
   for (const [f, charId, factory] of kits) assert.equal(typeof factory, 'function', `${f} ${charId}`);
-  assert.throws(() => targeting.aggroCmp(), (e) => e instanceof CompatGap && e.what === 'targeting.aggroCmp');
+  assert.throws(() => ai.attackCountdown(), (e) => e instanceof CompatGap && e.what === 'ai.attackCountdown');
 });
 
 test('[兼容-2] the pinned oracle’s 129 chess kits load too, each exporting the factories of its chess records', () => {

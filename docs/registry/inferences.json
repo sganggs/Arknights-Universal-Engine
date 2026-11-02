@@ -6200,5 +6200,12 @@
     "statement": "kit 给的持久（`persist`）屏障与护盾层，单位每次部署时按 kit 给的量重新给上，不是离场时剩下的。",
     "basis": "兼容层记下的持久增益是 kit 给的说明，部署时重新造（兼容-4「部署」）。Stronghold v0.3.1 的 server/sim/battle/deploy.js 在单位离场时留下持久的增益对象本身，下次部署接着用，剩下的屏障量和层数也跟着留下。固定提交的 72 个干员 kit 都不给持久的屏障或护盾层。",
     "status": "待查证"
+  },
+  {
+    "id": "INF-1130",
+    "clause": "兼容-4",
+    "statement": "链愈师 kit 的治疗链（chainHealNext）可以跳到治疗者 kit 特性的 healThrough 允许的友方，即使它拒绝友方治疗（Stronghold 的禁疗标记 noHeal 在兼容层就是拒绝友方治疗）；孤立的仍不跳。",
+    "basis": "PRTS「Mon3tr」第一天赋写「仅可被自身治疗的重构体」「重构体受到自身和Mon3tr治疗时，可额外进行一次不会衰减的治疗跳跃」，备注写「※可以强行选择重构体作为治疗目标」「※治疗效果无视禁疗，但对象选取受禁疗制约」：普通攻击可以强行选它、它受到治疗时多跳一次，但没有写治疗跳跃能否跳到它。Stronghold 的 chainHealNext 让 healThrough 也作用于跳跃，op-monstr.js 注明「[ASSUMED: the jumps too]」。职业-11 的治疗链不跳拒绝友方治疗的单位，引擎自己没有 healThrough。",
+    "status": "待查证"
   }
 ]

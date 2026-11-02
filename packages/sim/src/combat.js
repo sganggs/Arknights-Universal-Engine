@@ -599,13 +599,15 @@ function armed(w, c, op, mods) {
  * An attack now (攻击-5): content makes an operator attack at once — on the targets given that are on the field with HP,
  * or on those its attack would take —: its attack as it is now (no skill starts for it, its chance talents drawn), the
  * targets locked (`beforeAttack`), no wind-up and its cooldown untouched; it lands as any attack (攻击-2) — spending no
- * ammo with `noAmmo`. A swing under way goes on after it. Whether it attacked.
- * @param {World} w @param {Content} c @param {Unit} op @param {Unit[] | null} [given] @param {{ noAmmo?: boolean }} [o]
+ * ammo with `noAmmo`; `scale` times its 倍率; with `heal` it heals the targets given, whatever its attack is now
+ * (nowMods) — none given, it takes none of its own (they may be enemies). A swing under way goes on after it. Whether it
+ * attacked.
+ * @param {World} w @param {Content} c @param {Unit} op @param {Unit[] | null} [given] @param {{ noAmmo?: boolean, heal?: boolean, scale?: number }} [o]
  */
 export function attackNow(w, c, op, given = null, o = {}) {
   if (op.kind !== KIND.OPERATOR || op.hp <= 0 || !w.units.includes(op)) return false;
-  const a = armed(w, c, op, timedAttack(w, c, op, critMods(w, c, op, attackMods(w, c, op))));
-  const { targets, mods } = lockTargets(w, op, given ? given.filter((u) => u.hp > 0 && w.units.includes(u)) : a.targets, a.mods);
+  const a = armed(w, c, op, timedAttack(w, c, op, critMods(w, c, op, nowMods(attackMods(w, c, op), o))));
+  const { targets, mods } = lockTargets(w, op, given ? given.filter((u) => u.hp > 0 && w.units.includes(u)) : o.heal ? [] : a.targets, a.mods);
   if (targets.length === 0 || op.hp <= 0) return false;
   const prev = op.swing;
   for (const t of targets) w.events.push({ type: 'attack', id: op.id, target: t.id, wind: 0 });
@@ -613,6 +615,17 @@ export function attackNow(w, c, op, given = null, o = {}) {
   land(w, c, op);
   op.swing = prev;
   return true;
+}
+
+/**
+ * What content changes in an attack now (攻击-5): `scale` (a finite number ≥ 0) times its 倍率; `heal` makes it a heal
+ * (AttackMods `heal`), set before its chance talents are drawn, so it draws none (攻击-4). The mods as they are with
+ * neither.
+ * @param {AttackMods} mods @param {{ heal?: boolean, scale?: number }} o @returns {AttackMods}
+ */
+function nowMods(mods, o) {
+  const s = typeof o.scale === 'number' && Number.isFinite(o.scale) && o.scale >= 0 ? o.scale : 1;
+  return s === 1 && !o.heal ? mods : { ...mods, scale: mods.scale * s, ...(o.heal ? { heal: true } : {}) };
 }
 
 /**
