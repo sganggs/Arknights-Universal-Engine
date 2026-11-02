@@ -197,6 +197,27 @@ function withoutImmune(base, raw) {
 }
 
 /**
+ * 寒冷's flag (状态-5). Its buffs slow by their modifiers, and those are its effect: on a unit immune to the flag they do
+ * not count either (状态-7, INF-1150) — the game makes the cold's slowing buff only while its COLD flag takes effect
+ * (buff_template_data `c2e_cold`).
+ */
+const COLD = 'cold';
+
+/** Whether a buff carries a flag as aggregate reads one: own, visited by for…in, set. @param {Buff} b @param {string} k */
+const carries = (b, k) => enumerableOwn.call(b.flags, k) && !!b.flags[k];
+
+/**
+ * The buffs whose modifiers count (状态-7): those that take effect, but not the ones carrying 寒冷's flag on a unit
+ * immune to it — by its data, or by the flag `immune:cold` of one of them.
+ * @param {Partial<Base>} base @param {readonly Buff[]} act the buffs that take effect @returns {readonly Buff[]}
+ */
+function counted(base, act) {
+  if (!act.some((b) => carries(b, COLD))) return act;
+  const immune = (base.immune ?? []).includes(COLD) || act.some((b) => carries(b, `immune:${COLD}`));
+  return immune ? act.filter((b) => !carries(b, COLD)) : act;
+}
+
+/**
  * The flags of the active buffs a unit is not immune to and what they add up to (状态-5, 状态-7): flying (浮空 lifts,
  * 缚地 grounds, 近地悬浮 `hover` lifts), invincible (无敌, 沉睡), disabled (cannot attack or use skills) and immobile.
  * @param {Partial<Base>} base @param {Record<string, boolean>} raw
@@ -213,11 +234,13 @@ const ATTR_LIST = Object.freeze(Object.entries(ATTRS));
 
 /**
  * A unit's stats computed afresh: every attribute, the attack interval, the damage and healing multipliers, the flags
- * (ADR 0054). For a unit made up for one question (an attack bonus, a unit being created); statsOf for the others.
+ * (ADR 0054). For a unit made up for one question (an attack bonus, a unit being created); statsOf for the others. The
+ * flags come from every buff that takes effect, the sums and products from those whose modifiers count (状态-7).
  * @param {Pick<Unit, 'base' | 'buffs'>} u @returns {Stats}
  */
 export function computeStats(u) {
-  const { sum, prod, flags } = aggregate(effectiveBuffs(u.buffs));
+  const act = effectiveBuffs(u.buffs), all = aggregate(act), kept = counted(u.base, act);
+  const { sum, prod } = kept === act ? all : aggregate(kept), flags = all.flags;
   /** @type {Record<string, number>} */
   const v = {};
   for (const [name, a] of ATTR_LIST) v[name] = attrValue(a, u.base, sum, prod);
@@ -330,9 +353,9 @@ function unchanged(sig, u) {
 
 /**
  * A unit's maximum HP (属性-1, 属性-4) — statsOf(u).maxHp, to the bit — without the rest of the stats: the last stats'
- * while they hold, else only the four HP keys summed (each key's sum is its own, in the same order; a key only as
- * aggregate reads one, own and enumerable). For refreshHp, which runs after every change to a unit's buffs, often
- * several in a row before anything asks for the stats.
+ * while they hold, else only the four HP keys of the buffs whose modifiers count summed (each key's sum is its own, in
+ * the same order; a key only as aggregate reads one, own and enumerable). For refreshHp, which runs after every change
+ * to a unit's buffs, often several in a row before anything asks for the stats.
  * @param {Pick<Unit, 'base' | 'buffs'>} u
  */
 export function maxHpOf(u) {
@@ -342,7 +365,7 @@ export function maxHpOf(u) {
   const sum = {};
   /** @type {Record<string, number>} */
   const prod = {};
-  for (const b of effectiveBuffs(u.buffs)) {
+  for (const b of counted(u.base, effectiveBuffs(u.buffs))) {
     const st = b.stacks, mods = b.mods;
     for (const k of HP_KEYS) {
       const v = enumerableOwn.call(mods, k) ? mods[k] : undefined;

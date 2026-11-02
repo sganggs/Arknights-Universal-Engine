@@ -185,7 +185,8 @@ const UNIT_WHEN = Object.freeze({
   sameDir: (_w, u, _v, src) => normDir(u.dir) === normDir(src.dir),
   maxHpHighest: (w, u, _v, src, c) => sturdiest(w, c, src) === u,
   sluggish: (_w, u) => holdsStatus(u, 'sluggish'),
-  coldOnly: (_w, u) => !statsOf(u).flags.freeze && (holdsStatus(u, 'cold') || holdsStatus(u, 'enemyCold')),
+  // 寒冷's flag is filtered on a unit immune to it by its data or a buff (状态-7), so the flag is a cold it is not immune to.
+  coldOnly: (_w, u) => !statsOf(u).flags.freeze && !!statsOf(u).flags.cold,
   frozen: (_w, u) => !!statsOf(u).flags.freeze,
 });
 

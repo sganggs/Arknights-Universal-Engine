@@ -101,7 +101,7 @@ const HELD = Object.freeze({
   禁疗: ['healFree'], 无敌: ['invincible'], 孤立: ['isolated', 'noAllyHeal'], 不可阻挡: ['unblockable'], 静默: ['mute'], 不死: ['undying'], 无法撤退: ['noRetreat'],
 });
 /** The flags of the 异常效果 a summon may be immune to (召唤-7, 状态-7). @type {Readonly<Record<string, string>>} */
-const IMMUNE = Object.freeze({ 晕眩: 'stun', 冻结: 'freeze', 沉睡: 'sleep', 浮空: 'levitate', 沉默: 'silence', 恐惧: 'fear', 麻痹: 'palsy', 麻痹震颤: 'palsyShake' });
+const IMMUNE = Object.freeze({ 晕眩: 'stun', 冻结: 'freeze', 寒冷: 'cold', 沉睡: 'sleep', 浮空: 'levitate', 沉默: 'silence', 恐惧: 'fear', 麻痹: 'palsy', 麻痹震颤: 'palsyShake' });
 
 /**
  * What a summon's page says it holds (召唤-7): the flags it is deployed with — untargetable when it is not attacked or is
