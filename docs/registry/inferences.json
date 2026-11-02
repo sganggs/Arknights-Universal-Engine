@@ -5451,5 +5451,19 @@
     "statement": "占据在引擎里从不释放：场上没有留声机（trap_014_tower 没有装置说明，放置它的关卡不能组装，装置-3），没有可夺取的对象就不释放、不占攻击间隔，冷却停在就绪；按敌能-88、敌能-100、敌能-116 的做法算作已覆盖。冬灵血巫、冬灵血巫大师同形的天赋 occupy 没有页面标记，仍未覆盖。",
     "basis": "页面写「选择全场范围内距离自身最近的1台未处于敌方占领状态的L-44\"留声机\"，直接夺取其控制权」，没有写场上没有留声机时是否释放，技能栏也没有标注需要目标。act1multi_rm05 的装置 trap_014_tower（L-44\"留声机\"）不在内容的装置说明里。冬灵血巫的页面写死亡爆炸「同时清空范围内L-44\"留声机\"的SP并夺取其控制权」，是另一项能力，黑板同样是 { sp: -1 }。",
     "status": "待查证"
+  },
+  {
+    "id": "INF-1170",
+    "clause": "部署-9",
+    "statement": "保留方式的移动（内容的特殊设置）不保留元素值：发 deploy 事件之前，每种元素的元素值回到最大值，正在进行的元素爆发结束——爆发 Buff 去掉，不算到期，它带的效果随之结束；之后的元素损伤照常结算。移动到它所在的格（原地移动）也一样。",
+    "basis": "PRTS「术语释义」oldid=401060 移动：「本质上为一次特殊的撤退-再部署行为」，「除非具有特殊设置，否则执行移动行为时：不会继承任何Buff、技能状态」，留下的只有按比例的生命；部署的单位每种元素值初始为最大值（元素-1）。内容的特殊设置保留的是 Buff、技能状态和生命，元素值不在其中，所以按再部署回到最大值。元素爆发在数据里是一个 Buff（ep_breakbuff_table.elementBuffs：ep_break_sanity 等），它是元素值的爆发冷却（元素-3：期间元素值不变，结束时回到最大值），随元素值一起重新开始；不然移动后元素值满了却仍被锁住。页面没有直接写移动时元素值与爆发怎样。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-1171",
+    "clause": "部署-9",
+    "statement": "保留方式的移动结束元素爆发时，只去掉爆发 Buff（连同它带的灼燃的法术抗性降低、狂躁的攻击速度提升、凋亡与狂躁每秒的效果）；爆发开始时给的晕眩（神经）、阻回与静默（凋亡）和侵蚀的防御力降低是别的 Buff，照常保留：晕眩、阻回、静默到原来的时间结束，防御力降低一直在。",
+    "basis": "保留方式保留 Buff（部署-9、DIF-0034）；元素-4 的这几项在引擎里是单独的状态或 Buff，不是爆发 Buff 的一部分。数据（buff_template_data）里神经给干员的 stun（ep_break_sanity_char）和侵蚀的 ep_water_def_down（ep_break_water_char）不是派生 Buff（_isDerivedBuff 为 false），不随爆发 Buff 结束；灼燃的 ep_fire_magic_res_down（ep_break_fire_char）与凋亡的 sp_loss、ep_break_dark[damage]（ep_break_dark_char）连同它们的上一级都是派生 Buff（_isDerivedBuff、_finishDerivedBuffIfParentFinish 为 true），随爆发 Buff 结束。sp_loss 下的 sp_loss[decrease_sp] 带 SP_RECOVER_STOPPED 与 SKILL_NOT_ACTIVATABLE（PRTS「异常效果」oldid=422666 的表：阻回、静默），所以官方的结构里凋亡给干员的阻回与静默随爆发一起结束；这里它们是没有标记的状态，按保留方式留到原来的时间，是否也应去掉待查。狂躁正相反：攻击速度提升 ep_break_anger_char[attack_speed] 与每秒的真实伤害（ON_BUFF_TRIGGER）在 ep_break_anger_char 上，ep_break_anger 给它时不是派生 Buff（_isDerivedBuff 为 false），所以官方的结构里它们不随爆发 Buff 结束；这里它们在爆发 Buff 上（元素-4「爆发期间」），随它结束，是否应留到原来的时间同样待查。",
+    "status": "待查证"
   }
 ]
