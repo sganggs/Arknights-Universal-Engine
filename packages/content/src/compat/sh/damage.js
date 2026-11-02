@@ -1,10 +1,11 @@
 // Stands in for Stronghold's server/sim/damage.js (兼容-2): the names its operator kits import — whether a unit has HP
 // left, whether a hit is 生命流失 (the engine's `hpLoss`, 伤害-10, or Stronghold's tag), damage after the defences
-// (伤害-1…伤害-5), the 无来源 true damage of a periodic effect; the rest still gaps.
+// (伤害-1…伤害-5), the 无来源 true damage of a periodic effect, whether a unit's element values are locked (kitstubs.js,
+// 兼容-4); the rest still gaps.
 import { damage } from '@aue/sim';
 import { gap } from './gap.js';
 
-export const burstLocked = gap('damage.burstLocked');
+export { burstLocked } from '../kitstubs.js';
 export const applyRedirectCut = gap('damage.applyRedirectCut');
 export const redirectShare = gap('damage.redirectShare');
 /** On the field with HP left. @param {{ alive: boolean, hp: number } | null | undefined} u */

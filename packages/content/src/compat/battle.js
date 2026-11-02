@@ -16,6 +16,7 @@ import * as summoning from './summons.js';
 import { ShGrid } from './tiles.js';
 import { CompatGap } from './sh/gap.js';
 import { effectiveProfile } from './sh/ai.js';
+import { givePalsy } from './kitstubs.js';
 
 /** @typedef {import('@aue/sim').World} World @typedef {import('@aue/sim').Content} Content @typedef {import('@aue/sim').Unit} Unit */
 /** @typedef {(ctx: any, b: ShBattle) => void} Handler */
@@ -341,6 +342,8 @@ export class ShBattle {
 
   /** Presentation effects (`(kind, params)`; none drawn yet). */
   fx() {}
+  /** Stronghold's presentation records (`_ev(record)`: Mon3tr's kit logs each heal jump; none drawn yet, as fx). */
+  _ev() {}
 
   /** Cost for a player (费用-1: up to the level's cap). @param {number} playerId @param {number} n */
   addDp(playerId, n) { traits.gainCost(this.w, this.c, playerId, n); }
@@ -405,7 +408,7 @@ export class ShBattle {
 
   /**
    * A status (状态-5): the engine's catalogue, seconds as frames — or a stand-in for one it has no counterpart for
-   * (standins.js); whether it took hold.
+   * (standins.js); a 麻痹's value is its layers (kitstubs.js); whether it took hold.
    * @param {ShUnit} target @param {string} key @param {{ duration?: number, source?: ShUnit | null, value?: number }} [o]
    */
   applyStatus(target, key, o = {}) {
@@ -413,6 +416,7 @@ export class ShBattle {
     const k = statusKeyOf(key), frames = o.duration === undefined ? undefined : secondsToFrames(Math.max(0, o.duration));
     if (Object.hasOwn(STAND_INS, k)) return giveStandIn(this, target, k, o);
     if (!Object.hasOwn(status.STATUS, k)) throw new CompatGap(`status.${key}`);
+    if (k === 'palsy') return givePalsy(this, target, frames, o);
     return status.inflict(this.w, /** @type {Unit} */ (target.u), /** @type {any} */ (k), { frames, src: o.source?.u ?? null, value: o.value }) !== null;
   }
 }

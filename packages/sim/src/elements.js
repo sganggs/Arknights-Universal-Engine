@@ -70,6 +70,13 @@ export function epTaken(amount, s, el) {
 /** The units whose burst is beginning (its `elementBurst` handlers run): they take no 元素损伤 meanwhile (元素-3). @type {WeakSet<Unit>} */
 const beginning = new WeakSet();
 
+/**
+ * Whether a unit's element values are locked now (元素-3): in a burst (爆发冷却), or while its burst begins — the
+ * `elementBurst` handlers run, before the burst buff is there. The compat layer's burstLocked reads it (兼容-4).
+ * @param {Unit} u
+ */
+export const epLocked = (u) => bursting(u) || beginning.has(u);
+
 /** Whether a unit takes no 元素损伤 now (元素-2 step 1). @param {Unit} u */
 const unaffected = (u) => {
   const s = statsOf(u);
