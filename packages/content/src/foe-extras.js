@@ -11,6 +11,10 @@ const PRTS = 'https://prts.wiki/index.php?title=';
 export const FOE_EXTRAS = Object.freeze({
   // 活性态萨卡兹术师结晶: 不会攻击飞行单位
   enemy_10079_mpmage_2: { talents: { noFly: {} }, source: `${PRTS}%E6%B4%BB%E6%80%A7%E6%80%81%E8%90%A8%E5%8D%A1%E5%85%B9%E6%9C%AF%E5%B8%88%E7%BB%93%E6%99%B6&oldid=435961` },
+  // 转译基底·α / 转译基底·β (敌能-158): 变化过程持续2s (Passive's `change`, also the read pages' marker) and 特战术师形态's
+  // 同时攻击2个目标 (`targets`) — neither number is in the data.
+  enemy_10081_mpplai: { talents: { Passive: { change: 2 }, Mode_Shushi_Passive: { targets: 2 } }, source: `${PRTS}%E8%BD%AC%E8%AF%91%E5%9F%BA%E5%BA%95%C2%B7%CE%B1&oldid=368157` },
+  enemy_10081_mpplai_2: { talents: { Passive: { change: 2 }, Mode_Shushi_Passive: { targets: 2 } }, source: `${PRTS}%E8%BD%AC%E8%AF%91%E5%9F%BA%E5%BA%95%C2%B7%CE%B2&oldid=368158` },
   // 神勇的帕拉杜利斯: 冲锋 — 仅未被阻挡、且移动方向同一行/列的前方存在非飞行我方单位时可触发
   enemy_10163_mnctur_2: { skills: { rush: { charge: 1 } }, source: `${PRTS}%E7%A5%9E%E5%8B%87%E7%9A%84%E5%B8%95%E6%8B%89%E6%9D%9C%E5%88%A9%E6%96%AF&oldid=443405` },
   // “与我无关”: 燃烧弹 — 在自身所在位置释放一个碰撞半径1.5的燃烧区域弹道
