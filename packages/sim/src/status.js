@@ -37,8 +37,9 @@ const valued = (mods) => ({ rule: 'max', mods, value: null });
 /** The status catalogue (状态-5). Keys follow the Stronghold interface where it has one. */
 export const STATUS = Object.freeze({
   stun: status({ flags: { stun: true }, resist: true }),
-  cold: status({ mods: () => ({ aspd: -30 }), resist: true }),
-  enemyCold: status({ mods: () => ({ aspd: -30 }), resist: true }),
+  // Both colds carry 寒冷's flag; their −30 counts only while the flag takes effect (状态-5, 状态-7: attrs.js counted).
+  cold: status({ flags: { cold: true }, mods: () => ({ aspd: -30 }), resist: true }),
+  enemyCold: status({ flags: { cold: true }, mods: () => ({ aspd: -30 }), resist: true }),
   freeze: status({ flags: { freeze: true }, mods: () => ({ resFlat: -15 }), resist: true }),
   enemyFreeze: status({ flags: { freeze: true }, resist: true }),
   sleep: status({ flags: { sleep: true } }),
@@ -85,8 +86,12 @@ export const STATUS = Object.freeze({
 /** Frames from the options: given frames, or seconds converted (时间-2), or −1 for no end. @param {StatusOptions} o */
 const framesOf = (o) => o.frames ?? (o.seconds === undefined ? -1 : secondsToFrames(o.seconds));
 
-/** Whether the unit is immune to a flag (状态-7). @param {Unit} u @param {string} flag */
-const immuneTo = (u, flag) => (u.base.immune ?? []).includes(flag);
+/**
+ * Whether the unit is immune to a flag (状态-7): by its data, or by the flag `immune:<flag>` of a buff that takes effect
+ * — the data's immunities are given as the same immunity when the unit is made (PRTS 异常效果).
+ * @param {Unit} u @param {string} flag
+ */
+const immuneTo = (u, flag) => (u.base.immune ?? []).includes(flag) || !!statsOf(u).flags[`immune:${flag}`];
 
 /**
  * The buff a status gives (状态-5): a heavy unit (重量 > 3) halves 浮空 and 缚地 by decaying them twice as fast, its
@@ -106,7 +111,8 @@ export function statusBuff(key, target, o = {}) {
 /**
  * Cold (状态-6). A friendly cold meets a friendly cold already there: the pair becomes a friendly freeze lasting the
  * longer of the two. An enemy cold on a unit with an enemy cold or freeze becomes an enemy freeze. A unit immune to
- * freezing just gets colder.
+ * freezing, by its data or a buff, just gets colder; immune to 寒冷 alone, it still freezes (INF-1152). Colds pair only
+ * here, as one is given: those held when an immunity ends wait for the next (INF-1151).
  * @param {Unit} target @param {Buff} cold @returns {Buff}
  */
 function applyCold(target, cold) {

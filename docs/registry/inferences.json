@@ -5451,5 +5451,33 @@
     "statement": "占据在引擎里从不释放：场上没有留声机（trap_014_tower 没有装置说明，放置它的关卡不能组装，装置-3），没有可夺取的对象就不释放、不占攻击间隔，冷却停在就绪；按敌能-88、敌能-100、敌能-116 的做法算作已覆盖。冬灵血巫、冬灵血巫大师同形的天赋 occupy 没有页面标记，仍未覆盖。",
     "basis": "页面写「选择全场范围内距离自身最近的1台未处于敌方占领状态的L-44\"留声机\"，直接夺取其控制权」，没有写场上没有留声机时是否释放，技能栏也没有标注需要目标。act1multi_rm05 的装置 trap_014_tower（L-44\"留声机\"）不在内容的装置说明里。冬灵血巫的页面写死亡爆炸「同时清空范围内L-44\"留声机\"的SP并夺取其控制权」，是另一项能力，黑板同样是 { sp: -1 }。",
     "status": "待查证"
+  },
+  {
+    "id": "INF-1150",
+    "clause": "状态-7",
+    "statement": "寒冷的效果就是它的修饰器：单位对标记 cold 免疫（单位数据里的 cold，或生效的 Buff 的标记 immune:cold）时，带这个标记的 Buff 留在列表里、时间照常流逝，它的修饰器（攻击速度 −30）不计入；免疫结束后重新计入。友方寒冷、敌方寒冷都这样。",
+    "basis": "PRTS「异常效果」oldid=422666 写寒冷 COLD「攻击速度降低；在特定条件下转变为冻结」「此异常效果相关机制主要由Buff实现，并非异常本身的效果」，异常免疫只让异常效果「无法生效，无法被检测」、不清除 Buff，没有写寒冷的减速怎样。游戏数据 battle/buff_template_data.json 的 c2e_cold（友方寒冷）在 ON_BUFF_ENABLE、ON_BUFF_LATE_ENABLE、ON_ABNORMAL_FLAG_DIRTY 时查持有者的 COLD：不生效就结束派生的 c2e_cold[debuff]，生效就再建它，所以这个派生 Buff 只在 COLD 生效时存在；它的内容从 Buff 数据库读取、不在数据里，按名字当作攻击速度 −30。e2c_cold（敌方寒冷）的模板没有这样的节点，它的减速在哪个 Buff 上也看不到，按友方寒冷处理。写着寒冷免疫的单位页面（RMA70刺球、城防路障、阵地屏障、转译基底）不分两类。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-1151",
+    "clause": "状态-6",
+    "statement": "冻结免疫（单位数据，或 Buff 的标记 immune:freeze）期间加上的寒冷都留作寒冷；免疫结束时，已有的寒冷不会自己叠成冻结。之后施加的寒冷才按 状态-6 的两条处理：友方寒冷与列表里最早的一条友方寒冷成对，敌方寒冷变为敌方冻结。",
+    "basis": "页面只写「具有冻结免疫的单位身上的任何寒冷都不会尝试变为冻结」，没有写免疫结束时。游戏数据 battle/buff_template_data.json 里，c2e_cold 的成对（CheckTriggerableBuffsByKeys、TriggerBuff、TriggerBuffsByKeys）只在 ON_BUFF_ENABLE、ON_BUFF_LATE_ENABLE 两个启用事件里，异常效果变化时（ON_ABNORMAL_FLAG_DIRTY）只建、结束减速的 c2e_cold[debuff]；e2c_cold 只在 ON_BUFF_START 查冻结免疫、建 e2c_freeze。所以按施加的那一刻判定。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-1152",
+    "clause": "状态-6",
+    "statement": "只对寒冷免疫、不对冻结免疫的单位，两条寒冷照样按 状态-6 叠成冻结；寒冷自己的减速不计入（状态-7）。",
+    "basis": "页面只写冻结免疫挡住寒冷变为冻结（「具有冻结免疫的单位身上的任何寒冷都不会尝试变为冻结」），没有提寒冷免疫。游戏数据 battle/buff_template_data.json 的 c2e_cold 在 ON_BUFF_ENABLE 里查 COLD 只决定是否结束减速，之后是 AlwaysNext，成对的节点照常执行；e2c_cold 只查冻结的异常免疫。已知写着寒冷免疫的单位（RMA70刺球、城防路障、阵地屏障、转译基底，以及三个召唤物）都同时免疫冻结，引擎里还没有只免疫寒冷的单位。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-1153",
+    "clause": "状态-7",
+    "statement": "冻结免疫只让冻结的标记 freeze 不生效：带着它的冻结 Buff 留在列表里，友方冻结的法术抗性 −15 在免疫期间照常计入。",
+    "basis": "PRTS「异常效果」oldid=422666 写「术语冻结的法抗增减为Buff效果，非异常效果冻结本身的效果」，而异常免疫只让异常效果不生效。游戏数据 battle/buff_template_data.json 的 c2e_freeze[holder] 只在持有者的 FROZEN 生效时建派生的 c2e_freeze、不生效时结束它，这可能说明 −15 也随冻结的标记；但 −15 在哪个 Buff 上不在数据里（两者都从 Buff 数据库读取）。本条不改冻结，沿用原来的做法。",
+    "status": "待查证"
   }
 ]
