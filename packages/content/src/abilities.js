@@ -2,6 +2,7 @@
 // 过载 of the 匪帮, 隐匿 with a 强击 when blocked, a channelled 引导, and 载客. They act only through the context (ADR 0055).
 
 import { targeting } from '@aue/sim';
+import { rob } from './thief.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').FoeContext} FoeContext @typedef {import('@aue/sim').Unit} Unit */
 
@@ -11,23 +12,24 @@ const shoots = (e) => e.base.applyWay === 'RANGED' && e.base.rangeRadius > 0;
 /**
  * 资源偷取 / 劫掠 (敌能-12): an 攻击回复 skill — each attack of the enemy's kind (melee or by projectile, as the ability
  * says; either for 劫掠) gives 1 SP, and with SP at its cost the attack is the skill's instead, spending it; not while
- * silenced. The skill's hit, when it deals damage to an operator, takes −`cost` from that operator's player; 劫掠 also
- * heals the enemy `hp_ratio` of its maximum HP.
+ * silenced. The skill's first hit that deals damage robs its target (thief.js): never a summon or a 装置. The theft is
+ * that skill attack's own: the next ordinary attack of its kind drops it, so a skill hit that dealt nothing, was cut
+ * short or lost its target leaves no theft for a later blow (INF-1071).
  * @param {boolean | null} ranged @returns {FoeBehavior}
  */
 const costHit = (ranged) => Object.freeze({
   attack: (/** @type {FoeContext} */ ctx, /** @type {any} */ mods) => {
     const st = ctx.state;
     if (ranged !== null && shoots(ctx.self) !== ranged) return mods;
-    if (st.get('sp') >= ctx.sp && !ctx.stats(ctx.self).flags.silence) { st.set('sp', 0); st.set('armed', 1); } else st.set('sp', Math.min(ctx.sp, st.get('sp') + 1));
+    if (st.get('sp') >= ctx.sp && !ctx.stats(ctx.self).flags.silence) { st.set('sp', 0); st.set('armed', 1); return mods; }
+    st.set('sp', Math.min(ctx.sp, st.get('sp') + 1));
+    if (st.get('armed') === 1) st.set('armed', 0);
     return mods;
   },
   hit: (/** @type {FoeContext} */ ctx, /** @type {Unit} */ t) => {
     if (ctx.state.get('armed') !== 1) return;
     ctx.state.set('armed', 0);
-    if (t.owner < 0) return;
-    ctx.drainCost(t, -ctx.bb.cost);
-    if (ctx.bb.hp_ratio) ctx.heal(ctx.self, ctx.bb.hp_ratio * ctx.stats(ctx.self).maxHp);
+    rob(ctx, t);
   },
 });
 
