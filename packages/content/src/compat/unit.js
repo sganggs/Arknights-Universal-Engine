@@ -154,6 +154,12 @@ export class ShUnit {
   hasFlag(k) { return !!this.flags[k]; }
   /** An air unit (飞行, 浮空…, 属性-2). */
   get isFlying() { return !!this.u && attrs.statsOf(this.u).flying; }
+  /**
+   * Its own 行动方式 as Stronghold names it (兼容-4): an enemy's FLY or WALK — the engine's, which 敌能-34 and 敌能-48 change;
+   * not its route's, and not the air units' (isFlying) —, GROUND for the others: operators, summons and devices (a device
+   * is an 'enemy'-side unit here, an ally with no motion of its own in Stronghold).
+   */
+  get motion() { return this.u?.kind !== KIND.ENEMY ? 'GROUND' : this.u.base.motion === 'FLY' ? 'FLY' : 'WALK'; }
   /** On the field and not stunned, frozen, asleep or otherwise kept from acting. */
   get canAct() { return this.alive && !this.hidden && !attrs.statsOf(/** @type {Unit} */ (this.u)).disabled; }
   /** Its 重量等级. */
