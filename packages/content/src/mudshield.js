@@ -8,7 +8,7 @@ import { ratShield, ratBarrier } from './ratking.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior */
 
-/** Page marker (关卡-2). Only the two read enemies carry it; the same shape without it stays uncovered. */
+/** Page marker (关卡-2). Only the read enemies carry it (the two here, 泥岩 in 敌能-143); the same shape without it stays uncovered. */
 const PAGE = 'page';
 /** Buff key and behaviour key. Not the talent name: that key is the enemy ability, shared with other shapes. */
 const ACT = 'mudShield';
@@ -47,6 +47,20 @@ function grant(ctx) {
 
 /** The mud barrier (敌能-66), or 鼠王's by its shape (敌能-144). @type {FoeBehavior} */
 const shield = Object.freeze({ spawn: (ctx) => { if (ratShield(ctx.bb)) ratBarrier(ctx, ACT); else grant(ctx); } });
+
+/**
+ * 泥岩's 刷新屏障 (敌能-143): this barrier set back to the amount of a blackboard of its shape — the buff there retuned to
+ * it, else given again with its bonuses, so there is still one. No marker, or no positive amount: nothing. Whether it was.
+ * @param {import('@aue/sim').FoeContext} ctx @param {Record<string, number>} bb
+ */
+export function resetBarrier(ctx, bb) {
+  const amount = barrierAmount(bb);
+  if (!(amount > 0)) return false;
+  const mods = { hpPct: bb.max_hp, aspd: bb.attack_speed };
+  if (ctx.buffValue(ctx.self, ACT) === null) ctx.addBuff(ctx.self, { key: ACT, act: ACT, value: amount, mods });
+  else ctx.setBuff(ctx.self, ACT, amount, mods);
+  return true;
+}
 
 /**
  * 伤判 (敌能-66): only arts comes off `value`. At 0 the buff goes in this same step, before leftover HP loss, so the
