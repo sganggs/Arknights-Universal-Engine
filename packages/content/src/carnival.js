@@ -91,9 +91,19 @@ function play(ctx, m) {
   const t = m === 1 && ctx.ready && able(ctx) ? ctx.order(ctx.foes(ctx.self.base.rangeRadius))[0] : undefined;
   if (!t) return;
   ctx.use();
+  st.set('played', 1);
   st.set('lock', t.id + 1);
   st.set('until', ctx.frame + ctx.frames(ctx.bb['enemy_cnvsax[cd].duration']));
   st.set('beat', ctx.frame + ctx.frames(ctx.bb.hit_interval));
+}
+
+/**
+ * 狂欢式演奏's cooldown (敌能-97, the page's 冷却时间 note): the first one runs in either mode; once it has played, the
+ * next waits while it plays — it counts from the playing's end — and outside 反击模式, the skill's mode.
+ * @param {FoeContext} ctx @param {number} m
+ */
+function holdPlay(ctx, m) {
+  if (ctx.state.get('lock') > 0 || (ctx.state.get('played') === 1 && m !== 1)) ctx.holdCooldown();
 }
 
 /**
@@ -107,7 +117,12 @@ const fire = Object.freeze({
     const b = ctx.blocker();
     return ctx.state.get('mode') === 1 && ctx.state.get('lock') === 0 && b ? cands.filter((u) => u.id === b.id) : [];
   },
-  tick: (ctx) => { if (saxShape(ctx.bb)) play(ctx, mode(ctx)); },
+  tick: (ctx) => {
+    if (!saxShape(ctx.bb)) return;
+    const m = mode(ctx);
+    play(ctx, m);
+    holdPlay(ctx, m);
+  },
 });
 
 /**
