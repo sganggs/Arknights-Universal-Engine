@@ -8768,7 +8768,8 @@
         "hidden": true,
         "row": 6,
         "col": 6,
-        "dir": "UP"
+        "dir": "UP",
+        "mainSkillLvl": 2
       },
       {
         "alias": "trap_014_tower#2",
@@ -8776,7 +8777,8 @@
         "hidden": true,
         "row": 5,
         "col": 7,
-        "dir": "UP"
+        "dir": "UP",
+        "mainSkillLvl": 2
       },
       {
         "alias": "trap_014_tower#3",
@@ -8784,7 +8786,8 @@
         "hidden": true,
         "row": 4,
         "col": 6,
-        "dir": "UP"
+        "dir": "UP",
+        "mainSkillLvl": 2
       },
       {
         "alias": "trap_014_tower#4",
@@ -8792,7 +8795,8 @@
         "hidden": true,
         "row": 5,
         "col": 5,
-        "dir": "UP"
+        "dir": "UP",
+        "mainSkillLvl": 2
       },
       {
         "alias": "trap_014_tower#5",
@@ -8800,7 +8804,8 @@
         "hidden": true,
         "row": 5,
         "col": 5,
-        "dir": "UP"
+        "dir": "UP",
+        "mainSkillLvl": 3
       },
       {
         "alias": "trap_014_tower#6",
@@ -8816,7 +8821,8 @@
         "hidden": true,
         "row": 5,
         "col": 7,
-        "dir": "UP"
+        "dir": "UP",
+        "mainSkillLvl": 3
       },
       {
         "alias": "trap_014_tower#8",

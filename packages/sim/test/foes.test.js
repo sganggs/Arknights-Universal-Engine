@@ -68,6 +68,27 @@ test('[敌能-2] hooks: spawn, tick seeing hurt and unblocked, death; state per 
   assert.deepEqual(seen, [['spawn', 2], ['zap', 15, 3], ['hurt', 20], ['unblocked', 21], ['zap', 45, 3], ['death', 51]], 'ready 0.5 s after spawning, then 1 s after use');
 });
 
+test('[敌能-2] holdCooldown: a turn held does not count — a skill held for 10 turns after its use is ready 10 frames later; a ready one stays ready', () => {
+  /** @type {number[]} */
+  const used = [];
+  let hold = 0;
+  const { c, w } = arena({ skills: [{ key: 'zap', cooldown: 1, initCooldown: 0, bb: {} }] }, {
+    zap: { tick: (/** @type {any} */ ctx) => {
+      if (ctx.ready) { used.push(ctx.frame); ctx.use(); hold = 10; }
+      if (hold > 0) { hold--; ctx.holdCooldown(); }
+    } },
+  });
+  foe(w, c, 1, 3);
+  run(w, c, 90);
+  assert.deepEqual(used.slice(0, 3), [used[0], used[0] + 40, used[0] + 80], 'every 30 + 10 frames, not every 30');
+  const idle = arena({ skills: [{ key: 'zap', cooldown: 1, initCooldown: 0, bb: {} }] }, {
+    zap: { tick: (/** @type {any} */ ctx) => { ctx.holdCooldown(); if (ctx.ready) used.push(-ctx.frame); } },
+  });
+  const e = foe(idle.w, idle.c, 1, 3);
+  run(idle.w, idle.c, 3);
+  assert.equal(e.ab['zap.cd'], 0, 'holding a ready skill keeps it at 0');
+});
+
 test('[敌能-2] an initCooldown below 0 (the data\'s −1) is ready on its first turn, and again after resetSkills; a cooldown below 0 still uses it once', () => {
   /** @param {number} init */
   const zaps = (init) => {
@@ -105,6 +126,23 @@ test('[敌能-2] targets and attack hooks change whom an enemy attacks and how',
   assert.deepEqual(ev.filter((x) => x.type === 'attack').map((x) => x.target), [g.id], 'not blocking it, yet attacked');
   assert.equal(hp - g.hp, 200, 'arts 200 against res 0 (def 100 would cut physical)');
   assert.equal(e.hp, 1000);
+});
+
+test('[敌能-2] [索敌-5] a rank hook puts a candidate ahead of a newer one: 特殊优先级 before 仇恨值', () => {
+  /** @param {boolean} ranked */
+  const first = (ranked) => {
+    const { c, w } = arena({ applyWay: 'RANGED', rangeRadius: 3 }, {
+      pick: { rank: (/** @type {any} */ _ctx, /** @type {Unit} */ u) => (u.key === 'sniper' ? 0 : 1) },
+    });
+    c.enemies.foe.talents = ranked ? { pick: {} } : {};
+    foe(w, c, 1, 4);
+    const s = op(w, c, 'sniper', 0, 3), g = op(w, c, 'guard', 1, 2);
+    const at = run(w, c, 3).filter((x) => x.type === 'attack').map((x) => x.target);
+    return { at, s, g };
+  };
+  const plain = first(false), ranked = first(true);
+  assert.deepEqual(plain.at, [plain.g.id], 'without it, the one created later');
+  assert.deepEqual(ranked.at, [ranked.s.id], 'ranked 0 ahead of the newer guard');
 });
 
 test('[敌能-3] a delayed explosion: after its delay, the operators and neutral units within its radius, flying ones only if it reaches the air', () => {
