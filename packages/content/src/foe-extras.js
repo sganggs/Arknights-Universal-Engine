@@ -448,4 +448,8 @@ export const FOE_EXTRAS = Object.freeze({
     talents: { SleepImmune: {}, shield: { page: 1 }, charge: { layers: 6 } }, skills: { RefreshShield: { page: 1 }, occupy: { page: 1 } },
     source: `${PRTS}%E6%B3%A5%E5%B2%A9%28%E6%95%8C%E6%96%B9%29&oldid=378890`,
   },
+  // 鼠王 (敌能-144): 「出场时获得可吸收14001法术伤害的屏障，该屏障存在时防御力+3000」 — `page` marks the read `shield` and
+  // `defup` (布景小丑 / 布景大师 share { dynamic }); 唱沙's cross reaches 3 tiles each way (the page's range figure);
+  // 「普通攻击和技能不会选择飞行单位作为目标」 is noFly. SandStorm (a zone) and Mark (marks only) get nothing: uncovered.
+  enemy_1509_mousek: { talents: { shield: { page: 1 }, defup: { page: 1 }, noFly: {} }, skills: { DriftSand: { arm: 3 } }, source: `${PRTS}%E9%BC%A0%E7%8E%8B&oldid=378897` },
 });
