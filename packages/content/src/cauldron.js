@@ -1,19 +1,22 @@
 // 鼎沸 and 飘香 (docs/spec/foes.md 敌能-129), and the shapes of the shared talent `aoe`: 爆破攻坚手's splash share alone is
-// 敌能-26's cross splash (partisans.js), `atk_scale` and `ep_damage_ratio` alone is this pulse, and any other `aoe` stays
+// 敌能-26's cross splash (partisans.js), `atk_scale` and `ep_damage_ratio` with its marker is this pulse, and any other `aoe` stays
 // uncovered (关卡-2) and does nothing. The pulse is the whole talent row of the two pages: no normal attack, 停顿免疫, and
 // each second arts damage and 灼燃损伤 on the units in its attack range. It is a talent, so silence does not stop it
 // (如无特殊说明，天赋默认不可沉默). It acts only through the context (ADR 0055).
-// A third shape, 腐败骑士's with its page marker, is 敌能-145's cross (rotknights.js).
+// A third shape, 腐败骑士's with its page marker, is 敌能-145's cross (rotknights.js). The same two numbers as the pulse,
+// with the page's `radius`, are 卢西恩's and 不祥幻影's skill (敌能-156, lucien.js): a shape check cannot tell a talent
+// from a skill, so each of the two needs its own key.
 
 import { constants } from '@aue/sim';
 import { knightAoe } from './rotknights.js';
+import { shadeAoe } from './lucien.js';
 
 /** @typedef {import('@aue/sim').FoeContext} FoeContext */
 
 /** 爆破攻坚手's splash share (敌能-26), the only key of its `aoe`. */
 export const SPLASH = 'attack@bsthmr_range.atk_scale';
-/** The two numbers of the pulse's `aoe` (敌能-129). */
-const PULSE_KEYS = Object.freeze(['atk_scale', 'ep_damage_ratio']);
+/** The pulse's `aoe` (敌能-129): its two numbers and the marker FOE_EXTRAS gives the two read pages (敌能-156). */
+const PULSE_KEYS = Object.freeze(['atk_scale', 'ep_damage_ratio', 'page']);
 /** 不进行普通攻击, under a key no other ability gives. */
 const STILL = 'cauldronStill';
 /** 停顿免疫: 停顿 has no flag of its own, so `immune:sluggish` refuses it (状态-7). */
@@ -27,15 +30,15 @@ const exactly = (bb, keys) => Object.keys(bb).length === keys.length && keys.eve
 /** 爆破攻坚手's `aoe` (敌能-26): its splash share alone. @param {Record<string, unknown>} bb */
 export const splashAoe = (bb) => exactly(bb, [SPLASH]);
 
-/** 鼎沸's and 飘香's `aoe` (敌能-129): `atk_scale` and `ep_damage_ratio` alone. @param {Record<string, unknown>} bb */
+/** 鼎沸's and 飘香's `aoe` (敌能-129): `atk_scale`, `ep_damage_ratio` and the page marker. @param {Record<string, unknown>} bb */
 export const pulseAoe = (bb) => exactly(bb, PULSE_KEYS);
 
 /**
- * Whether an `aoe` blackboard is a shape the engine knows (敌能-26, 敌能-129, 敌能-145). Any other name is not this
- * check's: the caller still asks FOE_NEEDS (关卡-2).
+ * Whether an `aoe` blackboard is a shape the engine knows (敌能-26, 敌能-129, 敌能-145, 敌能-156). Any other name is not
+ * this check's: the caller still asks FOE_NEEDS (关卡-2).
  * @param {string} name @param {Record<string, unknown>} bb
  */
-export const aoeOwns = (name, bb) => name !== 'aoe' || splashAoe(bb) || pulseAoe(bb) || knightAoe(bb);
+export const aoeOwns = (name, bb) => name !== 'aoe' || splashAoe(bb) || pulseAoe(bb) || knightAoe(bb) || shadeAoe(bb);
 
 /** Gives a buff once; it is given again only if something took it away. @param {FoeContext} ctx @param {import('@aue/sim').buffs.BuffInit} init */
 function keep(ctx, init) {
