@@ -1,9 +1,9 @@
 // 萨卡兹枯朽系 (docs/spec/foes.md 敌能-46). No shipped level carries these ids, so the records are the game data's
-// blackboards (ArknightsGameData 17759cc8) plus the page extras. initCooldown is 0 here: the data's −1 is not a duration
-// secondsToFrames accepts, and the attack-charged bar does not use that cooldown.
+// blackboards (ArknightsGameData 17759cc8) plus the page extras. initCooldown is 0 here: the data's −1 is ready at once
+// as 0 is (敌能-2), and the attack-charged bar does not use that cooldown; one test plays the data's −1.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createWorld, step, attrs, status, buffs, damage, devices } from '@aue/sim';
+import { createWorld, step, stateHash, attrs, status, buffs, damage, devices } from '@aue/sim';
 import { tinyContent, oneWave, spawnAt } from '@aue/testkit';
 import { skeletonContent, withFoeExtras, FOE_EXTRAS } from '../src/index.js';
 import { uncoveredAbilities } from '../src/foes.js';
@@ -214,6 +214,20 @@ test('[敌能-46] 枯朽战车: the first attack is the skill, then two normal a
   const ev = run(w, c, 40);
   assert.deepEqual(took(ev, by.guard.id), [], 'the plain zone still respects 迷彩');
   assert.deepEqual(took(ev, box.id).map((x) => x.damage), [50], '我方单位 includes our device');
+});
+
+test('[敌能-2] [敌能-46] the data\'s initCooldown and cooldown of −1 play as the 0 these records use: the same hits, zones and state', () => {
+  /** @param {number} cd */
+  const play = (cd) => {
+    const def = tank('enemy_1272_nhtank');
+    const skills = (def.skills ?? []).map((s) => ({ ...s, cooldown: cd, initCooldown: cd }));
+    const { c, w, first } = bring([['enemy_1272_nhtank', { ...def, skills }]], [['guard', 1, 1]]);
+    const ev = [...first.map((x) => ({ ...x, f: 1 })), ...run(w, c, 600)];
+    return { hits: ev.filter((x) => x.type === 'hit').map((x) => [x.f, x.damage]), zones: w.zones?.length ?? 0, hash: stateHash(w) };
+  };
+  const data = play(-1);
+  assert.ok(data.hits.length >= 5, `it keeps attacking: ${data.hits.length} hits`);
+  assert.deepEqual(data, play(0));
 });
 
 test('[敌能-46] 枯朽战车 blocked: the skill stays 100% and the next attacks are 200%', () => {

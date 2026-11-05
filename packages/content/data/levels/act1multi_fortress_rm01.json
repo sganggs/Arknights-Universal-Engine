@@ -18474,7 +18474,8 @@
         "hidden": false,
         "row": 12,
         "col": 1,
-        "dir": "UP"
+        "dir": "UP",
+        "mainSkillLvl": 2
       },
       {
         "alias": "trap_209_mufrbs#2",
@@ -18482,7 +18483,8 @@
         "hidden": false,
         "row": 12,
         "col": 2,
-        "dir": "UP"
+        "dir": "UP",
+        "mainSkillLvl": 2
       },
       {
         "alias": "trap_206_mufrbk#3",
