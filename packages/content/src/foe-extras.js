@@ -158,6 +158,10 @@ export const FOE_EXTRAS = Object.freeze({
   enemy_1042_frostd: { talents: { atkSpeedDown: { range_radius: 2.5 }, Static: {} }, source: `${PRTS}%E5%AF%92%E9%9C%9C&oldid=371399` },
   // 澪: 普通攻击为2连击, and 寒晖 is those same two hits at 150% (talents [], PowerAttack has only atk_scale)
   enemy_10118_ymgprc: { skills: { PowerAttack: { times: 2 } }, source: `${PRTS}%E6%BE%AA&oldid=358826` },
+  // 深池弩炮手 / 深池弩炮队长: 爆破弹发射 — 对攻击目标及周围8格的我方单位造成攻击力100%物理普通伤害. The data's blackboard
+  // is empty; `square` marks these two read pages, so another empty PowerAttack stays uncovered (敌能-152, 关卡-2).
+  enemy_1289_dubmb: { skills: { PowerAttack: { square: 1 } }, source: `${PRTS}%E6%B7%B1%E6%B1%A0%E5%BC%A9%E7%82%AE%E6%89%8B&oldid=355340` },
+  enemy_1289_dubmb_2: { skills: { PowerAttack: { square: 1 } }, source: `${PRTS}%E6%B7%B1%E6%B1%A0%E5%BC%A9%E7%82%AE%E9%98%9F%E9%95%BF&oldid=355341` },
   // 静态刚体, as each page's ability cell says (the data has no talent for it; 敌能-37). Not their other talents — those are other behaviours.
   enemy_1017_defdrn: { talents: { Static: {} }, source: `${PRTS}%E5%BE%A14&oldid=380622` },
   // 半血恐惧's half and 「最终」 are not in the data (敌能-49). Static stays the 敌能-37 row.
