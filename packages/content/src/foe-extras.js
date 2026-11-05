@@ -457,4 +457,6 @@ export const FOE_EXTRAS = Object.freeze({
   // `Targets` is 凋零骑士's 最多同时攻击2个目标 (敌能-27).
   enemy_1513_dekght: { talents: { aoe: { page: 1 }, triggerrage: { page: 1, partner: 'enemy_1513_dekght_2' } }, skills: { ChargeAttack: { page: 1 } }, source: `${PRTS}%E8%85%90%E8%B4%A5%E9%AA%91%E5%A3%AB&oldid=361377` },
   enemy_1513_dekght_2: { talents: { Targets: { n: 2 }, triggerrage: { page: 1, partner: 'enemy_1513_dekght' } }, skills: { TripleAttack: { n: 3 } }, source: `${PRTS}%E5%87%8B%E9%9B%B6%E9%AA%91%E5%A3%AB&oldid=361330` },
+  // 杰斯顿·威廉姆斯 (敌能-146): `page` marks its four abilities. enemy_5055_dqkill has the same data and no read page.
+  enemy_1516_jakill: { talents: { reborn: { page: 1 }, enhance: { page: 1 } }, skills: { ironsandstorm: { page: 1 }, armorpiercing: { page: 1 } }, source: `${PRTS}%E6%9D%B0%E6%96%AF%E9%A1%BF%C2%B7%E5%A8%81%E5%BB%89%E5%A7%86%E6%96%AF&oldid=367674` },
 });

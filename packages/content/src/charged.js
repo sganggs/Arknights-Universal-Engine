@@ -7,10 +7,10 @@
  * Whether this attack is the skill (敌能-36). The cost is already gathered, the cooldown is ready (the skill table:
  * ready is not enough, the points have to be spent) and the enemy is not silenced. That attack clears the points and
  * starts the cooldown. Anything else stays an ordinary attack and counts once, capped at the cost — silence stops the
- * skill, not the count.
+ * skill, not the count. 杰斯顿·威廉姆斯's two skills count the same way (敌能-146).
  * @param {FoeContext} ctx
  */
-function isSkillAttack(ctx) {
+export function isSkillAttack(ctx) {
   const st = ctx.state, sp = st.get('sp');
   if (sp >= ctx.sp && ctx.ready && !ctx.stats(ctx.self).flags.silence) {
     st.set('sp', 0);
