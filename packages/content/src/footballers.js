@@ -6,6 +6,7 @@
 // team does beyond that is teams.js's.
 import { KIND } from '@aue/schema';
 import { beginRevival, endRebirth, avengerBehaviors } from './avenger.js';
+import { wolfReborn, wolfFatal, wolfRebornTick } from './wolflord.js';
 import { maceReborn, maceFatal, maceRebornTick } from './mace.js';
 import { MARK, RAGE, DRIBBLE, dist2, anyOf, openGoalTile, clearGoalTile, forwards, nearBall, kickless, teamBehaviors } from './teams.js';
 
@@ -271,17 +272,20 @@ export const playerReborn = (bb) => typeof bb.duration === 'number' && !('hp_rat
 
 /**
  * `Reborn` by its shape (敌能-18, 足球-9): a player's — a `duration` only — every knockdown, its HP back to the maximum
- * and `duration` seconds of 敌能-18's reviving; another the avenger's, once, at `hp_ratio`. 锏's — `duration` and
- * `invincible` with its page marker — goes first to mace.js (敌能-157), so it is not taken for a player's.
+ * and `duration` seconds of 敌能-18's reviving; another the avenger's, once, at `hp_ratio`. 扎罗's — a `duration` with
+ * 【远古威慑】's two numbers — goes first to wolflord.js (敌能-148), and 锏's — `duration` and `invincible` with its page
+ * marker — to mace.js (敌能-157), so neither is taken for a player's.
  * @type {FoeBehavior}
  */
 const Reborn = Object.freeze({
   fatal: (ctx) => {
+    if (wolfReborn(ctx.bb)) return wolfFatal(ctx);
     if (maceReborn(ctx.bb)) return maceFatal(ctx);
     return playerReborn(ctx.bb) ? beginRevival(ctx, 1) : avengerBehaviors.Reborn.fatal?.(ctx) ?? false;
   },
   tick: (ctx) => {
-    if (maceReborn(ctx.bb)) maceRebornTick(ctx);
+    if (wolfReborn(ctx.bb)) wolfRebornTick(ctx);
+    else if (maceReborn(ctx.bb)) maceRebornTick(ctx);
     else endRebirth(ctx);
   },
 });

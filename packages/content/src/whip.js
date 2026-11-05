@@ -5,21 +5,25 @@
 
 import { guardShape, digIn } from './stonecutter.js';
 import { stonesShape, broodShape, catapultAttack } from './catapult.js';
+import { snowShape, snowAttack } from './snowpriest.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior */
 /** @typedef {import('@aue/sim').FoeContext} FoeContext */
 
 /** 鞭笞者 / 拷打者 `Attack`: the half-strength shot and the leave aura. `range_radius` is the aura, not the shot. */
 const ATTACK_KEYS = new Set(['attack@ranged_atk_scale', 'range_radius', 'hp_ratio', 'atk', 'max_stack_cnt']);
-/** A death summon of only a count and a key. 骸骨卫士 adds `attack_speed` and `duration` and is not this. */
+/**
+ * A death summon of only a count and a key. 骸骨卫士 adds `attack_speed` and `duration` and is not this. The content's
+ * `page` marker may be there besides: the same two keys are skills elsewhere, and 敌能-153 covers only the read pages.
+ */
 const SUMMON_KEYS = new Set(['cnt', 'enemy_key']);
 
 /** One permanent 直接乘算 layer (属性-1 ③). Stacks sum, so n layers are ×(1 + atk·n), not 1.1ⁿ. */
 const WHIP_ATK = 'whipAtk';
 
-/** @param {Record<string, unknown>} bb @param {ReadonlySet<string>} keys */
-function exactKeys(bb, keys) {
-  const got = Object.keys(bb);
+/** @param {Record<string, unknown>} bb @param {ReadonlySet<string>} keys @param {string} [spare] a key that may be there besides them */
+function exactKeys(bb, keys, spare) {
+  const got = Object.keys(bb).filter((k) => k !== spare);
   if (got.length !== keys.size) return false;
   for (const k of got) if (!keys.has(k)) return false;
   return true;
@@ -37,7 +41,7 @@ function attackShape(bb) {
 
 /** @param {Record<string, unknown>} bb */
 function summonShape(bb) {
-  if (!exactKeys(bb, SUMMON_KEYS) || !num(bb.cnt)) return false;
+  if (!exactKeys(bb, SUMMON_KEYS, 'page') || !num(bb.cnt)) return false;
   return typeof bb.enemy_key === 'string' && bb.enemy_key !== '';
 }
 
@@ -47,7 +51,7 @@ function summonShape(bb) {
  * @param {string} name @param {Record<string, unknown>} bb
  */
 export function whipOwns(name, bb) {
-  if (name === 'Attack') return attackShape(bb) || guardShape(bb) || stonesShape(bb) || broodShape(bb);
+  if (name === 'Attack') return attackShape(bb) || guardShape(bb) || stonesShape(bb) || broodShape(bb) || snowShape(bb);
   if (name === 'Summon') return summonShape(bb);
   return true;
 }
@@ -83,6 +87,7 @@ function onLeave(ctx) {
 /**
  * 未被阻挡时 the shot is × `attack@ranged_atk_scale`. Blocked, the engine already hits only the blocker at ×1. 固海凿石者's
  * shape digs in before its first attack (敌能-87, stonecutter.js); 自制投石机's and 投嗣育母's are catapult.js's (敌能-106).
+ * 陷落雪祀's chain and 寒冷 are snowpriest.js's (敌能-142).
  */
 const Attack = Object.freeze(/** @type {FoeBehavior} */ ({
   targets: (ctx, cands) => catapultAttack.targets?.(ctx, cands) ?? cands,
@@ -92,6 +97,7 @@ const Attack = Object.freeze(/** @type {FoeBehavior} */ ({
   attack: (ctx, mods) => {
     const bb = bbOf(ctx);
     if (guardShape(bb)) return digIn(ctx, mods);
+    if (snowShape(bb)) return snowAttack(ctx, mods);
     if (!attackShape(bb) || ctx.blocked) return mods;
     return { ...mods, scale: mods.scale * /** @type {number} */ (bb['attack@ranged_atk_scale']) };
   },
