@@ -12,7 +12,7 @@ import { dealDamage, heal, setHp, knockDown } from './damage.js';
 import { dealEp } from './elements.js';
 import { selectable, sortAllies, friendly, evadesGround, stealthed } from './targeting.js';
 import { tileOf } from './body.js';
-import { tileAt } from './level.js';
+import { tileAt, buildableFor } from './level.js';
 import { board, alight, detour, wayKeys, becomeFlyer, becomeGround, displace, legsOf } from './routes.js';
 import { draw } from './rng.js';
 import { release } from './blocking.js';
@@ -78,6 +78,8 @@ export const BOLT_RADIUS = 0.3;
  *   (位移-3, 敌能-150); the first call starts the note, so a collision before it does not count
  * @property {boolean} ready a skill's cooldown is over
  * @property {() => void} use a skill was used: its cooldown starts again — one with a cooldown below 0 is not ready again
+ * @property {() => void} holdCooldown its skill's cooldown does not run this turn: called while a skill that lasts runs,
+ *   or outside the mode it is bound to (敌能-2). Once a turn.
  * @property {(seconds: number) => number} frames seconds as whole frames (时间-2)
  * @property {(name: string) => Record<string, number> | null} talent another talent's blackboard
  * @property {(radius: number, sel?: import('./targeting.js').Selector) => Unit[]} foes the units it may attack within `radius` of it.
@@ -184,6 +186,8 @@ export const BOLT_RADIUS = 0.3;
  * @property {(t: Unit, p: Payload) => void} hurl throws a homing skill projectile (敌能-83). Its speed is an enemy
  *   projectile's (攻击-3). `amount` is frozen as given. Arrival deals that as a skill hit, not an attack, then `status`
  *   when the target is still up
+ * @property {(row: number, col: number) => boolean} deployable whether the tile at (row, col) is a 可部署位: on the map,
+ *   its 部署类型 MELEE, RANGED or ALL (部署-1), whoever stands on it (敌能-141)
  */
 
 /**
@@ -192,6 +196,7 @@ export const BOLT_RADIUS = 0.3;
  * @property {(ctx: FoeContext) => void} [spawn]
  * @property {(ctx: FoeContext) => void} [tick]
  * @property {(ctx: FoeContext, cands: Unit[]) => Unit[]} [targets]
+ * @property {(ctx: FoeContext, u: Unit) => number} [rank] a candidate's 特殊优先级 for its attack, lower first (索敌-5)
  * @property {(ctx: FoeContext, mods: AttackMods) => AttackMods} [attack]
  * @property {(ctx: FoeContext, target: Unit) => boolean} [cancelHit] before the main hit of its normal attack is settled
  *   (a splash, a chain and an aftershock are not this): true cancels that hit (敌能-49)
@@ -250,6 +255,16 @@ function defaultAlly(c, u) {
 }
 
 /**
+ * A 可部署位 (敌能-141): a tile on the map a melee or a ranged operator may be deployed on by its 部署类型 (部署-1). Units
+ * on it do not matter.
+ * @param {Content} c @param {number} row @param {number} col
+ */
+function deployableAt(c, row, col) {
+  const t = tileAt(c.level, row, col);
+  return buildableFor(t, 'MELEE') || buildableFor(t, 'RANGED');
+}
+
+/**
  * The context's `bolt` (敌能-4): a direct bolt from the enemy, and its event. Kept out of contextOf for its line budget.
  * @param {World} w @param {Unit} e @param {Parameters<FoeContext['bolt']>[0]} b
  */
@@ -285,10 +300,12 @@ function contextOf(w, c, e, of) {
     bumpedHigh: () => bumpedHigh(ab),
     ready: skill !== null && (ab[`${name}.cd`] ?? 0) <= 0,
     use: () => { if (skill) ab[`${name}.cd`] = skill.cooldown < 0 ? ONCE : secondsToFrames(skill.cooldown); },
+    // the turn's frame off the cooldowns comes after its tick (foeTick): one frame back is this turn held
+    holdCooldown: () => { if ((ab[`${name}.cd`] ?? 0) > 0) ab[`${name}.cd`]++; },
     frames: secondsToFrames,
     talent: (t) => defOf(c, e).talents?.[t] ?? null,
     foes: (radius, sel) => w.units.filter((u) => isFoeOf(u, e) && selectable(u, sel) && dist2(u, e) <= radius * radius),
-    order: (units) => sortAllies(e, units, FPS),
+    order: (units) => sortAllies(e, units, FPS, foeRank(w, c, e)),
     allies: (radius) => w.units.filter((u) => u.kind === KIND.ENEMY && u.base.neutral !== true && u.hp > 0 && !u.hidden && dist2(u, e) <= radius * radius),
     talentOf: (u, t) => (u.kind === KIND.ENEMY ? defOf(c, u).talents?.[t] ?? null : null),
     buffValue: (u, key) => u.buffs.find((b) => b.key === key)?.value ?? null,
@@ -309,6 +326,7 @@ function contextOf(w, c, e, of) {
     ...blightContext(w, c, e),
     ground: () => { becomeGround(e); },
     defaultAlly: (u) => defaultAlly(c, u),
+    deployable: (row, col) => deployableAt(c, row, col),
     departed: () => readDeparted(w, ab, name),
     ...barrelContext(w, ab),
     ...footballContext(w, c, e),
@@ -576,6 +594,18 @@ export function foeTargets(w, c, e, cands) {
   let out = cands;
   each(w, c, e, 'targets', (b, ctx) => { if (b.targets) out = b.targets(ctx, out); });
   return out;
+}
+
+/**
+ * The 特殊优先级 its abilities give its attack's candidates (索敌-5, 敌能-2): one rank per ranking ability, in their
+ * order; undefined when none ranks.
+ * @param {World} w @param {Content} c @param {Unit} e @returns {((u: Unit) => number[]) | undefined}
+ */
+export function foeRank(w, c, e) {
+  /** @type {((u: Unit) => number)[]} */
+  const ranks = [];
+  each(w, c, e, 'rank', (b, ctx) => { const r = b.rank; if (r) ranks.push((u) => r(ctx, u)); });
+  return ranks.length > 0 ? (u) => ranks.map((r) => r(u)) : undefined;
 }
 
 /** The mods of an enemy's attack after its abilities (敌能-2). @param {World} w @param {Content} c @param {Unit} e @param {AttackMods} mods */

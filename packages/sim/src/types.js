@@ -30,7 +30,8 @@
  */
 /**
  * A predefined unit (波次-6): its tile and facing when the data gives them; a predefined operator's training (波次-7).
- * @typedef {{ alias: string, key: string, hidden: boolean, row?: number, col?: number, dir?: string, build?: import('@aue/schema').Build }} Predefine
+ * A predefined device's initial skill level is written only when it is not the default 1.
+ * @typedef {{ alias: string, key: string, hidden: boolean, row?: number, col?: number, dir?: string, mainSkillLvl?: number, build?: import('@aue/schema').Build }} Predefine
  */
 /**
  * A device's record (关卡-6, 装置-1): its name, attributes and its talents' blackboard; its side when it is the enemies'
@@ -135,6 +136,12 @@
  * 技能-14, read from other sentences: `counter` while the skill runs, a `barrier` gained as it starts, `bursts` at the
  * start or the end, `selfStun` when it ends, `allyHeal` for a friendly unit. `hitScale` `'attack'` means a plain
  * `atk_scale` belongs to the counter or the burst, so the attack's scale is `attack@atk_scale`.
+ * 技能-15: no new attacks while it runs (`stopAttack`; its first `seconds` only, when given) or for `seconds` once it ends
+ * (`stopAfter`); `costGain`, `cost` each `every` seconds while it runs, `steps` times (`plain`: those are the blackboard's
+ * own `interval` and `cost`, so that `cost` is not also gained at the start); `selfLoss`, HP lost as it starts (`ratio` of
+ * its HP, or of its maximum with `ofMax`); `opening`, what it does to enemies as it starts — those in its attack range
+ * (`most`: the first that many it would attack), or those it blocks — a hit of `scale` × its attack, then statuses. An
+ * opening hit's plain `atk_scale` is claimed by `hitScale` too.
  * @typedef {{ mods?: Record<string, number>, flags?: Record<string, boolean>, attack?: { blocked?: boolean, more?: number, times?: number, type?: DamageType,
  *   hitStatus?: { key: import('./status.js').StatusKey, seconds: number, prob?: number }, hitDebuff?: { seconds: number, mods: Record<string, number> },
  *   selfHeal?: number, element?: import('./elements.js').Element, epScale?: number,
@@ -145,6 +152,9 @@
  *   bursts?: { at: 'start' | 'end', scale: number, type: DamageType, where: 'attack' | 'cells', range?: Cell[] }[],
  *   selfStun?: { seconds: number },
  *   allyHeal?: { scale: number, all?: boolean, others?: boolean, on: 'attack' | 'start', below?: number, range?: Cell[] },
+ *   stopAttack?: { seconds?: number }, stopAfter?: { seconds: number }, costGain?: { every: number, cost: number, steps: number, plain?: boolean },
+ *   selfLoss?: { ratio: number, ofMax?: boolean },
+ *   opening?: { where: 'attack' | 'blocked', most?: number, hit?: { scale: number, type: DamageType }, status: { key: import('./status.js').StatusKey, seconds: number }[] }[],
  *   hitScale?: 'attack' }} SkillExtra
  */
 /**
@@ -575,8 +585,9 @@
  */
 /**
  * A chain (职业-11): at most `max` targets in all, each jump at `scale` × the one before; a damage chain jumps to the
- * nearest enemy within `radius`, a heal chain to an operator among `cells` around the current target.
- * @typedef {{ max: number, scale: number, radius: number, cells: Cell[] | null }} Chain
+ * nearest enemy within `radius`, a heal chain to an operator among `cells` around the current target. `side` `friendly`
+ * (an enemy's, 敌能-142) jumps to operators, neutral units and our devices instead.
+ * @typedef {{ max: number, scale: number, radius: number, cells: Cell[] | null, side?: 'friendly' }} Chain
  */
 /**
  * A splash (职业-8): every other enemy within `radius` tiles of the target (only those on the ground when `ground`)
@@ -862,10 +873,12 @@
  * tiles per second, and what it carries — the damage type and amount, hits, 元素损伤 ('' and 0 for none); a boomerang
  * (职业-12) its way back's speed and, on its way back, `ret` 1; `held` 1 while content holds it where it arrived.
  * `skillHit` 1 is a skill projectile (敌能-83): arrival deals what it carries as a skill hit, not an attack, then
- * applies `hitStatus`. Absent on every other shot, so a shot that is not one still hashes the same.
+ * applies `hitStatus`. Absent on every other shot, so a shot that is not one still hashes the same. `vsBuff` is the
+ * 倍率 its hit takes on a target holding that buff (敌能-141), absent the same way.
  * @typedef {{ src: number, target: number, sx: number, sy: number, speed: number, type: DamageType, amount: number, times: number, element: string, ep: number,
  *   splash?: Splash | null, aftershock?: number, chain?: Chain | null, hitStatus?: { key: import('./status.js').StatusKey, seconds: number } | null,
- *   skill?: boolean, skillHit?: number, back?: number, ret?: number, held?: number, mark?: number, frozen?: number, ignoreDef?: number }} Shot
+ *   skill?: boolean, skillHit?: number, back?: number, ret?: number, held?: number, mark?: number, frozen?: number, ignoreDef?: number,
+ *   vsBuff?: { key: string, scale: number } }} Shot
  */
 
 /**
