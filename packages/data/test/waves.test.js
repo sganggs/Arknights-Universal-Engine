@@ -40,6 +40,20 @@ test('[波次-4] hidden groups enabled at a difficulty: the runes whose mask nam
   assert.deepEqual([maskCovers('NONE', 'NORMAL'), maskCovers(4, 'NORMAL'), maskCovers(1, 'NORMAL')], [false, false, true]);
 });
 
+test('[波次-6] a predefined device\'s initial skill level: 1 and a missing one are left out, 2 and 3 are kept', () => {
+  const tok = (/** @type {string} */ alias, /** @type {number | undefined} */ mainSkillLvl) => ({
+    alias, hidden: true, position: { row: 5, col: 6 }, direction: 'UP', mainSkillLvl, inst: { characterKey: 'trap_014_tower' },
+  });
+  const out = predefinesOf({ characterInsts: [], tokenInsts: [tok('trap_014_tower#1', 1), tok('trap_014_tower#2', 2), tok('trap_014_tower#3', 3), tok('trap_014_tower#4', undefined)] });
+  assert.deepEqual(out.map((p) => [p.alias, p.mainSkillLvl]), [['trap_014_tower#1', undefined], ['trap_014_tower#2', 2], ['trap_014_tower#3', 3], ['trap_014_tower#4', undefined]]);
+  assert.deepEqual(out.map((p) => 'mainSkillLvl' in p), [false, true, true, false]);
+  assert.throws(() => predefinesOf({ characterInsts: [], tokenInsts: [tok('trap_014_tower#0', 0)] }), /mainSkillLvl/);
+  const op = { alias: null, hidden: false, position: { row: 1, col: 1 }, direction: 'RIGHT', skillIndex: 0, mainSkillLvl: 3, inst: { characterKey: 'char_002_amiya', level: 1, phase: 'PHASE_0', potentialRank: 0 } };
+  const ops = predefinesOf({ characterInsts: [op], tokenInsts: [] });
+  assert.equal(ops[0].mainSkillLvl, undefined, 'an operator keeps the level on build.skillLevel');
+  assert.equal(ops[0].build?.skillLevel, 3);
+});
+
 test('[波次-6] predefined units: the instances with an alias, their key, whether they start hidden, their tile and facing', () => {
   const inst = (/** @type {string | null} */ alias, /** @type {string} */ key, /** @type {boolean} */ hidden) => ({ alias, hidden, position: { row: 2, col: 8 }, direction: 'UP', inst: { characterKey: key } });
   assert.deepEqual(predefinesOf({ characterInsts: [inst('dev#1', 'trap_x', false)], tokenInsts: [inst('trap#1', 'trap_179_muctrl', true), inst(null, 'trap_y', false)], characterCards: [] }), [

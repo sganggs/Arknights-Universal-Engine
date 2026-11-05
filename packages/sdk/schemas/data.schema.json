@@ -2963,6 +2963,18 @@
               "type": "null"
             }
           ]
+        },
+        "mainSkillLvl": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "additionalProperties": false

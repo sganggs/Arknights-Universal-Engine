@@ -89,21 +89,31 @@ const Creation = Object.freeze({
  * one for `hit_duration` seconds — standing, no normal attacks, 沉默反制 (silence cleared and kept off) — dealing
  * `atk_scale` of its 攻击力 as arts damage each second; at the end the target and the units on the four tiles next to it
  * take `ep_damage_ratio` of it as 凋亡损伤. The target gone or the enemy unable to act, the channel stops.
+ * @param {FoeContext} ctx
+ */
+function castDeathEye(ctx) {
+  const s = ctx.stats(ctx.self);
+  if (!ctx.ready || s.disabled || s.flags.silence) return;
+  const [t] = ctx.order(ctx.foes(ctx.self.base.rangeRadius + 0.25));
+  if (!t) return;
+  ctx.use();
+  ctx.state.set('target', t.id);
+  ctx.state.set('left', ctx.frames(ctx.bb.hit_duration));
+  ctx.state.set('t', 0);
+  ctx.removeBuff(ctx.self, 'silence');
+  ctx.addBuff(ctx.self, { key: 'deathEye', flags: { 'immune:silence': true, root: true, noAttack: true } });
+}
+
+/**
+ * 死亡之眼 (敌能-29): a channel, or a new one. Its cooldown waits while the channel runs: it counts from the channel's
+ * end, finished or stopped (the pages' 冷却时间 note).
  * @type {FoeBehavior}
  */
 const DeathEye = Object.freeze({
   tick: (ctx) => {
-    if (ctx.state.get('left') > 0) { channel(ctx); return; }
-    const s = ctx.stats(ctx.self);
-    if (!ctx.ready || s.disabled || s.flags.silence) return;
-    const [t] = ctx.order(ctx.foes(ctx.self.base.rangeRadius + 0.25));
-    if (!t) return;
-    ctx.use();
-    ctx.state.set('target', t.id);
-    ctx.state.set('left', ctx.frames(ctx.bb.hit_duration));
-    ctx.state.set('t', 0);
-    ctx.removeBuff(ctx.self, 'silence');
-    ctx.addBuff(ctx.self, { key: 'deathEye', flags: { 'immune:silence': true, root: true, noAttack: true } });
+    if (ctx.state.get('left') > 0) channel(ctx);
+    else castDeathEye(ctx);
+    if (ctx.state.get('left') > 0) ctx.holdCooldown();
   },
 });
 
