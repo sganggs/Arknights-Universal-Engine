@@ -17,10 +17,11 @@ const libertyMods = (bb) => ({
 const free = (ctx, u) => ctx.buffValue(u, 'liberty') !== null;
 
 /**
- * Liberates a prisoner not liberated yet (敌能-17): its 禁锢 buff off, its 解放 buff on.
+ * Liberates a prisoner not liberated yet (敌能-17): its 禁锢 buff off, its 解放 buff on. 杰斯顿·威廉姆斯's 杀手形态 liberates
+ * the prisoners on the field with it (敌能-146).
  * @param {FoeContext} ctx @param {Unit} u
  */
-function liberate(ctx, u) {
+export function liberate(ctx, u) {
   const bb = ctx.talentOf(u, 'liberty');
   if (!bb || free(ctx, u)) return;
   ctx.removeBuff(u, 'confinement');
