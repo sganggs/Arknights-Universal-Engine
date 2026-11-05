@@ -7831,6 +7831,34 @@
       "tags": [
         "drone"
       ]
+    },
+    "enemy_1400_dhtbgj_2": {
+      "name": "身上的天标二",
+      "maxHp": 1,
+      "atk": 300,
+      "def": 0,
+      "res": 0,
+      "moveSpeed": 1,
+      "baseAttackTime": 1,
+      "rangeRadius": -1,
+      "applyWay": "NONE",
+      "motion": "WALK",
+      "massLevel": 0,
+      "levelType": "NORMAL",
+      "lifePointReduce": 0,
+      "immune": [
+        "stun",
+        "silence",
+        "sleep",
+        "freeze",
+        "levitate",
+        "disarmedCombat"
+      ],
+      "talents": {
+        "Passive": {
+          "damage_value": 300
+        }
+      }
     }
   },
   "devices": {

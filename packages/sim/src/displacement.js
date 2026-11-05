@@ -15,6 +15,7 @@ import { crossable } from './paths.js';
 import { dealDamage } from './damage.js';
 import { FRICTION, STOP_SPEED, HARD_FRAMES } from './constants.js';
 import { ballFriction, ballMove, ballMoved, ballRoll } from './ball.js';
+import { stoppedBy } from './hitwall.js';
 
 /** @typedef {import('./types.js').World} World @typedef {import('./types.js').Unit} Unit @typedef {import('./types.js').Content} Content */
 /**
@@ -191,6 +192,8 @@ function step(c, t, dx, dy, w) {
   const walled = (r !== r0 || col !== c0) && tileAt(m, r0, c0) !== null && !crossable(m, r0 * m.width + c0, r * m.width + col, false);
   if (!tile || tile.passable !== 'ALL' || walled) {
     if (t.slide) t.slide = { ...t.slide, vx: 0, vy: 0 };
+    // stopped against a 高地 tile, it collided with high ground: noted for its abilities (敌能-150)
+    stoppedBy(t, tile);
     return;
   }
   displace(t, nx, ny);

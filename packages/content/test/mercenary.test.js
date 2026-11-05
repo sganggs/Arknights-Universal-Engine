@@ -41,7 +41,7 @@ test('[敌能-94] PhysicalEvade: a physical dodge of prob from spawn; Evade: phy
   const mods = (/** @type {Unit} */ u) => u.buffs.find((b) => b.key === 'evade')?.mods;
   assert.deepEqual([mods(shoe), mods(skull)], [{ dodgePhys: 0.4 }, { dodgePhys: 0.4, dodgeArts: 0.4 }], 'lasting dodges (伤害-8)');
   assert.ok(shoe.buffs.find((b) => b.key === 'evade')?.left === -1);
-  assert.deepEqual(uncoveredAbilities([def({ PhysicalEvade: { prob: 0.4 } }), def({ Evade: { prob: 0.4 } })]), []);
+  assert.deepEqual(uncoveredAbilities([def({ PhysicalEvade: { prob: 0.4 } }), withFoeExtras('enemy_1419_mmcike', def({ Evade: { prob: 0.4 } }))]), []);
   assert.deepEqual(uncoveredAbilities([def({ Evade: { prob: 0.4, duration: 3 } })]), ['Evade']);
 });
 

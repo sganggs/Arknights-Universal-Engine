@@ -1,12 +1,16 @@
 // 闪现 (docs/spec/foes.md 敌能-73, 敌能-84). One behaviour for the shared name.
 // “灰礼帽”: { atk_scale, dist }, a full SP bar, an even 2s glide, then a hit 0.3s after the trigger.
 // 弑君者: { dist, glide }, a cooldown, an even glide of `glide` seconds (the page's 0.5s, not a data key), and no hit.
-// { dist } alone is 卢西恩 and stays uncovered (关卡-2). The 1s 不可阻挡 is the page's duration, not a blackboard key.
+// 卢西恩 (敌能-156): the crown's { dist, glide } and the `enemy_key` of the 不祥幻影 it leaves where the blink starts.
+// { dist } alone, its data without those, stays uncovered (关卡-2). The 1s 不可阻挡 is the page's duration, not a blackboard key.
 // 魔球帮's players (cup.md 锦标-3): { min_dist, max_dist, blink_cd }, a jump toward the ball or its target now and then.
 // 裹骸死士 (敌能-96): `Blink` { max_hp_ratio, dist }, once below that share of its HP and blocked, at once `dist` on.
+// 锏's 速杀 (敌能-157): `Blink` in its first form and `Blink2` in its second, { atk_scale, dist, glide } — `glide` the
+// page's 0.5 s, as 弑君者's —: a cooldown, the crown's slip and glide, then the hat's hit 0.3 s on, twice in the second form.
 import { hypot } from '@aue/math';
 import { onItsOwn } from './footballers.js';
 import { dist2, nearBallTarget } from './teams.js';
+import { maceSecond, maceReviving, maceFree, maceCast } from './mace.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior */
 /** @typedef {import('@aue/sim').FoeContext} FoeContext */
@@ -45,15 +49,31 @@ const teamShape = (bb) => shape(bb, TEAM_KEYS, TEAM_KEYS);
 const crownShape = (bb) => shape(bb, CROWN_KEYS, CROWN_KEYS);
 /** @param {Record<string, unknown>} bb */
 const skullShape = (bb) => shape(bb, SKULL_KEYS, SKULL_KEYS);
+/** 锏 (敌能-157). `glide` is the page's seconds: 路加萨尔古斯's `Blink` has the other two keys and no page. */
+const MACE_KEYS = new Set(['atk_scale', 'dist', 'glide']);
+/** @param {Record<string, unknown>} bb */
+const maceShape = (bb) => shape(bb, MACE_KEYS, MACE_KEYS);
+
+/** 卢西恩 (敌能-156): the crown's two numbers and the enemy it leaves, by key — both only on its page. */
+const SHADE_KEYS = new Set(['dist', 'glide', 'enemy_key']);
+/** @param {Record<string, unknown>} bb */
+const shadeShape = (bb) => shape(bb, CROWN_KEYS, SHADE_KEYS) && typeof bb.enemy_key === 'string' && bb.enemy_key !== '';
 
 /**
- * Whether a behaviour of this name is one of these blinks, when the name is blink or Blink (敌能-73, 敌能-84, 敌能-96,
- * 锦标-3). Any other name is not this family's concern.
+ * Whether its blink triggered in this turn (敌能-156): the 1 s slip of the trigger has not lost a frame yet — the buffs
+ * tick before the enemies' turns (帧-1). 卢西恩's other skill gives way to it then. @param {FoeContext} ctx
+ */
+export const blinkedNow = (ctx) => ctx.self.buffs.some((b) => b.key === 'blinkSlip' && b.left === ctx.frames(SLIP_S));
+
+/**
+ * Whether a behaviour of this name is one of these blinks, when the name is blink, Blink or Blink2 (敌能-73, 敌能-84,
+ * 敌能-96, 敌能-156, 敌能-157, 锦标-3). Any other name is not this family's concern.
  * @param {string} name @param {Record<string, unknown>} bb
  */
 export function blinkOwns(name, bb) {
-  if (name === 'Blink') return skullShape(bb);
-  return name !== 'blink' || hatShape(bb) || crownShape(bb) || teamShape(bb);
+  if (name === 'Blink') return skullShape(bb) || maceShape(bb);
+  if (name === 'Blink2') return maceShape(bb);
+  return name !== 'blink' || hatShape(bb) || crownShape(bb) || teamShape(bb) || shadeShape(bb);
 }
 
 /** Ready, blocked, able to act, not silenced (敌能-73, 敌能-84). @param {FoeContext} ctx */
@@ -62,11 +82,11 @@ function acting(ctx) {
   return ctx.ready && ctx.blocked && !s.disabled && !s.flags.silence;
 }
 
-/** Hat: a full bar. Crown: the dist+glide shape, no SP (敌能-84). @param {FoeContext} ctx */
+/** Hat: a full bar. Crown and 卢西恩: their shapes, no SP (敌能-84, 敌能-156). @param {FoeContext} ctx */
 function armed(ctx) {
   if (!acting(ctx)) return false;
   if (hatShape(ctx.bb)) return ctx.sp > 0 && ctx.state.get('sp') >= ctx.sp;
-  return crownShape(ctx.bb);
+  return crownShape(ctx.bb) || shadeShape(ctx.bb);
 }
 
 /**
@@ -100,7 +120,18 @@ function startGlide(ctx, to, sec) {
   ctx.addBuff(ctx.self, { key: 'blinkGlide', flags: { unblockable: true, invincible: true, noDisplace: true }, left: ctx.frames(sec) });
 }
 
-/** Slips the block. A hat also spends its bar and stores the hit; a crown only restarts the cooldown (敌能-84). @param {FoeContext} ctx */
+/**
+ * ③ of 卢西恩 (敌能-156): one `enemy_key` where the blink starts — it has not moved yet this turn —, on its route from the
+ * leg it is on, at once. @param {FoeContext} ctx
+ */
+function leaveShade(ctx) {
+  ctx.summon(String(/** @type {unknown} */ (ctx.bb.enemy_key)), { cnt: 1, delay: 0, bound: 0, tile: false });
+}
+
+/**
+ * Slips the block. A hat also spends its bar and stores the hit; a crown only restarts the cooldown (敌能-84); 卢西恩
+ * also leaves its 不祥幻影 when ② goes ahead (敌能-156). @param {FoeContext} ctx
+ */
 function begin(ctx) {
   const hat = hatShape(ctx.bb);
   if (hat) ctx.state.set('sp', 0);
@@ -109,6 +140,7 @@ function begin(ctx) {
   if (hat) noteBlocker(ctx);
   const to = destination(ctx);
   if (!to) return;
+  if (shadeShape(ctx.bb)) leaveShade(ctx);
   const glide = ctx.bb.glide;
   startGlide(ctx, to, hat ? HAT_GLIDE_S : (typeof glide === 'number' ? glide : 0));
 }
@@ -175,10 +207,62 @@ function skullBlink(ctx) {
   if (to) ctx.place(to.x, to.y);
 }
 
-/** `Blink` (敌能-96). @type {FoeBehavior} */
-const Blink = Object.freeze({ tick: (ctx) => { if (skullShape(ctx.bb)) skullBlink(ctx); } });
+/**
+ * 锏's 速杀 starting (敌能-157): it is cast (cooldown, the attack's turn), slips the block for 1 s, notes the unit that
+ * blocked it for the hit 0.3 s on and glides `dist` toward its course over `glide` s where it may stand there.
+ * @param {FoeContext} ctx
+ */
+function maceBegin(ctx) {
+  maceCast(ctx);
+  ctx.addBuff(ctx.self, { key: 'blinkSlip', flags: { unblockable: true }, left: ctx.frames(SLIP_S) });
+  noteBlocker(ctx);
+  const to = destination(ctx);
+  if (to) startGlide(ctx, to, ctx.bb.glide);
+}
 
-/** 闪现 (敌能-73, 敌能-84). A hat's attack only fills the bar. A crown's attack is ordinary and adds nothing. @type {FoeBehavior} */
+/**
+ * 速杀's ③ (敌能-157): 0.3 s after the trigger, the unit that blocked it takes the attack it has then × `atk_scale` as
+ * physical skill damage, `times` hits; none once it has left or has no HP. @param {FoeContext} ctx @param {number} times
+ */
+function maceStrike(ctx, times) {
+  const due = ctx.state.get('due');
+  if (!(due > 0) || ctx.frame < due) return;
+  ctx.state.set('due', 0);
+  const t = ctx.unit(ctx.state.get('who')), amount = ctx.bb.atk_scale * ctx.stats(ctx.self).atk;
+  for (let i = 0; i < times && t && t.hp > 0; i++) ctx.dealDamage(t, { type: 'phys', amount, isAttack: false, isSkill: true });
+}
+
+/**
+ * 锏's 速杀 (敌能-157), `second` for `Blink2`: in its own form, ready, blocked and free, it starts; a glide under way goes
+ * on and the hit lands — twice in the second form —; the rebirth stops both (「中止当前行动」).
+ * @param {FoeContext} ctx @param {boolean} second
+ */
+function maceBlink(ctx, second) {
+  if (maceReviving(ctx)) {
+    if (ctx.state.get('n') > 0) ctx.state.set('n', 0);
+    if (ctx.state.get('due') > 0) ctx.state.set('due', 0);
+    return;
+  }
+  if (maceSecond(ctx) === second && ctx.ready && ctx.blocked && maceFree(ctx)) maceBegin(ctx);
+  glide(ctx);
+  maceStrike(ctx, second ? 2 : 1);
+}
+
+/** `Blink` (敌能-96, 敌能-157): 裹骸死士's, or 锏's first form's 速杀. @type {FoeBehavior} */
+const Blink = Object.freeze({
+  tick: (ctx) => {
+    if (skullShape(ctx.bb)) skullBlink(ctx);
+    else if (maceShape(ctx.bb)) maceBlink(ctx, false);
+  },
+});
+
+/** `Blink2` (敌能-157): 锏's second form's 速杀. @type {FoeBehavior} */
+const Blink2 = Object.freeze({ tick: (ctx) => { if (maceShape(ctx.bb)) maceBlink(ctx, true); } });
+
+/**
+ * 闪现 (敌能-73, 敌能-84, 敌能-156). A hat's attack only fills the bar. A crown's attack, and 卢西恩's, is ordinary and adds
+ * nothing. @type {FoeBehavior}
+ */
 const blink = Object.freeze({
   attack: (ctx, mods) => {
     if (!hatShape(ctx.bb)) return mods;
@@ -187,7 +271,7 @@ const blink = Object.freeze({
   },
   tick: (ctx) => {
     if (teamShape(ctx.bb)) { teamBlink(ctx); return; }
-    if (!hatShape(ctx.bb) && !crownShape(ctx.bb)) return;
+    if (!hatShape(ctx.bb) && !crownShape(ctx.bb) && !shadeShape(ctx.bb)) return;
     if (armed(ctx)) begin(ctx);
     glide(ctx);
     if (hatShape(ctx.bb)) strike(ctx);
@@ -204,4 +288,4 @@ const ShiftImmune = Object.freeze({
 });
 
 /** @type {Readonly<Record<string, FoeBehavior>>} */
-export const blinkBehaviors = Object.freeze({ blink, Blink, ShiftImmune });
+export const blinkBehaviors = Object.freeze({ blink, Blink, ShiftImmune, Blink2 });

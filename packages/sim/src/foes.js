@@ -6,13 +6,14 @@ import { KIND } from '@aue/schema';
 import { statsOf } from './attrs.js';
 import { addBuff, removeBuff, makeBuff, retune, setLeft, setBaseMaxHp, removeTagged } from './buffs.js';
 import { setAmmo } from './skills.js';
+import { setSp } from './sp.js';
 import { inflict } from './status.js';
 import { launch } from './swing.js';
 import { dealDamage, heal, setHp, knockDown } from './damage.js';
 import { dealEp } from './elements.js';
 import { selectable, sortAllies, friendly, evadesGround, stealthed } from './targeting.js';
 import { tileOf } from './body.js';
-import { tileAt } from './level.js';
+import { tileAt, buildableFor } from './level.js';
 import { board, alight, detour, wayKeys, becomeFlyer, becomeGround, displace, legsOf } from './routes.js';
 import { draw } from './rng.js';
 import { release } from './blocking.js';
@@ -32,6 +33,7 @@ import { placeTasting, tickTastings } from './tasting.js';
 import { readDeparted } from './exits.js';
 import { grantLootCards } from './loot.js';
 import { footballContext } from './football.js';
+import { bumpedHigh, seenBump } from './hitwall.js';
 
 /** @typedef {import('./types.js').World} World @typedef {import('./types.js').Content} Content @typedef {import('./types.js').Unit} Unit */
 /** @typedef {import('./types.js').EnemyDef} EnemyDef @typedef {import('./types.js').Blast} Blast @typedef {import('./types.js').Bolt} Bolt */
@@ -39,6 +41,12 @@ import { footballContext } from './football.js';
 
 /** The cooldown, in frames, of a skill used once (its record's cooldown below 0, 敌能-2): longer than any battle. */
 const ONCE = 2147483647;
+
+/**
+ * A skill's first cooldown in frames (敌能-2): its `initCooldown` seconds; one below 0 (the data's −1) is ready at once.
+ * @param {import('./types.js').FoeSkill} s @returns {number}
+ */
+const firstCooldown = (s) => (s.initCooldown < 0 ? 0 : secondsToFrames(s.initCooldown));
 
 /** A 直击 bolt's speed in tiles per second, and the radius it hits within (敌能-4). */
 export const BOLT_SPEED = 10;
@@ -73,8 +81,14 @@ export const BOLT_RADIUS = 0.3;
  *   (敌能-38); an enemy no ability asks about keeps no count
  * @property {boolean} unblocked its block ended since its last turn
  * @property {boolean} fell it fell into a 地穴 (地图-4)
+ * @property {() => boolean} bumpedHigh a 失衡 slide of its stopped against a 高地 tile since its last turn's `tick`
+ *   (位移-3, 敌能-150); the first call starts the note, so a collision before it does not count
  * @property {boolean} ready a skill's cooldown is over
+ * @property {(name: string) => boolean} readyOf whether another of its skills, by name, is ready — its cooldown over —; false for
+ *   a name it has no skill of (敌能-157)
  * @property {() => void} use a skill was used: its cooldown starts again — one with a cooldown below 0 is not ready again
+ * @property {() => void} holdCooldown its skill's cooldown does not run this turn: called while a skill that lasts runs,
+ *   or outside the mode it is bound to (敌能-2). Once a turn.
  * @property {(seconds: number) => number} frames seconds as whole frames (时间-2)
  * @property {(name: string) => Record<string, number> | null} talent another talent's blackboard
  * @property {(radius: number, sel?: import('./targeting.js').Selector) => Unit[]} foes the units it may attack within `radius` of it.
@@ -141,6 +155,8 @@ export const BOLT_RADIUS = 0.3;
  *   (路线-2, 敌能-48); a unit that is not flying is left as it is
  * @property {(u: Unit) => number} ammoOf shots left on a unit's running ammo skill, otherwise 0 (敌能-49, 技能-4)
  * @property {(u: Unit, n: number) => void} spendAmmo takes that many shots, not below 0, and does not end the skill (敌能-49)
+ * @property {(u: Unit) => void} clearSp a unit's SP to 0 (技能-2); a running skill goes on, a unit without a skill is left as
+ *   it is (敌能-157)
  * @property {(u: Unit, key: string, frames: number, mods: Record<string, number>) => void} renew sets that buff's frames
  *   left and replaces its modifiers; adds it when the unit has none (敌能-49)
  * @property {() => Unit[]} ours operators and our devices still on the field (敌能-49)
@@ -183,6 +199,8 @@ export const BOLT_RADIUS = 0.3;
  * @property {(t: Unit, p: Payload) => void} hurl throws a homing skill projectile (敌能-83). Its speed is an enemy
  *   projectile's (攻击-3). `amount` is frozen as given. Arrival deals that as a skill hit, not an attack, then `status`
  *   when the target is still up
+ * @property {(row: number, col: number) => boolean} deployable whether the tile at (row, col) is a 可部署位: on the map,
+ *   its 部署类型 MELEE, RANGED or ALL (部署-1), whoever stands on it (敌能-141)
  */
 
 /**
@@ -191,6 +209,7 @@ export const BOLT_RADIUS = 0.3;
  * @property {(ctx: FoeContext) => void} [spawn]
  * @property {(ctx: FoeContext) => void} [tick]
  * @property {(ctx: FoeContext, cands: Unit[]) => Unit[]} [targets]
+ * @property {(ctx: FoeContext, u: Unit) => number} [rank] a candidate's 特殊优先级 for its attack, lower first (索敌-5)
  * @property {(ctx: FoeContext, mods: AttackMods) => AttackMods} [attack]
  * @property {(ctx: FoeContext, target: Unit) => boolean} [cancelHit] before the main hit of its normal attack is settled
  *   (a splash, a chain and an aftershock are not this): true cancels that hit (敌能-49)
@@ -249,6 +268,16 @@ function defaultAlly(c, u) {
 }
 
 /**
+ * A 可部署位 (敌能-141): a tile on the map a melee or a ranged operator may be deployed on by its 部署类型 (部署-1). Units
+ * on it do not matter.
+ * @param {Content} c @param {number} row @param {number} col
+ */
+function deployableAt(c, row, col) {
+  const t = tileAt(c.level, row, col);
+  return buildableFor(t, 'MELEE') || buildableFor(t, 'RANGED');
+}
+
+/**
  * Whether a unit is a 装置 (敌能-151): a device unit (装置-1), or an operator unit whose record is one — profession 装置
  * (`TRAP`: a 携带物, 符文-6; a builder, 守御-4; the other cards' devices) or a 装置类 summon (`summon.device`, 敌能-54).
  * @param {Content} c @param {Unit} u
@@ -292,12 +321,15 @@ function contextOf(w, c, e, of) {
     get taken() { if (!Object.hasOwn(ab, '@taken')) ab['@taken'] = 0; return ab['@taken']; },
     unblocked: (ab['@unblocked'] ?? 0) === 1,
     fell: (ab['@fell'] ?? 0) === 1,
+    bumpedHigh: () => bumpedHigh(ab),
     ready: skill !== null && (ab[`${name}.cd`] ?? 0) <= 0,
     use: () => { if (skill) ab[`${name}.cd`] = skill.cooldown < 0 ? ONCE : secondsToFrames(skill.cooldown); },
+    // the turn's frame off the cooldowns comes after its tick (foeTick): one frame back is this turn held
+    holdCooldown: () => { if ((ab[`${name}.cd`] ?? 0) > 0) ab[`${name}.cd`]++; },
     frames: secondsToFrames,
     talent: (t) => defOf(c, e).talents?.[t] ?? null,
     foes: (radius, sel) => w.units.filter((u) => isFoeOf(u, e) && selectable(u, sel) && dist2(u, e) <= radius * radius),
-    order: (units) => sortAllies(e, units, FPS),
+    order: (units) => sortAllies(e, units, FPS, foeRank(w, c, e)),
     allies: (radius) => w.units.filter((u) => u.kind === KIND.ENEMY && u.base.neutral !== true && u.hp > 0 && !u.hidden && dist2(u, e) <= radius * radius),
     talentOf: (u, t) => (u.kind === KIND.ENEMY ? defOf(c, u).talents?.[t] ?? null : null),
     buffValue: (u, key) => u.buffs.find((b) => b.key === key)?.value ?? null,
@@ -319,6 +351,7 @@ function contextOf(w, c, e, of) {
     ...blightContext(w, c, e),
     ground: () => { becomeGround(e); },
     defaultAlly: (u) => defaultAlly(c, u),
+    deployable: (row, col) => deployableAt(c, row, col),
     departed: () => readDeparted(w, ab, name),
     ...barrelContext(w, ab),
     ...footballContext(w, c, e),
@@ -331,12 +364,13 @@ function contextOf(w, c, e, of) {
  * @param {World} w @param {Content} c @param {Unit} e @param {Record<string, number>} ab
  * @returns {Pick<FoeContext, 'setHp' | 'resetSkills' | 'onWay' | 'detour' | 'release' | 'placeDevice' | 'summon' | 'draw' | 'remove'
  *   | 'devour' | 'carryOff' | 'putBack' | 'unlock' | 'lockCost' | 'sealCard' | 'lend' | 'around' | 'enemies' | 'fly' | 'attackAgain' | 'ammoOf' | 'spendAmmo' | 'renew' | 'ours' | 'place' | 'steady' | 'behind'
- *   | 'course' | 'open' | 'planted' | 'summonNext' | 'grantLoot' | 'hurl'>}
+ *   | 'course' | 'open' | 'planted' | 'summonNext' | 'grantLoot' | 'hurl' | 'clearSp' | 'readyOf'>}
  */
 function lateContext(w, c, e, ab) {
   return {
     setHp: (t, hp) => { setHp(t, hp); },
-    resetSkills: () => { for (const s of defOf(c, e).skills ?? []) ab[`${s.key}.cd`] = secondsToFrames(s.initCooldown); },
+    resetSkills: () => { for (const s of defOf(c, e).skills ?? []) ab[`${s.key}.cd`] = firstCooldown(s); },
+    readyOf: (name) => (defOf(c, e).skills ?? []).some((s) => s.key === name) && (ab[`${name}.cd`] ?? 0) <= 0,
     onWay: (u) => wayKeys(c, e).includes(keyAt(c.level, u.x, u.y)),
     detour: (row, col) => { detour(c, e, row, col); },
     release: () => { release(e); },
@@ -358,6 +392,7 @@ function lateContext(w, c, e, ab) {
     spendAmmo: (u, n) => { const st = u.skill; if (st && ammoLeft(c, u) > 0) setAmmo(st, st.ammo - n); },
     renew: (u, key, frames, mods) => { renewBuff(e, u, key, frames, mods); },
     ours: () => w.units.filter(ourUnit),
+    clearSp: (u) => { if (u.skill) setSp(u.skill, 0); },
     ...moveMembers(w, c, e, ab),
   };
 }
@@ -541,7 +576,7 @@ function each(w, c, e, hook, run) {
  * @param {World} w @param {Content} c @param {Unit} e
  */
 export function foeSpawn(w, c, e) {
-  for (const s of defOf(c, e).skills ?? []) e.ab[`${s.key}.cd`] = secondsToFrames(s.initCooldown);
+  for (const s of defOf(c, e).skills ?? []) e.ab[`${s.key}.cd`] = firstCooldown(s);
   e.ab['@hp'] = e.hp;
   e.ab['@blocked'] = e.blockedBy >= 0 ? 1 : 0;
   each(w, c, e, 'spawn', (b, ctx) => b.spawn?.(ctx));
@@ -557,6 +592,7 @@ export function foeTick(w, c, e) {
   ab['@hurt'] = e.hp < (ab['@hp'] ?? e.hp) ? 1 : 0;
   ab['@unblocked'] = (ab['@blocked'] ?? 0) === 1 && blocked === 0 ? 1 : 0;
   each(w, c, e, 'tick', (b, ctx) => b.tick?.(ctx));
+  seenBump(ab);
   for (const s of defOf(c, e).skills ?? []) if ((ab[`${s.key}.cd`] ?? 0) > 0) ab[`${s.key}.cd`]--;
   ab['@hp'] = e.hp;
   ab['@blocked'] = e.blockedBy >= 0 ? 1 : 0;
@@ -585,6 +621,18 @@ export function foeTargets(w, c, e, cands) {
   let out = cands;
   each(w, c, e, 'targets', (b, ctx) => { if (b.targets) out = b.targets(ctx, out); });
   return out;
+}
+
+/**
+ * The 特殊优先级 its abilities give its attack's candidates (索敌-5, 敌能-2): one rank per ranking ability, in their
+ * order; undefined when none ranks.
+ * @param {World} w @param {Content} c @param {Unit} e @returns {((u: Unit) => number[]) | undefined}
+ */
+export function foeRank(w, c, e) {
+  /** @type {((u: Unit) => number)[]} */
+  const ranks = [];
+  each(w, c, e, 'rank', (b, ctx) => { const r = b.rank; if (r) ranks.push((u) => r(ctx, u)); });
+  return ranks.length > 0 ? (u) => ranks.map((r) => r(u)) : undefined;
 }
 
 /** The mods of an enemy's attack after its abilities (敌能-2). @param {World} w @param {Content} c @param {Unit} e @param {AttackMods} mods */
