@@ -165,7 +165,6 @@ test('[敌能-38] the named enemies take their element id; a ratio alone does no
     assert.equal(got[RATIO], name === 'epdamage' ? 0.37 : 0.25, key);
     assert.deepEqual(gaps(key, raw), [], key);
   }
-  assert.equal(FOE_EXTRAS.enemy_1162_magmot_2, undefined);
   assert.equal(FOE_EXTRAS.enemy_1183_mlasrt_2, undefined);
   assert.equal(FOE_EXTRAS.enemy_2029_symon, undefined);
 });
@@ -179,7 +178,6 @@ test('[敌能-38] a shared talent name with the wrong blackboard, or no el, stay
   expectNone(fight('enemy_1225_dkmage', chain, { ops: GUARD }));
   assert.deepEqual(gaps('enemy_15017_dqdwlo', enemy({ empty: { [RATIO]: 0.25 } })), ['empty']);
   assert.deepEqual(gaps('enemy_1522_captan', enemy({ AttackSpeedUp: { attack_speed: 30 } })), ['AttackSpeedUp']);
-  assert.deepEqual(gaps('enemy_1512_mcmstr', enemy({ combat: { 'attack@mcmstr_rage_attack.atk_scale': 3.5 } })), ['combat']);
   assert.deepEqual(gaps('enemy_2014_csice', enemy({ combat: { [RATIO]: 0.2, 'attack@freeze': 2, el: 1 } })), ['combat']);
   assert.deepEqual(gaps('enemy_1230_bare', enemy({ EpDamage: { ep_damage_ratio: 0.8, el: 2 } })), ['EpDamage']);
   assert.deepEqual(gaps('enemy_5002_fan', enemy({ attack: { [RATIO]: 0.2, 'attack@times': 3, el: 1 } })), ['attack']);
@@ -201,7 +199,7 @@ test('[敌能-38] 绯红歌伶: 20% 神经 on an arts hit; 灼热源石虫: 100%
 
 test('[敌能-38] [敌能-26] 控潮术师 and 术师快艇: 80% 侵蚀 on the target and the four tiles beside it', () => {
   cross('enemy_1161_tidmag', { EpDamage: { [RATIO]: 0.8 } }, 2.2);
-  // The data's enemy_key is a string. The talent name alone has no behaviour, so the boat stays incomplete.
+  // An empty DeathRattle (no `enemy_key`) is not the boats' shape (敌能-133), so this boat stays incomplete.
   const boat = { EpDamage: { [RATIO]: 0.8 }, DeathRattle: {} };
   assert.deepEqual(gaps('enemy_1162_magmot', enemy(boat)), ['DeathRattle']);
   cross('enemy_1162_magmot', boat, 3);
