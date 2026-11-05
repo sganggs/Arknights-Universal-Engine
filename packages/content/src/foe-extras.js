@@ -462,4 +462,11 @@ export const FOE_EXTRAS = Object.freeze({
   // 吉兆飞鳞 (敌能-147): `parrot` marks this page's seven abilities, which 噩兆飞鳞 shares with no saved page; NoAttack is its
   // 近地悬浮，不进行普通攻击 (敌能-117's marker).
   enemy_10045_parrot: { talents: { M0SpeedUp: { parrot: 1 }, ThrowEnemy: { parrot: 1 }, M1SpeedUp: { parrot: 1 }, Stun: { parrot: 1 }, Mode: { parrot: 1 }, StateController: { parrot: 1 }, NoAttack: {} }, skills: { ThrowEnemy: { parrot: 1 } }, source: `${PRTS}%E5%90%89%E5%85%86%E9%A3%9E%E9%B3%9E&oldid=401248` },
+  // 扎罗，“狼之主” (敌能-148): 【远古威慑】：自身1.5半径范围内的我方单位攻击速度-50; 第二形态 进行远程攻击，普通攻击为2连击，攻击范围半径1.25;
+  // 技力槽 0/55，自动回复（1.0SP/s）. `page` marks the read page on `Passive` and `WildCalling`; 依然“狼之主” gets none of these.
+  enemy_1535_wlfmster: {
+    talents: { Passive: { page: 1 }, Reborn: { range_radius: 1.5, attack_speed: -50 }, Passive2: { range_radius: 1.25, times: 2 } },
+    skills: { WildCalling: { page: 1 }, FearCage: { init_sp: 0, sp_recovery_per_sec: 1 } },
+    source: `${PRTS}%E6%89%8E%E7%BD%97%EF%BC%8C%E2%80%9C%E7%8B%BC%E4%B9%8B%E4%B8%BB%E2%80%9D&oldid=365712`,
+  },
 });
