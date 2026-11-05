@@ -459,4 +459,7 @@ export const FOE_EXTRAS = Object.freeze({
   enemy_1513_dekght_2: { talents: { Targets: { n: 2 }, triggerrage: { page: 1, partner: 'enemy_1513_dekght' } }, skills: { TripleAttack: { n: 3 } }, source: `${PRTS}%E5%87%8B%E9%9B%B6%E9%AA%91%E5%A3%AB&oldid=361330` },
   // 杰斯顿·威廉姆斯 (敌能-146): `page` marks its four abilities. enemy_5055_dqkill has the same data and no read page.
   enemy_1516_jakill: { talents: { reborn: { page: 1 }, enhance: { page: 1 } }, skills: { ironsandstorm: { page: 1 }, armorpiercing: { page: 1 } }, source: `${PRTS}%E6%9D%B0%E6%96%AF%E9%A1%BF%C2%B7%E5%A8%81%E5%BB%89%E5%A7%86%E6%96%AF&oldid=367674` },
+  // 吉兆飞鳞 (敌能-147): `parrot` marks this page's seven abilities, which 噩兆飞鳞 shares with no saved page; NoAttack is its
+  // 近地悬浮，不进行普通攻击 (敌能-117's marker).
+  enemy_10045_parrot: { talents: { M0SpeedUp: { parrot: 1 }, ThrowEnemy: { parrot: 1 }, M1SpeedUp: { parrot: 1 }, Stun: { parrot: 1 }, Mode: { parrot: 1 }, StateController: { parrot: 1 }, NoAttack: {} }, skills: { ThrowEnemy: { parrot: 1 } }, source: `${PRTS}%E5%90%89%E5%85%86%E9%A3%9E%E9%B3%9E&oldid=401248` },
 });
