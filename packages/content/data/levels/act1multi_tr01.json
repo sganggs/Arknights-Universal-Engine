@@ -1624,6 +1624,87 @@
         "infection"
       ]
     },
+    "enemy_1002_nsabr": {
+      "name": "士兵",
+      "maxHp": 1650,
+      "atk": 200,
+      "def": 100,
+      "res": 0,
+      "moveSpeed": 1.1,
+      "baseAttackTime": 2,
+      "rangeRadius": 0,
+      "applyWay": "MELEE",
+      "motion": "WALK",
+      "massLevel": 1,
+      "levelType": "NORMAL",
+      "lifePointReduce": 1
+    },
+    "enemy_1006_shield": {
+      "name": "重装防御者",
+      "maxHp": 6000,
+      "atk": 600,
+      "def": 800,
+      "res": 0,
+      "moveSpeed": 0.75,
+      "baseAttackTime": 2.6,
+      "rangeRadius": 0,
+      "applyWay": "MELEE",
+      "motion": "WALK",
+      "massLevel": 3,
+      "levelType": "ELITE",
+      "lifePointReduce": 1
+    },
+    "enemy_1008_ghost": {
+      "name": "幽灵",
+      "maxHp": 2300,
+      "atk": 100,
+      "def": 120,
+      "res": 35,
+      "moveSpeed": 1.2,
+      "baseAttackTime": 1,
+      "rangeRadius": 0,
+      "applyWay": "NONE",
+      "motion": "WALK",
+      "massLevel": 1,
+      "levelType": "NORMAL",
+      "lifePointReduce": 1
+    },
+    "enemy_1010_demon": {
+      "name": "萨卡兹大剑手",
+      "maxHp": 7500,
+      "atk": 600,
+      "def": 230,
+      "res": 50,
+      "moveSpeed": 0.85,
+      "baseAttackTime": 2,
+      "rangeRadius": 0,
+      "applyWay": "MELEE",
+      "motion": "WALK",
+      "massLevel": 2,
+      "levelType": "ELITE",
+      "lifePointReduce": 1,
+      "tags": [
+        "sarkaz"
+      ]
+    },
+    "enemy_1010_demon_2": {
+      "name": "萨卡兹大剑组长",
+      "maxHp": 15000,
+      "atk": 750,
+      "def": 250,
+      "res": 50,
+      "moveSpeed": 0.85,
+      "baseAttackTime": 2,
+      "rangeRadius": 0,
+      "applyWay": "MELEE",
+      "motion": "WALK",
+      "massLevel": 2,
+      "levelType": "ELITE",
+      "lifePointReduce": 1,
+      "tags": [
+        "sarkaz"
+      ]
+    },
     "enemy_1013_airdrp": {
       "name": "空降兵",
       "maxHp": 1200,
@@ -1684,6 +1765,26 @@
       "massLevel": 1,
       "levelType": "NORMAL",
       "lifePointReduce": 1
+    },
+    "enemy_4007_murino": {
+      "name": "驮兽补给员",
+      "maxHp": 2000,
+      "atk": 700,
+      "def": 0,
+      "res": 0,
+      "moveSpeed": 0.8,
+      "baseAttackTime": 3.5,
+      "rangeRadius": -1,
+      "applyWay": "MELEE",
+      "motion": "WALK",
+      "massLevel": 2,
+      "levelType": "ELITE",
+      "lifePointReduce": 0,
+      "talents": {
+        "Weakness": {
+          "damage_resistance": 0.85
+        }
+      }
     }
   },
   "devices": {
