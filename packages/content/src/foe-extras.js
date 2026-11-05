@@ -81,12 +81,21 @@ export const FOE_EXTRAS = Object.freeze({
   // 游击队迫击炮兵/组长: 炮弹能对目标及其周围八格的我方单位造成伤害
   enemy_1082_soticn: { talents: { Shell: {} }, source: `${PRTS}%E6%B8%B8%E5%87%BB%E9%98%9F%E8%BF%AB%E5%87%BB%E7%82%AE%E5%85%B5&oldid=436975` },
   enemy_1082_soticn_2: { talents: { Shell: {} }, source: `${PRTS}%E6%B8%B8%E5%87%BB%E9%98%9F%E8%BF%AB%E5%87%BB%E7%82%AE%E5%85%B5%E7%BB%84%E9%95%BF&oldid=436976` },
+  // 帝国炮火先兆者 / 中枢先兆者: 静态刚体，普通攻击向目标所在位置发射一枚于3秒后命中的弹道 (敌能-130). Static is 敌能-37's.
+  // DelayShell's 3 s and 1.2 are the behaviour's own (artillery.js), so its blackboard is empty. The data has neither.
+  enemy_1112_emppnt: { talents: { Static: {}, DelayShell: {} }, source: `${PRTS}%E5%B8%9D%E5%9B%BD%E7%82%AE%E7%81%AB%E5%85%88%E5%85%86%E8%80%85&oldid=379217` },
+  enemy_1112_emppnt_2: { talents: { Static: {}, DelayShell: {} }, source: `${PRTS}%E5%B8%9D%E5%9B%BD%E7%82%AE%E7%81%AB%E4%B8%AD%E6%9E%A2%E5%85%88%E5%85%86%E8%80%85&oldid=414106` },
   // 萨卡兹积怨者/恶咒者: 可同时攻击2个目标，造成近战途径伤害
   enemy_1074_dbskar: { talents: { Targets: { n: 2, direct: 1 } }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E7%A7%AF%E6%80%A8%E8%80%85&oldid=436411` },
   enemy_1074_dbskar_2: { talents: { Targets: { n: 2, direct: 1 } }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E6%81%B6%E5%92%92%E8%80%85&oldid=436402` },
   // 冰原术师/队长: 拥有抵抗，可同时攻击2个目标
   enemy_1192_krgscr: { talents: { Targets: { n: 2 }, Resist: {} }, source: `${PRTS}%E5%86%B0%E5%8E%9F%E6%9C%AF%E5%B8%88&oldid=435602` },
   enemy_1192_krgscr_2: { talents: { Targets: { n: 2 }, Resist: {} }, source: `${PRTS}%E5%86%B0%E5%8E%9F%E6%9C%AF%E5%B8%88%E9%98%9F%E9%95%BF&oldid=435603` },
+  // 萨卡兹百夫长: 可最多同时攻击2个目标，造成近战途径伤害，不会攻击飞行单位 (敌能-134)
+  enemy_1501_demonk: { talents: { Targets: { n: 2, direct: 1 }, noFly: {} }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E7%99%BE%E5%A4%AB%E9%95%BF&oldid=413934` },
+  // “独轮车玩具”: 最多同时攻击2个目标 (敌能-134). No `direct` and no `noFly`: the page names neither. Its 结晶 range is
+  // not here, as the engine's levels have no 结晶.
+  enemy_10018_sgrobh: { talents: { Targets: { n: 2 } }, source: `${PRTS}%E2%80%9C%E7%8B%AC%E8%BD%AE%E8%BD%A6%E7%8E%A9%E5%85%B7%E2%80%9D&oldid=354028` },
   // 冰原狂战士队长: 拥有抵抗
   enemy_1193_krgbsk_2: { talents: { Resist: {} }, source: `${PRTS}%E5%86%B0%E5%8E%9F%E7%8B%82%E6%88%98%E5%A3%AB%E9%98%9F%E9%95%BF&oldid=435599` },
   // 冰原猎人队长: ①被阻挡时进行近战途径攻击 ②未被阻挡时进行远程途径攻击，优先攻击防御力最低的我方单位
@@ -153,6 +162,10 @@ export const FOE_EXTRAS = Object.freeze({
   enemy_1042_frostd: { talents: { atkSpeedDown: { range_radius: 2.5 }, Static: {} }, source: `${PRTS}%E5%AF%92%E9%9C%9C&oldid=371399` },
   // 澪: 普通攻击为2连击, and 寒晖 is those same two hits at 150% (talents [], PowerAttack has only atk_scale)
   enemy_10118_ymgprc: { skills: { PowerAttack: { times: 2 } }, source: `${PRTS}%E6%BE%AA&oldid=358826` },
+  // 深池弩炮手 / 深池弩炮队长: 爆破弹发射 — 对攻击目标及周围8格的我方单位造成攻击力100%物理普通伤害. The data's blackboard
+  // is empty; `square` marks these two read pages, so another empty PowerAttack stays uncovered (敌能-152, 关卡-2).
+  enemy_1289_dubmb: { skills: { PowerAttack: { square: 1 } }, source: `${PRTS}%E6%B7%B1%E6%B1%A0%E5%BC%A9%E7%82%AE%E6%89%8B&oldid=355340` },
+  enemy_1289_dubmb_2: { skills: { PowerAttack: { square: 1 } }, source: `${PRTS}%E6%B7%B1%E6%B1%A0%E5%BC%A9%E7%82%AE%E9%98%9F%E9%95%BF&oldid=355341` },
   // 静态刚体, as each page's ability cell says (the data has no talent for it; 敌能-37). Not their other talents — those are other behaviours.
   enemy_1017_defdrn: { talents: { Static: {} }, source: `${PRTS}%E5%BE%A14&oldid=380622` },
   // 半血恐惧's half and 「最终」 are not in the data (敌能-49). Static stays the 敌能-37 row.
@@ -168,6 +181,10 @@ export const FOE_EXTRAS = Object.freeze({
   enemy_1148_dssbr_2: { talents: { epdamage: { el: 1 } }, source: `${PRTS}%E5%AF%8C%E8%90%A5%E5%85%BB%E7%9A%84%E6%BB%91%E5%8A%A8%E8%80%85&oldid=353446` },
   // 骇笑看客: 普通攻击附带自身攻击力20%的神经损伤
   enemy_2009_csaudc: { talents: { combat: { el: 1 } }, source: `${PRTS}%E9%AA%87%E7%AC%91%E7%9C%8B%E5%AE%A2&oldid=354182` },
+  // 主角阵营角色 / 反派阵营角色: 「攻击附带神经损伤」, 主角's 「首次被击倒后进行持续3s的重生，恢复100%生命值并进入0s无敌」 (敌能-128).
+  // `page` marks the read pages: 命定的主角 / 命定的反派 have the same shapes and stay uncovered (关卡-2).
+  enemy_10098_crhro: { talents: { inside: { page: 1 }, reborn: { page: 1 } }, skills: { read: { page: 1 } }, source: `${PRTS}%E4%B8%BB%E8%A7%92%E9%98%B5%E8%90%A5%E8%A7%92%E8%89%B2&oldid=354169` },
+  enemy_10099_crvln: { talents: { inside: { page: 1 } }, skills: { read: { page: 1 } }, source: `${PRTS}%E5%8F%8D%E6%B4%BE%E9%98%B5%E8%90%A5%E8%A7%92%E8%89%B2&oldid=354171` },
   // 绯红歌伶: 普通攻击附带自身攻击力20%的神经损伤 (AttackSpeedUp is entirely in the data)
   enemy_2010_csdcr: { talents: { attack: { el: 1 } }, source: `${PRTS}%E7%BB%AF%E7%BA%A2%E6%AD%8C%E4%BC%B6&oldid=354183` },
   // 灼热源石虫/炽焰源石虫: 攻击造成法术伤害，并附加自身攻击力100%的灼燃损伤
@@ -176,7 +193,10 @@ export const FOE_EXTRAS = Object.freeze({
   // 控潮术师/领潮员/术师快艇: 目标及其周围四格, 攻击力80%的侵蚀损伤. `cross` 1 is that splash (敌能-26).
   enemy_1161_tidmag: { talents: { EpDamage: { el: 2, cross: 1 } }, source: `${PRTS}%E6%8E%A7%E6%BD%AE%E6%9C%AF%E5%B8%88&oldid=365951` },
   enemy_1161_tidmag_2: { talents: { EpDamage: { el: 2, cross: 1 } }, source: `${PRTS}%E9%A2%86%E6%BD%AE%E5%91%98&oldid=353468` },
-  enemy_1162_magmot: { talents: { EpDamage: { el: 2, cross: 1 } }, source: `${PRTS}%E6%9C%AF%E5%B8%88%E5%BF%AB%E8%89%87&oldid=353469` },
+  // 术师快艇 also (DeathRattle, 敌能-133): 死亡0.8s后在0.2边长正方形范围内随机位置以自身路径召唤1个控潮术师
+  enemy_1162_magmot: { talents: { EpDamage: { el: 2, cross: 1 }, DeathRattle: { delay: 0.8, offset_bound: 0.1 } }, source: `${PRTS}%E6%9C%AF%E5%B8%88%E5%BF%AB%E8%89%87&oldid=353469` },
+  // 领潮员快艇 (敌能-133): the same 侵蚀 cross (敌能-38); 不会攻击飞行单位 (noFly, 敌能-33); 死亡0.8s后在以自身为中心0.2边长正方形范围内……召唤1个领潮员
+  enemy_1162_magmot_2: { talents: { EpDamage: { el: 2, cross: 1 }, DeathRattle: { delay: 0.8, offset_bound: 0.1 }, noFly: {} }, source: `${PRTS}%E9%A2%86%E6%BD%AE%E5%91%98%E5%BF%AB%E8%89%87&oldid=395668` },
   // 骨海漂流体: 攻击附加相当于攻击力20%的侵蚀损伤
   enemy_2021_syfish: { talents: { EpDamage: { el: 2 } }, source: `${PRTS}%E9%AA%A8%E6%B5%B7%E6%BC%82%E6%B5%81%E4%BD%93&oldid=354187` },
   // 掠海漂移体: 侵蚀 is 敌能-38; Float's 近地悬浮 is 敌能-48; noFly is 不会攻击飞行单位 (敌能-33).
@@ -208,7 +228,8 @@ export const FOE_EXTRAS = Object.freeze({
   enemy_1204_msfhu: { talents: { hitCount: { arts: 1, true: 1 } }, source: `${PRTS}%E9%9D%92%E7%93%B7%E8%8C%B6%E5%99%A8&oldid=397896` },
   enemy_1204_msfhu_2: { talents: { hitCount: { arts: 1, true: 1 } }, source: `${PRTS}%E5%BD%A9%E7%93%B7%E8%8C%B6%E5%99%A8&oldid=365782` },
   // 新硎: 因坠落以外的原因. 沉沙's page says 死亡后, so a fall still spawns (敌能-44).
-  enemy_1207_sfji_2: { talents: { DeadSpawn: { fall: 0 } }, source: `${PRTS}%E6%96%B0%E7%A1%8E&oldid=381907` },
+  // 攻击力+80%（失去所有【断刃】后失效）: `blade` marks the read page; 山雪鬼's same-shaped `AtkUp` has none (敌能-149).
+  enemy_1207_sfji_2: { talents: { DeadSpawn: { fall: 0 }, AtkUp: { blade: 1 } }, source: `${PRTS}%E6%96%B0%E7%A1%8E&oldid=381907` },
   // 矛头 / 灯盘: 无法被阻挡，不进行普通攻击，具有特殊生命值机制 (the data has no talent for it)
   enemy_1208_msfji: { talents: { hitCount: {} }, source: `${PRTS}%E9%93%9C%E7%9F%9B%E5%A4%B4&oldid=365776` },
   enemy_1208_msfji_2: { talents: { hitCount: {} }, source: `${PRTS}%E9%93%81%E7%9F%9B%E5%A4%B4&oldid=365775` },
@@ -280,6 +301,9 @@ export const FOE_EXTRAS = Object.freeze({
   enemy_4039_mufbse: { talents: { unblockable: {} }, source: `${PRTS}%E7%8B%82%E5%A5%94%E4%B8%B0%E7%A2%91&oldid=364869` },
   // 碎骨: 不会攻击飞行单位; 未被阻挡时榴弹（攻击力 26%，目标及周围八格，防御力下降 50% 持续 5 秒）. The flat `defdown` users get none of these.
   enemy_1500_skulsr: { talents: { defdown: { scale: 0.26, duration: 5, square: 1 }, noFly: {} }, source: `${PRTS}%E7%A2%8E%E9%AA%A8&oldid=367689` },
+  // 「巨大的丑东西」: 第一形态未被阻挡时远程攻击的半径 2.5 is the page's; the 3×3 and the blocked melee's scale need no extra (敌能-124).
+  // `page` marks its 重生 and 大祭司形态 as read; 自爆's 2.17 s and radius 3.0 are the page's (敌能-125).
+  enemy_1512_mcmstr: { talents: { combat: { radius: 2.5 }, reborn: { page: 1 }, bird_run: { page: 1 } }, skills: { 'bomb[reborning]': { delay: 2.17, radius: 3 } }, source: `${PRTS}%E2%80%9C%E5%B7%A8%E5%A4%A7%E7%9A%84%E4%B8%91%E4%B8%9C%E8%A5%BF%E2%80%9D&oldid=384625` },
   // 萨卡兹术师 / 萨卡兹术师组长: 不会攻击飞行单位 (the data has no talent). `page` marks 枷锁 as read (敌能-72); the same
   // blackboard on 萨卡兹业余术师 has no snapshot, so it stays uncovered (关卡-2).
   enemy_1022_dmage: { talents: { noFly: {} }, skills: { lasso: { page: 1 } }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E6%9C%AF%E5%B8%88&oldid=380593` },
@@ -293,6 +317,9 @@ export const FOE_EXTRAS = Object.freeze({
   enemy_4019_mugold: { talents: { physic: { score: 3 } }, source: `${PRTS}%E8%87%B3%E7%BA%AF%E6%BA%90%E7%9F%B3%E7%90%83&oldid=437059` },
   // 净浊之焰: 「…攻击力100%灼燃损伤」 (敌能-38, el 3; its blast is 敌能-93)
   enemy_1177_dufrbl_2: { talents: { epdamage: { el: 3 } }, source: `${PRTS}%E5%87%80%E6%B5%8A%E4%B9%8B%E7%84%B0&oldid=436069` },
+  // 心虚设计师 / 顺从内心的设计师: 「受到来自正面的物理/法术伤害-80%」 — their lowercase `weakness` is 敌能-118's front (敌能-132)
+  enemy_10097_crshd: { talents: { weakness: { front: 1 } }, source: `${PRTS}%E5%BF%83%E8%99%9A%E8%AE%BE%E8%AE%A1%E5%B8%88&oldid=354167` },
+  enemy_10097_crshd_2: { talents: { weakness: { front: 1 } }, source: `${PRTS}%E9%A1%BA%E4%BB%8E%E5%86%85%E5%BF%83%E7%9A%84%E8%AE%BE%E8%AE%A1%E5%B8%88&oldid=354168` },
   // 箭棘兽: 「弱点部位位于正面，背面所受伤害降低」 — its `Weakness` is of the damage from behind (敌能-91)
   enemy_1310_mhprpn_2: { talents: { Weakness: { back: 1 } }, source: `${PRTS}%E7%AE%AD%E6%A3%98%E5%85%BD&oldid=439219` },
   // 硬甲爪兽 / 刚甲爪兽: 「【弱点】位于正面，受到来自背面的物理/法术伤害降低80%」(敌能-118). 刚甲's snapshot is the older one.
@@ -303,6 +330,12 @@ export const FOE_EXTRAS = Object.freeze({
   // 岩冠兽 / 坚岩冠兽: 「【弱点】位于背面，受到来自正面的物理/法术伤害降低80%」
   enemy_1307_mhrhcr: { talents: { Weakness: { front: 1 } }, source: `${PRTS}%E5%B2%A9%E5%86%A0%E5%85%BD&oldid=353757` },
   enemy_1307_mhrhcr_2: { talents: { Weakness: { front: 1 } }, source: `${PRTS}%E5%9D%9A%E5%B2%A9%E5%86%A0%E5%85%BD&oldid=353758` },
+  // 圆仔: 无法被阻挡，受到来源于正面的物理和法术伤害降低80%，始终面向我方干员数量最多的方向 (敌能-118, 敌能-119)
+  enemy_2085_skzjxd: { talents: { Weakness: { front: 1 }, faceCrowd: {}, unblockable: {} }, source: `${PRTS}%E5%9C%86%E4%BB%94&oldid=361333` },
+  enemy_2085_skzjxd_2: { talents: { Weakness: { front: 1 }, faceCrowd: {}, unblockable: {} }, source: `${PRTS}%E5%9C%86%E4%BB%94&oldid=361333` },
+  // 驮兽补给员 / “胆小如鼷”驮兽补给员: 未被阻挡时，始终面向我方干员数量较多的方向；受到来自正面的物理/法术伤害-85% / -95% (敌能-119)
+  enemy_4007_murino: { talents: { Weakness: { front: 1 }, faceCrowd: { unblocked: 1 } }, source: `${PRTS}%E9%A9%AE%E5%85%BD%E8%A1%A5%E7%BB%99%E5%91%98&oldid=361396` },
+  enemy_4007_murino_2: { talents: { Weakness: { front: 1 }, faceCrowd: { unblocked: 1 } }, source: `${PRTS}%E2%80%9C%E8%83%86%E5%B0%8F%E5%A6%82%E9%BC%B7%E2%80%9D%E9%A9%AE%E5%85%BD%E8%A1%A5%E7%BB%99%E5%91%98&oldid=361323` },
   // 狙击步兵组长: 天赋「不会攻击飞行单位」 (敌能-33); its 眩晕打击 is 敌能-36
   enemy_1047_sagent_2: { talents: { noFly: {} }, source: `${PRTS}%E7%8B%99%E5%87%BB%E6%AD%A5%E5%85%B5%E7%BB%84%E9%95%BF&oldid=436077` },
   // 无胄盟第三小队组长: 「普通攻击时额外造成攻击力35%的侵蚀损伤」 (敌能-38, el 2)，「普通攻击与技能不会攻击飞行单位」 (敌能-33)
@@ -340,7 +373,8 @@ export const FOE_EXTRAS = Object.freeze({
   enemy_1114_rgrdmn: { talents: { vampire: { page: 1 }, noFly: {} }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E5%AE%BF%E4%B8%BB%E7%99%BE%E5%A4%AB%E9%95%BF&oldid=365976` },
   enemy_1114_rgrdmn_2: { talents: { vampire: { page: 1 }, noFly: {} }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E5%AE%BF%E4%B8%BB%E5%8D%AB%E5%B7%A2%E7%99%BE%E5%A4%AB%E9%95%BF&oldid=365977` },
   // 新生血裔 / 渴血的子裔 / 饱腹的子裔: 成功造成伤害后治疗伤害量的 220%。页面没有「不会攻击飞行单位」。
-  enemy_1360_dfello: { talents: { vampire: { page: 1 } }, source: `${PRTS}%E6%96%B0%E7%94%9F%E8%A1%80%E8%A3%94&oldid=365296` },
+  // 新生血裔's `Summon` is 敌能-63's death summon on a read page (敌能-153): 死亡后……以自身路径召唤1个血珀
+  enemy_1360_dfello: { talents: { vampire: { page: 1 }, Summon: { page: 1 } }, source: `${PRTS}%E6%96%B0%E7%94%9F%E8%A1%80%E8%A3%94&oldid=365296` },
   enemy_1228_dslime: { talents: { vampire: { page: 1 } }, source: `${PRTS}%E6%B8%B4%E8%A1%80%E7%9A%84%E5%AD%90%E8%A3%94&oldid=353607` },
   enemy_1228_dslime_2: { talents: { vampire: { page: 1 } }, source: `${PRTS}%E9%A5%B1%E8%85%B9%E7%9A%84%E5%AD%90%E8%A3%94&oldid=353608` },
   // W: the cast is 3.2 s (the page; the data has no duration). noFly is the page's normal attack. The half-HP reset is the skill, not a talent (敌能-76).
@@ -371,7 +405,7 @@ export const FOE_EXTRAS = Object.freeze({
   enemy_1217_rescar_2: { talents: { shotbuff: { page: 1, melee: 1 } }, skills: { BornCar: { max: 3 } }, source: `${PRTS}%E5%AF%BB%E8%B7%AF%E8%80%85%E7%9F%A5%E5%90%8D%E7%94%9C%E5%93%81%E5%95%86&oldid=381093` },
   // 迷路的巨像: 眩晕击 throws a stone (敌能-83). `page` marks this page; 配重投石机 has the same data and no page.
   enemy_2003_rockman: { skills: { StunAttack: { page: 1 } }, source: `${PRTS}%E8%BF%B7%E8%B7%AF%E7%9A%84%E5%B7%A8%E5%83%8F&oldid=354366` },
-  // 弑君者: the 0.5s is on the page, not in the blackboard (敌能-84). 卢西恩 shares { dist } and gets no marker.
+  // 弑君者: the 0.5s is on the page, not in the blackboard (敌能-84). 卢西恩 shares { dist }; its row adds the 不祥幻影 (敌能-156).
   enemy_1502_crowns: { skills: { blink: { glide: 0.5 } }, source: `${PRTS}%E5%BC%91%E5%90%9B%E8%80%85(%E6%95%8C%E6%96%B9)&oldid=361341` },
   // 赛场补给车 / “天车散花”赛场补给车: 爆炸汽水布设 (敌能-86). `soda` marks the two pages that describe the bottle.
   // The same three keys on the other 补给员 are not this skill, and stay uncovered (关卡-2).
@@ -388,4 +422,105 @@ export const FOE_EXTRAS = Object.freeze({
   // 天桩-甲 / 失控天桩-甲: ……不进行普通攻击，无法被阻挡 — their 自缚, 失衡免疫, 阻回 and CheckAwake are not this clause
   enemy_1398_dhdcr: { talents: { NoAttack: {}, unblockable: {} }, source: `${PRTS}%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366637` },
   enemy_1398_dhdcr_2: { talents: { NoAttack: {}, unblockable: {} }, source: `${PRTS}%E5%A4%B1%E6%8E%A7%E5%A4%A9%E6%A1%A9-%E7%94%B2&oldid=366638` },
+  // 量产巨像 / 改进型量产巨像: 占用2个阻挡数. The number is not in the enemy data (敌能-120). Weak is the beam and gets no behaviour.
+  enemy_1240_ltgint: { talents: { blockSlots: { block: 2 } }, source: `${PRTS}%E9%87%8F%E4%BA%A7%E5%B7%A8%E5%83%8F&oldid=353633` },
+  enemy_1240_ltgint_2: { talents: { blockSlots: { block: 2 } }, source: `${PRTS}%E6%94%B9%E8%BF%9B%E5%9E%8B%E9%87%8F%E4%BA%A7%E5%B7%A8%E5%83%8F&oldid=371221` },
+  // 长臂投手 / 「精准制导」长臂投手: 无法被阻挡 (敌能-69's unblockable), 不会攻击飞行单位 (敌能-33's noFly) and the 攻击优先度
+  // (敌能-123's moduleFirst). The 200% against 设施 is not these markers. 铁头前锋's pages say none of the three (敌能-121).
+  enemy_4010_mubsbl: { talents: { unblockable: {}, noFly: {}, moduleFirst: {} }, source: `${PRTS}%E9%95%BF%E8%87%82%E6%8A%95%E6%89%8B&oldid=380514` },
+  enemy_4010_mubsbl_2: { talents: { unblockable: {}, noFly: {}, moduleFirst: {} }, source: `${PRTS}%E2%80%9C%E7%B2%BE%E5%87%86%E5%88%B6%E5%AF%BC%E2%80%9D%E9%95%BF%E8%87%82%E6%8A%95%E6%89%8B&oldid=380515` },
+  // 敌能-136. 卷心籽: 燃烧状态：死亡爆炸（爆炸半径1.25，延迟0.4秒，造成攻击力200%法术溅射伤害，无视迷彩，不可对空）.
+  // `kindle` marks a seed's boom: it goes off only once lit. 卷心草's page gives no delay nor 对空: 卷心籽's (INF-0832).
+  enemy_10065_ftzlc: { talents: { boom: { radius: 1.25, delay: 0.4, arts: 1, air: 0, sourced: 1, kindle: 1 } }, source: `${PRTS}%E5%8D%B7%E5%BF%83%E7%B1%BD&oldid=375979` },
+  enemy_10065_ftzlc_2: { talents: { boom: { radius: 1.25, delay: 0.4, arts: 1, air: 0, sourced: 1, kindle: 1 } }, source: `${PRTS}%E5%8D%B7%E5%BF%83%E8%8D%89&oldid=365426` },
+  // 灼藤 / 灼芯: ……造成100%的法术溅射伤害 (`splash`)……可以点燃半径0.5范围内的卷心籽/卷心草（不可对空） (`ignite`)
+  enemy_10067_ftsjc: { talents: { pow: { splash: 1, ignite: 0.5 } }, source: `${PRTS}%E7%81%BC%E8%97%A4&oldid=376257` },
+  enemy_10067_ftsjc_2: { talents: { pow: { splash: 1, ignite: 0.5 } }, source: `${PRTS}%E7%81%BC%E8%8A%AF&oldid=406825` },
+  // “帝国的甲胄”: 回忆里的誓死 — 持续5.85秒的【轰炸区域】，延迟1.33秒后……此后每0.53秒重复一次 (敌能-137); the data has only times 8
+  enemy_10027_vtsk: { skills: { Appear: { duration: 5.85, delay: 1.33, interval: 0.53 } }, source: `${PRTS}%E2%80%9C%E5%B8%9D%E5%9B%BD%E7%9A%84%E7%94%B2%E8%83%84%E2%80%9D&oldid=377746` },
+  // “遗弃者”: 不会攻击飞行单位 (noFly, 敌能-33). Its layers and their 4 s are all in the data (atkup, checker; 敌能-138).
+  enemy_2005_axetro: { talents: { noFly: {} }, source: `${PRTS}%E2%80%9C%E9%81%97%E5%BC%83%E8%80%85%E2%80%9D&oldid=365968` },
+  // “墓碑”: 远程攻击对目标及其周围八格的我方单位造成攻击力40%的物理伤害 — the 3×3 is the page's; the 40% is the data's atkdown (敌能-139)
+  enemy_2008_flking: { talents: { atkdown: { square: 1 } }, source: `${PRTS}%E2%80%9C%E5%A2%93%E7%A2%91%E2%80%9D&oldid=367181` },
+  // 纠缠藤蔓 (敌能-140): 拥有抵抗 is 敌能-27's Resist. `page` marks this page on 致幻缠绕 and on Weak: 古老藤蔓 has the same
+  // data and no page read, and the other stun-only StunAttack users have none either, so they stay uncovered (关卡-2).
+  enemy_2052_smgia: { talents: { Weak: { page: 1 }, Resist: {} }, skills: { StunAttack: { page: 1 } }, source: `${PRTS}%E7%BA%A0%E7%BC%A0%E8%97%A4%E8%94%93&oldid=355929` },
+  // “邪魔的利刃” / “邪魔的利刃”，游荡者: 对位于【国度】中的单位的造成伤害时攻击倍率提升至250% (敌能-141). `page` marks the two
+  // read pages; 无垠回荡克雷松 has the same DamageUp { atk_scale } and no marker.
+  enemy_2048_smgrd: { talents: { DamageUp: { page: 1 } }, source: `${PRTS}%E2%80%9C%E9%82%AA%E9%AD%94%E7%9A%84%E5%88%A9%E5%88%83%E2%80%9D&oldid=354395` },
+  enemy_2049_smgrd2: { talents: { DamageUp: { page: 1 } }, source: `${PRTS}%E2%80%9C%E9%82%AA%E9%AD%94%E7%9A%84%E5%88%A9%E5%88%83%E2%80%9D%EF%BC%8C%E6%B8%B8%E8%8D%A1%E8%80%85&oldid=354396` },
+  // 陷落雪祀 (敌能-142): 普通攻击会在3个目标间跳跃并附带4.5s寒冷；【反自然馈赠】. `page` marks the read page on both;
+  // 空洞雪祀 has the same keys and no page, so both of its abilities stay uncovered (关卡-2).
+  enemy_2050_smsha: { talents: { Attack: { page: 1 } }, skills: { ChainBuff: { page: 1 } }, source: `${PRTS}%E9%99%B7%E8%90%BD%E9%9B%AA%E7%A5%80&oldid=354397` },
+  // 泥岩 (敌能-143): 沉睡免疫; 敌能-66's barrier (可吸收16500法术伤害) and 刷新屏障 by the page marker; 增益最多叠加6层; 占据 by
+  // the marker, so that 冬灵血巫's unmarked `occupy` of the same { sp } stays uncovered
+  enemy_1511_mdrock: {
+    talents: { SleepImmune: {}, shield: { page: 1 }, charge: { layers: 6 } }, skills: { RefreshShield: { page: 1 }, occupy: { page: 1 } },
+    source: `${PRTS}%E6%B3%A5%E5%B2%A9%28%E6%95%8C%E6%96%B9%29&oldid=378890`,
+  },
+  // 鼠王 (敌能-144): 「出场时获得可吸收14001法术伤害的屏障，该屏障存在时防御力+3000」 — `page` marks the read `shield` and
+  // `defup` (布景小丑 / 布景大师 share { dynamic }); 唱沙's cross reaches 3 tiles each way (the page's range figure);
+  // 「普通攻击和技能不会选择飞行单位作为目标」 is noFly. SandStorm (a zone) and Mark (marks only) get nothing: uncovered.
+  enemy_1509_mousek: { talents: { shield: { page: 1 }, defup: { page: 1 }, noFly: {} }, skills: { DriftSand: { arm: 3 } }, source: `${PRTS}%E9%BC%A0%E7%8E%8B&oldid=378897` },
+  // 腐败骑士 / 凋零骑士 (敌能-145): `page` marks the two read pages — 并驾骑士 and the other 凋零骑士 have the same data and
+  // stay uncovered (关卡-2). `partner` is the knight whose 死亡/进入终点 raises the rage; `n` is 爆炸箭's 最多3个 targets;
+  // `Targets` is 凋零骑士's 最多同时攻击2个目标 (敌能-27).
+  enemy_1513_dekght: { talents: { aoe: { page: 1 }, triggerrage: { page: 1, partner: 'enemy_1513_dekght_2' } }, skills: { ChargeAttack: { page: 1 } }, source: `${PRTS}%E8%85%90%E8%B4%A5%E9%AA%91%E5%A3%AB&oldid=361377` },
+  enemy_1513_dekght_2: { talents: { Targets: { n: 2 }, triggerrage: { page: 1, partner: 'enemy_1513_dekght' } }, skills: { TripleAttack: { n: 3 } }, source: `${PRTS}%E5%87%8B%E9%9B%B6%E9%AA%91%E5%A3%AB&oldid=361330` },
+  // 杰斯顿·威廉姆斯 (敌能-146): `page` marks its four abilities. enemy_5055_dqkill has the same data and no read page.
+  enemy_1516_jakill: { talents: { reborn: { page: 1 }, enhance: { page: 1 } }, skills: { ironsandstorm: { page: 1 }, armorpiercing: { page: 1 } }, source: `${PRTS}%E6%9D%B0%E6%96%AF%E9%A1%BF%C2%B7%E5%A8%81%E5%BB%89%E5%A7%86%E6%96%AF&oldid=367674` },
+  // 吉兆飞鳞 (敌能-147): `parrot` marks this page's seven abilities, which 噩兆飞鳞 shares with no saved page; NoAttack is its
+  // 近地悬浮，不进行普通攻击 (敌能-117's marker).
+  enemy_10045_parrot: { talents: { M0SpeedUp: { parrot: 1 }, ThrowEnemy: { parrot: 1 }, M1SpeedUp: { parrot: 1 }, Stun: { parrot: 1 }, Mode: { parrot: 1 }, StateController: { parrot: 1 }, NoAttack: {} }, skills: { ThrowEnemy: { parrot: 1 } }, source: `${PRTS}%E5%90%89%E5%85%86%E9%A3%9E%E9%B3%9E&oldid=401248` },
+  // 扎罗，“狼之主” (敌能-148): 【远古威慑】：自身1.5半径范围内的我方单位攻击速度-50; 第二形态 进行远程攻击，普通攻击为2连击，攻击范围半径1.25;
+  // 技力槽 0/55，自动回复（1.0SP/s）. `page` marks the read page on `Passive` and `WildCalling`; 依然“狼之主” gets none of these.
+  enemy_1535_wlfmster: {
+    talents: { Passive: { page: 1 }, Reborn: { range_radius: 1.5, attack_speed: -50 }, Passive2: { range_radius: 1.25, times: 2 } },
+    skills: { WildCalling: { page: 1 }, FearCage: { init_sp: 0, sp_recovery_per_sec: 1 } },
+    source: `${PRTS}%E6%89%8E%E7%BD%97%EF%BC%8C%E2%80%9C%E7%8B%BC%E4%B9%8B%E4%B8%BB%E2%80%9D&oldid=365712`,
+  },
+  // “复仇者”: 生命值不高于50%时：攻击力+180% (敌能-8). `low` marks the read page; “火与钢” has the same keys and none (敌能-149).
+  enemy_1539_reid: { talents: { AtkUp: { low: 1 } }, source: `${PRTS}%E2%80%9C%E5%A4%8D%E4%BB%87%E8%80%85%E2%80%9D&oldid=354327` },
+  // 雪孩子 / 雪顽童: 与高地碰撞时若自身处于失衡状态，对自身造成5000真实伤害，随后的5秒内不会再次触发上述伤害 — the 5000 is the
+  // data's hitWall.value, the 5 s (`rearm`) only the page's (敌能-150). 直立小雪怪 shares the talent and gets no `rearm`.
+  enemy_10138_xdsnow: { talents: { hitWall: { rearm: 5 } }, source: `${PRTS}%E9%9B%AA%E5%AD%A9%E5%AD%90&oldid=373740` },
+  enemy_10138_xdsnow_2: { talents: { hitWall: { rearm: 5 } }, source: `${PRTS}%E9%9B%AA%E9%A1%BD%E7%AB%A5&oldid=373742` },
+  // 赏金猎人弩手 / 赏金猎人弩手队长: 赏金攫取 (敌能-151). `page` marks the two read pages; 赛场无赖射手 has the same
+  // `{cost}` and no saved page, so it stays uncovered (关卡-2).
+  enemy_1340_bthtbw: { skills: { PowerHit: { page: 1 } }, source: `${PRTS}%E8%B5%8F%E9%87%91%E7%8C%8E%E4%BA%BA%E5%BC%A9%E6%89%8B&oldid=355359` },
+  enemy_1340_bthtbw_2: { skills: { PowerHit: { page: 1 } }, source: `${PRTS}%E8%B5%8F%E9%87%91%E7%8C%8E%E4%BA%BA%E5%BC%A9%E6%89%8B%E9%98%9F%E9%95%BF&oldid=355360` },
+  // 敌能-153: one shape, two rules. `page` marks the pages that were read; the same shape elsewhere stays uncovered (关卡-2).
+  // 萨卡兹枯朽吞噬者 / 吸纳者 (敌能-30): 首次被阻挡时吞噬阻挡者，防御力大幅提升但移动速度下降
+  enemy_1271_nhkodo: { skills: { Devour: { page: 1 } }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E6%9E%AF%E6%9C%BD%E5%90%9E%E5%99%AC%E8%80%85&oldid=436421` },
+  enemy_1271_nhkodo_2: { skills: { Devour: { page: 1 } }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E6%9E%AF%E6%9C%BD%E5%90%B8%E7%BA%B3%E8%80%85&oldid=367790` },
+  // 萨卡兹骸骨鞭笞者 / 拷打者 (敌能-63): 死亡后在自身所在地块中心0.2边长正方形范围内随机位置以自身路径召唤2个血珀
+  enemy_1364_spnaxe: { talents: { Summon: { page: 1 } }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E9%AA%B8%E9%AA%A8%E9%9E%AD%E7%AC%9E%E8%80%85&oldid=365573` },
+  enemy_1364_spnaxe_2: { talents: { Summon: { page: 1 } }, source: `${PRTS}%E8%90%A8%E5%8D%A1%E5%85%B9%E9%AA%B8%E9%AA%A8%E6%8B%B7%E6%89%93%E8%80%85&oldid=365572` },
+  // 裹骸死士 (敌能-94): 拥有40%的物理/法术闪避
+  enemy_1419_mmcike: { talents: { Evade: { page: 1 } }, source: `${PRTS}%E8%A3%B9%E9%AA%B8%E6%AD%BB%E5%A3%AB&oldid=435902` },
+  // 投嗣育母 (敌能-106): 攻击目标时在目标所在格中心0.4边长正方形范围内随机位置召唤1只注亡拟嗣
+  enemy_2023_sypult: { talents: { Attack: { page: 1 } }, source: `${PRTS}%E6%8A%95%E5%97%A3%E8%82%B2%E6%AF%8D&oldid=436691` },
+  // 雪怪小队凿冰人 (敌能-27): 计算伤害时若目标正在受冻结影响，攻击倍率提高至250%
+  enemy_1069_icebrk: { talents: { atkup: { page: 1 } }, source: `${PRTS}%E9%9B%AA%E6%80%AA%E5%B0%8F%E9%98%9F%E5%87%BF%E5%86%B0%E4%BA%BA&oldid=436845` },
+  // 雪怪小队一族 (敌能-27, 敌能-153): 攻击持有冻结的单位时，攻击倍率（攻击力）提高至150%（破冰者300%）, the data's atk_scale
+  enemy_1064_snsbr: { talents: { atkup: { page: 1 } }, source: `${PRTS}%E9%9B%AA%E6%80%AA%E5%B0%8F%E9%98%9F&oldid=375683` },
+  enemy_1065_snwolf: { talents: { atkup: { page: 1 } }, source: `${PRTS}%E9%9C%9C%E7%89%99&oldid=353275` },
+  enemy_1065_snwolf_2: { talents: { atkup: { page: 1 } }, source: `${PRTS}%E9%9C%9C%E9%94%90&oldid=287261` },
+  enemy_1066_snbow: { talents: { atkup: { page: 1 } }, source: `${PRTS}%E9%9B%AA%E6%80%AA%E7%8B%99%E5%87%BB%E6%89%8B&oldid=367681` },
+  enemy_1066_snbow_2: { talents: { atkup: { page: 1 } }, source: `${PRTS}%E9%9B%AA%E6%80%AA%E7%8B%99%E5%87%BB%E6%89%8B%E7%BB%84%E9%95%BF&oldid=287263` },
+  enemy_1069_icebrk_2: { talents: { atkup: { page: 1 } }, source: `${PRTS}%E9%9B%AA%E6%80%AA%E5%B0%8F%E9%98%9F%E7%A0%B4%E5%86%B0%E8%80%85&oldid=353284` },
+  // 鼎沸 / 飘香 (敌能-129): `page` marks the talent `aoe` of the two read pages. 卢西恩's and 不祥幻影's skill `aoe` has the
+  // same two numbers, and a shape check cannot tell a talent from a skill (敌能-156).
+  enemy_10054_cjhot: { talents: { aoe: { page: 1 } }, source: `${PRTS}%E9%BC%8E%E6%B2%B8&oldid=381805` },
+  enemy_10054_cjhot_2: { talents: { aoe: { page: 1 } }, source: `${PRTS}%E9%A3%98%E9%A6%99&oldid=381806` },
+  // 卢西恩，“猩红血钻” / 不祥幻影 (敌能-156): 普通攻击额外附加……神经损伤 (`el` 1, 敌能-38), the skill's 半径2 (`radius`), and
+  // 卢西恩's 闪现: 在0.5s内 (`glide`, as 弑君者's) and the 不祥幻影 it leaves (`enemy_key`).
+  enemy_2016_csphtm: { talents: { combat: { el: 1 } }, skills: { blink: { glide: 0.5, enemy_key: 'enemy_2017_csphts' }, aoe: { radius: 2 } }, source: `${PRTS}%E5%8D%A2%E8%A5%BF%E6%81%A9%EF%BC%8C%E2%80%9C%E7%8C%A9%E7%BA%A2%E8%A1%80%E9%92%BB%E2%80%9D&oldid=354378` },
+  enemy_2017_csphts: { talents: { combat: { el: 1 } }, skills: { aoe: { radius: 2 } }, source: `${PRTS}%E4%B8%8D%E7%A5%A5%E5%B9%BB%E5%BD%B1&oldid=354186` },
+  // 锏 (敌能-157): 第一形态 拥有抵抗 (敌能-27's Resist); 速杀 在0.5s内向下个检查点方向瞬移1.5格 (`glide`, as 弑君者's, 敌能-84). `page`
+  // marks the read page on `Reborn`: “领袖” and “酒神” have the same `duration` and `invincible` and none.
+  enemy_1525_blkswb: {
+    talents: { Resist: {}, Reborn: { page: 1 } }, skills: { Blink: { glide: 0.5 }, Blink2: { glide: 0.5 } },
+    source: `${PRTS}%E9%94%8F%28%E6%95%8C%E6%96%B9%29&oldid=287951`,
+  },
 });

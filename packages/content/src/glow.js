@@ -1,5 +1,8 @@
 // 微光之触 (docs/spec/foes.md 敌能-77). The read pages share one blackboard shape. Other ChargeAttack
-// blackboards stay uncovered (关卡-2): the page marker is required, and extra keys are not this skill.
+// blackboards stay uncovered (关卡-2): the page marker is required, and extra keys are not this skill. 腐败骑士's 蓄力锤
+// is another shape of the name, run by rotknights.js (敌能-145) through this one behaviour.
+
+import { hammerShape, hammerTick } from './rotknights.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').FoeContext} FoeContext */
 
@@ -10,19 +13,25 @@ const HOLD = 'glowHold';
 /** 隐匿 (and, where the page says 隐匿免疫, 迷彩) does not take effect. The stealth buff itself stays. */
 const VEIL = 'glowVeil';
 
-/**
- * Whether this name and blackboard are the read 微光之触 (敌能-77). Any other name is not this family's concern.
- * @param {string} name @param {Record<string, unknown>} bb
- */
-export function chargeAttackOwns(name, bb) {
-  if (name !== 'ChargeAttack') return true;
+/** Whether a blackboard is the read pages' 微光之触 shape (敌能-77). @param {Record<string, unknown>} bb */
+function glowShape(bb) {
   if (typeof bb.duration !== 'number' || typeof bb.atk_scale !== 'number' || typeof bb.range_radius !== 'number') return false;
   for (const k of Object.keys(bb)) if (!OWN.has(k)) return false;
   return true;
 }
 
+/**
+ * Whether this name and blackboard are the read 微光之触 (敌能-77) or 蓄力锤 (敌能-145). Any other name is not this
+ * family's concern.
+ * @param {string} name @param {Record<string, unknown>} bb
+ */
+export function chargeAttackOwns(name, bb) {
+  if (name !== 'ChargeAttack') return true;
+  return glowShape(bb) || hammerShape(bb);
+}
+
 /** The read pages only (关卡-2). A matching blackboard without `page` is 点灯骑士, and does not run. @param {Record<string, number>} bb */
-const armed = (bb) => chargeAttackOwns('ChargeAttack', bb) && bb.page === 1;
+const armed = (bb) => glowShape(bb) && bb.page === 1;
 
 /** The unit whose spot is locked (敌能-77): 索敌-5 inside the radius, our units only. @param {FoeContext} ctx */
 function lockTarget(ctx) {
@@ -78,10 +87,11 @@ function begin(ctx) {
   raise(ctx);
 }
 
-/** 微光之触 (敌能-77). While the charge runs it does not attack. @type {FoeBehavior} */
+/** 微光之触 (敌能-77), or 蓄力锤 (敌能-145). While either charge runs it does not attack. @type {FoeBehavior} */
 const ChargeAttack = Object.freeze({
   targets: (ctx, cands) => (ctx.state.get('ch') > 0 ? [] : cands),
   tick: (ctx) => {
+    if (hammerShape(ctx.bb)) { hammerTick(ctx); return; }
     if (!armed(ctx.bb)) return;
     if (ctx.state.get('ch') > 0) channel(ctx);
     else begin(ctx);

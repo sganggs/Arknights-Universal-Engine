@@ -1,6 +1,8 @@
 // One talent name `Passive` (docs/spec/foes.md 敌能-63, 敌能-68; cup.md 锦标-2). 血珀's seed shape, R-11's armor shape
 // and 龙卷风's wind share this object: a second behaviour under the same name would replace one of them. Any other blackboard stays uncovered
 // (关卡-2) and these hooks do nothing with it. They act only through the context (ADR 0055).
+// 扎罗，“狼之主”'s shape (敌能-148) is handed to wolflord.js.
+import { wolfGuardShape, wolfGuardSpawn, wolfGuardTick } from './wolflord.js';
 
 // 家族灭迹人's shape (敌能-154) is covered and no hook here acts on it: eraser.js says why.
 import { eraserShape } from './eraser.js';
@@ -62,11 +64,12 @@ const windShape = (bb) => exactKeys(bb, WIND_KEYS) && num(bb.radius);
  */
 export function passiveOwns(name, bb) {
   if (name !== 'Passive') return true;
-  return seedShape(bb) || armorShape(bb) || windShape(bb) || eraserShape(bb);
+  return seedShape(bb) || armorShape(bb) || windShape(bb) || wolfGuardShape(bb) || eraserShape(bb);
 }
 
 /** 血珀: the four flags at once, then 10% of max HP as 生命流失 every second, the first a second after it appears. @param {FoeContext} ctx */
 function seedSpawn(ctx) {
+  if (wolfGuardShape(bbOf(ctx))) { wolfGuardSpawn(ctx); return; }
   if (windShape(bbOf(ctx))) ctx.addBuff(ctx.self, { key: 'tornado', flags: { ...WIND_FLAGS } });
   if (!seedShape(bbOf(ctx))) return;
   ctx.addBuff(ctx.self, { key: 'dseed', flags: { ...SEED_FLAGS } });
@@ -90,6 +93,7 @@ function windTick(ctx) {
 /** @param {FoeContext} ctx */
 function seedTick(ctx) {
   const bb = bbOf(ctx);
+  if (wolfGuardShape(bb)) { wolfGuardTick(ctx); return; }
   if (windShape(bb)) { windTick(ctx); return; }
   if (!seedShape(bb)) return;
   const due = ctx.state.get('due');
@@ -123,7 +127,7 @@ function armorAttack(ctx, mods) {
   return { ...mods, targets: /** @type {number} */ (bb.targets), scale: mods.scale * scale };
 }
 
-/** 血珀's drain, R-11's two attacks and 龙卷风's wind. The shape each hook reads decides which one runs. @type {FoeBehavior} */
+/** 血珀's drain, R-11's two attacks, 龙卷风's wind and 扎罗's first form. The shape each hook reads decides which one runs. @type {FoeBehavior} */
 const Passive = Object.freeze({
   spawn: seedSpawn,
   tick: seedTick,

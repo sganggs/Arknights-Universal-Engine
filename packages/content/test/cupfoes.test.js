@@ -80,7 +80,7 @@ test('[敌能-105] 投矛的士兵: a throw dodged gives the 失手标记; then 
 
 test('[敌能-106] 自制投石机: three stones 0.3 s apart on the target\'s spot, each its 攻击力 within 1.5; 投嗣育母: only ours on low ground, a 注亡拟嗣 on each hit; IntoFire covered', () => {
   const stones = { 'attack@times': 3, 'attack@projectile_range': 0.5, 'attack@offset_bound': 3, 'attack@hit_interval': 0.3 };
-  assert.deepEqual(uncoveredAbilities([def({ talents: { Attack: stones } }), def({ talents: { Attack: { enemy_key: 'enemy_2024_synut' } } }), def({ talents: { IntoFire: { move_speed: -0.7 } } })]), []);
+  assert.deepEqual(uncoveredAbilities([def({ talents: { Attack: stones } }), withFoeExtras('enemy_2023_sypult', def({ talents: { Attack: { enemy_key: 'enemy_2024_synut' } } })), def({ talents: { IntoFire: { move_speed: -0.7 } } })]), []);
   const a = open('enemy_10162_mnctpt', def({ atk: 750, applyWay: 'RANGED', rangeRadius: 4, baseAttackTime: 7, talents: { Attack: stones } }));
   const g = put(a.w, a.c, 'guard', 1, 3);
   a.e.x = 0.5;

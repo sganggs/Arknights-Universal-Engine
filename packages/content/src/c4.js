@@ -79,7 +79,7 @@ function channel(ctx) {
   endCast(ctx);
 }
 
-/** Start a cast when the skill is ready and someone can carry a charge. The cooldown starts here. @param {FoeContext} ctx */
+/** Start a cast when the skill is ready and someone can carry a charge. The cooldown is used here; it runs from the cast's end. @param {FoeContext} ctx */
 function begin(ctx) {
   const s = ctx.stats(ctx.self);
   if (!ctx.ready || s.disabled || s.flags.silence) return;
@@ -96,8 +96,9 @@ function begin(ctx) {
 }
 
 /**
- * C4 (敌能-76). While `ch` is running it does not attack. The half-HP reset is this skill reading its own HP: the data
- * has no talent for it. A cast that ends this frame does not start the next one; the reset during a cast is the same.
+ * C4 (敌能-76). While `ch` is running it does not attack, and the cooldown waits: it counts from the cast's end (the
+ * page's 冷却时间 note). The half-HP reset is this skill reading its own HP: the data has no talent for it. A cast that
+ * ends this frame does not start the next one; the reset during a cast is the same.
  * @type {FoeBehavior}
  */
 const C4 = Object.freeze({
@@ -106,10 +107,11 @@ const C4 = Object.freeze({
     if (ctx.state.get('ch') > 0) {
       channel(ctx);
       noteHalf(ctx);
-      return;
+    } else {
+      noteHalf(ctx);
+      begin(ctx);
     }
-    noteHalf(ctx);
-    begin(ctx);
+    if (ctx.state.get('ch') > 0) ctx.holdCooldown();
   },
   death: (ctx) => {
     blowPlanted(ctx);
