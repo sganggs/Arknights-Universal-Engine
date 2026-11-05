@@ -41,6 +41,12 @@ import { bumpedHigh, seenBump } from './hitwall.js';
 /** The cooldown, in frames, of a skill used once (its record's cooldown below 0, 敌能-2): longer than any battle. */
 const ONCE = 2147483647;
 
+/**
+ * A skill's first cooldown in frames (敌能-2): its `initCooldown` seconds; one below 0 (the data's −1) is ready at once.
+ * @param {import('./types.js').FoeSkill} s @returns {number}
+ */
+const firstCooldown = (s) => (s.initCooldown < 0 ? 0 : secondsToFrames(s.initCooldown));
+
 /** A 直击 bolt's speed in tiles per second, and the radius it hits within (敌能-4). */
 export const BOLT_SPEED = 10;
 export const BOLT_RADIUS = 0.3;
@@ -344,7 +350,7 @@ function contextOf(w, c, e, of) {
 function lateContext(w, c, e, ab) {
   return {
     setHp: (t, hp) => { setHp(t, hp); },
-    resetSkills: () => { for (const s of defOf(c, e).skills ?? []) ab[`${s.key}.cd`] = secondsToFrames(s.initCooldown); },
+    resetSkills: () => { for (const s of defOf(c, e).skills ?? []) ab[`${s.key}.cd`] = firstCooldown(s); },
     onWay: (u) => wayKeys(c, e).includes(keyAt(c.level, u.x, u.y)),
     detour: (row, col) => { detour(c, e, row, col); },
     release: () => { release(e); },
@@ -549,7 +555,7 @@ function each(w, c, e, hook, run) {
  * @param {World} w @param {Content} c @param {Unit} e
  */
 export function foeSpawn(w, c, e) {
-  for (const s of defOf(c, e).skills ?? []) e.ab[`${s.key}.cd`] = secondsToFrames(s.initCooldown);
+  for (const s of defOf(c, e).skills ?? []) e.ab[`${s.key}.cd`] = firstCooldown(s);
   e.ab['@hp'] = e.hp;
   e.ab['@blocked'] = e.blockedBy >= 0 ? 1 : 0;
   each(w, c, e, 'spawn', (b, ctx) => b.spawn?.(ctx));
