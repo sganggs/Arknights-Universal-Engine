@@ -97,6 +97,8 @@ export const BOLT_RADIUS = 0.3;
  * @property {(u: Unit, key: string, value: number, mods: Record<string, number>) => void} setBuff gives a unit a buff of a key
  *   without an end, or retunes the one it has (属性-4)
  * @property {(t: Unit, n: number) => void} drainCost an operator's player loses n cost, down to 0 (费用-1)
+ * @property {(u: Unit) => boolean} device whether a unit is a 装置 (敌能-151): a device unit (装置-1), or an operator unit
+ *   whose record is one — profession 装置 (`TRAP`: a 携带物, 符文-6; a builder, 守御-4 …) or a 装置类 summon (敌能-54)
  * @property {() => Unit | null} blocker the unit blocking it, or null
  * @property {(id: number) => Unit | null} unit the unit of that id still in the list, or null: hidden, unselectable and
  *   already at 0 HP all still count; one that has left the list does not (敌能-67)
@@ -271,6 +273,17 @@ function deployableAt(c, row, col) {
 }
 
 /**
+ * Whether a unit is a 装置 (敌能-151): a device unit (装置-1), or an operator unit whose record is one — profession 装置
+ * (`TRAP`: a 携带物, 符文-6; a builder, 守御-4; the other cards' devices) or a 装置类 summon (`summon.device`, 敌能-54).
+ * @param {Content} c @param {Unit} u
+ */
+function deviceUnit(c, u) {
+  if (u.kind === KIND.DEVICE) return true;
+  const d = u.kind === KIND.OPERATOR ? c.operators[u.key] : undefined;
+  return d?.profession === 'TRAP' || d?.summon?.device === true;
+}
+
+/**
  * The context's `bolt` (敌能-4): a direct bolt from the enemy, and its event. Kept out of contextOf for its line budget.
  * @param {World} w @param {Unit} e @param {Parameters<FoeContext['bolt']>[0]} b
  */
@@ -324,6 +337,7 @@ function contextOf(w, c, e, of) {
     passengers: () => w.units.filter((u) => u.ab['@carrier'] === e.id).length,
     alight: () => { releasePassengers(w, c, e); },
     drainCost: (t, n) => { const p = t.kind === KIND.OPERATOR ? w.players[t.owner] : undefined; if (p) p.cost = Math.max(0, p.cost - n); },
+    device: (u) => deviceUnit(c, u),
     inLine: () => inLine(w, e),
     // `buff` and `all` are omitted when absent: a null field would change the hash of every blast (敌能-43, 敌能-86).
     blast: (b) => { w.blasts.push({ x: b.x, y: b.y, radius: b.radius, left: secondsToFrames(b.delay), air: b.air, src: b.sourced ? e.id : -1, type: b.type, amount: b.amount, status: b.status ?? null, ...(b.buff ? { buff: b.buff } : {}), ...(b.all ? { all: true } : {}) }); },

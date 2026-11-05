@@ -476,4 +476,8 @@ export const FOE_EXTRAS = Object.freeze({
   // data's hitWall.value, the 5 s (`rearm`) only the page's (敌能-150). 直立小雪怪 shares the talent and gets no `rearm`.
   enemy_10138_xdsnow: { talents: { hitWall: { rearm: 5 } }, source: `${PRTS}%E9%9B%AA%E5%AD%A9%E5%AD%90&oldid=373740` },
   enemy_10138_xdsnow_2: { talents: { hitWall: { rearm: 5 } }, source: `${PRTS}%E9%9B%AA%E9%A1%BD%E7%AB%A5&oldid=373742` },
+  // 赏金猎人弩手 / 赏金猎人弩手队长: 赏金攫取 (敌能-151). `page` marks the two read pages; 赛场无赖射手 has the same
+  // `{cost}` and no saved page, so it stays uncovered (关卡-2).
+  enemy_1340_bthtbw: { skills: { PowerHit: { page: 1 } }, source: `${PRTS}%E8%B5%8F%E9%87%91%E7%8C%8E%E4%BA%BA%E5%BC%A9%E6%89%8B&oldid=355359` },
+  enemy_1340_bthtbw_2: { skills: { PowerHit: { page: 1 } }, source: `${PRTS}%E8%B5%8F%E9%87%91%E7%8C%8E%E4%BA%BA%E5%BC%A9%E6%89%8B%E9%98%9F%E9%95%BF&oldid=355360` },
 });
