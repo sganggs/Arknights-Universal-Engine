@@ -143,6 +143,10 @@ export const FOE_EXTRAS = Object.freeze({
   enemy_10031_cnvsld: { talents: { Stealth: { restore: 0, alone: 1 } }, source: `${PRTS}%E4%B8%9A%E4%BD%99%E7%AB%9E%E6%BC%94%E8%80%85&oldid=356722` },
   // 流泪小子: 隐匿（解除阻挡0秒后恢复），近战攻击使目标晕眩4s. `page` marks its Combat; the page is enemy_2034_sythef only.
   enemy_2034_sythef: { talents: { Stealth: { restore: 0 }, Combat: { page: 1 } }, source: `${PRTS}%E6%B5%81%E6%B3%AA%E5%B0%8F%E5%AD%90&oldid=361355` },
+  // 家族灭迹人 / 家族暗影灭迹人 (敌能-154): 隐匿（解除阻挡1秒后恢复），不会攻击飞行单位 — the Stealth above with its 1 s, and
+  // 敌能-33's noFly. `page` marks the read pages on the data's Passive, whose 清算时刻 numbers do nothing.
+  enemy_1283_sgkill: { talents: { Passive: { page: 1 }, Stealth: { restore: 1 }, noFly: {} }, source: `${PRTS}%E5%AE%B6%E6%97%8F%E7%81%AD%E8%BF%B9%E4%BA%BA&oldid=365973` },
+  enemy_1283_sgkill_2: { talents: { Passive: { page: 1 }, Stealth: { restore: 1 }, noFly: {} }, source: `${PRTS}%E5%AE%B6%E6%97%8F%E6%9A%97%E5%BD%B1%E7%81%AD%E8%BF%B9%E4%BA%BA&oldid=365974` },
   // 呼啸骑士团 / 沸血骑士团 (敌能-71): `page` marks the six pages read — 保鲜膜骑士 and 劈柴骑士 have the same blackboards and
   // stay uncovered (关卡-2). 呼啸 also 不会攻击飞行单位.
   enemy_1101_plkght: { talents: { buff: { page: 1 }, noFly: {} }, source: `${PRTS}%E5%91%BC%E5%95%B8%E9%AA%91%E5%A3%AB%E5%9B%A2%E5%AD%A6%E5%BE%92&oldid=367224` },
