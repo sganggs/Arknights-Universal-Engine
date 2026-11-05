@@ -509,4 +509,10 @@ export const FOE_EXTRAS = Object.freeze({
   // 卢西恩's 闪现: 在0.5s内 (`glide`, as 弑君者's) and the 不祥幻影 it leaves (`enemy_key`).
   enemy_2016_csphtm: { talents: { combat: { el: 1 } }, skills: { blink: { glide: 0.5, enemy_key: 'enemy_2017_csphts' }, aoe: { radius: 2 } }, source: `${PRTS}%E5%8D%A2%E8%A5%BF%E6%81%A9%EF%BC%8C%E2%80%9C%E7%8C%A9%E7%BA%A2%E8%A1%80%E9%92%BB%E2%80%9D&oldid=354378` },
   enemy_2017_csphts: { talents: { combat: { el: 1 } }, skills: { aoe: { radius: 2 } }, source: `${PRTS}%E4%B8%8D%E7%A5%A5%E5%B9%BB%E5%BD%B1&oldid=354186` },
+  // 锏 (敌能-157): 第一形态 拥有抵抗 (敌能-27's Resist); 速杀 在0.5s内向下个检查点方向瞬移1.5格 (`glide`, as 弑君者's, 敌能-84). `page`
+  // marks the read page on `Reborn`: “领袖” and “酒神” have the same `duration` and `invincible` and none.
+  enemy_1525_blkswb: {
+    talents: { Resist: {}, Reborn: { page: 1 } }, skills: { Blink: { glide: 0.5 }, Blink2: { glide: 0.5 } },
+    source: `${PRTS}%E9%94%8F%28%E6%95%8C%E6%96%B9%29&oldid=287951`,
+  },
 });

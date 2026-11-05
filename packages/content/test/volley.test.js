@@ -105,7 +105,7 @@ function loadOutcome(id, d) {
   }
 }
 
-/** The other users of the name, with their level-0 blackboards (enemy_database 17759cc8). @type {[string, Record<string, unknown>][]} */
+/** The other users of the name, with their level-0 blackboards (enemy_database 17759cc8); 锏's is 敌能-157's. @type {[string, Record<string, unknown>][]} */
 const OTHERS = [
   ['enemy_10222_agtski', { atk: 600, def: 800, enemy_key: 'enemy_10223_agtrac' }],
   ['enemy_10222_agtski_2', { atk: 720, def: 1000, enemy_key: 'enemy_10223_agtrac_2' }],
@@ -115,11 +115,10 @@ const OTHERS = [
   ['enemy_1235_dsbskr_4', { atk: 0.15, max_stack_cnt: 15, 'dsbskr_atk_reduce.interval': 0 }],
   ['enemy_15005_dqdsbs', { atk: 0.15, max_stack_cnt: 15, 'dsbskr_atk_reduce.interval': 0 }],
   ['enemy_15024_dqreid', { atk: 2.8, damage_resistance: 0.6 }],
-  ['enemy_1525_blkswb', { 'enemy_blkswb_t_1.atk': 0.3, 'enemy_blkswb_t_1[reborn].atk': 0.5 }],
   ['enemy_6020_orang', { max_cnt: 20, atk: 0.25, buff_duration: 15 }],
 ];
 
-test('[敌能-149] [关卡-2] AtkUp counts only as the cars\', 复仇者\'s or 新硎\'s, markers included; every other user, a text value or one key more or less, stays uncovered', () => {
+test('[敌能-149] [关卡-2] AtkUp counts only as the cars\', 复仇者\'s, 新硎\'s or 锏\'s (敌能-157), markers included; every other user, a text value or one key more or less, stays uncovered', () => {
   for (const [key, bb] of OTHERS) {
     const e = withFoeExtras(key, named({ AtkUp: bb }));
     assert.deepEqual([e.talents?.AtkUp, uncoveredAbilities([e])], [bb, ['AtkUp']], key);

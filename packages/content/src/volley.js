@@ -2,6 +2,7 @@
 // cap; 晕眩, 冻结, 沉睡, 浮空, 束缚 or 沉默 takes them all away and adds none while it lasts. `AtkUp` is a shared talent
 // name, so its one behaviour and its shape check live here: “复仇者”'s blackboard is read by 敌能-8's `atkup` and
 // 新硎's by `DeadSpawn` (敌能-44), so for those two this behaviour does nothing; any other shape stays uncovered (关卡-2).
+// 锏's (敌能-157) is its ATK in 降雪, a weather the engine's levels do not have: covered, and nothing happens for it.
 // They act only through the context (ADR 0055).
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').FoeContext} FoeContext */
@@ -15,6 +16,8 @@ const VOLLEY_KEYS = Object.freeze(['atk', 'max_stack_cnt']);
 const AVENGER_KEYS = Object.freeze(['atk', 'damage_resistance', 'low']);
 /** 新硎's, with `blade`, the marker of its read page (FOE_EXTRAS): the bonus while it holds a 断刃 (敌能-44). */
 const BLADE_KEYS = Object.freeze(['atk', 'blade']);
+/** 锏's two forms' bonus in 降雪 (敌能-157), from the data; no other enemy has these keys. */
+const MACE_KEYS = Object.freeze(['enemy_blkswb_t_1.atk', 'enemy_blkswb_t_1[reborn].atk']);
 
 /** The flags that take the layers away and keep new ones off (状态-5): 晕眩, 冻结 (either kind), 沉睡, 浮空, 束缚, 沉默. */
 const CLEARS = Object.freeze(['stun', 'freeze', 'sleep', 'levitate', 'root', 'silence']);
@@ -27,12 +30,12 @@ export const volleyShape = (bb) => exact(bb, VOLLEY_KEYS);
 
 /**
  * Whether a talent or skill of this name, with this blackboard, is an `AtkUp` the engine implements (敌能-149): the
- * cars', “复仇者”'s or 新硎's, each marker included. Any other name is not this check's concern.
+ * cars', “复仇者”'s or 新硎's, each marker included, or 锏's (敌能-157). Any other name is not this check's concern.
  * @param {string} name @param {Record<string, unknown>} bb
  */
 export function atkUpOwns(name, bb) {
   if (name !== 'AtkUp') return true;
-  return volleyShape(bb) || exact(bb, AVENGER_KEYS) || exact(bb, BLADE_KEYS);
+  return volleyShape(bb) || exact(bb, AVENGER_KEYS) || exact(bb, BLADE_KEYS) || exact(bb, MACE_KEYS);
 }
 
 /** Whether it is in one of the states that clear its layers; one it is immune to is no flag (状态-7). @param {FoeContext} ctx */
@@ -49,7 +52,8 @@ function clear(ctx) {
 /**
  * `AtkUp` (敌能-149). The cars: in one of those states as its turn starts, every layer goes; an attack it starts adds a
  * layer before the attack is worked out (直接乘算 +`atk` each, layers summed, at most `max_stack_cnt`), or none while
- * it is in one of them. 复仇者's and 新硎's are read by their own behaviours, so nothing happens here for them.
+ * it is in one of them. 复仇者's and 新硎's are read by their own behaviours, so nothing happens here for them, nor for
+ * 锏's: the engine has no 降雪 (敌能-157).
  * @type {FoeBehavior}
  */
 const AtkUp = Object.freeze({
