@@ -17,7 +17,8 @@ const IMMUNE = ['stun', 'silence', 'sleep', 'frozen', 'levitate'];
 function whipDef(over = {}) {
   return {
     name: 'whip', maxHp: 20000, atk: 900, def: 900, res: 20, moveSpeed: 0, baseAttackTime: 3, massLevel: 4,
-    applyWay: 'ALL', rangeRadius: 1.3, talents: { Attack: { ...AURA }, Summon: { cnt: 2, enemy_key: 'seed' } }, ...over,
+    // `page`: the read pages' marker the content gives this death summon (FOE_EXTRAS, 敌能-153)
+    applyWay: 'ALL', rangeRadius: 1.3, talents: { Attack: { ...AURA }, Summon: { cnt: 2, enemy_key: 'seed', page: 1 } }, ...over,
   };
 }
 
@@ -37,7 +38,7 @@ function fellowDef() {
     name: 'fellow', maxHp: 4000, atk: 100, def: 200, res: 20, moveSpeed: 0, baseAttackTime: 2, massLevel: 1,
     applyWay: 'MELEE', rangeRadius: 1,
     talents: {
-      DamageUp: { scale_ratio: 0.2, add_on: 1 }, Summon: { cnt: 1, enemy_key: 'seed' }, vampire: { heal_scale: 2.2 },
+      DamageUp: { scale_ratio: 0.2, add_on: 1 }, Summon: { cnt: 1, enemy_key: 'seed', page: 1 }, vampire: { heal_scale: 2.2 },
     },
   };
 }

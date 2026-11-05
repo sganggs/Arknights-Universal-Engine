@@ -106,7 +106,12 @@ test('[敌能-138] [关卡-2] 遗弃者\'s atkup and checker are covered in thei
   for (const bb of [{}, { delay: '4' }, { delay: 4, range_radius: 1 }, { duration: 4 }]) {
     assert.deepEqual(gaps({ atkup: { ...STACK }, checker: bb }), ['checker'], JSON.stringify(bb));
   }
-  for (const [key, bb] of OTHERS) assert.deepEqual(gaps({ atkup: bb }), [], key);
+  // 敌能-153: a bare `atkup {atk_scale}` counts only with its read page's marker — 狂徒, “盛怒” and “情绪失控” are another rule.
+  const other = new Set(['enemy_1059_buster', 'enemy_1059_buster_2', 'enemy_1129_spklr', 'enemy_1129_spklr_2', 'enemy_15082_dqklr']);
+  for (const [key, bb] of OTHERS) {
+    const merged = withFoeExtras(key, /** @type {any} */ ({ ...raw, talents: { atkup: bb } }));
+    assert.deepEqual(uncoveredAbilities([{ ...merged, talents: { atkup: merged.talents?.atkup ?? {} } }]), other.has(key) ? ['atkup'] : [], key);
+  }
 });
 
 test('[敌能-138] [关卡-2] a shape it does not know does nothing at runtime either; the hook adds nothing for a hit that dealt 0', () => {
