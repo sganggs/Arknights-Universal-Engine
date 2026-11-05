@@ -452,4 +452,9 @@ export const FOE_EXTRAS = Object.freeze({
   // `defup` (布景小丑 / 布景大师 share { dynamic }); 唱沙's cross reaches 3 tiles each way (the page's range figure);
   // 「普通攻击和技能不会选择飞行单位作为目标」 is noFly. SandStorm (a zone) and Mark (marks only) get nothing: uncovered.
   enemy_1509_mousek: { talents: { shield: { page: 1 }, defup: { page: 1 }, noFly: {} }, skills: { DriftSand: { arm: 3 } }, source: `${PRTS}%E9%BC%A0%E7%8E%8B&oldid=378897` },
+  // 腐败骑士 / 凋零骑士 (敌能-145): `page` marks the two read pages — 并驾骑士 and the other 凋零骑士 have the same data and
+  // stay uncovered (关卡-2). `partner` is the knight whose 死亡/进入终点 raises the rage; `n` is 爆炸箭's 最多3个 targets;
+  // `Targets` is 凋零骑士's 最多同时攻击2个目标 (敌能-27).
+  enemy_1513_dekght: { talents: { aoe: { page: 1 }, triggerrage: { page: 1, partner: 'enemy_1513_dekght_2' } }, skills: { ChargeAttack: { page: 1 } }, source: `${PRTS}%E8%85%90%E8%B4%A5%E9%AA%91%E5%A3%AB&oldid=361377` },
+  enemy_1513_dekght_2: { talents: { Targets: { n: 2 }, triggerrage: { page: 1, partner: 'enemy_1513_dekght' } }, skills: { TripleAttack: { n: 3 } }, source: `${PRTS}%E5%87%8B%E9%9B%B6%E9%AA%91%E5%A3%AB&oldid=361330` },
 });
