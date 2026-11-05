@@ -7,8 +7,11 @@
 /** The buff of the dodge (敌能-94). */
 const EVADE = 'evade';
 
-/** Whether a blackboard is `{ prob }` alone (敌能-94). @param {Record<string, unknown>} bb */
-const probShape = (bb) => Object.keys(bb).length === 1 && typeof bb.prob === 'number';
+/**
+ * Whether a blackboard is `{ prob }` alone (敌能-94), or with the content's `page` marker: the same `prob` is another
+ * dodge on other enemies, and 敌能-153 covers `Evade` only on the read page. @param {Record<string, unknown>} bb
+ */
+const probShape = (bb) => typeof bb.prob === 'number' && Object.keys(bb).every((k) => k === 'prob' || k === 'page');
 
 /** Whether a behaviour of this name is this family's, by its shape (关卡-2); any other name passes. @param {string} name @param {Record<string, unknown>} bb */
 export const evadeOwns = (name, bb) => (name !== 'PhysicalEvade' && name !== 'Evade') || probShape(bb);
