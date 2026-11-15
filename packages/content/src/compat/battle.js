@@ -198,7 +198,7 @@ export class ShBattle {
     }
   }
 
-  /** Stronghold's map of the events that have handlers, read by name (`_hooks.dodge`). */
+  /** Stronghold's map of the events that have handlers, read by name (`_hooks.dodge`). @returns {Record<string, true | undefined>} */
   get _hooks() {
     const w = this.w;
     return new Proxy({}, { get: (_t, name) => (typeof name === 'string' && bus.hasHook(w, name) ? true : undefined) });
