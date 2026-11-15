@@ -12,6 +12,7 @@ export const MAPPING = Object.freeze({
   'server/sim/targeting.js': './sh/targeting.js',
   'server/sim/body.js': './sh/body.js',
   'server/sim/damage.js': './sh/damage.js',
+  'server/sim/attack.js': './sh/attack.js',
   'server/sim/buffs.js': './sh/buffs.js',
   'server/sim/ai.js': './sh/ai.js',
   'server/sim/professions.js': './sh/professions.js',
@@ -24,6 +25,7 @@ export const MAPPING = Object.freeze({
   'shared/plugins/limits.js': './sh/plugins/limits.js',
   'shared/plugins/officialBounds.js': './sh/plugins/officialBounds.js',
   'shared/plugins/rules.js': './sh/plugins/rules.js',
+  'shared/plugins/dataUtils.js': './sh/plugins/dataUtils.js',
 });
 
 /** The content files of Stronghold: they load as they are. */

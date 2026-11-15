@@ -49,7 +49,9 @@ test('[兼容-2] the table: an engine module goes to its stand-in, content loads
   assert.equal(mappedUrl(root, 'file:///elsewhere/x.js', compat), null, 'not Stronghold');
   assert.throws(() => mappedUrl(root, 'file:///sh/server/sim/battle.js', compat), /no mapping for the Stronghold module server\/sim\/battle\.js/);
   assert.equal(mappedUrl(root, 'file:///sh/shared/plugins/steps.js', compat), 'file:///aue/compat/sh/plugins/steps.js');
-  assert.equal(Object.keys(MAPPING).length, 18);
+  assert.equal(mappedUrl(root, 'file:///sh/server/sim/attack.js', compat), 'file:///aue/compat/sh/attack.js', 'v0.3.2');
+  assert.equal(mappedUrl(root, 'file:///sh/shared/plugins/dataUtils.js', compat), 'file:///aue/compat/sh/plugins/dataUtils.js', 'v0.3.2');
+  assert.equal(Object.keys(MAPPING).length, 20);
 });
 
 test('[兼容-2] the pinned oracle’s 72 operator kits load unchanged; a name the layer does not provide yet throws when called', () => {

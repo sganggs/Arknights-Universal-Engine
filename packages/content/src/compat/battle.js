@@ -138,6 +138,8 @@ export class ShBattle {
     this.projectiles = new ShProjectiles(this);
     /** Stronghold's data source as kits read it: raw summon records (summons.js rawToken). */
     this.data = Object.freeze({ rawToken: (/** @type {string} */ id) => summoning.rawToken(this, id) });
+    /** whether the handler that sends the hpDamage transfers is on (transfer) */
+    this.transfersOn = false;
   }
 
   /** Battle seconds: the frame's start (Stronghold's tickCount × dt, the same in every handler of a frame). */
@@ -196,8 +198,15 @@ export class ShBattle {
     }
   }
 
+  /** Stronghold's map of the events that have handlers, read by name (`_hooks.dodge`). */
+  get _hooks() {
+    const w = this.w;
+    return new Proxy({}, { get: (_t, name) => (typeof name === 'string' && bus.hasHook(w, name) ? true : undefined) });
+  }
+
   /** @param {string} name @param {Handler} fn @param {{ priority?: number, owner?: unknown, once?: boolean }} [o] */
   on(name, fn, o = {}) {
+    if (name === 'hpDamage' && !this.transfersOn) this.transfersOn = !!bus.on(this.w, 'hpDamage', (k) => this.transfer(k), { priority: -Infinity });
     return bus.on(this.w, name, (k) => {
       let ctx = this.shapes.get(k);
       if (!ctx) { ctx = shapeOf(this, name, k); this.shapes.set(k, ctx); }
@@ -205,6 +214,18 @@ export class ShBattle {
       if (ctx.stopPropagation) k.stopPropagation = true;
       if (Object.hasOwn(BACK, name)) BACK[name](ctx, k);
     }, o);
+  }
+
+  /**
+   * After every `hpDamage` handler: the shares they set aside (sh/attack.js reserveTransfer) go where they were meant,
+   * each with the hit's tags and the transfers' (Stronghold's applyTransfers).
+   * @param {Record<string, any>} k
+   */
+  transfer(k) {
+    const entries = this.shapes.get(k)?.transfers?.entries;
+    if (!entries?.length) return;
+    const tags = [...new Set([...(k.dmg?.tags ?? []), ...entries.map((/** @type {{ tag: string }} */ e) => e.tag)])];
+    for (const e of entries) this.safe(() => e.apply(e.amount, tags), 'transfer', null);
   }
 
   /** @param {any} h a handle from `on` */
@@ -298,12 +319,39 @@ export class ShBattle {
   allyTargetsInRadius() { return []; }
   /** @param {ShUnit} u @param {Record<string, any>} [profile] */
   blockedTargets(u, profile) { return field.blockedTargets(u, profile); }
-  /** @param {ShUnit | null} source @param {ShUnit} target @param {Record<string, any>} dmg */
-  dealDamage(source, target, dmg) { return field.dealDamage(this, source, target, dmg); }
-  /** @param {ShUnit | null} source @param {ShUnit} target @param {number} amount @param {Record<string, any>} [opts] */
-  heal(source, target, amount, opts) { return field.heal(this, source, target, amount, opts); }
-  /** @param {ShUnit} target @param {number} amount @param {{ source?: ShUnit | null, tags?: string[] }} [o] */
-  loseHp(target, amount, o) { return field.loseHp(this, target, amount, o); }
+  /**
+   * Damage (field.js): `(source, target, dmg, opts?)`, or v0.3.2's request `({ source, credit, target, amount, type, … })`.
+   * @param {...any} args
+   */
+  dealDamage(...args) { return field.damageCall(this, args); }
+  /**
+   * A heal (field.js): `(source, target, amount, opts?)`, or v0.3.2's request `({ source, target, amount, mode, … })`.
+   * @param {...any} args
+   */
+  heal(...args) {
+    if (args.length !== 1) return field.heal(this, args[0], args[1], args[2], args[3]);
+    const { source = null, target, amount, ...opts } = args[0] ?? {};
+    return field.heal(this, source, target, amount, opts);
+  }
+  /**
+   * 生命流失 (field.js): `(target, amount, opts?)`, or v0.3.2's request `({ source, credit, target, amount, type, … })`.
+   * @param {...any} args
+   */
+  dealHPLose(...args) { return field.hpLossCall(this, args); }
+  /** The name before v0.3.2. @param {ShUnit} target @param {number} amount @param {Record<string, any>} [o] */
+  loseHp(target, amount, o) { return field.loseHp(this, target, amount, o ?? {}); }
+  /** 元素损伤 (v0.3.2's request, field.js). @param {Record<string, any>} req */
+  dealElementDamage(req) { return field.elementDamage(this, req); }
+  /**
+   * Element recovery (field.js): `(target, amount, element?)`, or v0.3.2's request `({ target, amount, element })`.
+   * @param {...any} args
+   */
+  healElement(...args) {
+    const r = args.length === 1 ? args[0] ?? {} : { target: args[0], amount: args[1], element: args[2] ?? null };
+    return field.healElement(r.target, r.amount, r.element ?? null);
+  }
+  /** The name before v0.3.2. @param {ShUnit} target @param {number} amount @param {string | null} [element] */
+  reduceElement(target, amount, element = null) { return field.healElement(target, amount, element); }
   /** @param {ShUnit} unit */
   retreat(unit) { field.retreat(this, unit); }
   /** @param {ShUnit} unit @param {number} r @param {number} c @param {{ clearSp?: boolean }} [o] */

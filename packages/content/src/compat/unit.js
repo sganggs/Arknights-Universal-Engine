@@ -141,6 +141,8 @@ export class ShUnit {
     return { ...s, flags: shFlagsOf(s.flags, elements.bursting(u)) };
   }
   get maxHp() { return this.u ? attrs.statsOf(this.u).maxHp ?? 0 : 0; }
+  /** The most 元素损伤 it can take before a burst (元素-2: its element value's maximum). */
+  get gaugeMax() { return this.u ? attrs.statsOf(this.u).maxEp ?? 0 : 0; }
   get atk() { return this.u ? attrs.statsOf(this.u).atk ?? 0 : 0; }
   get hpRatio() { const m = this.maxHp; return m > 0 ? this.hp / m : 0; }
   /** The enemies it blocks. */
