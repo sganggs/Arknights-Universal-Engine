@@ -5,11 +5,11 @@
 ### 敌能-1 能力数据与普通攻击的伤害类型
 
 - **天赋**：敌人数据的 `talentBlackboard` 按键名第一个 `.` 之前的部分分组，每组是一项天赋（如 `boom.atk_scale`、`boom.freeze` 是天赋 `boom` 的 `atk_scale` 和 `freeze`）。
-- **技能**：敌人数据的 `skills`，每项有名字（`prefabKey`）、初始冷却（`initCooldown`）、冷却（`cooldown`）、技力消耗（`spCost`，记作 `sp`，没有为 0）和 blackboard。
+- **技能**：敌人数据的 `skills`，每项有名字（`prefabKey`）、初始冷却（`initCooldown`）、冷却（`cooldown`）、技力消耗（`spCost`，记作 `sp`，没有为 0）和 blackboard。冷却和初始冷却照数据的秒数记，最大 1e9 秒，再大的数据当作出错拒绝。数据里有远比一场长的冷却（9999、99999 秒，直到 1e7、1e8 秒）：这样的技能一场里用过一次（或从未就绪）就不会再就绪，按普通冷却计时即可（协议的帧号最多 `MAX_FRAME` = 1,000,000 帧，约 9.3 小时）。
 - **伤害类型**：普通攻击的伤害类型取敌人图鉴（`enemy_handbook_table`）的 `damageType` 的第一项：`PHYSIC` 物理、`MAGIC` 法术，其余按物理。
 - 内容按天赋名和技能名给出行为；没有行为的天赋和技能不起作用。
 
-- 来源：数据：enemy_database 的 talentBlackboard、skills；enemy_handbook_table 的 damageType；[PRTS「重弩突袭者」oldid=437074](https://prts.wiki/index.php?title=%E9%87%8D%E5%BC%A9%E7%AA%81%E8%A2%AD%E8%80%85&oldid=437074)「技能0初始=2」「技能0消耗=8」与数据的 initCooldown、cooldown 对应；按前缀分组、取第一项伤害类型为推断 INF-0068
+- 来源：数据：enemy_database 的 talentBlackboard、skills；enemy_handbook_table 的 damageType；[PRTS「重弩突袭者」oldid=437074](https://prts.wiki/index.php?title=%E9%87%8D%E5%BC%A9%E7%AA%81%E8%A2%AD%E8%80%85&oldid=437074)「技能0初始=2」「技能0消耗=8」与数据的 initCooldown、cooldown 对应；按前缀分组、取第一项伤害类型为推断 INF-0068；很长的冷却：数据：enemy_database 的 enemy_9017_achunt_2（假想敌：铳）技能 `3` 冷却 10000000、初始冷却 0，enemy_6027_bqthie 的 `MoveSkill` 冷却与初始冷却 100000000，enemy_1577_iceball 的 `BigBomb` 999999；这些数表示一场里不再就绪为推断 INF-1089
 
 ### 敌能-2 钩子
 

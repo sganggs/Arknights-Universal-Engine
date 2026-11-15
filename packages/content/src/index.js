@@ -25,6 +25,7 @@ import { withBuilders } from './fortress.js';
 import { withLootCards } from './loot.js';
 import { withBallCards } from './pitch.js';
 import { OFFICIAL_SOURCE } from './mods/source.js';
+import { deckKeys, seatOfKey, summonKey } from './deckkeys.js';
 
 /** The official behaviours: skills (技能-6), enemy abilities (敌能-2), the chalice's 伤判 (敌能-41), the mudshield barrier (敌能-66) and W's planted C4 (敌能-76). */
 const BEHAVIORS = Object.freeze({ skills: skillBehaviors, foes: foeBehaviors, buffs: { ...chaliceBuffs, ...mudShieldBuffs, ...c4Buffs, ...heteroBuffs, ...pompeiiBuffs, ...rotKnightBuffs } });
@@ -91,15 +92,17 @@ function withoutTalents({ talentBb, talentMods, talentTrait, fieldTalents, range
 
 /**
  * The content of a match (同步-9): its level at its difficulty, and every seat's deck at its trainings — an operator's key
- * is "id#seat", it remembers its id (`char`) — with the official behaviours; each operator's summons at its training
- * (召唤-2), keyed "summon id#seat", with their owner's key (`summoner`). An operator with a loaded kit (兼容-6,
+ * is "id#seat", it remembers its id (`char`); with `copies` a deck may hold an id more than once, its n-th copy keyed
+ * "id#seat#n" (deckkeys.js), else a repeated id throws — with the official behaviours; each operator's summons at its training
+ * (召唤-2), keyed "summon id#seat" (a copy's with its "#n"), with their owner's key (`summoner`). An operator with a loaded kit (兼容-6,
  * kitmod.js) fights by its kit: its record without its talents, its team talents not given by the engine, its kit's
  * world setup and skill behaviours; the content names the commit and the kits it uses. A seat's runes (符文-1) change its
  * operators and summons, and its deploy limit (level.options.characterLimitAdd), the level's runes on our units every
  * seat's (关卡-2); runes not supported throw. In 堡垒守御
  * every seat's deck has the level's builders too (守御-4), and each token whose device is 轰隆隆先生 (装置-7). The levels, operators and summons come from the content
  * source — the official content, or it with mods (mod-8) —; the content names the mods it is made with.
- * @param {{ level: string, difficulty: 'NORMAL' | 'FOUR_STAR', seed: number, decks: { id: string, build: import('./operators.js').Build }[][], runes?: import('./runes.js').SeatRune[][] }} match
+ * @param {{ level: string, difficulty: 'NORMAL' | 'FOUR_STAR', seed: number, decks: { id: string, build: import('./operators.js').Build }[][], runes?: import('./runes.js').SeatRune[][],
+ *   copies?: boolean }} match
  * @param {{ source?: import('./mods/source.js').ContentSource, kits?: Readonly<Record<string, import('./compat/kitmod.js').KitFactory>> }} [o] the content
  *   source (default: the official content) and the loaded kit factories by character id
  * @returns {Promise<import('@aue/sim').Content>}
@@ -111,19 +114,20 @@ export async function matchContent(match, { source = OFFICIAL_SOURCE, kits = {} 
   /** @type {Record<string, import('./compat/kits.js').KitEntry>} */
   const entries = {};
   const decks = await Promise.all(match.decks.map(async (deck, seat) => {
-    const built = await Promise.all(deck.map(async ({ id, build }) => {
-      const t = await source.training(id), factory = Object.hasOwn(kits, id) ? kits[id] : null;
-      if (factory) entries[`${id}#${seat}`] = { factory, def: defOf(id, t, build), tokens: await tokenDefsOf(source, t, build) };
-      const entry = entries[`${id}#${seat}`];
-      return { id, key: `${id}#${seat}`, op: entry ? withKitTrait(withoutTalents(operatorAt(t, build)), entry, lv.level) : operatorAt(t, build), team: entry ? [] : teamTalentsAt(t, build).deck };
+    const keys = keysOf(deck, seat, match.copies === true);
+    const built = await Promise.all(deck.map(async ({ id, build }, i) => {
+      const key = keys[i], t = await source.training(id), factory = Object.hasOwn(kits, id) ? kits[id] : null;
+      if (factory) entries[key] = { factory, def: defOf(id, t, build), tokens: await tokenDefsOf(source, t, build) };
+      const entry = entries[key];
+      return { id, key, build, op: entry ? withKitTrait(withoutTalents(operatorAt(t, build)), entry, lv.level) : operatorAt(t, build), team: entry ? [] : teamTalentsAt(t, build).deck };
     }));
-    const team = built.flatMap((x) => x.team);
+    const team = deckTeam(built);
     for (const { id, key, op } of built) {
       const withTeam = withDeckTalents(op, team);
       operators[key] = withOwnTrait(id, { ...withTeam, blockCnt: Math.max(0, withTeam.blockCnt + lv.blockAdd), char: id, ...looks(source, id) });
     }
-    for (const { id, build } of deck) Object.assign(operators, await summonsOf(source, { id, build, seat, blockAdd: lv.blockAdd, kit: Object.hasOwn(kits, id) }));
-    return built.map((x) => x.key);
+    for (const { id, key, build } of built) Object.assign(operators, await summonsOf(source, { id, key, build, blockAdd: lv.blockAdd, kit: Object.hasOwn(kits, id) }));
+    return keys;
   }));
   await withPredefined(source, operators, lv.level, lv.blockAdd);
   const limitAdd = await withSeatRunes(operators, decks, match.runes ?? []);
@@ -141,6 +145,33 @@ export async function matchContent(match, { source = OFFICIAL_SOURCE, kits = {} 
 }
 
 /**
+ * A seat's deck keys (同步-9): an id more than once only when the match allows copies.
+ * @param {readonly { id: string }[]} deck @param {number} seat @param {boolean} copies @returns {string[]}
+ */
+function keysOf(deck, seat, copies) {
+  const ids = deck.map((e) => e.id), twice = ids.find((id, i) => ids.indexOf(id) !== i);
+  if (twice !== undefined && !copies) throw new RangeError(`seat ${seat}: ${twice} twice in one deck (copies not allowed)`);
+  return deckKeys(ids, seat);
+}
+
+/** Whether training `a` is above `b` (干员-9): its elite phase, then level, then potential. @param {import('./operators.js').Build} a @param {import('./operators.js').Build} b */
+const trainedAbove = (a, b) => (a.elite !== b.elite ? a.elite > b.elite : a.level !== b.level ? a.level > b.level : a.potential > b.potential);
+
+/**
+ * The team talents of a deck (干员-9): each operator's once — of its copies (同步-9), the best trained one's, the first of
+ * equals —, in deck order. @param {{ id: string, build: import('./operators.js').Build, team: import('@aue/sim').TeamTalent[] }[]} built
+ */
+function deckTeam(built) {
+  /** @type {Map<string, (typeof built)[number]>} */
+  const best = new Map();
+  for (const x of built) {
+    const was = best.get(x.id);
+    if (!was || trainedAbove(x.build, was.build)) best.set(x.id, x);
+  }
+  return [...best.values()].flatMap((x) => x.team);
+}
+
+/**
  * The level's predefined operators (波次-7), each at its training, under its predefined key; their summons too.
  * @param {import('./mods/source.js').ContentSource} source
  * @param {Record<string, import('@aue/sim').OperatorDef>} operators @param {import('@aue/sim').Content['level']} level @param {number} blockAdd
@@ -154,7 +185,7 @@ async function withPredefined(source, operators, level, blockAdd) {
 }
 
 /**
- * Every seat's runes on its operators and summons (keys ending in #seat, 符文-1…5), then its carried units' cards added
+ * Every seat's runes on its operators and summons (keys of the seat, 符文-1…5), then its carried units' cards added
  * to its deck (符文-6, key "unit id#seat"); each seat's change to the deploy limit. Throws for runes not supported yet.
  * @param {Record<string, import('@aue/sim').OperatorDef>} operators @param {string[][]} decks @param {readonly import('./runes.js').SeatRune[][]} runes
  * @returns {Promise<number[]>}
@@ -166,7 +197,7 @@ async function withSeatRunes(operators, decks, runes) {
     return r;
   });
   for (const [seat, r] of rules.entries()) {
-    for (const k of Object.keys(operators)) if (k.endsWith(`#${seat}`)) operators[k] = withRunes(operators[k], r.effects);
+    for (const k of Object.keys(operators)) if (seatOfKey(k) === seat) operators[k] = withRunes(operators[k], r.effects);
     for (const card of r.cards) {
       const key = `${card.key}#${seat}`;
       if (decks[seat].includes(key)) continue;
@@ -187,17 +218,18 @@ async function tokenDefsOf(source, owner, build) {
 }
 
 /**
- * An operator's summons at its training (召唤-1, 召唤-2), by key "summon id#seat": each with its owner's key and its id;
- * without their talents when the owner has a kit (兼容-6: its kits apply them).
+ * An operator's summons at its training (召唤-1, 召唤-2), by key "summon id#seat" — a copy's with its "#n", each copy's
+ * its own (同步-9) —: each with its owner's key and its id; without their talents when the owner has a kit (兼容-6: its
+ * kits apply them).
  * @param {import('./mods/source.js').ContentSource} source
- * @param {{ id: string, build: import('./operators.js').Build, seat: number, blockAdd: number, kit: boolean }} o
+ * @param {{ id: string, key: string, build: import('./operators.js').Build, blockAdd: number, kit: boolean }} o
  * @returns {Promise<Record<string, import('@aue/sim').OperatorDef>>}
  */
-async function summonsOf(source, { id, build, seat, blockAdd, kit }) {
+async function summonsOf(source, { id, key, build, blockAdd, kit }) {
   const owner = await source.training(id), ids = (owner.tokens ?? []).filter((t) => Object.hasOwn(TOKENS, t));
   const recs = await Promise.all(ids.map(async (t) => {
     const made = tokenAt(await source.token(t), t, owner, build), r = kit ? withoutTalents(made) : made;
-    return [`${t}#${seat}`, { ...r, blockCnt: Math.max(0, r.blockCnt + blockAdd), char: t, summoner: `${id}#${seat}`, ...attackOf(t) }];
+    return [/** @type {string} */ (summonKey(t, key)), { ...r, blockCnt: Math.max(0, r.blockCnt + blockAdd), char: t, summoner: key, ...attackOf(t) }];
   }));
   return Object.fromEntries(recs);
 }
@@ -253,6 +285,7 @@ export { MAPPING, mappedUrl } from './compat/mapping.js';
 export { PROFESSION_BITS, seatRules, withRunes } from './runes.js';
 export { CARRIED, CARRIED_PROFILES, loadCarried, carriedDef } from './carried.js';
 export { OFFICIAL_SOURCE, createSource } from './mods/source.js';
+export { deckKeys, seatOfKey, summonKey } from './deckkeys.js';
 export { readMod, loadOrder } from './mods/order.js';
 export { applyPatch, PatchError } from './mods/patch.js';
 export { recordProblems, tableSchemas } from './mods/shapes.js';

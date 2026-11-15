@@ -29,7 +29,7 @@
 | 阶段结算（`stage`，结束，合作-6） | `battle.ON_COOPERATE_STAGE_COMPLETE_<阶段序号，从 1 起>`；之后还有阶段时再播 `battle.ON_COOPERATE_REST_START`（中场休整，合作-8） |
 | 协作者申请暂停、申请加速（同步-7、同步-8） | `battle.ON_COOPERATE_PAUSE_CONFIRM`、`battle.ON_COOPERATE_SPEED_REQUEST` |
 
-单位 id 是干员、召唤物或携带物的数据 id（内容键「id#座位」去掉座位），敌人 id 是敌人的键。
+单位 id 是干员、召唤物或携带物的数据 id（内容键「id#座位」去掉座位，多份的「id#座位#n」也去掉后面的部分，同步-9），敌人 id 是敌人的键。
 
 - 来源：数据：audio_data.json 的库名（`battle.ON_UNIT_BORN.char`「b_char_set」、`battle.ON_UNIT_BORN.token`「b_char_tokenset」、`battle.ON_CHARACTER_WITHDRAW.char`「b_char_escape」、`battle.ON_UNIT_DEAD.char`「b_char_dead」、`battle.ON_UNIT_DEAD.enemy`「b_enemy_dead_n」、`battle.ON_UNIT_DEAD.token`「b_char_tokendead」、`battle.ON_ENEMY_REACHED_EXIT`「b_ui_alarmenter」、`battle.ON_SKILL_START.<技能 id>`、`battle.ON_COOPERATE_DYING`「b_ui_sos」、`battle.ON_COOPERATE_MATE_DYING`「b_ui_teammatelose」、`battle.ON_COOPERATE_REVIVE`「b_ui_reviveol」、`battle.ON_COOPERATE_COST_REJECT`、`battle.ON_COOPERATE_STAGE_COMPLETE_1`/`_2`「b_ui_achievestage」、`battle.ON_COOPERATE_REST_START`「b_ui_halftimerest」、`battle.ON_COOPERATE_PAUSE_CONFIRM`「b_ui_applypause」、`battle.ON_COOPERATE_SPEED_REQUEST`「b_ui_applyspeedup」）；事件与库的对应、携带物用召唤物的库为推断 INF-0169
 
