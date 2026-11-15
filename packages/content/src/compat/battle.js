@@ -14,8 +14,10 @@ import { ShProjectiles } from './projectiles.js';
 import * as field from './field.js';
 import * as summoning from './summons.js';
 import { ShGrid } from './tiles.js';
-import { CompatGap } from './sh/gap.js';
+import { CompatGap, gap } from './sh/gap.js';
 import { effectiveProfile } from './sh/ai.js';
+import { shData } from './sh/data.js';
+import * as players from './players.js';
 
 /** @typedef {import('@aue/sim').World} World @typedef {import('@aue/sim').Content} Content @typedef {import('@aue/sim').Unit} Unit */
 /** @typedef {(ctx: any, b: ShBattle) => void} Handler */
@@ -48,7 +50,7 @@ const elementDmg = (d) => ({
  * @type {Record<string, (b: ShBattle, k: Record<string, any>) => Record<string, any>>}
  */
 const SHAPES = {
-  deploy: (b, k) => ({ unit: sh(b, k.unit), initial: k.initial, ...(k.move ? { move: true } : {}) }),
+  deploy: (b, k) => ({ unit: sh(b, k.unit), initial: !!k.initial || !b.started, ...(k.move ? { move: true } : {}) }),
   death: (b, k) => ({ unit: sh(b, k.unit), reason: k.reason, killer: sh(b, k.killer), dying: false }),
   kill: (b, k) => ({ killer: sh(b, k.killer), victim: sh(b, k.victim) }),
   enemySpawn: (b, k) => ({ enemy: sh(b, k.enemy) }),
@@ -108,8 +110,8 @@ const BACK = {
 const shapeOf = (b, name, k) => (Object.hasOwn(SHAPES, name) ? SHAPES[name](b, k) : k);
 
 export class ShBattle {
-  /** @param {World} w @param {Content} c */
-  constructor(w, c) {
+  /** @param {World} w @param {Content} c @param {{ players?: (players.PlayerInput | null | undefined)[] }} [o] Stronghold's players' inputs, by seat (兼容-7) */
+  constructor(w, c, o = {}) {
     /** @type {World} */
     this.w = w;
     /** @type {Content} */
@@ -136,11 +138,28 @@ export class ShBattle {
     this.rng = makeRng(w);
     /** the kits' own shots (projectiles.js) */
     this.projectiles = new ShProjectiles(this);
-    /** Stronghold's data source as kits read it: raw summon records (summons.js rawToken). */
-    this.data = Object.freeze({ rawToken: (/** @type {string} */ id) => summoning.rawToken(this, id) });
+    /**
+     * Stronghold's data source as content reads it: raw summon records (summons.js rawToken) — a raw enemy record, a gap —
+     * and its game data (`raw`, sh/data.js; empty without it).
+     */
+    this.data = Object.freeze({ rawToken: (/** @type {string} */ id) => summoning.rawToken(this, id), rawEnemy: gap('data.rawEnemy'), get raw() { return shData() ?? {}; } });
     /** whether the handler that sends the hpDamage transfers is on (transfer) */
     this.transfersOn = false;
+    /** Stronghold's players (兼容-7), by seat; none without their inputs. */
+    this.players = (o.players ?? []).map((x, seat) => players.makePlayer(this, seat, x ?? {}));
+    /** Stronghold's battle flags (`flags`): in-battle layer gains are on, as in its normal battles. */
+    this.battleFlags = { layerGainsEnabled: true };
+    /** @type {string | null} Stronghold's mode: none */
+    this.modeId = null;
   }
+
+  /** Stronghold's battle flags. */
+  get flags() { return this.battleFlags; }
+  /** Stronghold's battle kind: a normal battle. */
+  get kind() { return 'normal'; }
+
+  /** The field's rectangle as Stronghold's: the whole level. */
+  get rect() { return { r0: 0, r1: this.c.level.height - 1, c0: 0, c1: this.c.level.width - 1 }; }
 
   /** Battle seconds: the frame's start (Stronghold's tickCount × dt, the same in every handler of a frame). */
   get time() { return this.w.frame * TICK; }
@@ -352,8 +371,15 @@ export class ShBattle {
   }
   /** The name before v0.3.2. @param {ShUnit} target @param {number} amount @param {string | null} [element] */
   reduceElement(target, amount, element = null) { return field.healElement(target, amount, element); }
-  /** @param {ShUnit} unit */
-  retreat(unit) { field.retreat(this, unit); }
+  /**
+   * A retreat (撤退-1). 突袭's (`reason` 'raid'), which Stronghold follows at once with a redeployment on another tile that
+   * keeps the SP, is a gap: the unit stays (兼容-7).
+   * @param {ShUnit} unit @param {{ reason?: string }} [o]
+   */
+  retreat(unit, o = {}) {
+    if (o?.reason === 'raid') throw new CompatGap('battle.retreat.raid');
+    field.retreat(this, unit);
+  }
   /** @param {ShUnit} unit @param {number} r @param {number} c @param {{ clearSp?: boolean }} [o] */
   moveRedeploy(unit, r, c, o) { return field.moveRedeploy(this, unit, r, c, o); }
 
@@ -398,9 +424,28 @@ export class ShBattle {
    * @param {number} id
    */
   getPlayer(id) {
+    if (this.players[id]) return this.players[id];
     const p = this.w.players[id], b = this;
     return p ? { id, mirror: false, get dp() { return p.cost; }, get units() { return b.allyUnits.filter((u) => u.ownerId === id); } } : null;
   }
+
+  // ---- Stronghold's players (players.js, 兼容-7) -----------------------------------------------------------------
+
+  /**
+   * An in-battle layer gain (the `layerGain` event first; at most 999 a bond). The layers added.
+   * @param {number} pid @param {string} bondId @param {number} n @param {string} [reason] @param {{ source?: any, tile?: [number, number] }} [o]
+   */
+  addLayers(pid, bondId, n, reason = '', o = {}) { return players.addLayers(this, pid, bondId, n, { ...o, reason }); }
+  /** 规程's temporary layers. @param {number} pid @param {string} bondId @param {number} n */
+  addTempLayers(pid, bondId, n) { return players.addTempLayers(this, pid, bondId, n); }
+  /** 「立刻重新部署」: the next deployment without 再部署时间 (and cost, `free`). @param {ShUnit} unit @param {{ free?: boolean, tile?: unknown, keepSp?: boolean }} [o] */
+  redeploy(unit, o) { return players.redeploy(this, unit, o); }
+  /** A knocked-out operator lying on its tile (`(unit)`): none in these modes — the fallen leave the field. */
+  isDown() { return false; }
+  /** Where a fallen operator would come back: the tile it left. @param {ShUnit} u @returns {[number, number]} */
+  restTile(u) { return [u.tileR, u.tileC]; }
+  /** A damage info as Stronghold makes one: physical, no amount, ×1, no tags, then what is given. @param {Record<string, any>} [o] */
+  makeDamage(o = {}) { return { type: 'phys', amount: 0, mul: 1, tags: [], ...o }; }
 
   /**
    * A buff (兼容-4): Stronghold's refresh rule as the engine's (状态-2); seconds as frames; one that `persist`s is given

@@ -2,7 +2,14 @@
 // Stronghold Protocol v0.2.4) — a chess record (records.js makes one from the engine's training data, 兼容-3) as the
 // "def" its kits receive. The fields keep Stronghold's alternative spellings.
 
+import { gap } from './gap.js';
+
 /** @typedef {Record<string, any>} Rec */
+
+// Stronghold's data views and route records, which its battle content beyond the kits imports: gaps (兼容-7).
+export const isShopItem = gap('simdata.isShopItem');
+export const normalizeRoute = gap('simdata.normalizeRoute');
+export const withUnitLoadouts = gap('simdata.withUnitLoadouts');
 
 /** A number from a number or a numeric string, else the default. @param {unknown} v @param {number} [d] */
 const num = (v, d = 0) => (typeof v === 'number' && Number.isFinite(v) ? v : (typeof v === 'string' && v.trim() !== '' && Number.isFinite(+v) ? +v : d));

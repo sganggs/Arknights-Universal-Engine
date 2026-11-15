@@ -51,7 +51,9 @@ test('[兼容-2] the table: an engine module goes to its stand-in, content loads
   assert.equal(mappedUrl(root, 'file:///sh/shared/plugins/steps.js', compat), 'file:///aue/compat/sh/plugins/steps.js');
   assert.equal(mappedUrl(root, 'file:///sh/server/sim/attack.js', compat), 'file:///aue/compat/sh/attack.js', 'v0.3.2');
   assert.equal(mappedUrl(root, 'file:///sh/shared/plugins/dataUtils.js', compat), 'file:///aue/compat/sh/plugins/dataUtils.js', 'v0.3.2');
-  assert.equal(Object.keys(MAPPING).length, 20);
+  assert.equal(mappedUrl(root, 'file:///sh/shared/i18n.js', compat), 'file:///aue/compat/sh/i18n.js', '兼容-7');
+  assert.equal(mappedUrl(root, 'file:///sh/server/sim/rng.js', compat), 'file:///aue/compat/sh/prep.js', '兼容-7: only the prep side reaches it');
+  assert.equal(Object.keys(MAPPING).length, 24);
 });
 
 test('[兼容-2] the pinned oracle’s 72 operator kits load unchanged; a name the layer does not provide yet throws when called', () => {

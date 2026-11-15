@@ -45,13 +45,15 @@ const FLAG_NAME = Object.freeze(Object.fromEntries(Object.entries(FLAG).map(([k,
 
 /**
  * A unit's attribute flags as a kit reads them: the engine's, also under Stronghold's names where it names them
- * otherwise, and `burstLock` during an element burst (元素-3).
- * @param {Record<string, boolean>} flags @param {boolean} bursting @returns {Record<string, boolean>}
+ * otherwise, `burstLock` during an element burst (元素-3) and `cold` while it is 寒冷 (the engine's cold status has no
+ * flag of its own, 状态-5).
+ * @param {Record<string, boolean>} flags @param {boolean} bursting @param {boolean} [cold] @returns {Record<string, boolean>}
  */
-export function shFlagsOf(flags, bursting) {
+export function shFlagsOf(flags, bursting, cold = false) {
   const out = { ...flags };
   for (const [k, on] of Object.entries(flags)) if (on && Object.hasOwn(FLAG_NAME, k)) out[FLAG_NAME[k]] = true;
   if (bursting) out.burstLock = true;
+  if (cold) out.cold = true;
   return out;
 }
 

@@ -194,6 +194,13 @@ function dodgeOf(d) {
 }
 
 /**
+ * Whether a request's 'resolved' amount (past its defences and its source's multipliers) is the plain amount here:
+ * 真实伤害 with no source to multiply it (兼容-7: 坚守's shared damage). Any other is a gap.
+ * @param {Record<string, any>} dmg @param {Unit | null} s
+ */
+const plainResolved = (dmg, s) => dmg.type === 'true' && (!s || !!dmg.sourceless);
+
+/**
  * Damage from a unit, or from none (伤害-7): an operator's is credited with a kill (职业-5); 元素损伤 (`type` 'element')
  * goes to the target's element (元素-2). Returns the HP taken (the 元素损伤 dealt).
  * @param {ShBattle} b @param {ShUnit | null} source @param {ShUnit} target @param {Record<string, any>} dmg
@@ -205,7 +212,7 @@ export function dealDamage(b, source, target, dmg) {
     const el = ELEMENT[dmg.element];
     return el ? elements.dealEp(b.w, t, el, Number(dmg.amount) || 0, s) : 0;
   }
-  if (dmg.calculation === 'resolved') throw new CompatGap('attack.calculation.resolved');
+  if (dmg.calculation === 'resolved' && !plainResolved(dmg, s)) throw new CompatGap('attack.calculation.resolved');
   if (dmg.onApplied != null) throw new CompatGap('attack.onApplied');
   const hit = hitOf(dmg);
   return s && s.kind === KIND.OPERATOR ? traits.creditedDamage(b.w, b.c, s, t, hit) : damage.dealDamage(b.w, s, t, hit);
@@ -306,12 +313,14 @@ function lossType(t) {
 }
 
 /**
- * Whom a 生命流失 counts for and whether its events see no source: its source; with none, its `credit`, unseen; a
+ * Whom a 生命流失 counts for and whether its events see no source: its `credit` when one is given — the kill and the
+ * statistics are its, as Stronghold's (阿戈尔's 吞噬: source the target itself, credit the marker); the engine has one
+ * unit for both, so the events see it as the source too —, else its source; with no source, the credit unseen; a
  * `sourceless` loss (or one from a sourceless hit) unseen too.
  * @param {Record<string, any>} o @returns {{ who: ShUnit | null, sourceless: boolean }}
  */
 function lossOrigin(o) {
-  const who = o.source ?? o.credit ?? null;
+  const who = o.credit ?? o.source ?? null;
   return { who, sourceless: !!o.sourceless || !!o.from?.sourceless || (!o.source && !!o.credit) };
 }
 

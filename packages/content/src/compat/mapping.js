@@ -26,6 +26,11 @@ export const MAPPING = Object.freeze({
   'shared/plugins/officialBounds.js': './sh/plugins/officialBounds.js',
   'shared/plugins/rules.js': './sh/plugins/rules.js',
   'shared/plugins/dataUtils.js': './sh/plugins/dataUtils.js',
+  // the battle content beyond the kits (兼容-7): messages, and the modules only its prep side reaches
+  'shared/i18n.js': './sh/i18n.js',
+  'server/sim/rng.js': './sh/prep.js',
+  'shared/garrisonUpgrades.js': './sh/prep.js',
+  'shared/plugins/skillSpec.js': './sh/prep.js',
 });
 
 /** The content files of Stronghold: they load as they are. */

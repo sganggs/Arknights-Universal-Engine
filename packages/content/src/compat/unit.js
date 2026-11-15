@@ -7,11 +7,15 @@ import { KIND, attrs, body, traits, buffs, status, damage, blocking, dir, elemen
 import { ShSkill } from './skill.js';
 import { STATUS_NAME, buffKeyOf, buffNameOf, shFlagsOf } from './mods.js';
 import { STAND_INS } from './standins.js';
+import { setRespawn } from './players.js';
 
 /** @typedef {import('@aue/sim').Unit} Unit @typedef {import('@aue/sim').Buff} Buff @typedef {import('./battle.js').ShBattle} ShBattle */
 
 /** Frames a second (时间-1). */
 const FPS = 30;
+
+/** Whether a unit is 寒冷 (状态-5: its cold status in effect), which Stronghold keeps as the flag `cold`. @param {Unit} u */
+const chilled = (u) => attrs.activeBuffs(u.buffs).some((x) => x.key === 'cold' || x.key === 'enemyCold');
 
 
 /**
@@ -82,7 +86,37 @@ export class ShUnit {
     /** @type {Map<number, { afterHit: Function }>} what a kit gave single attacks of it, by the attack's mark (兼容-4) */
     this.attackOverrides = new Map();
     this.attackMarks = 0;
+    // What Stronghold's battle content beyond the kits reads of a unit (兼容-7):
+    /** @type {string[]} the equipment a piece carries (its seat's facts) */
+    this.items = [];
+    /** @type {string | null} why a piece last left the field (the engine's `death` reason) */
+    this.removeReason = null;
+    /** when a piece last left the field, in battle seconds */
+    this.deathAt = -Infinity;
+    /** when it last attacked in this deployment, in battle seconds */
+    this.lastAttackAt = -Infinity;
+    /** @type {Record<string, any> | null} what a 联防 field carried in: none in these modes */
+    this.carry = null;
+    /** a free redeployment was given for its next deployment, and without cost (players.js redeploy) */
+    this.freeNext = false;
+    this.freeCost = false;
+    /** when a piece that left may come back, in battle seconds (Stronghold's respawnAt): set at each exit, kept after */
+    this.backAt = Infinity;
+    /** in its exit's own `death` event before the engine set its card, and what content set for it then (players.js) */
+    this.leaving = false;
+    /** @type {number | null} */
+    this.backWanted = null;
   }
+
+  /** Its player as Stronghold's battle content reads it (兼容-7), or null. */
+  get player() { return this.b.getPlayer(this.ownerId); }
+  /**
+   * When a piece that left the field may be deployed again, in battle seconds, as Stronghold keeps it: set as it leaves
+   * (Infinity in a knock-out's own `death` event, before the engine sets it), kept until it leaves again; content may
+   * set it (players.js setRespawn).
+   */
+  get respawnAt() { return this.backAt; }
+  set respawnAt(t) { setRespawn(this.b, this, Number(t)); }
 
   /**
    * Keeps what a kit gave one attack of it under the attack's mark — the mark given, or a new one — and returns the mark.
@@ -101,7 +135,8 @@ export class ShUnit {
   get deployed() { return !!this.u && this.b.w.units.includes(this.u); }
   /** On the field with HP left. */
   get alive() { return this.deployed && /** @type {Unit} */ (this.u).hp > 0; }
-  get removed() { return !this.deployed; }
+  /** Gone for good, as Stronghold's: an operator's piece never is (it may be deployed again); another unit off the field is. */
+  get removed() { return this.pieceId < 0 && !this.deployed; }
   /** A piece's id for the whole battle (as Stronghold's board pieces); another unit's engine id, −1 off the field. */
   get id() { return this.pieceId >= 0 ? this.pieceId : this.u ? this.u.id : -1; }
   get name() { return this.def?.name ?? this.defId; }
@@ -138,7 +173,7 @@ export class ShUnit {
     const u = this.u;
     if (!u) return null;
     const s = attrs.statsOf(u);
-    return { ...s, flags: shFlagsOf(s.flags, elements.bursting(u)) };
+    return { ...s, flags: shFlagsOf(s.flags, elements.bursting(u), chilled(u)) };
   }
   get maxHp() { return this.u ? attrs.statsOf(this.u).maxHp ?? 0 : 0; }
   /** The most 元素损伤 it can take before a burst (元素-2: its element value's maximum). */
@@ -151,7 +186,7 @@ export class ShUnit {
     return id < 0 ? [] : this.b.w.units.filter((e) => e.kind === KIND.ENEMY && e.blockedBy === id).map((e) => this.b.unitOf(e));
   }
   /** Its attribute flags now (stun, sleep, …). */
-  get flags() { return this.u ? shFlagsOf(attrs.statsOf(this.u).flags, elements.bursting(this.u)) : {}; }
+  get flags() { return this.u ? shFlagsOf(attrs.statsOf(this.u).flags, elements.bursting(this.u), chilled(this.u)) : {}; }
   /** @param {string} k */
   hasFlag(k) { return !!this.flags[k]; }
   /** An air unit (飞行, 浮空…, 属性-2). */

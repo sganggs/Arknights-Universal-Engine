@@ -10,8 +10,10 @@ import { ShUnit } from './unit.js';
 import { battles, SPEC_BEHAVIOR, KIT_TRAIT_BEHAVIOR, onAttackHit, onAttackDone, onSpecHit, onBoomerangHit } from './specs.js';
 import { KIT_BUFF, KIT_BUFF_BEHAVIOR, worldBattles } from './buffhooks.js';
 import { withGrid } from './grid.js';
+import { pieceLeft, pieceBack, keepFreeCuts } from './players.js';
 
 /** @typedef {import('@aue/sim').World} World @typedef {import('@aue/sim').Content} Content @typedef {import('@aue/sim').Unit} Unit */
+/** @typedef {import('./players.js').PlayerInput} PlayerInput @typedef {import('./players.js').PieceFacts} PieceFacts */
 /**
  * A kit for an operator key: Stronghold's factory and the def it is built from (records.js defOf), and its summons' defs
  * by summon id (records.js tokenDefOf).
@@ -75,16 +77,26 @@ export function withKitTrait(op, entry, level) {
 const FIRST = 1e9;
 
 /**
- * The world setup that brings kits into a battle (兼容-4); `seen` gets each battle made (for tests and tools).
- * @param {Record<string, KitEntry>} kits by operator key @param {(b: ShBattle) => void} [seen]
+ * Stronghold's battle content beyond the kits (兼容-7): its players' inputs by seat, and the content modules a battle
+ * installs after the kits, in order (Stronghold's installContent: each module's `install(battle)`).
+ * @typedef {{ players?: (PlayerInput | null | undefined)[], modules?: { name: string, install: (b: ShBattle) => void }[] }} ContentInput
+ */
+
+/**
+ * The world setup that brings kits into a battle (兼容-4) — and, given Stronghold's players, a piece for every operator of
+ * the decks and its content modules after the kits (兼容-7); `seen` gets each battle made (for tests and tools).
+ * @param {Record<string, KitEntry>} kits by operator key @param {(b: ShBattle) => void} [seen] @param {ContentInput} [o]
  * @returns {(w: World, c: Content) => void}
  */
-export function kitsWorld(kits, seen) {
+export function kitsWorld(kits, seen, o = {}) {
   return (w, c) => {
-    const b = new ShBattle(w, c);
+    const b = new ShBattle(w, c, { players: o.players });
     worldBattles.set(w, b);
     bus.on(w, 'battleStart', () => { b.started = true; }, { priority: FIRST });
     bus.on(w, 'enter', (k) => bind(b, k.unit), { priority: FIRST });
+    bus.on(w, 'death', (k) => left(b, k.unit, k.reason), { priority: FIRST });
+    bus.on(w, 'deploy', (k) => keepFreeCuts(b, k.unit.owner), { priority: FIRST });
+    bus.on(w, 'attack', (k) => { b.unitOf(k.attacker).lastAttackAt = b.time; }, { priority: FIRST });
     bus.on(w, 'skillStart', (k) => { const s = b.pieces.get(`${k.unit.owner}|${k.unit.key}`)?.skill; if (s && !s.counted) s.activations++; if (s) s.counted = false; }, { priority: FIRST });
     bus.on(w, 'attackHit', onAttackHit);
     bus.on(w, 'attack', onAttackDone, { priority: FIRST });
@@ -93,17 +105,58 @@ export function kitsWorld(kits, seen) {
     bus.on(w, 'tick', (k) => b.projectiles.update(k.frames / 30), { priority: FIRST });
     const decks = c.decks ?? w.players.map(() => Object.keys(c.operators));
     decks.forEach((deck, seat) => {
-      for (const key of deck) if (Object.hasOwn(kits, key)) install(b, seat, key, kits[key]);
+      for (const key of deck) {
+        const facts = o.players?.[seat]?.units?.[key];
+        if (Object.hasOwn(kits, key)) install(b, seat, key, kits[key], facts);
+        else if (o.players && Object.hasOwn(c.operators, key) && !c.operators[key].summon) addPiece(b, seat, key, plainDef(c, key, facts), facts);
+      }
     });
+    for (const m of o.modules ?? []) b.safe(() => m.install(b), `content:${m.name}`, null);
     seen?.(b);
   };
 }
 
-/** An operator's piece and its kit, installed once. @param {ShBattle} b @param {number} seat @param {string} key @param {KitEntry} entry */
-function install(b, seat, key, entry) {
-  const def = entry.def, piece = new ShUnit(b, { kind: 'op', key, ownerId: seat, def, pieceId: reserveIds(b.w, 1) });
-  piece.tokenDefs = entry.tokens ?? {};
+/**
+ * A piece's def with its seat's facts (兼容-7): its chess id (and the normal one as its base), bonds, shop tier, elite
+ * form, over the def its records make; the def itself without facts.
+ * @param {Record<string, any>} def @param {PieceFacts | undefined} facts @returns {Record<string, any>}
+ */
+function withFacts(def, facts) {
+  if (!facts) return def;
+  return { ...def, ...(facts.id ? { id: facts.id, baseId: facts.id.replace(/_b$/, '_a') } : {}), ...(facts.bonds ? { bonds: [...facts.bonds] } : {}),
+    ...(facts.tier != null ? { tier: facts.tier } : {}), ...(facts.golden != null ? { golden: !!facts.golden } : {}) };
+}
+
+/**
+ * The def of an operator without a kit, as Stronghold's content reads one: its key, name, profession and branch,
+ * position and rarity from the content's record — the rarity its shop tier too unless the facts give one, as the kits'
+ * records have it (records.js) —, with the facts.
+ * @param {Content} c @param {string} key @param {PieceFacts | undefined} facts
+ */
+function plainDef(c, key, facts) {
+  const d = c.operators[key];
+  return withFacts({ id: key, baseId: key, charId: d.char ?? key, name: d.name, profession: d.profession ?? null, subProf: d.branch ?? null,
+    position: d.position, rarity: d.rarity ?? 1, tier: d.rarity ?? 1, raw: {} }, facts);
+}
+
+/**
+ * An operator's piece for the whole battle, with the equipment of its facts. @param {ShBattle} b @param {number} seat @param {string} key
+ * @param {Record<string, any>} def @param {PieceFacts | undefined} facts
+ */
+function addPiece(b, seat, key, def, facts) {
+  const piece = new ShUnit(b, { kind: 'op', key, ownerId: seat, def, pieceId: reserveIds(b.w, 1) });
+  piece.items = [...(facts?.items ?? [])];
   b.pieces.set(`${seat}|${key}`, piece);
+  return piece;
+}
+
+/**
+ * An operator's piece and its kit, installed once. @param {ShBattle} b @param {number} seat @param {string} key @param {KitEntry} entry
+ * @param {PieceFacts} [facts]
+ */
+function install(b, seat, key, entry, facts) {
+  const def = withFacts(entry.def, facts), piece = addPiece(b, seat, key, def, facts);
+  piece.tokenDefs = entry.tokens ?? {};
   const kit = b.safe(() => entry.factory(def.skill?.bb ?? {}, def.raw, def), 'kit', piece);
   if (!kit) return;
   piece.kit = kit;
@@ -129,21 +182,39 @@ function bind(b, u) {
   if (!piece) return;
   piece.u = u;
   piece.deploySeq++;
+  piece.lastAttackAt = -Infinity;
+  pieceBack(piece);
   battles.set(u, b);
+  piece.skill?.applyCost();
   for (const spec of piece.persist) b.giveBuff(piece, spec);
+}
+
+/**
+ * A unit leaving the field (the `death` event, before any other handler) keeps its exit (兼容-7): an operator's piece
+ * (players.js pieceLeft), another unit content has seen its reason and time.
+ * @param {ShBattle} b @param {Unit} u @param {string} reason
+ */
+function left(b, u, reason) {
+  const piece = u.kind === KIND.OPERATOR && u.summoner === undefined ? b.pieces.get(`${u.owner}|${u.key}`) : undefined;
+  if (piece) {
+    if (piece.u === u) pieceLeft(b, piece, reason);
+    return;
+  }
+  const seen = b.others.get(u);
+  if (seen) Object.assign(seen, { removeReason: reason, deathAt: b.time });
 }
 
 /**
  * What content needs to bring kits into its battles (兼容-4, 兼容-5): the world setup, the skill behaviour of every
  * skill a kit describes, by skill id, the behaviour of a kit's buffs with callbacks, and the trait behaviour of every
  * branch a kitted operator has (职业-6).
- * @param {Record<string, KitEntry>} kits by operator key @param {(b: ShBattle) => void} [seen]
+ * @param {Record<string, KitEntry>} kits by operator key @param {(b: ShBattle) => void} [seen] @param {ContentInput} [o] Stronghold's content beyond the kits (兼容-7)
  * @returns {{ world: (w: World, c: Content) => void, skills: Record<string, import('@aue/sim').SkillBehavior>, buffs: Record<string, import('@aue/sim').buffs.Behavior>,
  *   traits: Record<string, import('@aue/sim').TraitBehavior> }}
  */
-export function kitsBehaviors(kits, seen) {
+export function kitsBehaviors(kits, seen, o = {}) {
   const ids = Object.values(kits).flatMap((e) => [e.def.skill?.id, ...Object.values(e.tokens ?? {}).map((d) => d.skill?.id)]).filter((id) => typeof id === 'string');
   const branches = [...new Set(Object.values(kits).map((e) => e.def.subProf).filter((x) => typeof x === 'string'))];
-  return { world: kitsWorld(kits, seen), skills: Object.fromEntries(ids.map((id) => [id, SPEC_BEHAVIOR])), buffs: { [KIT_BUFF]: KIT_BUFF_BEHAVIOR },
+  return { world: kitsWorld(kits, seen, o), skills: Object.fromEntries(ids.map((id) => [id, SPEC_BEHAVIOR])), buffs: { [KIT_BUFF]: KIT_BUFF_BEHAVIOR },
     traits: Object.fromEntries(branches.map((x) => [x, KIT_TRAIT_BEHAVIOR])) };
 }
