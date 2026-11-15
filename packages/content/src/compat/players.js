@@ -14,8 +14,8 @@ import { CompatGap } from './sh/gap.js';
  */
 /**
  * What the engine's records of an operator do not carry (Stronghold's chess record): its chess id (an elite one ends in
- * `_b`), its bonds, its shop tier, its elite form, the equipment it carries.
- * @typedef {{ id?: string, bonds?: string[], tier?: number, golden?: boolean, items?: string[] }} PieceFacts
+ * `_b`), its bonds, its shop tier, its elite form, the equipment it carries, its 特质 (garrison ids).
+ * @typedef {{ id?: string, bonds?: string[], tier?: number, golden?: boolean, items?: string[], garrisons?: string[] }} PieceFacts
  */
 /**
  * A seat's input (Stronghold's PlayerBattleInput, the parts its battle content reads): its bonds' live state, its band,

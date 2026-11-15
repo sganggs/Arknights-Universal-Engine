@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { tinyContent } from '@aue/testkit';
 import { createWorld, step, attrs, deck } from '@aue/sim';
 import { kitsBehaviors } from '../src/compat/kits.js';
-import { withGrid } from '../src/compat/grid.js';
+import * as grid from '../src/compat/grid.js';
 import { CompatGap } from '../src/compat/sh/gap.js';
 import { setShData, getData } from '../src/compat/sh/data.js';
 import { msg, dn } from '../src/compat/sh/i18n.js';
@@ -17,6 +17,7 @@ import { GEO } from '../src/compat/sh/sharedConstants.js';
 import { DIR_VEC, oppositeDir, localBefore } from '../src/compat/sh/dir.js';
 import { BOSS_ROW_OFFSET, ELEMENT } from '../src/compat/sh/constants.js';
 import * as prep from '../src/compat/sh/prep.js';
+import { matchContent, loadContent, CONTENT_MODULES } from '../src/index.js';
 
 /** @typedef {import('../src/compat/battle.js').ShBattle} ShBattle @typedef {import('../src/compat/players.js').PlayerInput} PlayerInput */
 
@@ -229,8 +230,8 @@ test('[兼容-7] a 生命流失 with a source and another credit counts for the 
 
 test('[兼容-7] the stand-ins’ new names: messages, the extended grid, potentials, Stronghold’s geometry and values, the prep side’s gaps, the data', () => {
   assert.deepEqual([msg('【维多利亚】获得{n}件维式重锤', { n: 2 }), dn('炎')], [{ msgid: '【维多利亚】获得{n}件维式重锤', params: { n: 2 } }, { dn: '炎' }]);
-  assert.deepEqual(withGrid({ width: 6, height: 3 }, () => extendedGrid([[0, 0], [0, 1], [1, 0], 'x'], 2)), [[0, 0], [0, 1], [1, 0], [0, 2], [0, 3], [1, 1], [1, 2]]);
-  assert.deepEqual(withGrid({ width: 6, height: 3 }, () => extendedGrid([[0, 0]], 0)), [[0, 0]]);
+  assert.deepEqual(grid.withGrid({ width: 6, height: 3 }, () => extendedGrid([[0, 0], [0, 1], [1, 0], 'x'], 2)), [[0, 0], [0, 1], [1, 0], [0, 2], [0, 3], [1, 1], [1, 2]]);
+  assert.deepEqual(grid.withGrid({ width: 6, height: 3 }, () => extendedGrid([[0, 0]], 0)), [[0, 0]]);
   assert.deepEqual([isPotential(1), isPotential(6), isPotential(7), isPotential(2.5), isPotential('3')], [true, true, false, false, false]);
   assert.deepEqual([GEO.FIELD, BOSS_ROW_OFFSET, ELEMENT.burn.enemy.elemDamage], [{ r0: 9, r1: 12, c0: 2, c1: 10 }, -7, 7000]);
   assert.deepEqual([DIR_VEC.UP, oppositeDir('LEFT'), localBefore([0, 1], [0, 2]), localBefore([1, 0], null)], [[1, 0], 'RIGHT', true, true]);
@@ -238,4 +239,39 @@ test('[兼容-7] the stand-ins’ new names: messages, the extended grid, potent
   assert.throws(() => getData(), (x) => x instanceof CompatGap && x.what === 'data.getData');
   setShData({ config: {} });
   assert.deepEqual(getData(), { config: {} });
+});
+
+test('[兼容-7] a match’s content brings the players and the modules into its battle, also with no kit; without them it has no world setup', async () => {
+  const deckOf = [{ id: 'char_123_fang', build: { elite: 0, level: 30, potential: 1, trust: 0, skill: 0, skillLevel: 1 } }];
+  const m = { level: 'act1multi_01', difficulty: /** @type {const} */ ('NORMAL'), seed: 1, decks: [deckOf] };
+  /** @type {ShBattle[]} */
+  const seen = [];
+  /** @type {string[]} */
+  const installed = [];
+  const input = { bonds: { yanShip: { count: 3, active: true, tier: 1, layers: 2 } }, bandId: 'band_x', units: { 'char_123_fang#0': { id: 'chess_x_a', bonds: ['yanShip'], tier: 2, garrisons: ['garrison_x_a'] } } };
+  const c = await matchContent(m, { content: { players: [input], modules: [{ name: 'm', install: (b) => { installed.push(b.allyUnits.map((u) => `${u.def?.id} ${u.def?.garrisonIds}`).join()); } }], seen: (b) => { seen.push(b); } } });
+  assert.equal(c.kits, undefined, 'no kit used');
+  createWorld(c, { seed: 1, players: 1 });
+  assert.deepEqual(installed, ['chess_x_a garrison_x_a'], 'the module saw the piece with its facts, its 特质 where Stronghold reads them');
+  assert.equal(seen.length, 1);
+  assert.deepEqual([seen[0].players[0].bonds, seen[0].players[0].bandId], [input.bonds, 'band_x']);
+  assert.equal((await matchContent(m)).behaviors?.world, undefined);
+});
+
+test('[兼容-7] the content modules load from a checkout in the order given, under the load grid; one that fails or has no install is named', async () => {
+  /** @type {[string, number][]} */
+  const asked = [];
+  const install = () => {};
+  /** @param {string} url */
+  const load = async (url) => {
+    asked.push([url, grid.COLS]);
+    if (url.endsWith('/bosses.js')) throw new Error('no file');
+    return url.endsWith('/enemies.js') ? {} : { install };
+  };
+  const r = await loadContent('file:///sh/', ['bonds', 'enemies', 'bosses', 'items'], load);
+  assert.deepEqual(r.modules.map((x) => x.name), ['bonds', 'items']);
+  assert.deepEqual(r.failed, ['enemies', 'bosses']);
+  assert.deepEqual(asked, ['bonds', 'enemies', 'bosses', 'items'].map((n) => [`file:///sh/server/sim/content/${n}.js`, grid.LOAD_GRID.width]));
+  assert.equal(grid.COLS, 0, 'the grid back after the load');
+  assert.deepEqual(CONTENT_MODULES, ['tokens', 'devices', 'enemies', 'bosses', 'bonds', 'garrisons', 'items', 'bands', 'choices'], 'Stronghold’s install order');
 });

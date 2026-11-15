@@ -1,7 +1,8 @@
 // The pinned Stronghold kits in matches (docs/spec/compat.md 兼容-6, ADR 0058): the commit, each operator kit's file, the
 // kits that run (those that passed the checks), and loading them from where the environment serves that commit — under
 // Node a file URL with the compat hook registered (hook.js), in a browser the platform's rewritten copy. The content of
-// a match then uses them for its operators (index.js matchContent).
+// a match then uses them for its operators (index.js matchContent). Stronghold's battle content beyond the kits (兼容-7)
+// loads the same way, from a checkout the host names.
 import kitData from '../../data/kits.json' with { type: 'json' };
 import { loadUnderGrid } from './grid.js';
 
@@ -40,4 +41,30 @@ export async function loadKits(base, charIds, load = (url) => import(url)) {
     }
   }
   return { kits, failed };
+}
+
+/** Stronghold's domain modules in the order its battles install them (its installContent, content/index.js). */
+export const CONTENT_MODULES = Object.freeze(['tokens', 'devices', 'enemies', 'bosses', 'bonds', 'garrisons', 'items', 'bands', 'choices']);
+
+/**
+ * Loads Stronghold's content modules (兼容-7) from a checkout at `base` (a URL ending in "/"): each
+ * `server/sim/content/<name>.js` under the load grid, in the order given, as the modules a match installs after its kits;
+ * the names whose file did not load or has no `install` are in `failed`.
+ * @param {string} base @param {readonly string[]} [names] @param {(url: string) => Promise<any>} [load] how to import a URL
+ * @returns {Promise<{ modules: { name: string, install: (b: any) => void }[], failed: string[] }>}
+ */
+export async function loadContent(base, names = CONTENT_MODULES, load = (url) => import(url)) {
+  /** @type {{ name: string, install: (b: any) => void }[]} */
+  const modules = [];
+  const failed = [];
+  for (const name of names) {
+    try {
+      const mod = await loadUnderGrid(() => load(`${base}server/sim/content/${name}.js`));
+      if (typeof mod?.install === 'function') modules.push({ name, install: mod.install });
+      else failed.push(name);
+    } catch {
+      failed.push(name);
+    }
+  }
+  return { modules, failed };
 }

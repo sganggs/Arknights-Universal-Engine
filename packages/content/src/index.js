@@ -100,14 +100,17 @@ function withoutTalents({ talentBb, talentMods, talentTrait, fieldTalents, range
  * operators and summons, and its deploy limit (level.options.characterLimitAdd), the level's runes on our units every
  * seat's (关卡-2); runes not supported throw. In 堡垒守御
  * every seat's deck has the level's builders too (守御-4), and each token whose device is 轰隆隆先生 (装置-7). The levels, operators and summons come from the content
- * source — the official content, or it with mods (mod-8) —; the content names the mods it is made with.
+ * source — the official content, or it with mods (mod-8) —; the content names the mods it is made with. Stronghold's
+ * battle content beyond the kits (`content`: its players' inputs, its modules, 兼容-7) comes into the battle with them,
+ * or alone.
  * @param {{ level: string, difficulty: 'NORMAL' | 'FOUR_STAR', seed: number, decks: { id: string, build: import('./operators.js').Build }[][], runes?: import('./runes.js').SeatRune[][],
  *   copies?: boolean }} match
- * @param {{ source?: import('./mods/source.js').ContentSource, kits?: Readonly<Record<string, import('./compat/kitmod.js').KitFactory>> }} [o] the content
- *   source (default: the official content) and the loaded kit factories by character id
+ * @param {{ source?: import('./mods/source.js').ContentSource, kits?: Readonly<Record<string, import('./compat/kitmod.js').KitFactory>>,
+ *   content?: import('./compat/kits.js').ContentInput }} [o] the content source (default: the official content), the loaded kit factories by
+ *   character id, and Stronghold's battle content beyond the kits
  * @returns {Promise<import('@aue/sim').Content>}
  */
-export async function matchContent(match, { source = OFFICIAL_SOURCE, kits = {} } = {}) {
+export async function matchContent(match, { source = OFFICIAL_SOURCE, kits = {}, content } = {}) {
   const lv = levelAt(match.level, match.difficulty, undefined, source.levels);
   /** @type {Record<string, import('@aue/sim').OperatorDef>} */
   const operators = {};
@@ -137,7 +140,7 @@ export async function matchContent(match, { source = OFFICIAL_SOURCE, kits = {} 
   // the level's runes on our units are every seat's (关卡-2, 符文-1)
   for (const k of Object.keys(operators)) operators[k] = withRunes(operators[k], lv.runes);
   const used = [...new Set(Object.keys(entries).map((k) => k.split('#')[0]))].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
-  const kb = used.length ? kitsBehaviors(entries) : null;
+  const kb = used.length || content ? kitsBehaviors(entries, content?.seen, content) : null;
   const behaviors = kb ? { ...BEHAVIORS, world: kb.world, skills: { ...BEHAVIORS.skills, ...kb.skills }, buffs: { ...BEHAVIORS.buffs, ...kb.buffs }, traits: kb.traits } : BEHAVIORS;
   const level = limitAdd.some((n) => n !== 0) ? { ...lv.level, options: { ...lv.level.options, characterLimitAdd: limitAdd } } : lv.level;
   return /** @type {any} */ ({ level, enemies: enemiesOf(lv.enemies), devices: lv.devices, operators, decks, behaviors, ...(used.length ? { kits: { sha: KIT_SOURCE.sha, used } } : {}),
@@ -280,7 +283,10 @@ export { ROSTER, rosterSource, loadTraining, operatorAt, statsAt } from './opera
 /** @typedef {import('./operators.js').Training} Training @typedef {import('./skills.js').SkillLevel} SkillLevel */
 export { textPair } from './compat/records.js';
 export { TOKENS, SUMMON_PAGES, loadToken, tokenAt } from './tokens.js';
-export { KIT_SOURCE, KIT_FILES, KITS_ENABLED, KIT_DIFFERENCES, loadKits } from './compat/kitmod.js';
+export { KIT_SOURCE, KIT_FILES, KITS_ENABLED, KIT_DIFFERENCES, loadKits, CONTENT_MODULES, loadContent } from './compat/kitmod.js';
+export { loadUnderGrid } from './compat/grid.js';
+export { setShData } from './compat/sh/data.js';
+/** @typedef {import('./compat/kits.js').ContentInput} ShContentInput @typedef {import('./compat/players.js').PlayerInput} ShPlayerInput @typedef {import('./compat/battle.js').ShBattle} ShBattle */
 export { MAPPING, mappedUrl } from './compat/mapping.js';
 export { PROFESSION_BITS, seatRules, withRunes } from './runes.js';
 export { CARRIED, CARRIED_PROFILES, loadCarried, carriedDef } from './carried.js';

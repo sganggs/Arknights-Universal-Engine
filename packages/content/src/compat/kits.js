@@ -78,8 +78,9 @@ const FIRST = 1e9;
 
 /**
  * Stronghold's battle content beyond the kits (兼容-7): its players' inputs by seat, and the content modules a battle
- * installs after the kits, in order (Stronghold's installContent: each module's `install(battle)`).
- * @typedef {{ players?: (PlayerInput | null | undefined)[], modules?: { name: string, install: (b: ShBattle) => void }[] }} ContentInput
+ * installs after the kits, in order (Stronghold's installContent: each module's `install(battle)`); `seen`, given to a
+ * match's content (index.js matchContent), gets each battle made.
+ * @typedef {{ players?: (PlayerInput | null | undefined)[], modules?: { name: string, install: (b: ShBattle) => void }[], seen?: (b: ShBattle) => void }} ContentInput
  */
 
 /**
@@ -118,13 +119,14 @@ export function kitsWorld(kits, seen, o = {}) {
 
 /**
  * A piece's def with its seat's facts (兼容-7): its chess id (and the normal one as its base), bonds, shop tier, elite
- * form, over the def its records make; the def itself without facts.
+ * form, 特质 (`garrisonIds`, where Stronghold's 特质 read them), over the def its records make; the def itself without facts.
  * @param {Record<string, any>} def @param {PieceFacts | undefined} facts @returns {Record<string, any>}
  */
 function withFacts(def, facts) {
   if (!facts) return def;
   return { ...def, ...(facts.id ? { id: facts.id, baseId: facts.id.replace(/_b$/, '_a') } : {}), ...(facts.bonds ? { bonds: [...facts.bonds] } : {}),
-    ...(facts.tier != null ? { tier: facts.tier } : {}), ...(facts.golden != null ? { golden: !!facts.golden } : {}) };
+    ...(facts.tier != null ? { tier: facts.tier } : {}), ...(facts.golden != null ? { golden: !!facts.golden } : {}),
+    ...(facts.garrisons ? { garrisonIds: [...facts.garrisons] } : {}) };
 }
 
 /**
