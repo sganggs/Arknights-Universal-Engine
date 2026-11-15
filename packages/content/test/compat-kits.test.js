@@ -59,7 +59,7 @@ test('[兼容-2] the table: an engine module goes to its stand-in, content loads
 test('[兼容-2] the pinned oracle’s 72 operator kits load unchanged; a name the layer does not provide yet throws when called', () => {
   assert.equal(kits.length, 72);
   for (const [f, charId, factory] of kits) assert.equal(typeof factory, 'function', `${f} ${charId}`);
-  assert.throws(() => targeting.aggroCmp(), (e) => e instanceof CompatGap && e.what === 'targeting.aggroCmp');
+  assert.throws(() => targeting.canTargetAlly(), (e) => e instanceof CompatGap && e.what === 'targeting.canTargetAlly');
 });
 
 test('[兼容-2] the pinned oracle’s 129 chess kits load too, each exporting the factories of its chess records', () => {

@@ -17,7 +17,7 @@ import { pieceLeft, pieceBack, keepFreeCuts } from './players.js';
 /**
  * A kit for an operator key: Stronghold's factory and the def it is built from (records.js defOf), and its summons' defs
  * by summon id (records.js tokenDefOf).
- * @typedef {{ factory: (bb: Record<string, any>, chess: Record<string, any>, def: Record<string, any>) => any, def: Record<string, any>,
+ * @typedef {{ factory: (bb: Record<string, any>, chess: Record<string, any>, def: Record<string, any>) => any, chess?: boolean, def: Record<string, any>,
  *   tokens?: Record<string, Record<string, any>> }} KitEntry
  */
 
@@ -162,10 +162,24 @@ function install(b, seat, key, entry, facts) {
   const kit = b.safe(() => entry.factory(def.skill?.bb ?? {}, def.raw, def), 'kit', piece);
   if (!kit) return;
   piece.kit = kit;
-  if (piece.skill) piece.skill.spec = kit.skills?.[def.skill?.id] ?? null;
+  if (piece.skill) piece.skill.spec = skillSpecOf(kit, def, !!entry.chess);
   b.safe(() => kit.trait?.install?.(b, piece), 'profile.install', piece);
   for (const t of kit.talents ?? []) b.safe(() => t.install?.(b, piece), 'talent', piece);
   b.safe(() => kit.install?.(b, piece), 'install', piece);
+}
+
+/**
+ * The kit's spec of the skill the piece fights with (兼容-5), as Stronghold's selectSkillSpec reads a kit: `skills[id]` of the
+ * selected skill; else, for a chess kit (`chess`: its piece fights with its chess's own skill), the kit's
+ * default `skill`; else none, and the engine's generic effects run the skill (技能-5). An operator kit names
+ * every skill it supports in `skills`, so the default does not stand for another skill.
+ * @param {Record<string, any>} kit @param {Record<string, any>} def @param {boolean} chess
+ * @returns {Record<string, any> | null}
+ */
+export function skillSpecOf(kit, def, chess) {
+  const id = def.skill?.id, own = kit.skills;
+  if (id && own && typeof own === 'object' && Object.hasOwn(own, id)) return own[id] ?? null;
+  return chess && kit.skill && typeof kit.skill === 'object' ? kit.skill : null;
 }
 
 /**
@@ -183,6 +197,8 @@ function bind(b, u) {
   const piece = b.pieces.get(`${u.owner}|${u.key}`);
   if (!piece) return;
   piece.u = u;
+  // what a kit set in the piece's `base` goes on each deployment's unit (unit.js base)
+  for (const [k, v] of Object.entries(piece.baseSet)) if (k !== 'cost' && k !== 'respawnTime') /** @type {Record<string, any>} */ (u.base)[k] = v;
   piece.deploySeq++;
   piece.lastAttackAt = -Infinity;
   pieceBack(piece);

@@ -6,7 +6,20 @@
 import kitData from '../../data/kits.json' with { type: 'json' };
 import { loadUnderGrid } from './grid.js';
 
-/** @typedef {(bb: Record<string, any>, chess: Record<string, any>, def: Record<string, any>) => any} KitFactory */
+/**
+ * A kit's factory (兼容-3). `chess` marks a chess kit (兼容-5): one written for a chess piece, whose `skill` is the spec of the skill the piece fights with.
+ * @typedef {((bb: Record<string, any>, chess: Record<string, any>, def: Record<string, any>) => any) & { chess?: boolean }} KitFactory
+ */
+
+/**
+ * Marks a factory as a chess kit's (兼容-5) and returns it: the kit's default `skill` then stands for the piece's selected skill when
+ * `skills` does not name it, as Stronghold reads a chess kit.
+ * @param {KitFactory} factory @returns {KitFactory}
+ */
+export function chessKit(factory) {
+  factory.chess = true;
+  return factory;
+}
 
 /** The pinned commit the kits come from (the oracle's, ADR 0058). */
 export const KIT_SOURCE = Object.freeze({ ...kitData.source });

@@ -74,7 +74,16 @@ export function sortEnemyTargets(battle, attacker, cands, priority) {
   return cands;
 }
 
-export const aggroCmp = gap('targeting.aggroCmp');
+/**
+ * The 仇恨值 order of two allies for an enemy (兼容-5; negative: `a` first): the higher taunt level first, then the one
+ * that came on the field later (`aggroSeq`) — the order enemies pick whom to attack by, after their own special priorities.
+ * @param {{ s?: { taunt?: number } | null, aggroSeq?: number, deploySeq?: number }} a @param {{ s?: { taunt?: number } | null, aggroSeq?: number, deploySeq?: number }} b
+ */
+export function aggroCmp(a, b) {
+  const ta = a.s?.taunt || 0, tb = b.s?.taunt || 0;
+  if (ta !== tb) return tb - ta;
+  return (b.aggroSeq || b.deploySeq || 0) - (a.aggroSeq || a.deploySeq || 0);
+}
 
 /**
  * A facing-RIGHT range grid with its 攻击范围扩大 (Stronghold's extendedGrid, the relative form of absoluteRangeKeys):

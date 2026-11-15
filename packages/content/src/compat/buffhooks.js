@@ -3,7 +3,6 @@
 // with the behaviour key KIT_BUFF (状态-1) and the interval as its trigger (状态-4); its callbacks stay with the battle,
 // by buff, and that one behaviour runs them with Stronghold's context. `onRemove` runs when the kit removes the buff.
 import { FPS, secondsToFrames } from '@aue/math';
-import { ShBuff } from './unit.js';
 
 /** @typedef {import('@aue/sim').World} World @typedef {import('@aue/sim').Unit} Unit @typedef {import('@aue/sim').Buff} Buff */
 /** @typedef {import('./battle.js').ShBattle} ShBattle */
@@ -35,7 +34,7 @@ export function hooksOf(spec) {
 export function runHook(battle, u, b, name) {
   const hooks = battle.buffHooks.get(b), fn = hooks?.[name];
   if (!hooks || typeof fn !== 'function') return;
-  const unit = battle.unitOf(u), buff = new ShBuff(battle, u, b);
+  const unit = battle.unitOf(u), buff = battle.buffOf(u, b);
   battle.safe(() => fn({ battle, unit, buff, ...(name === 'onTick' ? { dt: hooks.dt } : {}) }), `buff.${name}`, unit);
 }
 

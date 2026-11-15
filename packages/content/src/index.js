@@ -120,7 +120,7 @@ export async function matchContent(match, { source = OFFICIAL_SOURCE, kits = {},
     const keys = keysOf(deck, seat, match.copies === true);
     const built = await Promise.all(deck.map(async ({ id, build }, i) => {
       const key = keys[i], t = await source.training(id), factory = Object.hasOwn(kits, id) ? kits[id] : null;
-      if (factory) entries[key] = { factory, def: defOf(id, t, build), tokens: await tokenDefsOf(source, t, build) };
+      if (factory) entries[key] = { factory, chess: factory.chess === true, def: defOf(id, t, build), tokens: await tokenDefsOf(source, t, build) };
       const entry = entries[key];
       return { id, key, build, op: entry ? withKitTrait(withoutTalents(operatorAt(t, build)), entry, lv.level) : operatorAt(t, build), team: entry ? [] : teamTalentsAt(t, build).deck };
     }));
@@ -283,7 +283,7 @@ export { ROSTER, rosterSource, loadTraining, operatorAt, statsAt } from './opera
 /** @typedef {import('./operators.js').Training} Training @typedef {import('./skills.js').SkillLevel} SkillLevel */
 export { textPair } from './compat/records.js';
 export { TOKENS, SUMMON_PAGES, loadToken, tokenAt } from './tokens.js';
-export { KIT_SOURCE, KIT_FILES, KITS_ENABLED, KIT_DIFFERENCES, loadKits, CONTENT_MODULES, loadContent } from './compat/kitmod.js';
+export { KIT_SOURCE, KIT_FILES, KITS_ENABLED, KIT_DIFFERENCES, loadKits, chessKit, CONTENT_MODULES, loadContent } from './compat/kitmod.js';
 export { loadUnderGrid } from './compat/grid.js';
 export { setShData } from './compat/sh/data.js';
 /** @typedef {import('./compat/kits.js').ContentInput} ShContentInput @typedef {import('./compat/players.js').PlayerInput} ShPlayerInput @typedef {import('./compat/battle.js').ShBattle} ShBattle */

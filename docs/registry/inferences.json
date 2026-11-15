@@ -6151,5 +6151,33 @@
     "statement": "一个盟约的层数至多 999：战斗中加层加到 999 为止，已有 999 层时不再加，也不发 layerGain 事件。",
     "basis": "Stronghold v0.4.0 的 shared/constants.js 把 BOND_LAYER_CAP 定为 999，所有加层都经 layerGainRoom 截到这个数；它的注释引了巴哈姆特上的社区帖，说盟约层数会停在 999。activity_table 的 act2autochess 里没有 999 这个数，也没有层数上限的字段（与层数有关的只有 bondInfoDict 的 noStack）；PRTS「卫戍协议：盟约 下半/PRTS盟约记录」oldid=449019、「卫戍协议/帮助」oldid=450519 也没有写层数上限。",
     "status": "待查证"
+  },
+  {
+    "id": "INF-1091",
+    "clause": "兼容-4",
+    "statement": "kit 的 pull 返回的距离是拉的人要把敌人拖过的路：到目标点与到停点（拉的人的急停半径 0.6708 外）两者里近的；没拉动为 0。",
+    "basis": "Stronghold 的 battle/displacement.js pull 返回敌人位移的格数，kit（歌蕾蒂娅、锏的拖拽伤害，伺夜、乌尔比安的拉）拿它乘伤害。引擎的拉（位移-4）是一秒的拖拽，没有立刻的位移可返回。实测（compat-chesskits.test.js）：拉了之后敌人实际走的路与返回的距离相差 0.04 格以内（1.3292 对 1.3311、0.3292 对 0.3688）。拉力等级为负时 Stronghold 只拉一部分路，引擎的力随距离衰减，这里一律按到停点算。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-1092",
+    "clause": "兼容-5",
+    "statement": "棋子 kit 的 skill（默认技能）在 skills 里没有写所选技能时，就是所选技能的说明；棋子 kit 在 skills 里把默认技能以外它支持的技能都写全了，所以默认 skill 不会套到别的技能上。",
+    "basis": "Stronghold v0.4.0 content/index.js 的 selectSkillSpec：skills[id]，否则所选技能是棋子默认技能（loadout.skillIsDefault 不为 false，且不是补位或自选）时取 kit.skill。引擎的记录没有 loadout.skillIsDefault，宿主（交棋子练度的一方）也可以让玩家改选技能，所以「所选的就是默认技能」不能当前提。依据是 kit 的写法：对 v0.4.0 的 112 个商店棋子逐个选默认以外的技能，已解锁的 171 次选择，所选技能都在该 kit 的 skills 里，取到的是 skills 里自己的说明，没有一次落到 skill 上（另 53 次是形态未解锁的技能，宿主拒绝）。一个把别的技能留给 skill 的 kit 会被取错；引擎要区分，需要宿主交 skillIsDefault。同一干员有两个棋子条目（隐藏的 5_18 百炼嘉维尔、1_16 锡人等）时，宿主取了另一条的 kit，所选技能不在它的 skills 里就取它的 skill，与那个棋子自己的默认技能不一定相同。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-1093",
+    "clause": "兼容-4",
+    "statement": "onOwnBoard(玩家, 行, 列) 对在场的玩家等于 onFieldBoard：关卡的整张地图是玩家的场地。",
+    "basis": "Stronghold 的 onOwnBoard 把棋盘区域（GEO.FIELD）按座位映射到场地，用来让乌尔比安的移动不落到联防的另一半或首领场地的手牌行。这里一个战斗只有一个座位、一张按它的格子给的关卡，没有另一半；引擎已有 onFieldBoard（INF-0352：地图内且近战或远程能站的格子）。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-1094",
+    "clause": "兼容-4",
+    "statement": "Stronghold 的坏死（necrosis）元素槽在引擎里没有对应：棋子的 elem.necrosis 恒为 0，引擎的狂躁（ANGER）不并入它。",
+    "basis": "兼容层的元素名表（mods.js ELEMENT）只有四项：neural→SANITY、erosion→WATER、burn→FIRE、apoptosis→DARK；引擎的元素有五种，第五种 ANGER（狂躁，元素-4）。读 elem.necrosis 的 kit（哈洛德的重症优先、山羊的负荷排序）把五个槽取最大或相加；Stronghold 的 necrosis 与官方哪一种对应，没有找到出处。",
+    "status": "待查证"
   }
 ]
