@@ -6249,5 +6249,19 @@
     "statement": "有浮游单元的单位，档案里的 funnelMul 是一个函数：kit 的 typeof 判断由它选到 funnelMul 这个键；kit 把它写成空（或 false）即关掉这个单位的浮游单元，写回那个函数即打开。调用它只给出下一次攻击对那个目标会得到的倍率，不计数。",
     "basis": "kit 只用 typeof unit.profile.funnelMul === 'function' 选键，把值存下来、技能结束时写回（洛洛 2_10、耶拉 3_20、ver-cammou），从不调用它。Stronghold 的 funnelMul 每次调用就推进一步倍率；引擎的浮游单元在攻击结算时计数（职业-12），这个函数不能再计一次，所以只预告。",
     "status": "待查证"
+  },
+  {
+    "id": "INF-1110",
+    "clause": "兼容-4",
+    "statement": "kit 给的增益，键与引擎光环键同形（以 aura:、field:、range:、doll:、mod:、ally:、inspire:、alchemy:、aspd:、fieldRegen:、fieldBuff:、stackShare:、resistRegen:、stayVuln: 开头）的，在引擎里存成 kit: 加原键；kit 读到、写入、移除用的仍是原来的名字，引擎自己光环的键不变。",
+    "basis": "引擎每帧的光环同步把这种形状的键、又没有光环要它的增益都去掉（sim/aura.js），kit 给的 aura:spRecovery 一类增益（Stronghold 的技力光环每隔一小段时间给一次短时间的增益）因此在同一帧被去掉，技力回复加成永远读不到；Stronghold 没有保留键。kit: 这个前缀是兼容层自己定的，其他键不加前缀，已带 kit: 又同形的也加，名字不丢。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-1111",
+    "clause": "钩子-3",
+    "statement": "damageApplying 事件看到的伤害，是引擎在计算防御、倍率、来源倍率之后，又算过攻击的保底（职业-31）、来源的不致命上限（职业-34）和工事倍率（地图-3）的那个数，事件在这之后、目标的伤判之前。",
+    "basis": "Stronghold 的 damageApplying 在它的来源倍率与输出（damageOutput、damageBeforeApply）之后、限伤与目标伤判之前；引擎的保底、不致命上限与工事倍率在 Stronghold 里没有对应的步骤，它们属于「来源这边的计算」，放在这个事件之前；没有找到官方对这几步与目标一侧的 ON_APPLYING_MODIFIER 次序的说明。",
+    "status": "待查证"
   }
 ]

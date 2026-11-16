@@ -396,8 +396,17 @@ function healAfterHit(w, c, op, mods) {
 }
 
 /**
+ * An ammo skill spends a shot (技能-4): one fewer, then the `ammoUsed` event (钩子-3) with the shots left.
+ * @param {World} w @param {Unit} op @param {import('./types.js').SkillState} st
+ */
+function spendShot(w, op, st) {
+  st.ammo--;
+  emit(w, 'ammoUsed', { unit: op, left: st.ammo });
+}
+
+/**
  * After an operator attacked (技能-2, 技能-4, 技能-9): the HP the attack gives it back; a next-attack skill ends; an ammo
- * skill spends a shot — unless an `attack` handler made it free (钩子-3); an attack the skill did not make gives one SP to a
+ * skill spends a shot — unless an `attack` handler made it free (钩子-3), and tells it by `ammoUsed`; an attack the skill did not make gives one SP to a
  * skill that recovers by attacking.
  * @param {World} w @param {Content} c @param {Unit} op @param {AttackMods} mods @param {boolean} [noAmmo]
  */
@@ -407,7 +416,7 @@ export function afterAttack(w, c, op, mods, noAmmo = false) {
   if (mods.selfHeal && op.hp > 0) heal(w, op, op, statsOf(op).maxHp * mods.selfHeal);
   healAfterHit(w, c, op, mods);
   if (mods.skill && st.armed) endSkill(w, c, op, 'instant');
-  else if (mods.skill && st.ammo > 0 && !noAmmo) st.ammo--;
+  else if (mods.skill && st.ammo > 0 && !noAmmo) spendShot(w, op, st);
   else if (!mods.skill && st.spType === 'attack' && !statsOf(op).flags.noSp) gainSp(st, 1);
 }
 

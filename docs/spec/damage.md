@@ -54,14 +54,14 @@
 1. 目标生命已为 0：不造成伤害。
 2. 生命流失：直接扣除生命（伤害-10）。
 3. 目标无敌（无敌、沉睡）：不造成伤害；标明穿透沉睡（`throughSleep`）的伤害只被无敌挡住，沉睡的目标照样受到伤害——除非它同时隐匿或无法选中，那样仍然不受伤害。可以攻击沉睡敌人的干员（职业-28），它的伤害都穿透沉睡。起飞的单位不受行动方式为地面的敌人、以及未浮空的敌对装置的这一次伤害（阻挡-2）；没有来源的、空中敌人的不在此列。这一判定在下一步的 `hit` 事件之前做一次。
-4. `hit` 事件（钩子-3）：处理函数取消时不造成伤害。
+4. `hit` 事件（钩子-3）：处理函数取消时不造成伤害。随后有来源的伤害（无来源的没有，第 6 步）发 `damageCalculate` 事件（钩子-3），取消时同样不造成伤害：来源的内容在这里改这次伤害，或另造伤害（标明 `calculation` 为 `precomputed` 的伤害不再发它，所以不会自己触发自己；标明 `resolved` 的也不发）。
 5. 按伤害类型和目标的防御、法抗、元素抗性计算（伤害-1 至 伤害-5），乘以这次伤害的 `mul`（默认 1）；攻击的伤害（`isAttack`）不低于来源天赋的保底（`minDamage`，职业-31）；来源天赋不致命（`nonLethal`，职业-34）时，对敌人的伤害至多为目标生命减 1。
 6. 乘以来源的伤害倍率：`dmgDealtMul` × 物理时 `physDealtMul`、法术时 `artsDealtMul`；关卡有玉门天灾工事的规则时，再乘工事倍率（地图-3）。无来源的伤害没有这一步；记在来源名下的无来源伤害（`sourceless`，如持续伤害）也没有，第 5 步也不用来源的穿透；它的事件里来源为空，`credit` 仍是来源，击杀也记给来源。
-7. 目标的伤判效果（伤害-8）。
+7. `damageApplying` 事件（钩子-3）：目标的内容在这里改将要进入伤判的伤害（不低于 0；不是有限数的按 0），或取消这次伤害，取消时整次伤害不造成、不做伤判；然后是目标的伤判效果（伤害-8）。
 8. `hpDamage` 事件（钩子-3）。
-9. 剩下的伤害大于 0 时扣除生命（伤害-9），其间的 `fatal`、之后的 `damaged` 事件（钩子-3）。
+9. 剩下的伤害大于 0 时扣除生命（伤害-9），其间的 `fatal`、之后的 `damageApplied`（造成了伤害的，不是生命流失）、`damaged` 事件（钩子-3）。
 
-- 来源：[PRTS「作战机制」oldid=433935](https://prts.wiki/index.php?title=%E4%BD%9C%E6%88%98%E6%9C%BA%E5%88%B6&oldid=433935)「伤害及其处理」：先计算伤害（ON_CALCULATE_DAMAGE），来源的伤害倍率在 ON_OUTPUT_DAMAGE，伤判在 ON_TAKE_DAMAGE；[PRTS「伤判效果」oldid=439572](https://prts.wiki/index.php?title=%E4%BC%A4%E5%88%A4%E6%95%88%E6%9E%9C&oldid=439572)：伤判在防御和法抗计算之后；[PRTS「异常效果」oldid=440606](https://prts.wiki/index.php?title=%E5%BC%82%E5%B8%B8%E6%95%88%E6%9E%9C&oldid=440606) 无敌：「受到的伤害与元素值变为0」；事件点与 `mul` 为设计决定（钩子-3，ADR 0057）；[PRTS「死芒」oldid=435148](https://prts.wiki/index.php?title=%E6%AD%BB%E8%8A%92&oldid=435148) 技能「令最多2名攻击范围内的敌人陷入沉睡，每0.5秒对目标造成相当于攻击力…的法术伤害」：伤害穿透它施加的沉睡；[PRTS「异常效果」oldid=440606](https://prts.wiki/index.php?title=%E5%BC%82%E5%B8%B8%E6%95%88%E6%9E%9C&oldid=440606)「可影响沉睡单位的伤害」：先判定「假定目标具有沉睡免疫的情况下，是否仍具有无敌/隐匿/不可选中/塔不可选中之一」，有则「即使无视沉睡也无法造成伤害」
+- 来源：[PRTS「作战机制」oldid=433935](https://prts.wiki/index.php?title=%E4%BD%9C%E6%88%98%E6%9C%BA%E5%88%B6&oldid=433935)「伤害及其处理」：先计算伤害（ON_CALCULATE_DAMAGE），来源的伤害倍率在 ON_OUTPUT_DAMAGE，伤判在 ON_TAKE_DAMAGE；[PRTS「伤判效果」oldid=439572](https://prts.wiki/index.php?title=%E4%BC%A4%E5%88%A4%E6%95%88%E6%9E%9C&oldid=439572)：伤判在防御和法抗计算之后；[PRTS「异常效果」oldid=440606](https://prts.wiki/index.php?title=%E5%BC%82%E5%B8%B8%E6%95%88%E6%9E%9C&oldid=440606) 无敌：「受到的伤害与元素值变为0」；事件点与 `mul` 为设计决定（钩子-3，ADR 0057）；`damageCalculate`、`damageApplying`、`damageApplied` 的时点与 `calculation` 取自 Stronghold v0.4.0 的 `server/sim/attack/hit.js`、`attack/health.js`（GPL-3.0-or-later），引擎在 `damageApplying` 之前还有保底、不致命与工事倍率，Stronghold 没有这几步（推断 INF-1111），受击回复与目标的攻击计数在 `damageApplying` 之前算，与 Stronghold 的次序不同（DIF-0051）；[PRTS「死芒」oldid=435148](https://prts.wiki/index.php?title=%E6%AD%BB%E8%8A%92&oldid=435148) 技能「令最多2名攻击范围内的敌人陷入沉睡，每0.5秒对目标造成相当于攻击力…的法术伤害」：伤害穿透它施加的沉睡；[PRTS「异常效果」oldid=440606](https://prts.wiki/index.php?title=%E5%BC%82%E5%B8%B8%E6%95%88%E6%9E%9C&oldid=440606)「可影响沉睡单位的伤害」：先判定「假定目标具有沉睡免疫的情况下，是否仍具有无敌/隐匿/不可选中/塔不可选中之一」，有则「即使无视沉睡也无法造成伤害」
 
 ### 伤害-8 伤判效果
 

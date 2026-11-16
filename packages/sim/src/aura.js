@@ -28,8 +28,14 @@ import { stayVuln } from './talentfight.js';
 
 /** The keys of the aura buffs. */
 const AURA_KEYS = /^(?:aura|field|range|doll|mod|ally|inspire|alchemy|aspd|fieldRegen|fieldBuff|stackShare|resistRegen|stayVuln):/;
+/**
+ * Whether a buff key is an aura's: the aura sync owns every key of that shape and removes one that no aura of the engine
+ * wants, so content that gives its own buffs keeps clear of them.
+ * @param {string} key
+ */
+export const isAuraKey = (key) => AURA_KEYS.test(key);
 /** Whether a buff is an aura's. @param {{ key: string }} b */
-const isAura = (b) => AURA_KEYS.test(b.key);
+const isAura = (b) => isAuraKey(b.key);
 
 /**
  * An aura's share of its source's attack now (职业-13): its skill's `attack@atk_to_hp_recovery_ratio` (or the same key

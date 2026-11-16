@@ -292,7 +292,7 @@ test('[兼容-4] pushDistance is the distance the engine’s push takes an enemy
   assert.ok(want > 1 && b.pushDistance(e, 3) > want && b.pushDistance(e, 0) < want);
   assert.ok(b.pushDistance(e, 0, { effect: true }) < b.pushDistance(e, 0), 'an effect’s push moves from the next frame');
   assert.equal(b.pushDistance(e, -5), 0, 'weight takes the force away');
-  assert.equal(b.push(e, 1, { from: { x: x0 - 1, y: y0 } }), 1);
+  assert.ok(Math.abs(b.push(e, 1, { from: { x: x0 - 1, y: y0 } }) - want) < 1e-9, 'push returns the tiles it moves it: on open ground the distance it says (the wall and the edge: compat-events.test.js)');
   for (let i = 0; i < 300 && /** @type {any} */ (e.u).slide; i++) step(w, c);
   assert.ok(Math.abs(Math.hypot(e.x - x0, e.y - y0) - want) < 1e-9, `moved ${Math.hypot(e.x - x0, e.y - y0)}, said ${want}`);
   assert.equal(b.pushDistance(piece(b, 'siege'), 1), 0, 'not an enemy');

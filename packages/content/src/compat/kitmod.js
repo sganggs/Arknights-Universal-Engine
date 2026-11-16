@@ -62,18 +62,19 @@ export const CONTENT_MODULES = Object.freeze(['tokens', 'devices', 'enemies', 'b
 /**
  * Loads Stronghold's content modules (兼容-7) from a checkout at `base` (a URL ending in "/"): each
  * `server/sim/content/<name>.js` under the load grid, in the order given, as the modules a match installs after its kits;
- * the names whose file did not load or has no `install` are in `failed`.
+ * the names whose file did not load or has no `install` are in `failed`. A module's `kits` — the tokens module's kits of
+ * summons, by summon id — are kept with it: a battle gives them to the summons it spawns (summons.js).
  * @param {string} base @param {readonly string[]} [names] @param {(url: string) => Promise<any>} [load] how to import a URL
- * @returns {Promise<{ modules: { name: string, install: (b: any) => void }[], failed: string[] }>}
+ * @returns {Promise<{ modules: { name: string, install: (b: any) => void, kits?: Readonly<Record<string, Function>> }[], failed: string[] }>}
  */
 export async function loadContent(base, names = CONTENT_MODULES, load = (url) => import(url)) {
-  /** @type {{ name: string, install: (b: any) => void }[]} */
+  /** @type {{ name: string, install: (b: any) => void, kits?: Readonly<Record<string, Function>> }[]} */
   const modules = [];
   const failed = [];
   for (const name of names) {
     try {
       const mod = await loadUnderGrid(() => load(`${base}server/sim/content/${name}.js`));
-      if (typeof mod?.install === 'function') modules.push({ name, install: mod.install });
+      if (typeof mod?.install === 'function') modules.push({ name, install: mod.install, ...(mod.kits && typeof mod.kits === 'object' ? { kits: mod.kits } : {}) });
       else failed.push(name);
     } catch {
       failed.push(name);
