@@ -6181,6 +6181,90 @@
     "status": "待查证"
   },
   {
+    "id": "INF-1095",
+    "clause": "兼容-5",
+    "statement": "kit 说明里每帧检查条件的规则（SP_FULL、带格子的 CUSTOM_RANGE 与 SKILL_RANGE）接到引擎的「就绪即发动」；基础规则加上友方条件（allies 或治疗技能）时，条件成立后发动的时机仍是引擎的（即将攻击时，立即类技能就绪即发动），不是 Stronghold 的「攻击检查时」。",
+    "basis": "Stronghold 的 skills.js：SP_FULL、CUSTOM_RANGE、SKILL_RANGE 在 TICK_RULES 里，tick 每帧检查条件、成立就发动，不等攻击；基础规则的友方条件在 onAboutToAttack 里，攻击检查时才发动，没有敌人时也发动（取代这次攻击）。引擎的自动技能只有「就绪即发动」与「即将攻击时发动」两个时机，即将攻击要有目标（攻击-2），所以条件成立后交给引擎自己的时机：立即类技能就绪即发动，带攻击键的在攻击时发动。起点是同一个条件，发动的帧可以差到一次攻击间隔。没有找到官方对这类技能发动时机的明文。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-1096",
+    "clause": "兼容-5",
+    "statement": "没有格子的 CUSTOM_RANGE，以及没有格子、没有 allies 的 SKILL_RANGE，按基础规则处理，不是每帧检查基础条件。",
+    "basis": "Stronghold 的 _tickRuleSatisfied 对没有格子的 CUSTOM_RANGE 与 SKILL_RANGE 每帧算基础条件（初始攻击范围内有敌人）、成立就发动，不等攻击；兼容层当作没有意见，发动的时机是引擎的。v0.4.0 的棋子 kit 里写 CUSTOM_RANGE 的都带格子（空格子是「永不自动发动」的写法），没有遇到不带格子的，所以这一条在这些 kit 上不起作用，留着是为了 kit 以后这样写。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-1097",
+    "clause": "兼容-5",
+    "statement": "说明没写 heal 的技能，干员的特性是治疗（引擎的 trait.heal）时算治疗技能；治疗技能和 DEFAULT 带 allies 的发动，看的攻击范围是引擎此刻的。",
+    "basis": "Stronghold 的 SkillRuntime：healSkill 取说明的 heal，没写时看单位的档案——dmgType 是 heal 并且有 heal 项；基础规则的伤员条件看初始攻击范围（baseRangeKeys：自身的格子加永久的攻击距离延伸）。引擎的干员记录没有 Stronghold 的档案，对应的是它的特性是治疗（医疗干员的各分支）；技能没在运行时引擎此刻的攻击范围就是初始范围，kit 另给的范围（setExtraRange）也在内，与 baseRangeKeys 的差别没有逐个核对。「档案是治疗」与「特性是治疗」是否处处相同，同样没有逐个核对；写了 heal 的说明不受第一项影响。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-1098",
+    "clause": "兼容-5",
+    "statement": "引擎的命中不带它属于哪次攻击：兼容层把同一单位对同一目标、在 attackHit 到来之前的各段命中看作一次攻击，即 Stronghold 的一次 resolveHit。",
+    "basis": "引擎的 hitTarget 对一个目标先逐段结算命中（每段发一个 hit 事件），再发一次 attackHit（钩子-3）；Stronghold 的 resolveHit 对一个目标一次算完：dmgMul 与 hitsFn 问一次，主目标的 onEachHit、afterHit 与技能的 onHit 调用一次。事件里没有攻击编号，所以用「同一帧、同一目标、这个目标的 attackHit 还没有来」来划分；同一帧里的另一次攻击（kit 的 forceAttack 恰好同帧落到同一目标）在前一次的 attackHit 之后，算另一次。嵌在一次命中处理里的另一次攻击没有处理。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-1099",
+    "clause": "兼容-5",
+    "statement": "秘术师随攻击放出的储存能量弹与那次攻击是同一次攻击：引擎特性里有储存能量（trait.store 大于 0）的干员，同一帧落到同一目标的后续主目标命中并入前一次攻击。",
+    "basis": "引擎的 releaseEnergy 在攻击落下之后为每份能量发射一个投射物，各自落成一次 attackHit（kind 为 main）；Stronghold 的秘术师特质把能量放进这次攻击的主目标命中（hitsFn 为 1 加能量，一次 resolveHit），afterHit 只调用一次。弹与那次攻击从同一处以同一速度射出，落在同一帧。让弹带上自己的标记要改投射物的状态（计入状态哈希），没有做；限定「特性有储存能量」，免得别的同帧命中被并成一次。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-1100",
+    "clause": "兼容-4",
+    "statement": "棋子的 baseRangeKeys 是它自己的攻击范围（kit 写过的范围，否则记录里的）按所在格和朝向展开的格子，按范围表里的次序，不带技能的范围、额外格和任何攻击距离扩展；不在场的棋子、不是干员或召唤物的单位没有（undefined）。",
+    "basis": "Stronghold v0.4.0 的 server/sim/battle/queries.js _refreshRange：baseRangeKeys = absoluteRangeKeys(u.rangeGrid, tileR, tileC, dir, u.s.baseRangeExtend)，注释称它是默认触发的初始范围。其中 baseRangeExtend 是永久的攻击距离扩展；引擎只有一个 rangeExtend 属性，不分永久与限时，所以这里不带扩展——引擎自己的「原本攻击范围」也不带（职业-34，traits.js inBaseRange）。读它的 kit（耶拉的低眉数地面格、远牙、魔王、白）都在部署时读，那时技能的扩展还没有。有永久攻击距离扩展的干员，Stronghold 里它的 baseRangeKeys 比这里多出扩展的格子。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-1101",
+    "clause": "技能-3",
+    "statement": "只在技能运行时才普通攻击的干员（特性的 attackInSkill：解放者、阵法术师；kit 的 noAttackUnlessSkill）的自动技能，一就绪就发动，不等「即将攻击」，也不看范围内有没有敌人。",
+    "basis": "这类干员技能不运行就不攻击，「即将攻击时发动」永远等不到：以前这样的自动技能整局不发动。PRTS 给阵法术师、解放者的技能发动方式另有「范围内存在敌人」一条（技能的自动发动策略），引擎的 技能-3 没有这样的条件；Stronghold 的默认规则每帧检查技力与范围内的目标。一就绪就发动，在没有敌人时也会发动，是粗略的取舍。手动技能不受影响。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-1102",
+    "clause": "兼容-4",
+    "statement": "kit 读到的 lastHitAt 在单位每次真的损失生命时更新（引擎在扣生命之后发的 damaged 事件，量大于 0），为战斗秒数；没有损失过为 −Infinity；每次部署的单位各有各的。被护盾、屏障、闪避挡下而没有扣生命的不算。",
+    "basis": "Stronghold 的 server/sim/attack/health.js 在扣生命的函数里写 target.lastHitAt = battle.time，扣的量为 0 的实例也写；kit 的用法（vulpis 的蓄势：battle.time − lastHitAt ≥ 4 秒才回血；tokens.js 的脱战回血）都是「多久没有受到伤害」。引擎的 damaged 事件在扣生命之后发，量为 0 的实例（被护盾、屏障、闪避挡下的伤害不走到这一步）这里不算。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-1103",
+    "clause": "兼容-5",
+    "statement": "带 kit 的傀儡师不带引擎对替身的模组追加（特性数据 doll 的 atk、maxHp，取自特性 blackboard 里模组改的值）：它们同 职业-17、职业-18、职业-20、职业-21 的追加一样，是模组的特性追加，由 kit 自己施加。",
+    "basis": "归溟幽灵鲨的 kit 自己按模组的特性 blackboard 给替身加攻击与生命（chess_char_5_13-ghost2.js 的 ghost2:module、ghost2:moduleY）；引擎的 doll.atk、doll.maxHp 取自同一份 blackboard（content/traits.js 的 dollkeeper），两边都加会算两次：实测替身的追加伤害乘 1.30 而不是 1.15。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-1104",
+    "clause": "兼容-4",
+    "statement": "有浮游单元的单位，档案里的 funnelMul 是一个函数：kit 的 typeof 判断由它选到 funnelMul 这个键；kit 把它写成空（或 false）即关掉这个单位的浮游单元，写回那个函数即打开。调用它只给出下一次攻击对那个目标会得到的倍率，不计数。",
+    "basis": "kit 只用 typeof unit.profile.funnelMul === 'function' 选键，把值存下来、技能结束时写回（洛洛 2_10、耶拉 3_20、ver-cammou），从不调用它。Stronghold 的 funnelMul 每次调用就推进一步倍率；引擎的浮游单元在攻击结算时计数（职业-12），这个函数不能再计一次，所以只预告。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-1110",
+    "clause": "兼容-4",
+    "statement": "kit 给的增益，键与引擎光环键同形（以 aura:、field:、range:、doll:、mod:、ally:、inspire:、alchemy:、aspd:、fieldRegen:、fieldBuff:、stackShare:、resistRegen:、stayVuln: 开头）的，在引擎里存成 kit: 加原键；kit 读到、写入、移除用的仍是原来的名字，引擎自己光环的键不变。",
+    "basis": "引擎每帧的光环同步把这种形状的键、又没有光环要它的增益都去掉（sim/aura.js），kit 给的 aura:spRecovery 一类增益（Stronghold 的技力光环每隔一小段时间给一次短时间的增益）因此在同一帧被去掉，技力回复加成永远读不到；Stronghold 没有保留键。kit: 这个前缀是兼容层自己定的，其他键不加前缀，已带 kit: 又同形的也加，名字不丢。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-1111",
+    "clause": "钩子-3",
+    "statement": "damageApplying 事件看到的伤害，是引擎在计算防御、倍率、来源倍率之后，又算过攻击的保底（职业-31）、来源的不致命上限（职业-34）和工事倍率（地图-3）的那个数，事件在这之后、目标的伤判之前。",
+    "basis": "Stronghold 的 damageApplying 在它的来源倍率与输出（damageOutput、damageBeforeApply）之后、限伤与目标伤判之前；引擎的保底、不致命上限与工事倍率在 Stronghold 里没有对应的步骤，它们属于「来源这边的计算」，放在这个事件之前；没有找到官方对这几步与目标一侧的 ON_APPLYING_MODIFIER 次序的说明。",
+    "status": "待查证"
+  },
+  {
     "id": "INF-1190",
     "clause": "敌能-158",
     "statement": "转译基底·α、转译基底·β 的 Passive 只在黑板正好是 phy_max_count、magic_max_count 与内容按页面补上的 change、值都是数时覆盖（关卡-2），没有 change 的同样两个数仍未覆盖；Mode_Fuchou_Anger 正好是 atk，Mode_Fuchou_Passive、Mode_Youling_Passive 正好是 max_hp、atk、def、magic_resistance、move_speed、base_attack_time、mass_level，Mode_Shushi_Passive 是这七个键加内容补上的 targets，三项技能 ChangeToB、ChangeToC、ChangeToD 的黑板为空。这七项没有自己的行为：四项 Mode 天赋由 Passive 读，三项技能不用，原始形态、计数、变化与三种形态都由 Passive 的行为做。",
