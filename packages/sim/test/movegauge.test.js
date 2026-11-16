@@ -1,6 +1,7 @@
 // A 移动 that keeps the rest (docs/spec/field.md 部署-9) still starts the element values afresh: every value back at its
-// maximum and a burst under way ended — its buff and what it carries — before the deploy event, while the buffs the
-// burst gave at its start, the other buffs, the HP and the skill stay. The general move, a fresh unit, has none of it.
+// maximum and a burst under way ended — its buff and what it carries, and the 阻回 and 静默 a 凋亡 burst gave, which end
+// with it — before the deploy event, while the 晕眩 and the DEF cut the burst gave at its start, the other buffs, the HP
+// and the skill stay. The general move, a fresh unit, has none of it.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { tinyContent } from '@aue/testkit';
@@ -56,13 +57,18 @@ test('[部署-9] keep: every element value back at its maximum — the one its b
 
 /** What a burst on a character gives at its start besides its own buff (元素-4), by element. */
 const GIVEN = Object.freeze({ SANITY: ['stun'], WATER: ['erosion'], FIRE: [], DARK: ['noSp', 'mute'], ANGER: [] });
+/**
+ * What of it stays after a kept 移动: all but the 阻回 and 静默 a 凋亡 burst gave, which end with the burst (INF-1171).
+ * @type {Readonly<Record<string, string[]>>}
+ */
+const KEPT = Object.freeze({ SANITY: ['stun'], WATER: ['erosion'], FIRE: [], DARK: [], ANGER: [] });
 /** The attributes during each burst on the guard (DEF 100, RES 50, ASPD 100): 侵蚀 −100 DEF, 灼燃 −20 RES, 狂躁 +50 ASPD. */
 const DURING = Object.freeze({
   SANITY: { def: 100, res: 50, aspd: 100 }, WATER: { def: 0, res: 50, aspd: 100 }, FIRE: { def: 100, res: 30, aspd: 100 },
   DARK: { def: 100, res: 50, aspd: 100 }, ANGER: { def: 100, res: 50, aspd: 150 },
 });
 
-test('[部署-9] keep: a burst of any element ends — its buff with the RES or ASPD it carries — and what it gave at its start stays; a new burst can follow', () => {
+test('[部署-9] keep: a burst of any element ends — its buff with the RES or ASPD it carries — and what it gave at its start stays, but 凋亡 gave 阻回 and 静默 end with it; a new burst can follow', () => {
   for (const el of ELEMENTS) {
     const { w, c, guard } = field();
     dealEp(w, guard, el, 1000);
@@ -72,14 +78,14 @@ test('[部署-9] keep: a burst of any element ends — its buff with the RES or 
     assert.deepEqual(others.map((s) => s.split('×')[0]), GIVEN[el], `${el}: what its start gave`);
     keepMove(w, c, guard);
     assert.deepEqual([bursting(guard), guard.ep, guard.hp], [false, {}, hp], `${el}: no burst, the values full, the HP kept`);
-    assert.deepEqual(buffsOf(guard), others, `${el}: the buffs its start gave, as they were`);
+    assert.deepEqual(buffsOf(guard), others.filter((s) => KEPT[el].includes(s.split('×')[0])), `${el}: the buffs its start gave that do not end with it, as they were`);
     assert.deepEqual(touched(guard), { ...DURING[el], res: 50, aspd: 100 }, `${el}: RES and ASPD back; 侵蚀's DEF cut stays`);
     dealEp(w, guard, el, 1000);
     assert.ok(burstOf(guard, el), `${el}: no lock left — 1000 bursts it again`);
   }
 });
 
-test('[部署-9] keep: a 凋亡 burst\'s SP loss and damage each second end with it; its 阻回 and 静默 run out at their own time', () => {
+test('[部署-9] keep: a 凋亡 burst each-second SP loss and damage end with it, and so do the 阻回 and 静默 it gave (INF-1171)', () => {
   const runs = [false, true].map((move) => {
     const { w, c, guard } = field();
     guard.skill.sp = 20;
@@ -93,7 +99,7 @@ test('[部署-9] keep: a 凋亡 burst\'s SP loss and damage each second end with
     return { sp: guard.skill.sp, lost: hp - guard.hp, hits, noSp: left('noSp'), mute: left('mute') };
   });
   assert.deepEqual(runs[0], { sp: 17, lost: 150, hits: [50, 50, 50], noSp: 355, mute: 355 }, 'not moved: −1 SP and 100 arts damage (RES 50) at 30, 60, 90 frames');
-  assert.deepEqual(runs[1], { sp: 20, lost: 0, hits: [], noSp: 355, mute: 355 }, 'moved: none of it; 阻回 and 静默 still run their 15 s');
+  assert.deepEqual(runs[1], { sp: 23, lost: 0, hits: [], noSp: 0, mute: 0 }, 'moved: none of it; 阻回 and 静默 gone with the burst, so the SP recovers again (3 in 95 frames)');
 });
 
 test('[部署-9] the general move of a unit in a burst: a fresh unit — no element value, no burst, nothing the burst gave either', () => {

@@ -6,11 +6,12 @@
 // its lasting buffs again.
 import { KIND, bus, reserveIds, traits } from '@aue/sim';
 import { ShBattle } from './battle.js';
-import { ShUnit } from './unit.js';
+import { ShUnit, hurtAt } from './unit.js';
 import { battles, SPEC_BEHAVIOR, KIT_TRAIT_BEHAVIOR, onAttackHit, onAttackDone, onSpecHit, onBoomerangHit } from './specs.js';
 import { KIT_BUFF, KIT_BUFF_BEHAVIOR, worldBattles } from './buffhooks.js';
 import { withGrid } from './grid.js';
 import { pieceLeft, pieceBack, keepFreeCuts } from './players.js';
+import { statusKeyOf } from './mods.js';
 
 /** @typedef {import('@aue/sim').World} World @typedef {import('@aue/sim').Content} Content @typedef {import('@aue/sim').Unit} Unit */
 /** @typedef {import('./players.js').PlayerInput} PlayerInput @typedef {import('./players.js').PieceFacts} PieceFacts */
@@ -57,19 +58,70 @@ const moduleAdded = (t) => Object.entries(NO_MODULE_ADDITIONS).some(([k, none]) 
 });
 
 /**
+ * The status a kit's trait gives each hit (Stronghold's `onHitStatus` `{ key, duration, value }`) as the engine's trait data
+ * (职业-4); none for a kit that clears it (`null`) or gives no time.
+ * @param {Record<string, any> | null | undefined} st @returns {import('@aue/sim').TraitDef['hitStatus']}
+ */
+function hitStatusOf(st) {
+  if (!st || !(Number(st.duration) > 0)) return null;
+  return { key: /** @type {any} */ (statusKeyOf(st.key)), seconds: Number(st.duration), ...(Number.isFinite(st.value) ? { value: Number(st.value) } : {}) };
+}
+
+/**
+ * The trait data of a 傀儡师 under its kit (兼容-5): the kit applies its module's attack and HP for the 替身 itself, so the
+ * trait's are none; the 替身 makes no normal attack when the kit says so (`dollNoAttack`).
+ * @param {NonNullable<import('@aue/sim').TraitDef['doll']>} doll @param {Record<string, any>} kt
+ */
+const dollUnder = (doll, kt) => ({ ...doll, atk: 0, maxHp: 0, ...(kt.dollNoAttack ? { attack: false } : {}) });
+
+/**
+ * What a kit's own `trait` changes of the engine's attack data (兼容-5): `afterHit` takes the place of the 投掷手's aftershock,
+ * `splashRadius` the splash's radius, `onHitStatus` the status each hit gives, `hits` and `hitDmgMul` the hits of an attack and
+ * the share each takes, `maxTargets` the most targets.
+ * @param {Record<string, any>} kt @param {import('@aue/sim').TraitDef} t @returns {Partial<import('@aue/sim').TraitDef>}
+ */
+function attackFrom(kt, t) {
+  /** @type {Partial<import('@aue/sim').TraitDef>} */
+  const over = {};
+  if (typeof kt.afterHit === 'function' && t.aftershock > 0) over.aftershock = 0;
+  if (Number(kt.splashRadius) > 0) over.splash = { scale: 1, ground: false, ...t.splash, radius: Number(kt.splashRadius) };
+  if (Object.hasOwn(kt, 'onHitStatus')) over.hitStatus = hitStatusOf(kt.onHitStatus);
+  if (Number.isFinite(kt.hits)) over.hits = Math.max(1, Math.floor(kt.hits));
+  if (Number(kt.hitDmgMul) > 0) over.hitMul = Number(kt.hitDmgMul);
+  if (Number.isFinite(kt.maxTargets)) over.targets = Math.max(1, Math.floor(kt.maxTargets));
+  return over;
+}
+
+/**
+ * What a kit's own `trait` changes of how the engine's operator acts (兼容-5): `noAttackUnlessSkill` makes it attack only while
+ * its skill runs, `hitSleep` lets it select and damage sleeping enemies, `rangeTiles` searches by the tile of an enemy, `blockFly`
+ * blocks flying units; a trait with its own `install` replaces the profession's, the 吟游者's regeneration aura with it (the kit
+ * gives it itself); a 傀儡师's 替身 (dollUnder).
+ * @param {Record<string, any>} kt @param {import('@aue/sim').TraitDef} t @returns {Partial<import('@aue/sim').TraitDef>}
+ */
+function modeFrom(kt, t) {
+  /** @type {Partial<import('@aue/sim').TraitDef>} */
+  const over = {};
+  if (kt.noAttackUnlessSkill) over.attackInSkill = true;
+  if (kt.hitSleep) over.hurtSleeping = true;
+  if (kt.rangeTiles === true) over.rangeTiles = true;
+  if (typeof kt.install === 'function' && t.regenAura > 0) over.regenAura = 0;
+  if (t.doll) over.doll = dollUnder(t.doll, kt);
+  return { ...over, ...(kt.blockFly === true ? { flags: { ...t.flags, blockFly: true } } : {}) };
+}
+
+/**
  * An operator's record under its kit's trait (兼容-5): where the kit's `trait` takes the place of a part of the
- * profession's profile that the engine keeps as trait data, that data follows it — its `afterHit` replaces the
- * 投掷手's aftershock (Stronghold's one profession afterHit), its `splashRadius` the splash's radius —, the trait data
- * its branch leaves to kits is its kit's (KIT_OWNED), and so are its module's trait additions (NO_MODULE_ADDITIONS). The
+ * profession's profile that the engine keeps as trait data, that data follows it (attackFrom, modeFrom), the trait data its branch
+ * leaves to kits is its kit's (KIT_OWNED), and so are its module's trait additions (NO_MODULE_ADDITIONS). The
  * kit is built for this (under the level's grid); one that cannot be has no trait of its own.
  * @param {import('@aue/sim').OperatorDef} op @param {KitEntry} entry @param {{ width: number, height: number }} level
  * @returns {import('@aue/sim').OperatorDef}
  */
 export function withKitTrait(op, entry, level) {
   const kt = kitTraitOf(entry, level), t = traits.traitOfDef(op), added = moduleAdded(t);
-  const over = /** @type {Partial<import('@aue/sim').TraitDef>} */ ({ ...(op.branch && Object.hasOwn(KIT_OWNED, op.branch) ? KIT_OWNED[op.branch] : {}), ...(added ? NO_MODULE_ADDITIONS : {}) });
-  if (typeof kt?.afterHit === 'function' && t.aftershock > 0) over.aftershock = 0;
-  if (Number(kt?.splashRadius) > 0) over.splash = { scale: 1, ground: false, ...t.splash, radius: Number(kt.splashRadius) };
+  const over = /** @type {Partial<import('@aue/sim').TraitDef>} */ ({ ...(op.branch && Object.hasOwn(KIT_OWNED, op.branch) ? KIT_OWNED[op.branch] : {}), ...(added ? NO_MODULE_ADDITIONS : {}),
+    ...attackFrom(kt ?? {}, t), ...modeFrom(kt ?? {}, t) });
   return Object.keys(over).length ? { ...op, trait: { ...op.trait, ...over } } : op;
 }
 
@@ -80,7 +132,8 @@ const FIRST = 1e9;
  * Stronghold's battle content beyond the kits (兼容-7): its players' inputs by seat, and the content modules a battle
  * installs after the kits, in order (Stronghold's installContent: each module's `install(battle)`); `seen`, given to a
  * match's content (index.js matchContent), gets each battle made.
- * @typedef {{ players?: (PlayerInput | null | undefined)[], modules?: { name: string, install: (b: ShBattle) => void }[], seen?: (b: ShBattle) => void }} ContentInput
+ * A module that defines kits for summons (`kits`: the tokens module) gives them to every summon of an operator with a kit.
+ * @typedef {{ players?: (PlayerInput | null | undefined)[], modules?: { name: string, install: (b: ShBattle) => void, kits?: Readonly<Record<string, Function>> }[], seen?: (b: ShBattle) => void }} ContentInput
  */
 
 /**
@@ -98,6 +151,7 @@ export function kitsWorld(kits, seen, o = {}) {
     bus.on(w, 'death', (k) => left(b, k.unit, k.reason), { priority: FIRST });
     bus.on(w, 'deploy', (k) => keepFreeCuts(b, k.unit.owner), { priority: FIRST });
     bus.on(w, 'attack', (k) => { b.unitOf(k.attacker).lastAttackAt = b.time; }, { priority: FIRST });
+    bus.on(w, 'damaged', (k) => { if (k.target && k.amount > 0) hurtAt.set(k.target, b.time); }, { priority: FIRST });
     bus.on(w, 'skillStart', (k) => { const s = b.pieces.get(`${k.unit.owner}|${k.unit.key}`)?.skill; if (s && !s.counted) s.activations++; if (s) s.counted = false; }, { priority: FIRST });
     bus.on(w, 'attackHit', onAttackHit);
     bus.on(w, 'attack', onAttackDone, { priority: FIRST });
@@ -112,19 +166,26 @@ export function kitsWorld(kits, seen, o = {}) {
         else if (o.players && Object.hasOwn(c.operators, key) && !c.operators[key].summon) addPiece(b, seat, key, plainDef(c, key, facts), facts);
       }
     });
-    for (const m of o.modules ?? []) b.safe(() => m.install(b), `content:${m.name}`, null);
+    for (const m of o.modules ?? []) {
+      if (m.name === 'tokens' && m.kits) b.tokenKits = m.kits;
+      b.safe(() => m.install(b), `content:${m.name}`, null);
+    }
     seen?.(b);
   };
 }
 
 /**
  * A piece's def with its seat's facts (兼容-7): its chess id (and the normal one as its base), bonds, shop tier, elite
- * form, 特质 (`garrisonIds`, where Stronghold's 特质 read them), over the def its records make; the def itself without facts.
+ * form, 特质 (`garrisonIds`, where Stronghold's 特质 read them), over the def its records make — the chess record `raw` too has
+ * the elite form (`isGolden`) and the ids, which the kits read —; the def itself without facts.
  * @param {Record<string, any>} def @param {PieceFacts | undefined} facts @returns {Record<string, any>}
  */
 function withFacts(def, facts) {
   if (!facts) return def;
-  return { ...def, ...(facts.id ? { id: facts.id, baseId: facts.id.replace(/_b$/, '_a') } : {}), ...(facts.bonds ? { bonds: [...facts.bonds] } : {}),
+  const base = facts.id ? facts.id.replace(/_b$/, '_a') : null;
+  // the chess record a kit receives (`def.raw`) carries the elite form and the ids too: kits read `chess.isGolden`
+  const raw = { ...def.raw, ...(facts.golden != null ? { isGolden: !!facts.golden } : {}), ...(facts.id ? { chessId: facts.id, baseId: base } : {}) };
+  return { ...def, raw, ...(facts.id ? { id: facts.id, baseId: base } : {}), ...(facts.bonds ? { bonds: [...facts.bonds] } : {}),
     ...(facts.tier != null ? { tier: facts.tier } : {}), ...(facts.golden != null ? { golden: !!facts.golden } : {}),
     ...(facts.garrisons ? { garrisonIds: [...facts.garrisons] } : {}) };
 }
@@ -162,6 +223,7 @@ function install(b, seat, key, entry, facts) {
   const kit = b.safe(() => entry.factory(def.skill?.bb ?? {}, def.raw, def), 'kit', piece);
   if (!kit) return;
   piece.kit = kit;
+  piece.noteTraitGaps(kit.trait);
   if (piece.skill) piece.skill.spec = skillSpecOf(kit, def, !!entry.chess);
   b.safe(() => kit.trait?.install?.(b, piece), 'profile.install', piece);
   for (const t of kit.talents ?? []) b.safe(() => t.install?.(b, piece), 'talent', piece);
