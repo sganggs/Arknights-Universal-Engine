@@ -573,8 +573,19 @@ function advanceSwing(w, c, a) {
 }
 
 /**
- * One operator's attack (攻击-1, 攻击-2, 技能-3…技能-5, 职业-2, 职业-3): a swing under way goes on; with the cooldown
- * out, no swing and a target, its skill may start or end, the first targets are locked — as many as the skill's mods or
+ * The attack already due is not made (兼容-5). The skill that starts as the operator is about to attack may hold it
+ * back (`noAttack`), or that start may leave the operator down. Stronghold re-reads the profile after `onAboutToAttack`
+ * and returns before `performAttack`, without restarting the cooldown (`server/sim/ai.js` `updateAlly`).
+ * @param {Content} c @param {Unit} op @returns {boolean}
+ */
+function dueAttackDropped(c, op) {
+  return op.hp <= 0 || !mayAttack(c, op);
+}
+
+/**
+ * One operator's attack (攻击-1, 攻击-2, 技能-3…技能-5, 职业-2, 职业-3, 兼容-5): a swing under way goes on; with the cooldown
+ * out, no swing and a target, its skill may start or end. If that start holds the operator back, the attack already due
+ * is dropped and the cooldown stays where it is. Otherwise the first targets are locked — as many as the skill's mods or
  * the trait allow, whichever is more; the trait's hits multiply the skill's — and a new swing starts.
  * @param {World} w @param {Content} c @param {Unit} op
  */
@@ -585,7 +596,12 @@ function operatorAttack(w, c, op) {
   const found = mayAttack(c, op) && traitAsk(w, c, op, 'canAttack') !== false ? targetsOf(w, c, op) : [], hold = holdFrames(w, c, op, found.length > 0);
   if (hold > 0) { op.atkCd = hold - 1; op.anim = ANIM.IDLE; return; }
   if (found.length === 0) { op.anim = ANIM.IDLE; return; }
-  const a = armed(w, c, op, timedAttack(w, c, op, critMods(w, c, op, beforeAttack(w, c, op))));
+  const mods = beforeAttack(w, c, op);
+  if (dueAttackDropped(c, op)) {
+    op.anim = ANIM.IDLE;
+    return;
+  }
+  const a = armed(w, c, op, timedAttack(w, c, op, critMods(w, c, op, mods)));
   startSwing(w, c, op, a.targets, a.mods);
 }
 
