@@ -41,6 +41,7 @@
 | `attackHit` | 一次攻击对一个目标的各段伤害结算之后（引擎自己的事件） | `attacker`、`target`、`dealt`（各段合计）、`kind`：`main`、`splash`、`chain`、`aftershock`，`isSkill`，`mark`（这次攻击的标记） |
 | `skillStart` | 技能发动、它的行为开始之后（技能-3、技能-4） | `unit`、`reason`：`manual`（玩家发动）、`auto`、`deploy`（被动技能） |
 | `skillEnd` | 技能结束之后（技能-4、技能-7）；运行中的干员离场时，先于它的 `death` | `unit`、`reason`：`duration`、`instant`（立即生效或下次攻击的技能）、`ammo`、`stopped`（玩家关闭）、`death`（离场）、`move`（一般方式的移动，部署-9） |
+| `ammoUsed` | 弹药技能的一次攻击用掉一发之后（技能-4）；`attack` 的处理函数让这次攻击不耗弹药时不发 | `unit`、`left`（剩下的弹药） |
 | `elementHit` | 一次元素损伤判定不受影响之后、计算受到的量之前（元素-2） | `source`、`target`、`dmg`：`type` 为 `element`、`element`、`amount` 与 `mul`（可改）、`cancel` |
 | `elementBurst` | 元素爆发开始、爆发 Buff 加上之前（元素-3） | `source`（使它爆发的单位）、`target`、`element` |
 | `burstStart` | 元素爆发的 Buff 加上、即时效果之后（元素-3） | `source`、`target`、`element` |

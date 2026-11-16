@@ -77,6 +77,12 @@ const SHAPES = {
   beforeStatus: (b, k) => ({ source: sh(b, k.source), target: sh(b, k.target), status: STATUS_NAME[k.status] ?? k.status,
     get duration() { return k.frames < 0 ? Infinity : k.frames * TICK; }, set duration(v) { k.frames = v === Infinity ? -1 : secondsToFrames(Math.max(0, Number(v) || 0)); },
     get value() { return k.strength; }, set value(v) { k.strength = v; }, get cancel() { return k.cancel; }, set cancel(v) { k.cancel = v; } }),
+  // 钩子-3's ammoUsed with the kit's unit and skill; a kit's own emit (its extra shots) already has them and is handed on as it is
+  ammoUsed: (b, k) => {
+    if (k.unit instanceof ShUnit) return k;
+    const u = sh(b, k.unit);
+    return { unit: u, left: k.left, skill: u?.skill ?? null };
+  },
 };
 
 /**
