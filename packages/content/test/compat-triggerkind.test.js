@@ -6,7 +6,7 @@ import { test, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { tinyContent, oneWave, spawnAt } from '@aue/testkit';
 import { createWorld, step } from '@aue/sim';
-import { kitsBehaviors } from '../src/compat/kits.js';
+import { kitsBehaviors, withKitTrait } from '../src/compat/kits.js';
 import { defOf } from '../src/compat/records.js';
 import { loadTraining, operatorAt } from '../src/operators.js';
 
@@ -22,19 +22,21 @@ before(async () => {
 
 /**
  * The tiny level with one sturdy slime that appears at 3 s and walks into range, the piece `siege` on 推进之王's record
- * with a chess kit whose default skill is `spec`, deployed at (1, 1) facing right with its SP full.
- * @param {Record<string, unknown>} spec
+ * with a chess kit whose default skill is `spec` (and kit trait `trait`), deployed at (1, 1) facing right with its SP full.
+ * @param {Record<string, unknown>} spec @param {Record<string, unknown>} [trait]
  */
-function stance(spec) {
+function stance(spec, trait) {
   const c = /** @type {any} */ (tinyContent());
   c.level.waves = [oneWave([spawnAt(3, 'slime')])];
   c.enemies.slime.maxHp = 1e9;
   Object.assign(c.level.options, { initialCost: 99, maxCost: 99 });
   const { talentBb, fieldTalents, rangeTalents, critTalents, timedTalents, deployTalents, ...rest } = operatorAt(training, BUILD);
   void [talentBb, fieldTalents, rangeTalents, critTalents, timedTalents, deployTalents];
-  c.operators.siege = { ...rest, respawnTime: 1 };
+  const entry = { factory: () => ({ skill: spec, ...(trait ? { trait } : {}) }), chess: true, def: defOf(SIEGE, training, BUILD) };
+  // the record under its kit's trait, as a match makes it (兼容-5: `noAttackUnlessSkill` is the engine's attackInSkill)
+  c.operators.siege = { ...withKitTrait(/** @type {any} */ (rest), entry, c.level), respawnTime: 1 };
   c.decks = [['siege']];
-  const { world, skills, buffs, traits } = kitsBehaviors({ siege: { factory: () => ({ skill: spec }), chess: true, def: defOf(SIEGE, training, BUILD) } });
+  const { world, skills, buffs, traits } = kitsBehaviors({ siege: entry });
   c.behaviors = { world, skills, buffs, traits };
   const w = createWorld(c, { seed: 1, players: 1 });
   step(w, c, [[0, { type: 'deploy', op: 'siege', row: 1, col: 1, dir: 0 }]]);
@@ -55,5 +57,10 @@ test('[兼容-5] [技能-3] a toggle on an instant-looking record waits for the 
 
 test('[兼容-5] [技能-3] the same record with an instant kit skill still starts when ready, nobody in range', () => {
   const x = stance({ kind: 'instant', mods: { atkPct: 0.1 } });
+  assert.equal(x.runs(5), true);
+});
+
+test('[兼容-5] [技能-3] a toggle of a piece that attacks only while its skill runs still starts when ready: it would wait for an attack that never comes', () => {
+  const x = stance({ kind: 'toggle', mods: { atkPct: 0.1 } }, { noAttackUnlessSkill: true });
   assert.equal(x.runs(5), true);
 });

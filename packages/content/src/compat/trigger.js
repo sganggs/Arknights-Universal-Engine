@@ -106,17 +106,27 @@ function enemyOn(b, p, grid, selectable) {
 const asTick = (holds) => (holds ? 'ready' : 'never');
 
 /**
+ * Whether the piece makes normal attacks while its skill is down (职业-12, 职业-13): not one that never attacks, nor one
+ * that attacks only while its skill runs (a kit's `noAttackUnlessSkill`, kits.js). @param {ShBattle} b @param {ShUnit} p
+ */
+function attacksIdle(b, p) {
+  const t = p.u ? traits.traitOf(b.c, p.u) : null;
+  return !!t && !t.noAttack && !t.attackInSkill;
+}
+
+/**
  * The basic rule (DEFAULT, and a rule Stronghold does not know, which falls back to it): the cast waits for the attack
  * about to be made, which the engine's rule does too; what the spec adds is the ally a cast needs — an injured one for
  * `trigger.allies`, for a heal skill one in the unit's range. A toggle says so itself: the engine takes the record's kind,
- * and a stance with no duration and no attack keys in its record (山's 横扫架势) is instant there, started when ready.
- * Nothing else to add: no opinion.
+ * and a stance with no duration and no attack keys in its record (山's 横扫架势) is instant there, started when ready —
+ * but only for a piece that attacks while the skill is down: one that does not (圣聆初雪) would wait for an attack that never
+ * comes, and the engine's rule for it, started when ready, stands. Nothing else to add: no opinion.
  * @param {ShBattle} b @param {ShUnit} p @param {Trigger} t @param {Record<string, any>} spec @returns {Answer}
  */
 function basic(b, p, t, spec) {
   const held = t.allies ? !allyHolds(b, p, t) : heals(b, p, spec) && !healHolds(b, p, t);
   if (held) return 'never';
-  return spec.kind === 'toggle' ? 'attack' : undefined;
+  return spec.kind === 'toggle' && attacksIdle(b, p) ? 'attack' : undefined;
 }
 
 /**

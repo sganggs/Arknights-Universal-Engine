@@ -105,7 +105,7 @@ kit 为技能写的说明（Stronghold 的 SkillSpec）接到引擎的技能运�
   - `NEVER`、`MANUAL`，以及格子为空的 `CUSTOM_RANGE`（kit 声明「引擎不要自己发动」的写法）：不自动发动，kit 自己用 `skill.activate()` 发动（塞雷娅的二技能、缇缇的二技能；Stronghold 同样永不自动发动）；
   - `SP_FULL`（`ALWAYS`）：技力一满就发动，不等攻击；
   - 带格子的 `CUSTOM_RANGE`：格子（facing-right 的 [行, 列] 偏移，按干员所在格与朝向，索敌-1）上有它能选中的敌人时就绪即发动，没有就不发动；`SKILL_RANGE` 同样，只是任何活着的敌人都算（无视不可选中）；带 `allies` 的 `SKILL_RANGE`：格子上有生命比例不高于 `hpAtMost`（缺省 1）的受伤友方时就绪即发动，没有就不发动；
-  - `DEFAULT`、不认识的规则、没有格子的 `CUSTOM_RANGE` 与 `SKILL_RANGE`：基础规则，发动的时机仍是引擎的，说明的类型是切换（`toggle`）时另说明即将攻击时发动——引擎按技能记录定类型，记录里没有持续时间、没有攻击键的架势（山的横扫架势）在引擎里是立即类，会一就绪就开，Stronghold 的 `DEFAULT` 等到即将攻击、范围里有敌人；带 `allies` 时另要求格子（没有格子则干员的攻击范围）上有这样的友方，没有就不发动；治疗技能（说明写 `heal: true`，没写时干员的特性是治疗）另要求攻击范围里有受伤的友方（`trigger.enemies` 时敌人也行），没有就不发动（推断 INF-1095、INF-1096、INF-1097）；
+  - `DEFAULT`、不认识的规则、没有格子的 `CUSTOM_RANGE` 与 `SKILL_RANGE`：基础规则，发动的时机仍是引擎的，说明的类型是切换（`toggle`）、干员在技能没开时也普通攻击的，另说明即将攻击时发动——引擎按技能记录定类型，记录里没有持续时间、没有攻击键的架势（山的横扫架势）在引擎里是立即类，会一就绪就开，Stronghold 的 `DEFAULT` 等到即将攻击、范围里有敌人；不进行普通攻击、或只在技能运行时攻击的干员（圣聆初雪）等不到攻击，仍按引擎的规则一就绪就开；带 `allies` 时另要求格子（没有格子则干员的攻击范围）上有这样的友方，没有就不发动；治疗技能（说明写 `heal: true`，没写时干员的特性是治疗）另要求攻击范围里有受伤的友方（`trigger.enemies` 时敌人也行），没有就不发动（推断 INF-1095、INF-1096、INF-1097）；
   - 说明没有 `trigger` 的技能，也不是治疗技能的：没有意见，照引擎的规则。
   - kit 在战斗中用 `setTrigger(规则, 格子)` 改的规则与格子，从那时起取代说明里的（空格子算没有格子；`allies`、`hpAtMost`、`enemies` 仍取说明的）。
   - 不读：kit 另加的触发范围（`addTriggerRange`，只记着，可由 `triggerSatisfied` 查询）和 `TAKE_DAMAGE`、`ACTIVE_RANGE`、`SEARCH`、`GDGLOW_SKILL_2` 等规则，它们按基础规则；数据里的触发规则也不读，引擎的技能记录没有（DIF-0042）。
