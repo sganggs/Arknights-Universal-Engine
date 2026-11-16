@@ -418,9 +418,9 @@
   {
     "id": "DIF-0054",
     "clause": "兼容-4",
-    "ours": "kit 登记 damageOutput、damageBeforeApply、damageCalculateTarget、block、blocked、projectileStep、spGain、palsyTrigger、enemyAttackStart、hpChanged、modifierApplied、elementApplied、enemyLeak、battleEnd 时，引擎不发这些事件，只记一条缺口（compat: event.<名字> is not emitted yet，每个单位每个事件一次）；逐个 kit 的对照里它显为一条 errors 行（slent2 的 spGain、phatm2 的 enemyAttackStart、mantra 的 palsyTrigger）。",
+    "ours": "kit 登记 damageOutput、damageBeforeApply、damageCalculateTarget、block、blocked、projectileStep、spGain、hpChanged、modifierApplied、elementApplied、enemyLeak、battleEnd 时，引擎不发这些事件，只记一条缺口（compat: event.<名字> is not emitted yet，每个单位每个事件一次）；逐个 kit 的对照里它显为一条 errors 行（slent2 的 spGain）。",
     "stronghold": "这些事件在它的结算、技能、敌人行动、投射物与战斗生命周期里照常发出，kit 的处理函数被调用。",
-    "reason": "引擎没有这些事件的对应点：伤害输出与应用前的两步属于 Stronghold 的有序结算里引擎没有的阶段，技力获得、麻痹触发、敌人攻击开始、投射物步进、阻挡、生命变化等要在引擎各自的流程里加事件，没有做。kit 自己 emit 的这些事件照常到它的处理函数。逐个 kit 的对照里这三个 kit 的技能效果与 Stronghold 一致（对照的情形没有触发这些事件），显出的只是这条缺口记录。",
+    "reason": "引擎没有这些事件的对应点：伤害输出与应用前的两步属于 Stronghold 的有序结算里引擎没有的阶段，技力获得、投射物步进、阻挡、生命变化等要在引擎各自的流程里加事件，没有做。kit 自己 emit 的这些事件照常到它的处理函数。逐个 kit 的对照里这个 kit 的技能效果与 Stronghold 一致（对照的情形没有触发这些事件），显出的只是这条缺口记录。",
     "status": "有效"
   }
 ]

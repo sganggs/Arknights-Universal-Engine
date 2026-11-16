@@ -8,6 +8,7 @@ import { liftoffRefused } from './targeting.js';
 import { makeBuff, addBuff, removeBuff, consumeStack, count, decayRate } from './buffs.js';
 import { emit, hasHook } from './bus.js';
 import { noteFear, noteAttract } from './induce.js';
+import { palsyKept } from './hookmore.js';
 
 /** @typedef {import('./types.js').Unit} Unit @typedef {import('./types.js').Buff} Buff */
 /** @typedef {import('./attrs.js').Stats} Stats */
@@ -235,14 +236,15 @@ const palsyDecay = {
 export const STATUS_BEHAVIORS = Object.freeze({ palsy: palsyDecay });
 
 /**
- * 麻痹 at an enemy's attack (状态-8): when its 麻痹 takes effect, one layer goes, the enemy gets 0.5 s of 麻痹震颤 and
- * the attack is interrupted. Returns whether it was.
- * @param {Unit} e
+ * 麻痹 at an enemy's attack (状态-8): when its 麻痹 takes effect, one layer goes — unless, in a battle `w`, a handler of
+ * the `palsyTrigger` event keeps it (钩子-5) —, the enemy gets 0.5 s of 麻痹震颤 and the attack is interrupted.
+ * Returns whether it was.
+ * @param {Unit} e @param {import('./types.js').World} [w]
  */
-export function palsyInterrupts(e) {
+export function palsyInterrupts(e, w) {
   const b = e.kind === KIND.ENEMY && statsOf(e).flags.palsy ? e.buffs.find((x) => x.key === 'palsy') : undefined;
   if (!b) return false;
-  consumeStack(e, b);
+  if (!w || !palsyKept(w, e, b)) consumeStack(e, b);
   applyStatus(e, 'palsyShake', { frames: PALSY_SHAKE_FRAMES });
   return true;
 }
