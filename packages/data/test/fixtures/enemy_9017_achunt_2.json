@@ -1,0 +1,286 @@
+{
+  "Key": "enemy_9017_achunt_2",
+  "Value": [
+    {
+      "level": 0,
+      "enemyData": {
+        "name": {
+          "m_defined": true,
+          "m_value": "假想敌：铳"
+        },
+        "description": {
+          "m_defined": true,
+          "m_value": "造成伤害时附带侵蚀损伤；优先攻击防御力高的敌人;对同一个单位进行攻击时攻速逐渐提升；具有高额物理法术减伤"
+        },
+        "prefabKey": {
+          "m_defined": true,
+          "m_value": "enemy_9017_achunt"
+        },
+        "attributes": {
+          "maxHp": {
+            "m_defined": true,
+            "m_value": 120000
+          },
+          "atk": {
+            "m_defined": true,
+            "m_value": 750
+          },
+          "def": {
+            "m_defined": true,
+            "m_value": 1100
+          },
+          "magicResistance": {
+            "m_defined": true,
+            "m_value": 60.0
+          },
+          "cost": {
+            "m_defined": false,
+            "m_value": 0
+          },
+          "blockCnt": {
+            "m_defined": false,
+            "m_value": 0
+          },
+          "moveSpeed": {
+            "m_defined": true,
+            "m_value": 0.4
+          },
+          "attackSpeed": {
+            "m_defined": true,
+            "m_value": 0.0
+          },
+          "baseAttackTime": {
+            "m_defined": true,
+            "m_value": 4.5
+          },
+          "respawnTime": {
+            "m_defined": false,
+            "m_value": 0
+          },
+          "hpRecoveryPerSec": {
+            "m_defined": true,
+            "m_value": 0.0
+          },
+          "spRecoveryPerSec": {
+            "m_defined": false,
+            "m_value": 0.0
+          },
+          "maxDeployCount": {
+            "m_defined": false,
+            "m_value": 0
+          },
+          "massLevel": {
+            "m_defined": true,
+            "m_value": 8
+          },
+          "baseForceLevel": {
+            "m_defined": false,
+            "m_value": 0
+          },
+          "tauntLevel": {
+            "m_defined": true,
+            "m_value": 0
+          },
+          "epDamageResistance": {
+            "m_defined": true,
+            "m_value": 0.0
+          },
+          "epResistance": {
+            "m_defined": true,
+            "m_value": 0.0
+          },
+          "damageHitratePhysical": {
+            "m_defined": false,
+            "m_value": 0.0
+          },
+          "damageHitrateMagical": {
+            "m_defined": false,
+            "m_value": 0.0
+          },
+          "epBreakRecoverSpeed": {
+            "m_defined": false,
+            "m_value": 0.0
+          },
+          "stunImmune": {
+            "m_defined": true,
+            "m_value": true
+          },
+          "silenceImmune": {
+            "m_defined": true,
+            "m_value": true
+          },
+          "sleepImmune": {
+            "m_defined": true,
+            "m_value": true
+          },
+          "frozenImmune": {
+            "m_defined": true,
+            "m_value": true
+          },
+          "levitateImmune": {
+            "m_defined": true,
+            "m_value": true
+          },
+          "disarmedCombatImmune": {
+            "m_defined": true,
+            "m_value": true
+          },
+          "fearedImmune": {
+            "m_defined": true,
+            "m_value": true
+          },
+          "palsyImmune": {
+            "m_defined": true,
+            "m_value": true
+          },
+          "attractImmune": {
+            "m_defined": false,
+            "m_value": false
+          },
+          "teleportImmune": {
+            "m_defined": false,
+            "m_value": false
+          },
+          "groundBoundImmune": {
+            "m_defined": false,
+            "m_value": false
+          }
+        },
+        "applyWay": {
+          "m_defined": true,
+          "m_value": "RANGED"
+        },
+        "motion": {
+          "m_defined": true,
+          "m_value": "WALK"
+        },
+        "enemyTags": {
+          "m_defined": true,
+          "m_value": [
+            "origen"
+          ]
+        },
+        "lifePointReduce": {
+          "m_defined": true,
+          "m_value": 2
+        },
+        "levelType": {
+          "m_defined": true,
+          "m_value": "BOSS"
+        },
+        "rangeRadius": {
+          "m_defined": true,
+          "m_value": 2.0
+        },
+        "numOfExtraDrops": {
+          "m_defined": true,
+          "m_value": 0
+        },
+        "viewRadius": {
+          "m_defined": false,
+          "m_value": 0.0
+        },
+        "notCountInTotal": {
+          "m_defined": false,
+          "m_value": false
+        },
+        "talentBlackboard": [
+          {
+            "key": "3.move_speed",
+            "value": 2.0,
+            "valueStr": null
+          },
+          {
+            "key": "3.atk_scale",
+            "value": 1.5,
+            "valueStr": null
+          },
+          {
+            "key": "1.ep_damage_ratio",
+            "value": 0.4,
+            "valueStr": null
+          },
+          {
+            "key": "1.damage_scale",
+            "value": 1.0,
+            "valueStr": null
+          },
+          {
+            "key": "2.max_stack_cnt",
+            "value": 5.0,
+            "valueStr": null
+          },
+          {
+            "key": "2.max_valid_stack_cnt",
+            "value": 5.0,
+            "valueStr": null
+          },
+          {
+            "key": "2.attack_speed",
+            "value": 80.0,
+            "valueStr": null
+          },
+          {
+            "key": "3.duration",
+            "value": 15.0,
+            "valueStr": null
+          },
+          {
+            "key": "4.damage_scale",
+            "value": 0.2,
+            "valueStr": null
+          }
+        ],
+        "skills": [
+          {
+            "prefabKey": "1",
+            "priority": 0,
+            "cooldown": 30.0,
+            "initCooldown": 10.0,
+            "spCost": 0,
+            "blackboard": null
+          },
+          {
+            "prefabKey": "2",
+            "priority": 0,
+            "cooldown": 45.0,
+            "initCooldown": 20.0,
+            "spCost": 0,
+            "blackboard": [
+              {
+                "key": "dog_duration",
+                "value": 5.0,
+                "valueStr": null
+              },
+              {
+                "key": "move_speed",
+                "value": 8.0,
+                "valueStr": null
+              }
+            ]
+          },
+          {
+            "prefabKey": "3",
+            "priority": 0,
+            "cooldown": 10000000.0,
+            "initCooldown": 0.0,
+            "spCost": 0,
+            "blackboard": [
+              {
+                "key": "value",
+                "value": 100.0,
+                "valueStr": null
+              },
+              {
+                "key": "interval",
+                "value": 1.0,
+                "valueStr": null
+              }
+            ]
+          }
+        ],
+        "spData": null
+      }
+    }
+  ]
+}

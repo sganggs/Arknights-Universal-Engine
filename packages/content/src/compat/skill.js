@@ -40,6 +40,32 @@ export class ShSkill {
     this.triggerRanges = [];
     /** @type {Set<Function>} those of them for an attack only (Stronghold's `attackOnly`) */
     this.attackTriggerRanges = new Set();
+    /** the multiplier content set on its SP cost (Stronghold's spCostMul: 绝技 ×0.7), for every deployment */
+    this.costMul = 1;
+  }
+
+  /** How it gains SP: time, attack, hurt or none (技能-2). */
+  get spType() { return this.st?.spType ?? this.def?.sp ?? 'time'; }
+  /** The multiplier on its SP cost (兼容-7). */
+  get spCostMul() { return this.costMul; }
+  /** Content sets it (anything but a finite number ≥ 0 is 1): the cost is ⌊the skill's × it⌋ from now on. @param {number} v */
+  set spCostMul(v) {
+    this.costMul = typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : 1;
+    this.applyCost();
+  }
+
+  /**
+   * Its SP cost by the multiplier (Stronghold's spCost: ⌊base × spCostMul⌋), on the engine's state of this deployment:
+   * the cost and the cap (cost × charges, 技能-2), its SP no more than the cap.
+   */
+  applyCost() {
+    const st = this.st, d = this.def;
+    if (!st || !d || !(d.cost > 0)) return;
+    const cost = Math.max(0, Math.floor(d.cost * this.costMul));
+    if (st.cost === cost) return;
+    st.cost = cost;
+    st.cap = cost * Math.max(1, d.charges);
+    sp.setSp(st, st.sp);
   }
 
   /** The engine's state of the skill, null without one or off the field. @returns {SkillState | null} */
@@ -70,6 +96,16 @@ export class ShSkill {
   get duration() { return this.def?.duration ?? 0; }
   get ammoLeft() { const st = this.st; return st?.active ? st.ammo : 0; }
   set ammoLeft(n) { const st = this.st; if (st) skills.setAmmo(st, Number(n)); }
+  /**
+   * More shots for a running ammo skill (技能-4), as Stronghold's `addAmmo`: nothing for a skill that is not running or is
+   * not an ammo skill, nor for a number that is not finite.
+   * @param {number} n
+   */
+  addAmmo(n) {
+    const st = this.st;
+    if (!st?.active || this.kind !== 'ammo' || !Number.isFinite(n)) return;
+    skills.setAmmo(st, st.ammo + n);
+  }
   /** Seconds from the battle's start to its last start, −Infinity before any. */
   get lastStart() { const st = this.st; return st && st.at >= 0 ? st.at / FPS : -Infinity; }
   get rangeGrid() { return this.unit.def?.skill?.rangeGrid ?? null; }

@@ -34,6 +34,7 @@ import { stealthed, liftoffRefused } from './targeting.js';
  * @property {boolean} [isAttack] @property {boolean} [isSkill] @property {boolean} [isSplash] @property {boolean} [isProjectile]
  * @property {string[]} [tags]
  * @property {boolean} [canDodge]
+ * @property {boolean} [noDodgeCancel] 无视闪避 (伤害-12): the target's dodges are still drawn, but none cancels this hit
  * @property {boolean} [hpLoss] @property {boolean} [noHurtSp] gives no 受击回复 (技能-2: 敌能-103's burn)
  * @property {boolean} [dodged] set by the 伤判 when the hit was dodged or missed (伤害-8; 敌能-2's `landed`)
  * @property {boolean} [sourceless] 无来源 though credited to its source: the events see no source, the kill is its source's,
@@ -199,11 +200,11 @@ function tagMul(m, tags, pa) {
 }
 
 /**
- * Whether a hit can be dodged (伤害-8): physical and arts damage unless the hit says not, nor a physical hit of a source
- * whose flags ignore 物理闪避 (`ignoreDodgePhys`, 伤害-12).
+ * Whether a dodge that is drawn cannot cancel a hit (伤害-12, 无视闪避): the hit says so (`noDodgeCancel`), or it is
+ * physical from a source whose flags ignore 物理闪避 (`ignoreDodgePhys`). The dodge is drawn all the same.
  * @param {Damage} dmg @param {Unit | null} src
  */
-const dodgeable = (dmg, src) => (dmg.canDodge ?? true) && !(dmg.type === 'phys' && src && statsOf(src).flags.ignoreDodgePhys);
+const dodgeProof = (dmg, src) => !!dmg.noDodgeCancel || (dmg.type === 'phys' && !!src && !!statsOf(src).flags.ignoreDodgePhys);
 
 /**
  * One buff's 伤判 effects on a hit, in a fixed order within the buff: dodge, 抵挡, taken multipliers, shield, barrier
@@ -213,7 +214,7 @@ const dodgeable = (dmg, src) => (dmg.canDodge ?? true) && !(dmg.type === 'phys' 
  */
 function judge(w, u, b, amount, hit) {
   const { dmg, src } = hit, p = dodgeOf(b, dmg), q = blockOf(b, dmg, src);
-  if (p > 0 && dodgeable(dmg, src) && draw(w) < 1 - powi(1 - p, b.stacks)) return -1;
+  if (p > 0 && (dmg.canDodge ?? true) && draw(w) < 1 - powi(1 - p, b.stacks) && !dodgeProof(dmg, src)) return -1;
   if (q > 0 && draw(w) < 1 - powi(1 - q, b.stacks)) return 0;
   let left = amount * takenMul(b, dmg.type) * blockedMul(u, b, src) * sourceMul(b, dmg, hit, u);
   if (b.mods.dmgReduceFlat && (dmg.type === 'phys' || dmg.type === 'arts')) left = Math.max(0, left - b.mods.dmgReduceFlat * b.stacks);
@@ -232,12 +233,13 @@ function judge(w, u, b, amount, hit) {
 }
 
 /**
- * Whether a hit misses by its source's 命中率 (伤害-8, 技能-13): a physical or arts hit that can be dodged and has a source
- * whose hit rate (`hitRateMul`, 最终乘算) is below 1 misses at the chance 1 − the rate.
+ * Whether a hit misses by its source's 命中率 (伤害-8, 技能-13): a physical or arts hit that can be dodged — not
+ * `canDodge` false, not `noDodgeCancel` — and has a source whose hit rate (`hitRateMul`, 最终乘算) is below 1 misses at
+ * the chance 1 − the rate.
  * @param {World} w @param {Damage} dmg @param {Unit | null} src
  */
 function misses(w, dmg, src) {
-  if (!src || dmg.sourceless || (dmg.type !== 'phys' && dmg.type !== 'arts') || dmg.canDodge === false) return false;
+  if (!src || dmg.sourceless || (dmg.type !== 'phys' && dmg.type !== 'arts') || dmg.canDodge === false || dmg.noDodgeCancel) return false;
   const h = statsOf(src).prod.hitRateMul;
   return h !== undefined && h < 1 && draw(w) >= h;
 }
@@ -292,8 +294,9 @@ function brokeShield(u, n, c) {
 
 /**
  * The target's 伤判 effects in turn (伤害-8): what the hit sets off as they begin (judged), a miss by the source's hit
- * rate, then its active buffs by event priority, highest first, then acquisition order. One that cancels the hit or
- * brings it to 0 ends the step; a dodge or a miss is the `dodge` event (钩子-3). `from`: the source the events see, the
+ * rate, then its active buffs by event priority, highest first, then acquisition order. Once one cancels the hit or
+ * brings it to 0, the later ones do no dodge, 抵挡, shield, barrier or take — only their behaviour's `afterCancel`
+ * (反伤, 受伤计数), which cannot bring it back; a dodge or a miss is the `dodge` event (钩子-3). `from`: the source the events see, the
  * source the kill is counted for (`credit`; the events' source when omitted), the tags of an enemy source (伤害-12), the
  * content (for the target's talents and a buff's `take`).
  * @param {World} w @param {Unit} u @param {number} amount @param {Damage} dmg
@@ -304,8 +307,12 @@ export function takeDamage(w, u, amount, dmg, from = {}) {
   judged(w, u, src, from.c);
   if (misses(w, dmg, src)) { dodged(w, u, src, dmg); return 0; }
   const order = activeBuffs(u.buffs).map((b, i) => ({ b, i })).sort((x, y) => y.b.prio - x.b.prio || x.i - y.i);
-  let left = amount;
+  let left = amount, gone = false;
   for (const { b } of order) {
+    if (gone) {
+      behaviorOf(from.c, b)?.afterCancel?.(w, u, b, { dmg, src, credit, tags, c: from.c });
+      continue;
+    }
     const hits = b.shieldHits;
     const hit = { dmg, src, credit, tags, c: from.c };
     left = judge(w, u, b, left, hit);
@@ -313,10 +320,13 @@ export function takeDamage(w, u, amount, dmg, from = {}) {
     if (b.tag === 'shieldBreak' && b.shieldHits < hits) brokeShield(u, b.n, from.c);
     if (left > 0) left = applyTake(w, u, b, left, hit);
     if (left < 0) dodged(w, u, src, dmg);
-    if (!(left > 0)) return 0;
+    gone = !(left > 0);
   }
-  return left;
+  return gone ? 0 : left;
 }
+
+/** A buff's behaviour in the content (伤害-8): by `act`, or the buff's key. @param {import('./types.js').Content | undefined} c @param {Buff} b */
+const behaviorOf = (c, b) => c?.behaviors?.buffs?.[b.act || b.key];
 
 /**
  * A buff behaviour's replacement of the damage this buff has left (伤害-8), after its own dodge, block, multipliers,
@@ -326,7 +336,7 @@ export function takeDamage(w, u, amount, dmg, from = {}) {
  * @param {{ dmg: Damage, src: Unit | null, credit: Unit | null, tags: readonly string[], c?: import('./types.js').Content }} hit
  */
 function applyTake(w, u, b, amount, hit) {
-  const next = hit.c?.behaviors?.buffs?.[b.act || b.key]?.take?.(w, u, b, amount, hit);
+  const next = behaviorOf(hit.c, b)?.take?.(w, u, b, amount, hit);
   return typeof next === 'number' && Number.isFinite(next) ? Math.max(0, next) : amount;
 }
 

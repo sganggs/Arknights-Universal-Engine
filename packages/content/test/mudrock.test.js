@@ -268,12 +268,14 @@ function heldBack(hold, free, o = {}) {
   assert.equal(view(box.e).barrier, 16500);
 }
 
-test('[敌能-143] stun, 失衡, 恐惧, 不进行攻击, 战栗 while blocked and, without the resistance, silence postpone 刷新屏障', () => {
+test('[敌能-143] [状态-12] stun, 失衡, 恐惧, 不进行攻击, 缴械, 强制缴械, 战栗 while blocked and, without the resistance, silence postpone 刷新屏障', () => {
   heldBack((b) => { status.applyStatus(b.e, 'stun', {}); }, (b) => { buffs.removeBuff(b.e, 'stun'); });
   // 失衡 (位移-3): the turn only slides and does not attack, so the interval would be taken when the slide ends.
   heldBack((b) => { b.e.slide = { vx: 0, vy: 0, hard: 1000 }; }, (b) => { displacement.stopSlide(b.e); });
   heldBack((b) => { status.applyStatus(b.e, 'fear', {}); }, (b) => { buffs.removeBuff(b.e, 'fear'); });
   heldBack((b) => { buffs.addBuff(b.e, buffs.makeBuff({ key: 'held', flags: { noAttack: true } })); }, (b) => { buffs.removeBuff(b.e, 'held'); });
+  heldBack((b) => { status.applyStatus(b.e, 'disarm', {}); }, (b) => { buffs.removeBuff(b.e, 'disarm'); });
+  heldBack((b) => { status.applyStatus(b.e, 'forceDisarm', {}); }, (b) => { buffs.removeBuff(b.e, 'forceDisarm'); });
   heldBack((b) => { status.applyStatus(b.e, 'disarmedCombat', {}); }, (b) => { buffs.removeBuff(b.e, 'disarmedCombat'); }, { blocked: true });
   heldBack((b) => { status.applyStatus(b.e, 'silence', {}); }, (b) => { buffs.removeBuff(b.e, 'silence'); }, { def: merged(rock({ immune: [] })) });
   // 消失 (路线-4): the engine's attack does not run while it is hidden, so the interval would be taken later.
