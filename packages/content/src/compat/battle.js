@@ -624,6 +624,19 @@ export class ShBattle {
   }
 
   /**
+   * A status off a unit (Stronghold's removeStatus: its removeBuff by the status's key): every buff of each engine
+   * status Stronghold calls by this name — 寒冷 and 冻结 from either side (状态-5) — or the compat layer's stand-in of that
+   * key (standins.js), with their `onRemove`; nothing when the unit has none. A name that is neither is a gap.
+   * @param {ShUnit | null | undefined} target @param {string} key
+   */
+  removeStatus(target, key) {
+    if (!target) return;
+    const keys = statusKeysNamed(key);
+    if (keys.length === 0) throw new CompatGap(`status.${key}`);
+    for (const k of keys) this.removeBuff(target, k);
+  }
+
+  /**
    * A status (状态-5): the engine's catalogue, seconds as frames — or a stand-in for one it has no counterpart for
    * (standins.js); a 麻痹's value is its layers (kitstubs.js); whether it took hold.
    * @param {ShUnit} target @param {string} key @param {{ duration?: number, source?: ShUnit | null, value?: number }} [o]
@@ -640,6 +653,13 @@ export class ShBattle {
 
 /** The buff in effect for one just added: itself, or the buff of its key it joined or took the place of. @param {Unit} u @param {import('@aue/sim').Buff} b */
 const inEffect = (u, b) => (u.buffs.includes(b) ? b : u.buffs.find((x) => x.key === b.key) ?? null);
+
+/**
+ * The engine's buff keys of the statuses Stronghold calls `name`: the catalogue's keys whose Stronghold name it is (状态-5;
+ * 寒冷 and 冻结 have a friendly and an enemy key each), or the stand-in's own key.
+ * @param {string} name @returns {string[]}
+ */
+const statusKeysNamed = (name) => (Object.hasOwn(STAND_INS, name) ? [name] : Object.keys(status.STATUS).filter((k) => (STATUS_NAME[k] ?? k) === name));
 
 /** The parts of a kit's buff spec the engine's buffs do not carry (noteUnsupported). */
 const UNSUPPORTED_BUFF = Object.freeze(['injury', 'observeInjury', 'damageReduction']);
