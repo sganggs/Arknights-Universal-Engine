@@ -10,7 +10,7 @@ import { statsOf } from './attrs.js';
 import { makeBuff, addBuff, removeBuff, retune } from './buffs.js';
 import { inKeys, hostile } from './targeting.js';
 import { reachKeys } from './reach.js';
-import { traitOf, dollNow, summonHeld } from './traits.js';
+import { traitOf, dollNow, summonHeld, traitRegen } from './traits.js';
 import { statMods } from './skills.js';
 import { tileOf } from './body.js';
 import { frontOf, rotateOffset, normDir } from './dir.js';
@@ -28,8 +28,14 @@ import { stayVuln } from './talentfight.js';
 
 /** The keys of the aura buffs. */
 const AURA_KEYS = /^(?:aura|field|range|doll|mod|ally|inspire|alchemy|aspd|fieldRegen|fieldBuff|stackShare|resistRegen|stayVuln):/;
+/**
+ * Whether a buff key is an aura's: the aura sync owns every key of that shape and removes one that no aura of the engine
+ * wants, so content that gives its own buffs keeps clear of them.
+ * @param {string} key
+ */
+export const isAuraKey = (key) => AURA_KEYS.test(key);
 /** Whether a buff is an aura's. @param {{ key: string }} b */
-const isAura = (b) => AURA_KEYS.test(b.key);
+const isAura = (b) => isAuraKey(b.key);
 
 /**
  * An aura's share of its source's attack now (职业-13): its skill's `attack@atk_to_hp_recovery_ratio` (or the same key
@@ -42,14 +48,19 @@ function shareOf(c, op, base) {
 }
 
 /**
- * The regen aura of one source (职业-13): every operator with a tile in its attack range (itself too).
- * @param {Content} c @param {Unit} src @param {Unit[]} ops @param {Map<Unit, Map<string, Want>>} want
+ * The regen aura of one source (职业-13): every operator with a tile in its attack range (itself too), the amount its trait
+ * behaviour makes of it for that operator when it says (职业-6); none for an amount that is not above 0 then.
+ * @param {World} w @param {Content} c @param {Unit} src @param {Unit[]} ops @param {Map<Unit, Map<string, Want>>} want
  */
-function regenAura(c, src, ops, want) {
+function regenAura(w, c, src, ops, want) {
   const share = traitOf(c, src).regenAura;
   if (!(share > 0)) return;
-  const grid = { rows: c.level.height, cols: c.level.width }, keys = reachKeys(c, src), amount = shareOf(c, src, share) * statsOf(src).atk;
-  for (const u of ops) if (inKeys(u, keys, grid)) want.get(u)?.set(`aura:${src.id}`, { src: src.id, value: amount, mods: { hpRegen: amount } });
+  const grid = { rows: c.level.height, cols: c.level.width }, keys = reachKeys(c, src), amount = shareOf(c, src, share) * statsOf(src).atk, own = traitRegen(w, c, src);
+  for (const u of ops) {
+    if (!inKeys(u, keys, grid)) continue;
+    const value = own ? own(u, amount) : amount;
+    if (!own || value > 0) want.get(u)?.set(`aura:${src.id}`, { src: src.id, value, mods: { hpRegen: value } });
+  }
 }
 
 /**
@@ -185,7 +196,8 @@ const UNIT_WHEN = Object.freeze({
   sameDir: (_w, u, _v, src) => normDir(u.dir) === normDir(src.dir),
   maxHpHighest: (w, u, _v, src, c) => sturdiest(w, c, src) === u,
   sluggish: (_w, u) => holdsStatus(u, 'sluggish'),
-  coldOnly: (_w, u) => !statsOf(u).flags.freeze && (holdsStatus(u, 'cold') || holdsStatus(u, 'enemyCold')),
+  // 寒冷's flag is filtered on a unit immune to it by its data or a buff (状态-7), so the flag is a cold it is not immune to.
+  coldOnly: (_w, u) => !statsOf(u).flags.freeze && !!statsOf(u).flags.cold,
   frozen: (_w, u) => !!statsOf(u).flags.freeze,
 });
 
@@ -363,7 +375,7 @@ export function auras(w, c) {
   /** @type {Map<Unit, Map<string, Want>>} */
   const want = new Map(units.map((u) => [u, new Map()]));
   for (const src of ops) {
-    regenAura(c, src, ops, want);
+    regenAura(w, c, src, ops, want);
     fieldRegen(c, src, ops, want);
     fieldBuffs(w, c, src, ops, want);
     stackShare(c, src, ops, want);

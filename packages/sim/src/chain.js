@@ -52,15 +52,20 @@ function nextFoe(w, at, ch, seen, antiAir) {
   return best;
 }
 
+/** Whether a heal chain may jump to an operator by default (职业-11): it does not refuse allies' heals (职业-9). @param {Unit} u */
+const takesAllyHeals = (u) => !statsOf(u).flags.noAllyHeal;
+
 /**
- * The next operator a heal chain jumps to from `at` (职业-11): one with a tile among the chain's cells around `at`'s
- * tile, on the field, not refusing allies' heals (职业-9), not reached yet — full HP or not; the lowest 生命比例
- * (at 0.001), then the latest deployed.
- * @param {World} w @param {Content} c @param {Unit} at @param {Chain} ch @param {Set<number>} seen @returns {Unit | null}
+ * The next operator a heal chain jumps to from `at` (职业-11): one with a tile among the jump's `cells` around `at`'s
+ * tile, on the field, not reached yet (`seen`), that its `may` lets in — by default one not refusing allies' heals
+ * (职业-9) —, full HP or not; the lowest 生命比例 (at 0.001), then the latest deployed. A kit's jumps take it with the
+ * kit's own `may` (兼容-4).
+ * @param {World} w @param {Content} c @param {Unit} at @param {Set<number>} seen
+ * @param {{ cells: readonly import('./types.js').Cell[], may?: (u: Unit) => boolean }} jump @returns {Unit | null}
  */
-function nextAlly(w, c, at, ch, seen) {
-  const grid = gridOf(c), keys = rangeKeys(grid, { ...at, dir: DEFAULT_DIR }, ch.cells ?? []);
-  const cands = w.units.filter((u) => u.kind === KIND.OPERATOR && u.hp > 0 && !seen.has(u.id) && inKeys(u, keys, grid) && !statsOf(u).flags.noAllyHeal);
+export function healJump(w, c, at, seen, jump) {
+  const grid = gridOf(c), keys = rangeKeys(grid, { ...at, dir: DEFAULT_DIR }, jump.cells), may = jump.may ?? takesAllyHeals;
+  const cands = w.units.filter((u) => u.kind === KIND.OPERATOR && u.hp > 0 && !seen.has(u.id) && inKeys(u, keys, grid) && may(u));
   const key = (/** @type {Unit} */ u) => precisionKey(u.hp / u.maxHp, 0.001);
   return cands.reduce((/** @type {Unit | null} */ b, u) => (!b || key(u) < key(b) || (key(u) === key(b) && (u.born > b.born || (u.born === b.born && u.bornN > b.bornN))) ? u : b), null);
 }
@@ -75,7 +80,7 @@ export function chainOf(w, c, first, ch, how) {
   const out = [];
   const seen = new Set([first.id]);
   for (let at = first; out.length < ch.max - 1;) {
-    const next = how.heals ? nextAlly(w, c, at, ch, seen) : nextFoe(w, at, ch, seen, how.antiAir);
+    const next = how.heals ? healJump(w, c, at, seen, { cells: ch.cells ?? [] }) : nextFoe(w, at, ch, seen, how.antiAir);
     if (!next) break;
     out.push(next);
     seen.add(next.id);
