@@ -38,7 +38,18 @@ export function acquireTargets(b, u, prof) {
 
 export const chainHealNext = gap('ai.chainHealNext');
 export const performAttack = gap('ai.performAttack');
-export const attackCountdown = gap('ai.attackCountdown');
+
+/**
+ * One tick off an attack cooldown, in seconds (兼容-4): what is left within 1e-9 of 0 is 0, so that a cooldown of a whole
+ * number of frames ends on its frame (one second counted down in thirty steps of 1/30 leaves 2.1e-16 in floating point).
+ * @param {number} cd @param {number} dt
+ */
+export function attackCountdown(cd, dt) {
+  const left = cd - dt;
+  return left > 1e-9 ? left : 0;
+}
+
+export const compileRoute = gap('ai.compileRoute');
 
 /** The targeting keys a skill spec may override. */
 const TARGETING = Object.freeze(['maxTargets', 'priority', 'allInRange', 'canHitFly']);

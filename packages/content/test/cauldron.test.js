@@ -89,14 +89,18 @@ function play(box, frame) {
   return ev;
 }
 
-test('[敌能-129] [敌能-26] [关卡-2] aoe by its shape: 爆破攻坚手\'s share alone and the pulse\'s two numbers are covered; every other shape is not', () => {
-  assert.deepEqual(uncoveredAbilities([foe(SPLASH), HOT]), []);
-  for (const bb of [KNIGHT, LOCK, {}, { ...HOT.talents?.aoe, el: 3 }, { atk_scale: 1, ep_damage_ratio: '0.4' }, { ep_damage_ratio: 0.4 }, { ...SPLASH, atk_scale: 1 }]) {
+test('[敌能-129] [敌能-26] [敌能-156] [关卡-2] aoe by its shape: 爆破攻坚手\'s share alone and the pulse\'s two numbers with the page marker are covered; every other shape is not', () => {
+  const hot = withFoeExtras(HOT_KEY, HOT);
+  assert.deepEqual(hot.talents, { aoe: { atk_scale: 1, ep_damage_ratio: 0.4, page: 1 } });
+  assert.deepEqual(uncoveredAbilities([foe(SPLASH), hot]), []);
+  const bare = { atk_scale: 1, ep_damage_ratio: 0.4 };
+  for (const bb of [KNIGHT, LOCK, {}, bare, { ...bare, el: 3 }, { ...bare, page: '1' }, { ...bare, page: 1, radius: 2 }, { atk_scale: 1, ep_damage_ratio: '0.4', page: 1 }, { ep_damage_ratio: 0.4, page: 1 }, { ...SPLASH, atk_scale: 1 }]) {
     assert.deepEqual(uncoveredAbilities([foe(bb)]), ['aoe'], JSON.stringify(bb));
   }
   assert.deepEqual(withoutIncomplete(foe(LOCK)).talents, {});
   assert.deepEqual(withoutIncomplete(foe(KNIGHT)).talents, {});
-  assert.deepEqual(withoutIncomplete(HOT).talents, HOT.talents);
+  assert.deepEqual(withoutIncomplete(HOT).talents, {}, 'the two numbers alone are 卢西恩\'s skill too (敌能-156): not covered without the marker');
+  assert.deepEqual(withoutIncomplete(hot).talents, hot.talents);
   assert.deepEqual(withoutIncomplete(foe(SPLASH)).talents, { aoe: SPLASH });
 });
 
@@ -274,8 +278,9 @@ test('[敌能-129] [状态-7] 停顿免疫: 停顿 does not take hold, so nothin
 
 test('[敌能-129] [关卡-2] 飘香 in PF-S-2 盘带练习: its aoe is covered and kept, and the level\'s record pulses at its 攻击力 200', () => {
   assert.equal(levelAt(LEVEL, 'NORMAL').level.uncovered, undefined);
+  assert.deepEqual(levelAt(LEVEL, 'NORMAL').enemies[AROMA_KEY].talents, { aoe: { atk_scale: 1, ep_damage_ratio: 0.4 } }, 'the level record: the data');
   const record = /** @type {EnemyDef} */ (levelContent(LEVEL, 'NORMAL').enemies[AROMA_KEY]);
-  assert.deepEqual([record.atk, record.rangeRadius, record.applyWay, record.talents], [200, 1.6, 'NONE', { aoe: { atk_scale: 1, ep_damage_ratio: 0.4 } }]);
+  assert.deepEqual([record.atk, record.rangeRadius, record.applyWay, record.talents], [200, 1.6, 'NONE', { aoe: { atk_scale: 1, ep_damage_ratio: 0.4, page: 1 } }]);
   const box = stand(AROMA_KEY, record, { raw: true, ops: [['guard', 1, 2], ['far', 1, 4]] });
   const ev = play(box, 61);
   assert.deepEqual([box.op('guard').hp, fire(box.op('guard'))], [1e6 - 400, 1000 - 160]);
