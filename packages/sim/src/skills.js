@@ -9,7 +9,7 @@ import { actorContext, traitOf } from './traits.js';
 import { addBuff, makeBuff, removeBuff } from './buffs.js';
 import { throwAlchemy } from './alchemy.js';
 import { heal } from './damage.js';
-import { emit } from './bus.js';
+import { emit, hasHook } from './bus.js';
 import { grantSummons, endSummons } from './summons.js';
 import { restartCharge } from './modes.js';
 import { talentSkillEnd, talentSkillStart } from './talentfx.js';
@@ -393,8 +393,8 @@ function healAfterHit(w, c, op, mods) {
 
 /**
  * After an operator attacked (技能-2, 技能-4, 技能-9): the HP the attack gives it back; a next-attack skill ends; an ammo
- * skill spends a shot — unless an `attack` handler made it free (钩子-3); an attack the skill did not make gives one SP to a
- * skill that recovers by attacking.
+ * skill spends a shot — unless an `attack` handler made it free (钩子-3) — and then the `ammoUsed` event; an attack the
+ * skill did not make gives one SP to a skill that recovers by attacking.
  * @param {World} w @param {Content} c @param {Unit} op @param {AttackMods} mods @param {boolean} [noAmmo]
  */
 export function afterAttack(w, c, op, mods, noAmmo = false) {
@@ -403,8 +403,18 @@ export function afterAttack(w, c, op, mods, noAmmo = false) {
   if (mods.selfHeal && op.hp > 0) heal(w, op, op, statsOf(op).maxHp * mods.selfHeal);
   healAfterHit(w, c, op, mods);
   if (mods.skill && st.armed) endSkill(w, c, op, 'instant');
-  else if (mods.skill && st.ammo > 0 && !noAmmo) st.ammo--;
+  else if (mods.skill && st.ammo > 0 && !noAmmo) spendShot(w, op, st);
   else if (!mods.skill && st.spType === 'attack' && !statsOf(op).flags.noSp) gainSp(st, 1);
+}
+
+/**
+ * A shot of a running ammo skill spent by its attack (技能-4), then the `ammoUsed` event (钩子-3) with the shots left, when
+ * it has a handler: content that counts or refunds shots (Stronghold's 拉特兰 bond and kits listen to it).
+ * @param {World} w @param {Unit} op @param {SkillState} st
+ */
+function spendShot(w, op, st) {
+  st.ammo--;
+  if (hasHook(w, 'ammoUsed')) emit(w, 'ammoUsed', { unit: op, left: st.ammo });
 }
 
 /** A newly deployed operator's passive skill starts (技能-3). @param {World} w @param {Content} c @param {Unit} op */

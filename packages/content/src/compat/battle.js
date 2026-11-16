@@ -85,6 +85,12 @@ const SHAPES = {
   enemyAttackStart: (b, k) => ({ enemy: sh(b, k.enemy), targets: k.targets.map((/** @type {Unit} */ t) => b.unitOf(t)) }),
   palsyTrigger: (b, k) => ({ enemy: sh(b, k.enemy), buff: b.buffOf(k.enemy, k.buff), get keep() { return k.keep; }, set keep(v) { k.keep = v; } }),
   blocked: (b, k) => ({ blocker: sh(b, k.blocker), enemy: sh(b, k.enemy) }),
+  // 钩子-3's ammoUsed with the kit's unit and skill; a kit's own emit (its extra shots) already has them and is handed on as it is
+  ammoUsed: (b, k) => {
+    if (k.unit instanceof ShUnit) return k;
+    const u = sh(b, k.unit);
+    return { unit: u, left: k.left, skill: u?.skill ?? null };
+  },
 };
 
 /**
