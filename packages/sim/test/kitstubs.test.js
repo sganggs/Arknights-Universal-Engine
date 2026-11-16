@@ -1,6 +1,6 @@
 // The engine's parts the compat layer's stand-ins for Stronghold's kit functions use (docs/spec/compat.md 兼容-4): an
-// attack now with a 倍率 of content's or as a heal (攻击-5), a heal chain's jump with a rule of its own for who may take
-// it (职业-11), whether a unit's element values are locked (元素-3).
+// attack now with a 倍率 of content's or as a heal (攻击-5) and a heal chain's jump with a rule of its own for who may
+// take it (职业-11).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { tinyContent } from '@aue/testkit';
@@ -9,7 +9,6 @@ import { makeEnemy } from '../src/units.js';
 import { applyStatus } from '../src/status.js';
 import { statsOf } from '../src/attrs.js';
 import { addBuff, makeBuff } from '../src/buffs.js';
-import { dealEp, epLocked, bursting } from '../src/elements.js';
 
 /** @typedef {import('../src/types.js').Unit} Unit */
 
@@ -81,22 +80,4 @@ test('[职业-11] healJump: the next operator of a heal chain among the cells ar
   assert.equal(healJump(w, c, g1, new Set([g1.id]), { cells: AROUND, may: () => true })?.key, 'g2', 'a `may` that lets it in');
   assert.equal(healJump(w, c, g1, new Set([g1.id]), { cells: AROUND, may: (u) => u !== g3 && !statsOf(u).flags.noAllyHeal }), null);
   assert.equal(healJump(w, c, g1, new Set([g1.id, g3.id]), { cells: [{ row: 0, col: 1 }] }), null, 'only the cell to its right: g3, already jumped to');
-});
-
-test('[元素-3] epLocked: a unit\'s element values are locked in its burst and while it begins (its elementBurst handlers), not before or after', () => {
-  const c = tinyContent();
-  c.level.waves = [];
-  const w = createWorld(c, { seed: 1, players: 1 }), e = makeEnemy(w, c, { key: 'slime', route: 0 });
-  e.base = { ...e.base, maxHp: 1e6 };
-  e.hp = e.maxHp = statsOf(e).maxHp;
-  applyStatus(e, 'root', {});
-  w.units.push(e);
-  const seen = /** @type {boolean[][]} */ ([]);
-  bus.on(w, 'elementBurst', (k) => { seen.push([epLocked(k.target), bursting(k.target)]); });
-  dealEp(w, e, 'FIRE', 999, null);
-  assert.equal(epLocked(e), false);
-  dealEp(w, e, 'FIRE', 1, null);
-  assert.deepEqual([seen, epLocked(e)], [[[true, false]], true], 'locked as it begins, before the burst buff; then in it');
-  for (let i = 0; i < 300; i++) step(w, c);
-  assert.equal(epLocked(e), false, 'the 10 s burst over');
 });

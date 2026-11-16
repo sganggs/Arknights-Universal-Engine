@@ -76,5 +76,8 @@ const Rush = Object.freeze({
   },
 });
 
-/** The behaviours of this file, by talent or skill name; `AtkUp` gives its bonus through `atkup` (敌能-8). @type {Readonly<Record<string, FoeBehavior>>} */
-export const avengerBehaviors = Object.freeze({ Reborn, Rush, AtkUp: Object.freeze({}) });
+/**
+ * The behaviours of this file, by talent or skill name. `AtkUp` gives its bonus through `atkup` (敌能-8); the name's one
+ * behaviour and its shape check are volley.js's (敌能-149). @type {Readonly<Record<string, FoeBehavior>>}
+ */
+export const avengerBehaviors = Object.freeze({ Reborn, Rush });

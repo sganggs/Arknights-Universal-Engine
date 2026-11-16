@@ -1,14 +1,11 @@
 // The Stronghold functions kits call that were gaps (docs/spec/compat.md 兼容-4), with kits of our own on an open field:
-// burstLocked while a burst begins and runs, aggroCmp by 仇恨值, chainHealNext by the engine's heal-chain jump with a
-// kit's rules for allies, performAttack as an attack now that heals; a kit's 麻痹 value as its layers, a beforeStatus
-// handler's change too.
+// chainHealNext by the engine's heal-chain jump with a kit's rules for allies, performAttack as an attack now that heals;
+// a kit's 麻痹 value as its layers, a beforeStatus handler's change too.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { oneWave, spawnAt } from '@aue/testkit';
 import { createWorld, step, buffs, status, attrs } from '@aue/sim';
 import { kitsBehaviors } from '../src/compat/kits.js';
-import { burstLocked } from '../src/compat/sh/damage.js';
-import { aggroCmp } from '../src/compat/sh/targeting.js';
 import { chainHealNext, performAttack } from '../src/compat/sh/ai.js';
 
 /** @typedef {import('../src/compat/battle.js').ShBattle} ShBattle @typedef {import('../src/compat/unit.js').ShUnit} ShUnit */
@@ -58,62 +55,6 @@ function field(o) {
 const deploy = (op, row, col) => [0, { type: 'deploy', op, row, col, dir: 0 }];
 /** A buff of our own on a unit. @param {ShUnit} u @param {string} key @param {Record<string, any>} o */
 const give = (u, key, o) => buffs.addBuff(/** @type {any} */ (u.u), buffs.makeBuff({ key, ...o }));
-
-test('[兼容-4] burstLocked: no before a burst; yes while its burst begins (elementBurst, no lock flag yet), runs, and no once it ends; no off the field', () => {
-  /** @type {any[]} */
-  const seen = [];
-  const kit = () => ({ skills: {}, install(/** @type {ShBattle} */ b) { b.on('elementBurst', (k) => { seen.push([burstLocked(k.target), !!k.target.s.flags.burstLock]); }); } });
-  const { b, run, unit } = field({ ops: { guard: plain('guard'), spare: plain('spare') }, kits: { guard: kit, spare: () => ({ skills: {} }) }, n: 1 });
-  run(1, [deploy('guard', 2, 2)]);
-  const g = unit('guard'), s = unit('slime');
-  assert.equal(burstLocked(s), false, 'its element values move');
-  b.dealDamage(g, s, { type: 'element', element: 'neural', amount: 999 });
-  assert.deepEqual([burstLocked(s), seen], [false, []], 'one short of the burst');
-  b.dealDamage(g, s, { type: 'element', element: 'neural', amount: 1 });
-  assert.deepEqual(seen, [[true, false]], 'its handlers: locked before the burst buff (the flag) is there');
-  assert.deepEqual([burstLocked(s), !!s.findBuff('neuralBurst')], [true, true], 'in the burst');
-  run(299);
-  assert.equal(burstLocked(s), true, 'the 10 s burst, its last frame');
-  run(1);
-  assert.deepEqual([burstLocked(s), s.findBuff('neuralBurst')], [false, null], 'over: its values move again');
-  b.dealDamage(g, s, { type: 'element', element: 'neural', amount: 1000 });
-  b.dealDamage(g, s, { type: 'true', amount: 2e6 });
-  run(1);
-  assert.deepEqual([burstLocked(s), /** @type {any} */ (s.u).buffs.some((/** @type {any} */ x) => x.key === 'burst:SANITY')], [false, true], 'knocked out in a burst: off the field, no (its burst buff kept)');
-  const spare = /** @type {ShUnit} */ ([...b.pieces.values()].find((p) => p.defId === 'spare'));
-  assert.deepEqual([burstLocked(spare), burstLocked(null)], [false, false], 'a piece off the field, none');
-  assert.deepEqual(b.errors, []);
-});
-
-test('[兼容-4] aggroCmp: ours by 嘲讽等级, then the later created first; enemies by 嘲讽等级, then the shorter 路径距离; off the field last', () => {
-  const { b, run, unit } = field({ ops: { g1: plain('g1'), g2: plain('g2'), g3: plain('g3'), spare: plain('spare') }, kits: { spare: () => ({ skills: {} }) }, n: 2, spots: [[2, 2], [2, 4]] });
-  run(1, [deploy('g1', 1, 1), deploy('g2', 1, 2)]);
-  run(3, [deploy('g3', 1, 3)]);
-  const [g1, g2, g3] = ['g1', 'g2', 'g3'].map((k) => unit(k)), names = (/** @type {ShUnit[]} */ l) => l.map((x) => x.defId);
-  assert.deepEqual(names([g1, g2, g3].sort(aggroCmp)), ['g3', 'g2', 'g1'], 'g3 three frames later; g2 the second of its frame');
-  give(g1, 'test:taunt', { mods: { taunt: 1 } });
-  assert.deepEqual(names([g2, g3, g1].sort(aggroCmp)), ['g1', 'g3', 'g2'], 'a higher 嘲讽等级 first');
-  give(g3, 'test:taunt', { mods: { taunt: -1 } });
-  assert.deepEqual(names([g3, g2, g1].sort(aggroCmp)), ['g1', 'g2', 'g3']);
-  const far = unit('slime', 0), near = unit('slime', 1);
-  assert.deepEqual([aggroCmp(near, far), aggroCmp(far, near)], [-1, 1], 'nearer its goal first');
-  give(far, 'test:taunt', { mods: { taunt: 1 } });
-  assert.equal(aggroCmp(far, near), -1, 'its 嘲讽等级 first');
-  const spare = /** @type {ShUnit} */ ([...b.pieces.values()].find((p) => p.defId === 'spare'));
-  assert.deepEqual([aggroCmp(spare, g2), aggroCmp(g2, spare), aggroCmp(spare, spare)], [1, -1, 0], 'off the field after the others');
-  /** @type {any} */ (g1.u).hp = 0;
-  assert.deepEqual([aggroCmp(g1, g2), aggroCmp(g2, g1)], [1, -1], 'g1 at 0 HP: after the others, its 嘲讽等级 aside');
-});
-
-test('[兼容-4] aggroCmp: an enemy by its 路径距离 whenever it appeared, its 仇恨值 compared at the precision 0.1', () => {
-  const { unit } = field({ ops: { guard: plain('guard') }, n: 3, spots: [[2, 3], [2, 3], [2, 3]] });
-  const [first, second, third] = [0, 1, 2].map((i) => unit('slime', i));
-  // one tile, 3 steps from the goal, less the offset towards it (索敌-6's 修正值): 2.8, 2.98, 2.93
-  const at = (/** @type {ShUnit} */ e, /** @type {number} */ x) => { /** @type {any} */ (e.u).x = x; };
-  at(first, 3.2); at(second, 3.02); at(third, 3.07);
-  assert.deepEqual([aggroCmp(first, second), aggroCmp(second, first)], [-1, 1], 'the first to appear, nearer its goal: first');
-  assert.equal(aggroCmp(second, third), 0, '2.98 and 2.93: the same 仇恨值 at 0.1 (向零取整)');
-});
 
 /**
  * The open field with a medic under a kit at (0, 0) — its trait's `healThrough` says yes for g4 and throws for g5 — and

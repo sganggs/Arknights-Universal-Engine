@@ -66,10 +66,10 @@ const read = (ctx) => ctx.bb.page === 1;
 /** A messenger: the shot also disarms and silences. The wreckers have no duration. @param {FoeContext['bb']} bb */
 const messenger = (bb) => typeof bb[DISARM] === 'number';
 
-/** Already under this shot's attached effect, from any source (敌能-81). @param {FoeContext} ctx @param {Unit} u */
+/** Already under this shot's attached effect, 沉默 or 缴械 (状态-12), from any source (敌能-81). @param {FoeContext} ctx @param {Unit} u */
 function underEffect(ctx, u) {
   const f = ctx.stats(u).flags;
-  return f.silence === true || f.noAttack === true;
+  return f.silence === true || f.disarm === true;
 }
 
 /** @param {FoeContext} ctx @param {Unit[]} list */
@@ -136,7 +136,7 @@ function merchantAttack(ctx, mods) {
 
 /**
  * `shotbuff` (敌能-81). The read pages carry `page` 1. Ammunition, when the page gives it, starts full and never
- * refills. A messenger's hit applies 缴械 (`noAttack`) and 沉默 only after that hit took HP (敌能-2).
+ * refills. A messenger's hit applies 缴械 (状态-12) and 沉默 only after that hit took HP (敌能-2).
  * @type {FoeBehavior}
  */
 const shotbuff = Object.freeze({
@@ -159,7 +159,7 @@ const shotbuff = Object.freeze({
     // `live` is the shot that just started. The spend has already taken the round, so remaining ammunition is not the gate.
     if (!read(ctx) || ctx.state.get('live') !== 1 || typeof seconds !== 'number') return;
     ctx.applyStatus(target, 'silence', { seconds });
-    ctx.addBuff(target, { key: 'shotbuffDisarm', left: ctx.frames(seconds), flags: { noAttack: true } });
+    ctx.applyStatus(target, 'disarm', { seconds });
   },
 });
 

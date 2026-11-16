@@ -1,44 +1,10 @@
 // The Stronghold functions its pinned kits call that were gaps (docs/spec/compat.md 兼容-4), on the engine's own rules:
-// whether a unit's element values are locked (元素-3), the 仇恨值 order of two units (索敌-3, 索敌-5), the next jump of a
-// 链愈师 heal chain (职业-11), an attack now with a profile of the kit's (攻击-5); and the layers of a 麻痹 a kit gives
-// (状态-8). The stand-in modules sh/damage.js, sh/ai.js and sh/targeting.js export the first four.
+// the next jump of a 链愈师 heal chain (职业-11) and an attack now with a profile of the kit's (攻击-5); and the layers of
+// a 麻痹 a kit gives (状态-8). The stand-in module sh/ai.js exports the first two.
 import rangeTable from '../../data/ranges.json' with { type: 'json' };
-import { KIND, attrs, bus, elements, routes, status, targeting, attackNow, healJump } from '@aue/sim';
+import { attrs, bus, status, attackNow, healJump } from '@aue/sim';
 
 /** @typedef {import('./battle.js').ShBattle} ShBattle @typedef {import('./unit.js').ShUnit} ShUnit @typedef {import('@aue/sim').Unit} Unit */
-
-/** Frames a second (时间-1). */
-const FPS = 30;
-
-/**
- * Stronghold's burstLocked: a unit's element values are locked now (元素-3) — in a burst, or while its burst begins (its
- * `elementBurst` handlers run). Off the field: no. Its element argument is not read, as Stronghold's.
- * @param {ShUnit | null | undefined} u @returns {boolean}
- */
-export const burstLocked = (u) => !!u?.u && u.deployed && elements.epLocked(u.u);
-
-/**
- * A unit's 仇恨值 at the comparison precision 0.1: one of ours by 索敌-5 (嘲讽等级, then the later created), an enemy by
- * 索敌-3 (嘲讽等级, then the shorter 路径距离, 索敌-6); −Infinity off the field.
- * @param {ShUnit | null | undefined} x @returns {number}
- */
-function hatredKey(x) {
-  const u = x?.u;
-  if (!x || !u || !x.alive) return -Infinity;
-  const taunt = attrs.statsOf(u).taunt;
-  const h = u.kind === KIND.ENEMY ? targeting.enemyHatred(taunt, routes.pathDistance(x.b.c, u)) : targeting.characterHatred(taunt, u.born / FPS, u.bornN);
-  return targeting.precisionKey(h);
-}
-
-/**
- * Stronghold's aggroCmp, for a sort: negative when `a` goes first — the higher 仇恨值 first (hatredKey), units off the
- * field after the others.
- * @param {ShUnit} a @param {ShUnit} b @returns {number}
- */
-export function aggroCmp(a, b) {
-  const ka = hatredKey(a), kb = hatredKey(b);
-  return ka === kb ? 0 : ka > kb ? -1 : 1;
-}
 
 /** A 链愈师 heal chain's jumps: the 3 × 3 around the one healed last (range_table x-4; PRTS 链愈师「跳跃范围为x-4」, 职业-11). */
 const X4 = /** @type {Record<string, { row: number, col: number }[]>} */ (rangeTable.ranges)['x-4'];

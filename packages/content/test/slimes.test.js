@@ -64,6 +64,11 @@ test('[敌能-102] 异质源石虫: taunt + 1; a sourced hit tries 200 arts on i
   e.hp = 4500;
   damage.dealDamage(w, null, e, { type: 'arts', amount: 1000 }, c);
   assert.equal(4500 - e.hp, 400, 'sourceless: halved, no 反伤');
+  buffs.removeBuff(g, 'safe');
+  buffs.addBuff(e, buffs.makeBuff({ key: 'wall', prio: 1, mods: { blockAll: 1 } }));
+  [e.hp, g.hp] = [4500, 1e5];
+  damage.dealDamage(w, g, e, { type: 'phys', amount: 1100 }, c);
+  assert.deepEqual([4500 - e.hp, 1e5 - g.hp], [0, 200], '抵挡 by an effect before the 屏障 (伤害-8): no damage, the 反伤 still tried');
 });
 
 test('[敌能-103] “庞贝”: its hit burns 20 arts each 0.33 s for 10 s; blocked, 1000 within 1.4 every 10 s; below half its HP, 攻击速度 + 40', () => {

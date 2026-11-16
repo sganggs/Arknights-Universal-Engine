@@ -70,13 +70,6 @@ export function epTaken(amount, s, el) {
 /** The units whose burst is beginning (its `elementBurst` handlers run): they take no 元素损伤 meanwhile (元素-3). @type {WeakSet<Unit>} */
 const beginning = new WeakSet();
 
-/**
- * Whether a unit's element values are locked now (元素-3): in a burst (爆发冷却), or while its burst begins — the
- * `elementBurst` handlers run, before the burst buff is there. The compat layer's burstLocked reads it (兼容-4).
- * @param {Unit} u
- */
-export const epLocked = (u) => bursting(u) || beginning.has(u);
-
 /** Whether a unit takes no 元素损伤 now (元素-2 step 1). @param {Unit} u */
 const unaffected = (u) => {
   const s = statsOf(u);
@@ -102,19 +95,22 @@ export function dealEp(w, u, el, amount, src = null) {
 }
 
 /**
- * Restores element values (职业-12): each one below the maximum rises by the amount, up to it; nothing for a unit at 0
- * HP or in a burst (元素-3).
- * @param {Unit} u @param {number} amount
+ * Restores element values (职业-12): each one below the maximum — or only `only`'s — rises by the amount, up to it;
+ * nothing for a unit at 0 HP or in a burst (元素-3). Returns the total risen.
+ * @param {Unit} u @param {number} amount @param {Element | null} [only]
  */
-export function restoreEp(u, amount) {
-  if (u.hp <= 0 || !(amount > 0) || bursting(u)) return;
+export function restoreEp(u, amount, only = null) {
+  if (u.hp <= 0 || !(amount > 0) || bursting(u)) return 0;
   const max = statsOf(u).maxEp;
+  let risen = 0;
   for (const el of ELEMENTS) {
-    if (!Object.hasOwn(u.ep, el)) continue;
+    if (!Object.hasOwn(u.ep, el) || (only !== null && el !== only)) continue;
     const v = u.ep[el] + amount;
+    risen += Math.min(v, max) - u.ep[el];
     if (v >= max) delete u.ep[el];
     else u.ep[el] = v;
   }
+  return risen;
 }
 
 /**

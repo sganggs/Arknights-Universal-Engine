@@ -1,13 +1,13 @@
 // The pinned kits that call the Stronghold functions that were gaps (docs/spec/compat.md 兼容-4), unchanged, on an open
-// field: 酒神's 空剧场 until the element values lock (burstLocked), 死芒's 复燃 upgrade by 仇恨值 (aggroCmp), Mon3tr's
-// 熔毁 chain from herself (chainHealNext), 黍's 离离枯荣 heal with no target (performAttack), 真言's 【麻痹付与】 2 layers.
+// field: Mon3tr's 熔毁 chain from herself (chainHealNext), 黍's 离离枯荣 heal with no target (performAttack), 真言's
+// 【麻痹付与】 2 layers.
 import { test, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { register } from 'node:module';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { oracleDir, oneWave, spawnAt } from '@aue/testkit';
-import { createWorld, step, bus, buffs, status, attrs, damage } from '@aue/sim';
+import { createWorld, step, bus, buffs, status, attrs } from '@aue/sim';
 import { loadUnderGrid } from '../src/compat/grid.js';
 import { defOf, tokenDefOf } from '../src/compat/records.js';
 import { kitsBehaviors, withKitTrait } from '../src/compat/kits.js';
@@ -19,8 +19,7 @@ import { TOKENS, loadToken, tokenAt } from '../src/tokens.js';
 /** E2 90, 潜能 6, the third skill at 专精 3, no module. */
 const BUILD = { elite: 2, level: 90, potential: 6, trust: 100, skill: 2, skillLevel: 10 };
 /** The kits by key: character id and file in the pinned commit. @type {Record<string, [string, string]>} */
-const FILES = { phatm2: ['char_1042_phatm2', 'op-phatm2.js'], necras: ['char_450_necras', 'op-necras.js'], monstr: ['char_4179_monstr', 'op-monstr.js'],
-  shu: ['char_2025_shu', 'op-shu.js'], mantra: ['char_4204_mantra', 'op-mantra.js'] };
+const FILES = { monstr: ['char_4179_monstr', 'op-monstr.js'], shu: ['char_2025_shu', 'op-shu.js'], mantra: ['char_4204_mantra', 'op-mantra.js'] };
 /** @type {Record<string, { id: string, factory: any, training: any }>} */
 const kits = {};
 
@@ -84,62 +83,6 @@ function heals(w) {
   bus.on(w, 'heal', (k) => { out.push([w.frame, k.source?.key, k.target?.key, Math.round(k.amount)]); }, { priority: -1e9 });
   return out;
 }
-
-test('[兼容-4] 酒神\'s 空剧场, unchanged: an enemy she gave 神经损伤 takes it every second until its element values lock (burstLocked), not while they are', async () => {
-  const { w, b, run, unit } = await field('phatm2', { n: 1, spots: [[2, 4]] });
-  // her attacks held from her entry (职业-13's flag), so only the skill gives 神经损伤
-  bus.on(w, 'enter', (k) => { if (k.unit.key === 'phatm2') buffs.addBuff(k.unit, buffs.makeBuff({ key: 'test:hold', flags: { noAttack: true } })); });
-  run(1, [deploy('phatm2', 1, 2)]);
-  const me = unit('phatm2'), e = unit('slime');
-  run(1, [cast(me)]);
-  const key = `phatm2:s3dot#${b.unitOf(me).id}`, dot = () => e.buffs.some((/** @type {any} */ x) => x.key === key);
-  // her 神经损伤 as the engine's `damaged` would carry it (伤害-7 has no 元素损伤, so it never does: 兼容-4)
-  const gave = () => bus.emit(w, 'damaged', { source: me, credit: me, target: e, amount: 50, type: 'element', dmg: { type: 'element', element: 'neural', amount: 50, tags: [] } });
-  /** @type {number[]} */
-  const ticks = [];
-  bus.on(w, 'elementHit', (k) => { if (k.source === me && k.target === e) ticks.push(w.frame); });
-  e.ep.SANITY = 200;
-  const f = w.frame, tick = attrs.statsOf(me).atk * 0.1;
-  gave();
-  assert.equal(dot(), true, 'it starts');
-  run(4);
-  assert.deepEqual([ticks, Math.round(e.ep.SANITY)], [[f + 3], Math.round(200 - tick)], 'ep_damage_ratio × her ATK, 0.1 s later');
-  run(29);
-  assert.deepEqual([ticks, dot()], [[f + 3], true], 'not before a second has passed');
-  run(1);
-  assert.deepEqual([ticks, dot()], [[f + 3, f + 33], false], 'a second later: the hit that bursts it, so its values are locked and it ends');
-  assert.equal(e.buffs.some((/** @type {any} */ x) => x.key === 'burst:SANITY'), true);
-  gave();
-  assert.equal(dot(), false, 'not while its values are locked');
-  for (let i = 0; i < 400 && e.buffs.some((/** @type {any} */ x) => x.key === 'burst:SANITY'); i++) run(1);
-  gave();
-  assert.equal(dot(), true, 'after the burst: again');
-  assert.deepEqual(b.errors, []);
-});
-
-/**
- * 死芒 (S2: with S3 her first summon is the special form, which this upgrade never takes) at (1, 3) facing right, and
- * four slimes killed one after another on her range: three summons, then — at her cap — the upgrade; `beforeLast` runs
- * before the fourth kill. Which summons were upgraded, in the order made.
- * @param {(skels: any[]) => void} [beforeLast]
- */
-async function necras(beforeLast = () => {}) {
-  const { w, b, run } = await field('necras', { n: 4, spots: [[2, 4], [2, 5], [1, 5], [0, 4]], build: { ...BUILD, skill: 1 } });
-  run(1, [deploy('necras', 1, 3)]);
-  const slimes = w.units.filter((u) => u.key === 'slime'), skels = () => w.units.filter((u) => u.key.startsWith('token_10043'));
-  for (const e of slimes.slice(0, 3)) { damage.dealDamage(w, null, e, { type: 'true', amount: 2e6 }); run(15); }
-  beforeLast(skels());
-  damage.dealDamage(w, null, slimes[3], { type: 'true', amount: 2e6 });
-  run(15);
-  assert.deepEqual(b.errors, []);
-  return skels().map((u) => u.buffs.some((/** @type {any} */ x) => x.key === 'necras:upgrade'));
-}
-
-test('[兼容-4] 死芒\'s 复燃, unchanged: at her cap the upgrade goes to the summon of the highest 仇恨值 among equal HP (aggroCmp): the last made, or a higher 嘲讽等级', async () => {
-  assert.deepEqual(await necras(), [false, false, true], 'the same HP: the last one made');
-  assert.deepEqual(await necras((s) => { buffs.addBuff(s[0], buffs.makeBuff({ key: 'test:taunt', mods: { taunt: 1 } })); }), [true, false, false], 'the first one, taunt +1');
-  assert.deepEqual(await necras((s) => { s[1].hp -= 1; }), [false, true, false], 'the lowest HP before any 仇恨值 (the kit\'s own order)');
-});
 
 /**
  * Mon3tr (S3) at (1, 2), her 重构体 at (1, 3) and guards g1 (0, 3), g2 (0, 4), g3 (1, 4) at `hp`; a slime at (2, 4); her

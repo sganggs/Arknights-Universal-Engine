@@ -167,18 +167,15 @@ const Awake = Object.freeze({
   },
 });
 
-/** A mercenary's 自缚 when its blackboard gives no `unmove_duration` (敌能-32), in seconds. */
-const STANDBY_BIND = 150;
-
 /**
- * 待命 and 临战 (敌能-32): it comes in standing by — no normal attacks, and for `unmove_duration` seconds (150 when the
- * data gives none) unable to move —; below `hp_ratio` of its maximum HP, or under a sentry's alarm, it takes up arms
- * for good: 移动速度 + `move_speed` (直接乘算).
+ * 待命 and 临战 (敌能-32): it comes in standing by — no normal attacks, and for `unmove_duration` seconds unable to
+ * move (a `revive` without it is not this talent, 敌能-153) —; below `hp_ratio` of its maximum HP, or under a sentry's
+ * alarm, it takes up arms for good: 移动速度 + `move_speed` (直接乘算).
  * @type {FoeBehavior}
  */
 const revive = Object.freeze({
   spawn: (ctx) => {
-    const bind = ctx.bb.unmove_duration ?? STANDBY_BIND;
+    const bind = ctx.bb.unmove_duration;
     ctx.addBuff(ctx.self, { key: 'standby', flags: { noAttack: true } });
     if (bind > 0) ctx.addBuff(ctx.self, { key: 'standby:bind', flags: { root: true }, left: ctx.frames(bind) });
   },
