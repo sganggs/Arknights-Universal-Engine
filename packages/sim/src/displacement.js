@@ -182,21 +182,61 @@ export function push(w, c, t, force, o) {
 }
 
 /**
+ * Whether a move from (x, y) to (nx, ny) is stopped (位移-3, 地图-2): it leaves the map, enters a tile that is not
+ * passable, or crosses a closed edge. What stops it, with the tile it ran into (null off the map); null when it moves on.
+ * @param {Content} c @param {number} x @param {number} y @param {number} nx @param {number} ny
+ * @returns {{ tile: import('./level.js').Tile | null } | null}
+ */
+function stoppedAt(c, x, y, nx, ny) {
+  const m = c.level, r = Math.round(ny), col = Math.round(nx), r0 = Math.round(y), c0 = Math.round(x), tile = tileAt(m, r, col);
+  const walled = (r !== r0 || col !== c0) && tileAt(m, r0, c0) !== null && !crossable(m, r0 * m.width + c0, r * m.width + col, false);
+  return !tile || tile.passable !== 'ALL' || walled ? { tile } : null;
+}
+
+/**
  * Moves a sliding unit by (dx, dy) unless that leaves the map or, for a ground unit, enters a tile it cannot walk or
  * crosses a closed edge (位移-3, 地图-2): then it stops where it is. A ball moves by its own rules (足球-4).
  * @param {Content} c @param {Unit} t @param {number} dx @param {number} dy @param {World} [w]
  */
 function step(c, t, dx, dy, w) {
   if (t.ball) { ballStep(c, t, dx, dy, w); return; }
-  const m = c.level, nx = t.x + dx, ny = t.y + dy, r = Math.round(ny), col = Math.round(nx), r0 = Math.round(t.y), c0 = Math.round(t.x), tile = tileAt(m, r, col);
-  const walled = (r !== r0 || col !== c0) && tileAt(m, r0, c0) !== null && !crossable(m, r0 * m.width + c0, r * m.width + col, false);
-  if (!tile || tile.passable !== 'ALL' || walled) {
+  const nx = t.x + dx, ny = t.y + dy, stop = stoppedAt(c, t.x, t.y, nx, ny);
+  if (stop) {
     if (t.slide) t.slide = { ...t.slide, vx: 0, vy: 0 };
     // stopped against a 高地 tile, it collided with high ground: noted for its abilities (敌能-150)
-    stoppedBy(t, tile);
+    stoppedBy(t, stop.tile);
     return;
   }
   displace(t, nx, ny);
+}
+
+/** Frames a projected slide is followed at most: a push is over in well under a second (位移-3). */
+const SLIDE_FRAMES = 300;
+
+/**
+ * How far the slide a unit is in takes it from where it stands, in tiles (位移-3): the integration of the frames that
+ * follow, as `slideStep` runs them, a wall stopping it as `step` does; the unit itself does not move. 0 for a unit that is
+ * not sliding, a 静态刚体 (位移-5), a ball (足球-4), or one that is lifted (浮空). It does not see a pull that goes on
+ * (位移-4): right after a push there is none.
+ * @param {Content} c @param {Unit} t
+ */
+export function slideTravel(c, t) {
+  const s = t.slide;
+  if (!s || t.ball || statsOf(t).flags.staticBody || statsOf(t).flags.levitate) return 0;
+  let vx = s.vx, vy = s.vy, hard = s.hard, x = t.x, y = t.y, far = 0;
+  for (let i = 0; i < SLIDE_FRAMES; i++) {
+    const v = len(vx, vy), k = v > 0 ? Math.max(0, v - FRICTION / FPS) / v : 0;
+    vx *= k;
+    vy *= k;
+    hard = Math.max(0, hard - 1);
+    const nx = x + vx / FPS, ny = y + vy / FPS;
+    if (stoppedAt(c, x, y, nx, ny)) break;
+    far += len(nx - x, ny - y);
+    x = nx;
+    y = ny;
+    if (len(vx, vy) <= STOP_SPEED && hard === 0) break;
+  }
+  return far;
 }
 
 /**

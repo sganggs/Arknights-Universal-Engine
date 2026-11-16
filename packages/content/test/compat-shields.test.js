@@ -1,7 +1,7 @@
 // Kit barriers and 护盾 layers on the engine's buffs (docs/spec/compat.md 兼容-4, damage.md 伤害-8): the barrier, the
 // layers and the damage types they absorb, as a kit's spec gives them in Stronghold's shape, absorb as the engine's do;
 // a spent one stays when its spec gave modifiers or flags; `extend` raises what it merges into; what Stronghold does and
-// we do not (INF-1120…INF-1122). Then three pinned kits, unchanged: 年's layers, 机械师's typed barrier, 林's 琉璃璧.
+// we do not (DIF-0055, DIF-0056). Then three pinned kits, unchanged: 年's layers, 机械师's typed barrier, 林's 琉璃璧.
 import { test, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { register } from 'node:module';
@@ -210,24 +210,21 @@ test('[兼容-4] a kit\'s shields take their turn in the engine\'s 伤判 (DIF-0
   assert.deepEqual(b.errors, []);
 });
 
-test('[兼容-4] a hit a kit shield takes whole has no damaged (INF-1120); a spent one the engine takes away runs no onRemove, one the kit removes does (INF-1121)', () => {
+test('[兼容-4] a hit a kit shield takes whole has no damaged (DIF-0055); the one that spends it has the rest’s events', () => {
   const m = match({}), { b } = m, g = guardOf(m);
   /** @type {string[]} */
   const log = [];
   b.on('damaged', (k) => { if (k.target === g) log.push(`damaged:${k.amount}`); });
   b.on('hpDamage', (k) => { if (k.target === g) log.push(`hpDamage:${k.amount}`); });
-  b.addBuff(g, { key: 'w1', shield: 50, onRemove: () => log.push('w1') });
+  b.addBuff(g, { key: 'w1', shield: 50 });
   hit(b, g, 30);
   assert.deepEqual(log.splice(0), [], 'taken whole: no event');
   hit(b, g, 30);
-  assert.deepEqual([g.findBuff('w1'), log.splice(0)], [null, ['hpDamage:10', 'damaged:10']], 'spent by a hit: gone, no onRemove; the rest\'s events');
-  b.addBuff(g, { key: 'w2', shield: 50, onRemove: () => log.push('w2') });
-  b.removeBuff(g, 'w2');
-  assert.deepEqual(log, ['w2']);
+  assert.deepEqual([g.findBuff('w1'), log.splice(0)], [null, ['hpDamage:10', 'damaged:10']], 'spent by a hit: gone; the rest’s events');
   assert.deepEqual(b.errors, []);
 });
 
-test('[兼容-4] a lasting kit barrier comes back at the next deployment with the amount the kit gave, not what was left (INF-1122)', () => {
+test('[兼容-4] a lasting kit barrier comes back at the next deployment with the amount the kit gave, not what was left (DIF-0056)', () => {
   const kit = () => ({ skills: {}, install() {} });
   const m = match({ guard: { def: { name: 'guard', skill: null, raw: {} }, factory: kit } }), { w, c, b } = m, g = guardOf(m);
   b.addBuff(g, { key: 'keepsake', shield: 100, shieldHits: 2, persist: true });
@@ -253,7 +250,7 @@ function pinned(id, key, { talent, bb, at, rec = {} }) {
   return { ...m, op: /** @type {any} */ (m.b.unitOf(unit(m.w, key))) };
 }
 
-test('[兼容-4] 年\'s kit unchanged: 干明可鉴 gives `times` 护盾 layers at her deployment, each negating a hit; PRO-X counts the broken ones by the layers it reads — a 流失 breaks none; a negated hit has no damaged, so its stacks come with the next hit that lands (INF-1120)', () => {
+test('[兼容-4] 年\'s kit unchanged: 干明可鉴 gives `times` 护盾 layers at her deployment, each negating a hit; PRO-X counts the broken ones by the layers it reads — a 流失 breaks none; a negated hit has no damaged, so its stacks come with the next hit that lands (DIF-0055)', () => {
   for (const times of [2, 3]) {
     const { b, op: n } = pinned(NIAN, 'nian', { talent: '干明可鉴', bb: { times }, at: [1, 1] });
     const stacks = () => n.findBuff('talent:nian:shieldBreak')?.stacks ?? 0;
@@ -279,7 +276,7 @@ test('[兼容-4] 机械师\'s kit unchanged: 生命方程\'s barrier at her depl
   }
 });
 
-test('[兼容-4] 林\'s kit unchanged: the 琉璃璧 (its talent\'s `value`; its spec\'s mods: {}) stays when hits drain it, so the hit that breaks it bursts — the enemy next to her stunned and hit — and it is back `interval` s later; a hit it takes whole does not fill it again (INF-1120)', () => {
+test('[兼容-4] 林\'s kit unchanged: the 琉璃璧 (its talent\'s `value`; its spec\'s mods: {}) stays when hits drain it, so the hit that breaks it bursts — the enemy next to her stunned and hit — and it is back `interval` s later; a hit it takes whole does not fill it again (DIF-0055)', () => {
   for (const [value, interval] of [[300, 2], [200, 1]]) {
     const { w, c, b, slime, op: lin } = pinned(LIN, 'lin', { talent: '计出万全', bb: { value, interval }, at: [2, 2] });
     Object.assign(slime, { x: 2, y: 1 });

@@ -8,7 +8,7 @@ import { makeBuff, addBuff, removeBuff, retune, count } from './buffs.js';
 import { ELEMENTS, epOf, currentElement } from './elements.js';
 import { precisionKey, insertionSort, selectable, hostile, inKeys } from './targeting.js';
 import { tileOf } from './body.js';
-import { traitOf, traitAsk } from './traits.js';
+import { traitOf, traitAsk, funnelNow } from './traits.js';
 import { launch } from './swing.js';
 import { gainSp } from './sp.js';
 import { draw } from './rng.js';
@@ -60,11 +60,11 @@ export function modeDeploy(op, t) {
 /**
  * The 倍率 of an operator's attack on a target by its funnel (职业-12), counted as the attack reaches it: the trait's
  * `init` on another target than the last (its `funnel` buff keeps that one's id), `delta` more for each attack on the
- * same, at most `max`; 1 without one.
- * @param {Content} c @param {Unit} a @param {Unit} t
+ * same, at most `max`; 1 without one — none now, or none counted, when its trait behaviour has it off (职业-6).
+ * @param {World} w @param {Content} c @param {Unit} a @param {Unit} t
  */
-export function funnelScale(c, a, t) {
-  const f = traitOf(c, a).funnel, b = f ? held(a, 'funnel') : null;
+export function funnelScale(w, c, a, t) {
+  const f = funnelNow(w, c, a), b = f ? held(a, 'funnel') : null;
   if (!f || !b) return 1;
   if (b.value === t.id) count(b, 1);
   else {

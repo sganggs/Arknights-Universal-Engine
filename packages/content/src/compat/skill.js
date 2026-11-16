@@ -2,10 +2,12 @@
 // an operator's skill — whether it has one, runs, runs for a time, its charges, time and ammo left; its SP, gained by
 // Stronghold's rules (none while a timed skill runs or under 阻回, except SP that ignores 阻回: Stronghold's 'init' and the
 // exceptions a kit names, 技能-2) or set outright; starting it (free or not) and ending it with Stronghold's reasons. The
-// automatic start rules stay the engine's (技能-3): a kit's rule changes are accepted and unused; its extra trigger ranges
-// are kept, with whether one holds an enemy now (triggerSatisfied: for whoever starts the skill as Stronghold's automatic
+// automatic start is the engine's (技能-3), with the rule the kit's spec declares (trigger.js, read by the skill behaviour
+// in specs.js): a rule a kit sets while the battle runs (setTrigger) replaces the spec's; its extra trigger ranges are
+// kept, with whether one holds an enemy now (triggerSatisfied: for whoever starts the skill as Stronghold's automatic
 // operations — the kit differential —; the engine's rules do not read them).
 import { attrs, skills, sp } from '@aue/sim';
+import { ruleName } from './trigger.js';
 
 /** @typedef {import('./unit.js').ShUnit} ShUnit @typedef {import('@aue/sim').Unit} Unit */
 /** @typedef {import('@aue/sim').SkillState} SkillState @typedef {import('@aue/sim').SkillDef} SkillDef */
@@ -42,6 +44,8 @@ export class ShSkill {
     this.attackTriggerRanges = new Set();
     /** the multiplier content set on its SP cost (Stronghold's spCostMul: 绝技 ×0.7), for every deployment */
     this.costMul = 1;
+    /** @type {import('./trigger.js').Change | null} the rule a kit set while the battle runs (setTrigger), for every deployment */
+    this.change = null;
   }
 
   /** How it gains SP: time, attack, hurt or none (技能-2). */
@@ -157,8 +161,14 @@ export class ShSkill {
     }
     return false;
   }
-  /** A change of the automatic start's rule (`(rule, grid)`): accepted, unused (技能-3). */
-  setTrigger() {}
+  /**
+   * A change of the automatic start's rule (`(rule, grid)`, Stronghold's setTrigger): the rule and grid the skill behaviour
+   * reads from now on, over the spec's (an empty grid is none); the spec's options (allies, hpAtMost, enemies) stay.
+   * @param {string} rule @param {number[][] | null} [grid]
+   */
+  setTrigger(rule, grid = null) {
+    this.change = { rule: ruleName(rule), grid: Array.isArray(grid) && grid.length ? grid : null };
+  }
 
   /**
    * Adds SP up to the bar's cap; returns what was gained. `reason` 'init' or `o.ignoreLock`: SP that ignores 阻回.

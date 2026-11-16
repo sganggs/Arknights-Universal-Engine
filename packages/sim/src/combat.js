@@ -39,6 +39,8 @@ import { timedAttack, attackEnded } from './talenttime.js';
 import { lowestArts } from './talentfoe.js';
 import { palsyCut, epOnHit, healDotOn } from './talentelem.js';
 import { disarmed } from './disarm.js';
+import { healable, healHow } from './healthrough.js';
+import { strikes, swingLost } from './hookmore.js';
 
 /** @typedef {import('./types.js').World} World @typedef {import('./types.js').Unit} Unit @typedef {import('./types.js').Content} Content */
 /** @typedef {import('./types.js').Cell} Cell @typedef {import('./attrs.js').Stats} Stats */
@@ -56,15 +58,16 @@ export function rangeCell(op, off) {
 /**
  * What an operator's normal attack can target, in the official order (索敌-1…索敌-3, 职业-1, 职业-2, 职业-12, 职业-14).
  * One that heals now: the operators in range that are not at full HP (or, restoring element values, have element
- * damage) and not under 禁疗, by 生命比例升序. Otherwise the selectable enemies with a tile in range (flying ones only
- * with 可对空) and, when the trait prefers them, the enemies it blocks wherever they stand, flying or not (阻挡-4), and,
- * when the trait reaches them, those its own summons block — ordered by the trait's filters.
+ * damage) and not under 禁疗 — unless it heals them through it (伤害-13) —, by 生命比例升序. Otherwise the selectable
+ * enemies with a tile in range (flying ones only with 可对空) and, when the trait prefers them, the enemies it blocks
+ * wherever they stand, flying or not (阻挡-4), and, when the trait reaches them, those its own summons block — ordered by
+ * the trait's filters.
  * @param {World} w @param {Content} c @param {Unit} op @returns {Unit[]}
  */
 export function targetsOf(w, c, op) {
   const grid = { rows: c.level.height, cols: c.level.width }, d = c.operators[op.key], t = traitOfDef(d);
   const keys = reachKeys(c, op);
-  if (healsNow(c, op)) return healOrder(c, op, w.units.filter((u) => u.kind === KIND.OPERATOR && u.hp > 0 && inKeys(u, keys, grid) && !statsOf(u).flags.healFree && !statsOf(u).flags.noAllyHeal));
+  if (healsNow(c, op)) return healOrder(c, op, w.units.filter((u) => u.kind === KIND.OPERATOR && u.hp > 0 && inKeys(u, keys, grid) && healable(w, c, op, u)));
   const held = (/** @type {Unit} */ u) => t.blockedFirst && u.blockedBy === op.id, air = t.idleAirOnly && !inSkill(op), sleep = t.hurtSleeping;
   const any = { canHitFly: true, canHitSleep: sleep, canHitStealth: t.seeStealth }, sel = { canHitFly: t.antiAir || !!dollNow(c, op)?.antiAir, canHitSleep: sleep, canHitStealth: t.seeStealth };
   const bySummon = t.summonBlocked ? summonHeld(w, op) : () => false, skip = talentSkip(c, op, traitSkip(w, c, op));
@@ -109,12 +112,13 @@ export const pickTarget = (w, c, op) => targetsOf(w, c, op)[0] ?? null;
 /** @typedef {import('./skills.js').AttackMods} AttackMods @typedef {import('./types.js').Swing} Swing */
 /**
  * What an attack carries to one target: its damage type and amount, hits, 元素损伤, and an operator's splash and
- * aftershock (职业-8) and chain (职业-11); whether the skill makes it, and which of its hits this is (钩子-3).
+ * aftershock (职业-8) and chain (职业-11); whether the skill makes it, and which of its hits this is (钩子-3). `split`: the
+ * share of the amount each of its hits takes, after the defences, and `later` marks the hits after the first (职业-3).
  * @typedef {{ type: import('./types.js').DamageType, amount: number, times: number, element: string, ep: number, splash?: import('./types.js').Splash | null,
  *   aftershock?: number, chain?: import('./types.js').Chain | null, ranged?: boolean, hitStatus?: { key: import('./status.js').StatusKey, seconds: number, value?: number, prob?: number } | null,
  *   hitDebuff?: { seconds: number, mods: Record<string, number> }, displace?: { pull: boolean, force: number, along?: boolean },
  *   skill?: boolean, hit?: 'splash' | 'chain' | 'aftershock', mark?: number, frozen?: number, packed?: { cnt: number, atk: number }, aftershocks?: number, ignoreDef?: number, ignoreSelect?: boolean,
- *   facScale?: number, plain?: number, atkMul?: number, vsBuff?: { key: string, scale: number } }} Load
+ *   facScale?: number, plain?: number, atkMul?: number, vsBuff?: { key: string, scale: number }, split?: number, later?: boolean }} Load
  */
 
 /**
@@ -130,7 +134,8 @@ function vsBuffMul(load, t) {
  * A hit's damage, with where it comes from (钩子-3, the names of Stronghold's content): an attack's hit on its target,
  * on one splashed or jumped to; an aftershock is a splash and no attack's hit; whether the skill made it; a projectile's.
  * Its amount × `frozen` on a target 冻结 as the hit is worked out (敌能-27), × `vsBuff` on a target holding that buff
- * (敌能-141); both before the target's defences.
+ * (敌能-141); both before the target's defences. With a `split` it is that share after them, and the hits after the first
+ * give no 受击回复 (职业-3).
  * @param {Load} load @param {Unit} t @returns {import('./damage.js').Damage}
  */
 function damageOf(load, t) {
@@ -139,6 +144,10 @@ function damageOf(load, t) {
     ...(load.ignoreDef ? { defIgnorePct: load.ignoreDef } : {}), ...(load.ignoreSelect ? { ignoreSelect: true } : {}) });
   if (how === 'splash' || how === 'aftershock') d.isSplash = true;
   if (how === 'chain' || how === 'aftershock') d.tags = [how];
+  if (load.split !== undefined) {
+    d.mul = load.split;
+    if (load.later) d.noHurtSp = true;
+  }
   return d;
 }
 
@@ -152,7 +161,8 @@ function damageOf(load, t) {
 function hitTarget(w, c, src, t, load) {
   if (src && src.kind === KIND.ENEMY && !load.hit && foeCancelHit(w, c, src, t)) return;
   let total = 0;
-  for (let k = 0; k < load.times; k++) total += oneHit(w, c, src, t, load);
+  const later = load.split !== undefined ? { ...load, later: true } : load;
+  for (let k = 0; k < load.times; k++) total += oneHit(w, c, src, t, k === 0 ? load : later);
   if (src && load.displace && t.hp > 0) displaceOnHit(w, c, src, t, load.displace);
   if (src) emit(w, 'attackHit', { attacker: src, target: t, dealt: total, kind: load.hit ?? 'main', isSkill: !!load.skill, mark: load.mark ?? 0 });
 }
@@ -339,9 +349,10 @@ function loadFor(w, c, a, t, load) {
   if (a.kind !== KIND.OPERATOR) return hit;
   const tr = traitOf(c, a);
   return {
-    ...hit, amount: hit.amount * traitScale(w, c, a, t) * funnelScale(c, a, t), splash: tr.skillSplash && inSkill(a) ? tr.skillSplash : tr.splash, aftershock: tr.aftershock, chain: tr.chain,
+    ...hit, amount: hit.amount * traitScale(w, c, a, t) * funnelScale(w, c, a, t), splash: tr.skillSplash && inSkill(a) ? tr.skillSplash : tr.splash, aftershock: tr.aftershock, chain: tr.chain,
     ...(tr.aftershocks !== 1 ? { aftershocks: tr.aftershocks } : {}),
     ...(tr.packed ? { packed: tr.packed } : {}),
+    ...(tr.hitMul !== 1 ? { split: tr.hitMul } : {}),
   };
 }
 
@@ -409,7 +420,7 @@ function jumpHits(w, c, src, t, load) {
  * A healer's heals on one target (职业-2, 职业-11, 职业-12), then a heal chain's on each operator it jumps to, at the
  * chain's share of the one before; each heal also restores element values by the trait's share of it (× its talents' on
  * a ground unit, 职业-31), gives the one healed its talents' SP for it (职业-25) and leaves their heal over time (职业-29);
- * what the talents give for any heal is the heal hook's (职业-33).
+ * what the talents give for any heal is the heal hook's (职业-33). One it heals through 禁疗 is healed through it (伤害-13).
  * @param {World} w @param {Content} c @param {Unit} a @param {Unit} t @param {{ load: Load, jumps: Unit[] }} how
  */
 function heals(w, c, a, t, how) {
@@ -417,7 +428,7 @@ function heals(w, c, a, t, how) {
   let amount = how.load.amount;
   for (const u of [t, ...how.jumps]) {
     for (let k = 0; k < how.load.times; k++) {
-      w.events.push({ type: 'heal', id: a.id, target: u.id, amount: heal(w, a, u, amount * vsHeal(w, c, a, u)) });
+      w.events.push({ type: 'heal', id: a.id, target: u.id, amount: heal(w, a, u, amount * vsHeal(w, c, a, u), healHow(w, c, a, u)) });
       if (ep > 0 && !statsOf(u).flags.healFree) restoreEp(u, amount * ep * epHealMul(c, a, u));
       talentSp(w, c, a, 'heal', u);
       healDotOn(c, a, u);
@@ -445,12 +456,14 @@ function deliverAll(w, c, a, sw, heals) {
  * that answer it, 职业-29); the locked
  * targets still on the field and alive take it — out of range or not — as hits, a healer's heals (职业-2), or the
  * projectiles a ranged attacker launches; then an operator's skill counts the attack (技能-2, 技能-4).
+ * Before 麻痹 is looked at, an enemy's sends `enemyAttackStart`, whose handlers may cancel it (钩子-5).
  * @param {World} w @param {Content} c @param {Unit} a
  */
 function land(w, c, a) {
   const sw = /** @type {Swing} */ (a.swing);
   a.swing = null;
-  if (palsyInterrupts(a)) { a.anim = ANIM.IDLE; palsyCut(w, c, a); return; }
+  if (!strikes(w, a, sw)) { a.anim = ANIM.IDLE; return; }
+  if (palsyInterrupts(a, w)) { a.anim = ANIM.IDLE; palsyCut(w, c, a); return; }
   const op = a.kind === KIND.OPERATOR, heals = op && (healerNow(c, a) || !!sw.mods.heal);
   if (op) attackEnded(w, a);
   const reached = deliverAll(w, c, a, sw, !!heals);
@@ -556,7 +569,7 @@ function advanceSwing(w, c, a) {
   sw.wind--;
   sw.since++;
   if (sw.wind <= 0) { land(w, c, a); return; }
-  if (sw.since >= PALSY_CUT_FRAMES && palsyInterrupts(a)) { a.swing = null; a.anim = ANIM.IDLE; palsyCut(w, c, a); }
+  if (sw.since >= PALSY_CUT_FRAMES && palsyInterrupts(a, w)) { a.swing = null; a.anim = ANIM.IDLE; palsyCut(w, c, a); }
 }
 
 /**
@@ -795,9 +808,7 @@ function takeHold(e) {
 export function enemyAttack(w, c, e) {
   const s = statsOf(e);
   // 恐惧 cancels a swing already under way, unlike 战栗 (状态-10, INF-0293). It is not one of the eight 阻止攻击 flags.
-  if (s.disabled || s.atk <= 0 || e.hidden || s.flags.noAttack || s.flags.fear) { e.swing = null; return false; }
-  // 缴械 and 强制缴械 are two of the eight: the attack stops as for one that cannot act, and the enemy may walk (状态-12).
-  if (disarmed(e)) { e.swing = null; return false; }
+  if (swingLost(e, s)) { e.swing = null; return false; }
   const swinging = e.swing !== null;
   if (e.swing) advanceSwing(w, c, e);
   takeAgain(e);
