@@ -298,9 +298,9 @@
   {
     "id": "DIF-0038",
     "clause": "兼容-4",
-    "ours": "kit 给单位换档案或写档案的一项（unit.profile），引擎自己的攻击不读，兼容层只读选目标与可否选中的几项（maxTargets、priority、allInRange、hitAllBlocked、canHitFly、groundOnly、hitSleep、skipEnemy、rangeTiles、attackRangeRadius）。其余的项记着不使用，每个单位每一项记一条 `compat: profile.<项> is not provided yet`：浮游单元的倍率（funnel、funnelMul、dmgMul）、hits、splashRadius、shockTimes、auraRatio、selfHeal、heal、dmgType、noAttack、atkScale。投掷手的浮游倍率仍是引擎特性数据里的。",
+    "ours": "kit 给单位换档案或写档案的一项（unit.profile），引擎自己的攻击不读，兼容层读选目标与可否选中的几项（maxTargets、priority、allInRange、hitAllBlocked、canHitFly、groundOnly、hitSleep、skipEnemy、rangeTiles、attackRangeRadius），以及有浮游单元的单位的 funnel 与 funnelMul（funnelMul 写成空即关掉浮游单元，funnel 换上新的 init、delta、max：引擎经特性行为读，职业-6）。其余的项记着不使用，每个单位每一项记一条 `compat: profile.<项> is not provided yet`：dmgMul、hits、splashRadius、shockTimes、auraRatio、selfHeal、heal、dmgType、noAttack、atkScale。档案里有单位的特性数据（canHitFly、heal、dmgType、hits、浮游单元、命中状态）和 kit 自己的 trait，部署前的棋子也有，kit 原样写回的不记。投掷手的浮游倍率仍是引擎特性数据里的。",
     "stronghold": "攻击循环读单位的 profile：kit 在技能开始时把 funnelMul、dmgMul 换成自己的函数或把 funnel.max 乘一个系数（洛洛、耶拉），之后的攻击就按它算。",
-    "reason": "引擎的浮游倍率、段数、溅射、光环比例、自疗、治疗等是特性数据（职业-12 等），攻击结算不读档案。让这些项起作用要把特性数据改成可被 kit 覆盖，是引擎的改动，没有做。受影响的棋子 kit 与项：洛洛 rockr（funnel、funnelMul、dmgMul）、耶拉 kjera（funnelMul、dmgMul）、whitw2（hits、funnel）、mlyss 的召唤物（hits）、rosmon（splashRadius、shockTimes）、cetsyr 的两个棋子条目 4_25 与 5_09（auraRatio）、excu2（selfHeal）、papyrs（heal）、skadi2 与隐德来希 etlchi 的召唤物（noAttack）、siege2 的召唤物（dmgType）。这些写入不再静默：以前整份档案的赋值会抛错，现在记一条缺口。技能里这些项的变化没有生效。",
+    "reason": "引擎的段数、溅射、光环比例、自疗、治疗等是特性数据（职业-12 等），攻击结算不读档案。让这些项起作用要把特性数据改成可被 kit 覆盖，是引擎的改动，除浮游单元外没有做。受影响的棋子 kit 与项：whitw2（hits）、mlyss 的召唤物（hits）、rosmon（splashRadius、shockTimes）、cetsyr 的两个棋子条目 4_25 与 5_09（auraRatio）、excu2（selfHeal）、papyrs（heal）、skadi2 与隐德来希 etlchi 的召唤物（noAttack）、siege2 的召唤物（dmgType）；kit 自己的 trait.funnelMul（耶拉、malist）见 DIF-0045。这些写入不再静默：以前整份档案的赋值会抛错，现在记一条缺口。技能里这些项的变化没有生效。",
     "status": "有效"
   },
   {
@@ -325,6 +325,38 @@
     "ours": "kit 增益的伤判回调在引擎的伤判里运行，次序与 Stronghold 有三处不同：同一增益里先算引擎自己的闪避、抵挡、倍率、护盾、屏障，再算 kit 的固定减伤和 injury；一个增益自己的护盾或闪避取消了伤害时，它自己的 observeInjury 不调用；injury 里 defer 的回调在这个增益的轮次末尾运行，不等扣除生命之后。抵挡成功没有 block 事件。",
     "stronghold": "同一增益里先乘倍率、减固定减伤、再用护盾、再调 injury、最后判定闪避；每个增益不论谁取消了伤害都调用 observeInjury；defer 的回调在扣除生命之后运行；抵挡发 block 事件。",
     "reason": "引擎的伤判（伤害-8）给内容的口子是 take 和 afterCancel：take 在增益自己的效果之后、伤害仍大于 0 时才调用，取消之后只调用后面增益的 afterCancel，扣除生命之后没有口子。第二期下半的棋子 kit 里，伤判回调的增益都不带护盾和闪避，也没有用 defer 的，次序的不同在这些 kit 上不起作用；同时带护盾和伤判回调的增益会有差异。",
+    "status": "有效"
+  },
+  {
+    "id": "DIF-0045",
+    "clause": "兼容-5",
+    "ours": "kit 的 `trait` 里兼容层认的项起作用：回调（canAttack、skipEnemy、storeEnergy、dmgMul、hitsFn、afterHit、afterAttack、onEachHit、boomerangOnward）、自己的 install，和对应引擎特性数据的 splashRadius、onHitStatus、hits、hitDmgMul、maxTargets、noAttackUnlessSkill、hitSleep、rangeTiles、blockFly、dollNoAttack（rampInit 引擎从模组的数据里取同一个值）。其余的项没有作用，每个棋子每一项记一条 `compat: trait.<项> is not provided yet`：priority、heal、healThrough、dmgType、noAttack、canHitFly、selfHeal、selfHealFilter、funnelMul、funnelBodyHits、splashScale、shockTimes 等。",
+    "stronghold": "kit 的 trait 逐项覆盖职业的档案（Object.assign(p, kitTrait)），攻击循环按档案进行：priority 排候选，heal 与 healThrough 定治疗的方式与对象，dmgType 定伤害类型，canHitFly 与 noAttack 定能否选中飞行单位、是否攻击，funnelMul 与 funnelBodyHits 定浮游单元的伤害。",
+    "reason": "引擎的这些项是特性数据（职业-1…职业-3、职业-11、职业-12），攻击结算不读档案；逐项接上要给特性数据加对应的字段，没有一项是这一步的目标，所以不再静默丢掉，记成缺口。差分里钉住的 kit 与项：priority（poca、typhon）、heal（cgbird、monstr）、healThrough（kalts、kalts2、monstr）、dmgType（hsgma2）；这些 kit 的命中与状态没有因此不同，差分只多一行缺口。",
+    "status": "有效"
+  },
+  {
+    "id": "DIF-0046",
+    "clause": "兼容-4",
+    "ours": "kit 读写的 unit.trait 里，解放者的 ramp 是引擎蓄力 Buff 的攻击加成，写入落到最近的一级（共 steps 级，每级 atk ÷ steps）；浮游单元的 funnelTarget、funnelScale 是引擎浮游 Buff 记的上次目标与连续次数，funnelMap 只有上次目标这一项（它的 t 永远不是现在）；技能结束事件里引擎的蓄力已经回到 0，kit 在技能结束时读到的 ramp 是 0。",
+    "stronghold": "ramp 是浮点数，每秒加 rampMax ÷ rampTime，技能结束的事件里职业自己的处理（优先度 0）才把它清零，优先度更高的 kit 处理函数还读得到技能期间的 ramp（玛恩纳 S2 的「击倒敌人后不重置」靠它）；funnelMap 是对每个目标各记一份倍率。",
+    "reason": "引擎把解放者的蓄力做成按级累加的 Buff（职业-12，DIF-0036），在技能结束时先清零再发 skillEnd；浮游单元一次只数一个目标（职业-12）。所以玛恩纳 S2 的保留蓄力、雷茨2 的同类逻辑读到 0，仍不生效（以前 trait 是空对象，同样不生效）；耶拉两个浮游单元各锁一个目标时，各自的倍率没有分开记。",
+    "status": "有效"
+  },
+  {
+    "id": "DIF-0047",
+    "clause": "兼容-5",
+    "ours": "kit 的 trait.onHitStatus 换掉职业特性给每次命中的状态，技能运行时引擎照旧另给技能攻击的状态（技能的 attack.onHitStatus）：两个状态都施加，同名的取较长。",
+    "stronghold": "effectiveProfile 在技能有攻击覆盖时用技能的 onHitStatus 代替档案的，只施加技能的那一个。",
+    "reason": "引擎的命中状态在特性（职业-4）与技能的攻击（技能-5）里各有一份，攻击结算两份都用。两个状态相同、或技能的更长时没有差别（格雷伊 S：技能 0.64 秒、天赋 0.4 秒）；技能的更短或不同键时，这里多一个特性的状态。",
+    "status": "有效"
+  },
+  {
+    "id": "DIF-0048",
+    "clause": "兼容-4",
+    "ours": "带 kit 的吟游者，kit 没有自己的 trait.install 时，生命回复由引擎的光环给（职业-13）：每帧维持的 Buff `aura:<吟游者的 id>`，量先经 bardRegen 事件（kit 有处理函数时）。",
+    "stronghold": "installBard 每 0.25 秒给范围内每名友方一个 `trait:bard:<吟游者的 id>`，持续 0.5 秒，量经 bardRegen。",
+    "reason": "引擎的光环 Buff 跟着范围每帧同步（职业-13），不是限时重给的 Buff；每秒的回复量相同，Buff 的键和刷新方式不同。读那个键的 kit 没有（魔王、斯卡蒂 2 只用事件与 bardRegen 函数）。",
     "status": "有效"
   }
 ]

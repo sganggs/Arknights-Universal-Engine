@@ -66,6 +66,27 @@ export const KIT_TRAIT_BEHAVIOR = Object.freeze({
     if (!r || !fn || !e) return undefined;
     return !!r.b.safe(() => fn(e), 'profile.skipEnemy', r.p);
   },
+  /**
+   * The funnel a kit gave its operator through its profile (`profile.funnel`, `profile.funnelMul`: null takes it away), else the
+   * trait's (职业-6, 职业-12).
+   * @param {any} ctx
+   */
+  funnel(ctx) {
+    const r = pieceOf(ctx.self);
+    return r ? r.p.funnelOverride : undefined;
+  },
+  /**
+   * The regeneration the aura of a kitted 吟游者 gives an ally (职业-13): the event `bardRegen` first, as Stronghold's profession
+   * gives it to each ally, so that a handler (魔王's 微尘) changes this ally's share; none when it is not above 0. Without a
+   * handler the engine's amount stands.
+   * @param {any} ctx @param {Unit} ally @param {number} amount
+   */
+  regen(ctx, ally, amount) {
+    const r = pieceOf(ctx.self), to = r ? r.b.unitOf(ally) : null;
+    if (!r || !to || !r.b.hasHook('bardRegen')) return undefined;
+    const given = Number(r.b.emit('bardRegen', { unit: r.p, target: to, value: amount }).value);
+    return Number.isFinite(given) ? given : 0;
+  },
   /** A kit trait with an `install` of its own takes the place of the branch's (Stronghold's profession install). @param {any} ctx */
   own(ctx) {
     const r = pieceOf(ctx.self);

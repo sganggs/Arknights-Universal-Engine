@@ -12,7 +12,7 @@ import { c4Buffs } from './c4.js';
 import { heteroBuffs } from './heteroslime.js';
 import { pompeiiBuffs } from './pompeii.js';
 import { rotKnightBuffs } from './rotknights.js';
-import { operatorAt, teamTalentsAt } from './operators.js';
+import { operatorAt, teamTalentsAt, TALENT_FIELDS } from './operators.js';
 import { TOKENS, tokenAt } from './tokens.js';
 import { teamFits, predefinedKey } from '@aue/sim';
 import { skillBehaviors } from './skills.js';
@@ -85,7 +85,8 @@ export function levelContent(id, difficulty) {
  * kept (职业-16) —: a kit applies its talents itself (兼容-6).
  * @param {import('@aue/sim').OperatorDef} op @returns {import('@aue/sim').OperatorDef}
  */
-function withoutTalents({ talentBb, talentMods, talentTrait, fieldTalents, rangeTalents, critTalents, timedTalents, deployTalents, ...rest }) {
+function withoutTalents(op) {
+  const rest = /** @type {import('@aue/sim').OperatorDef} */ (Object.fromEntries(Object.entries(op).filter(([k]) => !TALENT_FIELDS.includes(k))));
   const doll = rest.trait?.doll;
   return doll ? { ...rest, trait: { ...rest.trait, doll: { ...doll, attack: true, aura: null } } } : rest;
 }

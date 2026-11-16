@@ -284,8 +284,9 @@ export function canClose(c, op) {
 
 /**
  * When an AUTO skill starts (技能-3): as its behaviour says — or as its behaviour works out now —, else an instant one,
- * or one of an operator that makes no normal attacks (职业-13), as soon as it is ready and the others as the operator is
- * about to attack — one that throws a 炼金单元 at the enemies needs a target (技能-13).
+ * or one of an operator that makes no normal attacks (职业-13) or makes them only while its skill runs (职业-12), as soon as
+ * it is ready and the others as the operator is about to attack — one that throws a 炼金单元 at the enemies needs a target
+ * (技能-13).
  * @param {World} w @param {Content} c @param {Unit} op @returns {'ready' | 'attack'}
  */
 function triggerOf(w, c, op) {
@@ -293,7 +294,8 @@ function triggerOf(w, c, op) {
   if (typeof t === 'function') return t(contextOf(w, c, op));
   const def = defOf(c, op);
   if (t === undefined && def.alchemy) return def.alchemy.at === 'enemy' ? 'attack' : 'ready';
-  return t ?? (kindOf(def) === 'instant' || traitOf(c, op).noAttack ? 'ready' : 'attack');
+  const tr = traitOf(c, op);
+  return t ?? (kindOf(def) === 'instant' || tr.noAttack || tr.attackInSkill ? 'ready' : 'attack');
 }
 
 /**

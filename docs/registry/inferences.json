@@ -6179,5 +6179,40 @@
     "statement": "Stronghold 的坏死（necrosis）元素槽在引擎里没有对应：棋子的 elem.necrosis 恒为 0，引擎的狂躁（ANGER）不并入它。",
     "basis": "兼容层的元素名表（mods.js ELEMENT）只有四项：neural→SANITY、erosion→WATER、burn→FIRE、apoptosis→DARK；引擎的元素有五种，第五种 ANGER（狂躁，元素-4）。读 elem.necrosis 的 kit（哈洛德的重症优先、山羊的负荷排序）把五个槽取最大或相加；Stronghold 的 necrosis 与官方哪一种对应，没有找到出处。",
     "status": "待查证"
+  },
+  {
+    "id": "INF-1100",
+    "clause": "兼容-4",
+    "statement": "棋子的 baseRangeKeys 是它自己的攻击范围（kit 写过的范围，否则记录里的）按所在格和朝向展开的格子，按范围表里的次序，不带技能的范围、额外格和任何攻击距离扩展；不在场的棋子、不是干员或召唤物的单位没有（undefined）。",
+    "basis": "Stronghold v0.4.0 的 server/sim/battle/queries.js _refreshRange：baseRangeKeys = absoluteRangeKeys(u.rangeGrid, tileR, tileC, dir, u.s.baseRangeExtend)，注释称它是默认触发的初始范围。其中 baseRangeExtend 是永久的攻击距离扩展；引擎只有一个 rangeExtend 属性，不分永久与限时，所以这里不带扩展——引擎自己的「原本攻击范围」也不带（职业-34，traits.js inBaseRange）。读它的 kit（耶拉的低眉数地面格、远牙、魔王、白）都在部署时读，那时技能的扩展还没有。有永久攻击距离扩展的干员，Stronghold 里它的 baseRangeKeys 比这里多出扩展的格子。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-1101",
+    "clause": "技能-3",
+    "statement": "只在技能运行时才普通攻击的干员（特性的 attackInSkill：解放者、阵法术师；kit 的 noAttackUnlessSkill）的自动技能，一就绪就发动，不等「即将攻击」，也不看范围内有没有敌人。",
+    "basis": "这类干员技能不运行就不攻击，「即将攻击时发动」永远等不到：以前这样的自动技能整局不发动。PRTS 给阵法术师、解放者的技能发动方式另有「范围内存在敌人」一条（技能的自动发动策略），引擎的 技能-3 没有这样的条件；Stronghold 的默认规则每帧检查技力与范围内的目标。一就绪就发动，在没有敌人时也会发动，是粗略的取舍。手动技能不受影响。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-1102",
+    "clause": "兼容-4",
+    "statement": "kit 读到的 lastHitAt 在单位每次真的损失生命时更新（引擎在扣生命之后发的 damaged 事件，量大于 0），为战斗秒数；没有损失过为 −Infinity；每次部署的单位各有各的。被护盾、屏障、闪避挡下而没有扣生命的不算。",
+    "basis": "Stronghold 的 server/sim/attack/health.js 在扣生命的函数里写 target.lastHitAt = battle.time，扣的量为 0 的实例也写；kit 的用法（vulpis 的蓄势：battle.time − lastHitAt ≥ 4 秒才回血；tokens.js 的脱战回血）都是「多久没有受到伤害」。引擎的 damaged 事件在扣生命之后发，量为 0 的实例（被护盾、屏障、闪避挡下的伤害不走到这一步）这里不算。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-1103",
+    "clause": "兼容-5",
+    "statement": "带 kit 的傀儡师不带引擎对替身的模组追加（特性数据 doll 的 atk、maxHp，取自特性 blackboard 里模组改的值）：它们同 职业-17、职业-18、职业-20、职业-21 的追加一样，是模组的特性追加，由 kit 自己施加。",
+    "basis": "归溟幽灵鲨的 kit 自己按模组的特性 blackboard 给替身加攻击与生命（chess_char_5_13-ghost2.js 的 ghost2:module、ghost2:moduleY）；引擎的 doll.atk、doll.maxHp 取自同一份 blackboard（content/traits.js 的 dollkeeper），两边都加会算两次：实测替身的追加伤害乘 1.30 而不是 1.15。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-1104",
+    "clause": "兼容-4",
+    "statement": "有浮游单元的单位，档案里的 funnelMul 是一个函数：kit 的 typeof 判断由它选到 funnelMul 这个键；kit 把它写成空（或 false）即关掉这个单位的浮游单元，写回那个函数即打开。调用它只给出下一次攻击对那个目标会得到的倍率，不计数。",
+    "basis": "kit 只用 typeof unit.profile.funnelMul === 'function' 选键，把值存下来、技能结束时写回（洛洛 2_10、耶拉 3_20、ver-cammou），从不调用它。Stronghold 的 funnelMul 每次调用就推进一步倍率；引擎的浮游单元在攻击结算时计数（职业-12），这个函数不能再计一次，所以只预告。",
+    "status": "待查证"
   }
 ]
