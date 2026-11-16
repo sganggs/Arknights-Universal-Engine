@@ -1,6 +1,7 @@
 // Abilities whose counterpart the engine's levels do not have (docs/spec/foes.md 敌能-116): 集团军盾卫's `ExtraPower` acts
-// under a 指挥官指令, and “家族专用轿车”'s `DeathRattle` brings in 家族士兵, whom the level's data does not carry. Each is
-// covered in its shape and does nothing. `DeathRattle` has a second shape that does act: the boats' `enemy_key`, whose
+// under a 指挥官指令, and “家族专用轿车”'s `DeathRattle` brings in 家族士兵, whom the level's data does not carry; the Dor
+// series' `Driver` gives SP to an inactive R-series power armour, a device no level has (敌能-163). Each is covered in its
+// shape and does nothing. `DeathRattle` has a second shape that does act: the boats' `enemy_key`, whose
 // crew goes on fighting (敌能-133, boats.js).
 
 import { boatShape, boatDeath } from './boats.js';
@@ -14,8 +15,13 @@ export const sedanShape = (bb) => Object.keys(bb).length === 1 && typeof bb['att
 export function absentOwns(name, bb) {
   if (name === 'ExtraPower') return Object.keys(bb).length === 1 && typeof bb.damage_resistance === 'number';
   if (name === 'DeathRattle') return sedanShape(bb) || boatShape(bb);
+  if (name === 'Driver') return Object.keys(bb).length === 1 && typeof bb.sp === 'number';
   return true;
 }
 
-/** The behaviours of this file, by name: the sedan's `DeathRattle` does nothing, the boats' brings their crew (敌能-133). @type {Readonly<Record<string, FoeBehavior>>} */
-export const absentBehaviors = Object.freeze({ ExtraPower: Object.freeze({}), DeathRattle: Object.freeze({ death: boatDeath }) });
+/**
+ * The behaviours of this file, by name: the sedan's `DeathRattle` does nothing, the boats' brings their crew (敌能-133);
+ * `ExtraPower` and `Driver` do nothing.
+ * @type {Readonly<Record<string, FoeBehavior>>}
+ */
+export const absentBehaviors = Object.freeze({ ExtraPower: Object.freeze({}), DeathRattle: Object.freeze({ death: boatDeath }), Driver: Object.freeze({}) });
