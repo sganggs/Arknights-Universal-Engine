@@ -143,6 +143,35 @@ test('[技能-3] AUTO: an instant skill starts when ready; others when about to 
   assert.equal(statsOf(p.guard).atk, 50);
 });
 
+test('[技能-3] a behaviour\'s trigger may be a function: undefined leaves it to the default rule, \'never\' (or any other answer) is not now, \'ready\' and \'attack\' as given', () => {
+  /** @type {any} */
+  let answer;
+  const probe = { trigger: () => answer };
+  /** @param {SkillDef} skill @param {number} foes @param {any} [behaviour] */
+  const play = (skill, foes, behaviour) => {
+    const a = arena(skill, foes);
+    if (behaviour) a.c.behaviors = { skills: { [skill.id]: behaviour } };
+    return a;
+  };
+  const starts = (/** @type {{ w: World, c: any }} */ a, /** @type {number} */ n) => run(a.w, a.c, n).filter((e) => e.type === 'skill' && e.active === 1).map((e) => e.f);
+  const instant = sk({ id: 'inst', type: 'AUTO', cost: 2, init: 0, bb: { cost: 6 } }), timed = sk({ id: 'dur', type: 'AUTO', cost: 1, init: 1, duration: 2, bb: { atk: 1 } });
+  answer = undefined;
+  for (const [skill, foes] of /** @type {[SkillDef, number][]} */ ([[instant, 0], [timed, 1]])) {
+    assert.deepEqual(starts(play(skill, foes, probe), 90), starts(play(skill, foes), 90), `${skill.id}: no opinion is the rule it has without a behaviour`);
+  }
+  assert.equal(starts(play(timed, 1), 90).length, 1, 'the default for a timed skill: the first attack starts it');
+  answer = 'never';
+  const idle = play(timed, 1, probe), held = play(instant, 0, probe);
+  assert.deepEqual([starts(idle, 90), starts(held, 90)], [[], []], 'not now: ready, with a target, and it does not start');
+  answer = 'attack';
+  assert.equal(starts(idle, 60).length, 1, 'on attack: with the first attack after');
+  assert.equal(starts(held, 30).length, 0, 'an instant skill is not asked to start before an attack');
+  answer = 'ready';
+  assert.equal(starts(held, 2).length, 1, 'ready: at once');
+  answer = 'unknown';
+  assert.deepEqual(starts(play(instant, 0, probe), 90), [], 'any other answer is not now');
+});
+
 test('[技能-4] a duration runs n frames from the frame it starts; stun does not stop it; no SP meanwhile', () => {
   const a = arena(sk({ cost: 1, init: 1, duration: 1, bb: { attack_speed: 100 } }), 0);
   run(a.w, a.c, 1, [[0, { type: 'skill', unit: a.guard.id }]]);

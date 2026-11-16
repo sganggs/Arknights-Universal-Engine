@@ -140,6 +140,6 @@ test('[伤害-13] [职业-11] a heal chain’s jump onto an ally it heals throug
   assert.equal(no.pet.hp, 800);
 });
 
-test('[职业-6] the behaviour interface is version 6: a trait behaviour may name the allies its operator heals through 禁疗', () => {
-  assert.equal(BEHAVIOR_API_VERSION, 6);
+test('[职业-6] the behaviour interface is version 7: a trait behaviour may name the allies its operator heals through 禁疗', () => {
+  assert.equal(BEHAVIOR_API_VERSION, 7);
 });

@@ -54,14 +54,14 @@
 1. 目标生命已为 0：不造成伤害。
 2. 生命流失：直接扣除生命（伤害-10）。
 3. 目标无敌（无敌、沉睡）：不造成伤害；标明穿透沉睡（`throughSleep`）的伤害只被无敌挡住，沉睡的目标照样受到伤害——除非它同时隐匿或无法选中，那样仍然不受伤害。可以攻击沉睡敌人的干员（职业-28），它的伤害都穿透沉睡。起飞的单位不受行动方式为地面的敌人、以及未浮空的敌对装置的这一次伤害（阻挡-2）；没有来源的、空中敌人的不在此列。这一判定在下一步的 `hit` 事件之前做一次。
-4. `hit` 事件（钩子-3）：处理函数取消时不造成伤害。
+4. `hit` 事件（钩子-3）：处理函数取消时不造成伤害。随后有来源的伤害（无来源的没有，第 6 步）发 `damageCalculate` 事件（钩子-3），取消时同样不造成伤害：来源的内容在这里改这次伤害，或另造伤害（标明 `calculation` 为 `precomputed` 的伤害不再发它，所以不会自己触发自己；标明 `resolved` 的也不发）。
 5. 按伤害类型和目标的防御、法抗、元素抗性计算（伤害-1 至 伤害-5），乘以这次伤害的 `mul`（默认 1）；攻击的伤害（`isAttack`）不低于来源天赋的保底（`minDamage`，职业-31）；来源天赋不致命（`nonLethal`，职业-34）时，对敌人的伤害至多为目标生命减 1。
 6. 乘以来源的伤害倍率：`dmgDealtMul` × 物理时 `physDealtMul`、法术时 `artsDealtMul`；关卡有玉门天灾工事的规则时，再乘工事倍率（地图-3）。无来源的伤害没有这一步；记在来源名下的无来源伤害（`sourceless`，如持续伤害）也没有，第 5 步也不用来源的穿透；它的事件里来源为空，`credit` 仍是来源，击杀也记给来源。
-7. 目标的伤判效果（伤害-8）。
+7. `damageApplying` 事件（钩子-3）：目标的内容在这里改将要进入伤判的伤害（不低于 0；不是有限数的按 0），或取消这次伤害，取消时整次伤害不造成、不做伤判；然后是目标的伤判效果（伤害-8）。
 8. `hpDamage` 事件（钩子-3）。
-9. 剩下的伤害大于 0 时扣除生命（伤害-9），其间的 `fatal`、之后的 `damaged` 事件（钩子-3）。
+9. 剩下的伤害大于 0 时扣除生命（伤害-9），其间的 `fatal`、之后的 `damageApplied`（造成了伤害的，不是生命流失）、`damaged` 事件（钩子-3）。
 
-- 来源：[PRTS「作战机制」oldid=433935](https://prts.wiki/index.php?title=%E4%BD%9C%E6%88%98%E6%9C%BA%E5%88%B6&oldid=433935)「伤害及其处理」：先计算伤害（ON_CALCULATE_DAMAGE），来源的伤害倍率在 ON_OUTPUT_DAMAGE，伤判在 ON_TAKE_DAMAGE；[PRTS「伤判效果」oldid=439572](https://prts.wiki/index.php?title=%E4%BC%A4%E5%88%A4%E6%95%88%E6%9E%9C&oldid=439572)：伤判在防御和法抗计算之后；[PRTS「异常效果」oldid=440606](https://prts.wiki/index.php?title=%E5%BC%82%E5%B8%B8%E6%95%88%E6%9E%9C&oldid=440606) 无敌：「受到的伤害与元素值变为0」；事件点与 `mul` 为设计决定（钩子-3，ADR 0057）；[PRTS「死芒」oldid=435148](https://prts.wiki/index.php?title=%E6%AD%BB%E8%8A%92&oldid=435148) 技能「令最多2名攻击范围内的敌人陷入沉睡，每0.5秒对目标造成相当于攻击力…的法术伤害」：伤害穿透它施加的沉睡；[PRTS「异常效果」oldid=440606](https://prts.wiki/index.php?title=%E5%BC%82%E5%B8%B8%E6%95%88%E6%9E%9C&oldid=440606)「可影响沉睡单位的伤害」：先判定「假定目标具有沉睡免疫的情况下，是否仍具有无敌/隐匿/不可选中/塔不可选中之一」，有则「即使无视沉睡也无法造成伤害」
+- 来源：[PRTS「作战机制」oldid=433935](https://prts.wiki/index.php?title=%E4%BD%9C%E6%88%98%E6%9C%BA%E5%88%B6&oldid=433935)「伤害及其处理」：先计算伤害（ON_CALCULATE_DAMAGE），来源的伤害倍率在 ON_OUTPUT_DAMAGE，伤判在 ON_TAKE_DAMAGE；[PRTS「伤判效果」oldid=439572](https://prts.wiki/index.php?title=%E4%BC%A4%E5%88%A4%E6%95%88%E6%9E%9C&oldid=439572)：伤判在防御和法抗计算之后；[PRTS「异常效果」oldid=440606](https://prts.wiki/index.php?title=%E5%BC%82%E5%B8%B8%E6%95%88%E6%9E%9C&oldid=440606) 无敌：「受到的伤害与元素值变为0」；事件点与 `mul` 为设计决定（钩子-3，ADR 0057）；`damageCalculate`、`damageApplying`、`damageApplied` 的时点与 `calculation` 取自 Stronghold v0.4.0 的 `server/sim/attack/hit.js`、`attack/health.js`（GPL-3.0-or-later），引擎在 `damageApplying` 之前还有保底、不致命与工事倍率，Stronghold 没有这几步（推断 INF-1111），受击回复与目标的攻击计数在 `damageApplying` 之前算，与 Stronghold 的次序不同（DIF-0051）；[PRTS「死芒」oldid=435148](https://prts.wiki/index.php?title=%E6%AD%BB%E8%8A%92&oldid=435148) 技能「令最多2名攻击范围内的敌人陷入沉睡，每0.5秒对目标造成相当于攻击力…的法术伤害」：伤害穿透它施加的沉睡；[PRTS「异常效果」oldid=440606](https://prts.wiki/index.php?title=%E5%BC%82%E5%B8%B8%E6%95%88%E6%9E%9C&oldid=440606)「可影响沉睡单位的伤害」：先判定「假定目标具有沉睡免疫的情况下，是否仍具有无敌/隐匿/不可选中/塔不可选中之一」，有则「即使无视沉睡也无法造成伤害」
 
 ### 伤害-8 伤判效果
 
@@ -78,10 +78,10 @@
 
 - 护盾、屏障没有指定类型时，吸收所有类型。类型用 `+` 连成几种时，只吸收这几种。
 - 一个 Buff 取消伤害，或者把伤害降到 0 时，这次伤害就此取消：后面的 Buff 不再做闪避、抵挡、伤害修改、护盾、屏障，也不调用 `take`；行为里挂了 `afterCancel` 的（反伤、受伤计数这类效果），轮到它时照样调用，但伤害不会因此恢复。
-- 只有护盾和屏障、没有其他修饰器和标记的 Buff，用完就移除。
+- 只有护盾和屏障、没有其他修饰器和标记的 Buff，用完就移除。因此移除的 Buff，行为里挂了 `spent` 的，移除后调用一次（兼容层的增益在这时调用 kit 的 `onRemove`，兼容-4）。
 - 一个 Buff 可以用行为键 `act`（没有则用它的 key）在内容的 `behaviors.buffs` 里挂上 `take`。轮到这个 Buff，且它自己的闪避、抵挡、倍率、护盾、屏障处理完、伤害仍大于 0 时，`take` 用返回值替换还剩的伤害。返回值不是有限数则不改。`take` 把伤害降到 0 也算取消，这个 Buff 自己不再调用 `afterCancel`。
 
-- 来源：[PRTS「伤判效果」oldid=439572](https://prts.wiki/index.php?title=%E4%BC%A4%E5%88%A4%E6%95%88%E6%9E%9C&oldid=439572)：处理顺序「事件优先级＞获取顺序」，「若伤害被某一效果成功归零/取消（如成功闪避、成功格挡、伤害减少至0），后续一部分伤判效果（如各类检测伤害予以闪避的效果、各类计次格挡效果）将不会继续处理，绝大部分效果（例如反伤、受伤计数等）仍可处理。」；[PRTS「术语释义」oldid=440223](https://prts.wiki/index.php?title=%E6%9C%AF%E8%AF%AD%E9%87%8A%E4%B9%89&oldid=440223) 护盾「每层护盾可以抵挡一次伤害」、屏障「可以吸收一定数值的伤害」「若无特殊说明，屏障可吸收全种类伤害」；[PRTS「游戏数据基础」oldid=440563](https://prts.wiki/index.php?title=%E6%B8%B8%E6%88%8F%E6%95%B0%E6%8D%AE%E5%9F%BA%E7%A1%80&oldid=440563)「闪避」：多个闪避相乘合并；一个 Buff 内的顺序、用完移除为推断 INF-0022；伤判中调用 Buff 行为表是设计决定，行为在表里而不在 Buff 上（[ADR 0054](../adr/0054-attributes-and-buffs-as-data.md)）；取消之后引擎自带的闪避、抵挡、护盾、屏障一律不再处理，「仍可处理」的效果由内容的 `afterCancel` 承担，为推断 INF-1083
+- 来源：[PRTS「伤判效果」oldid=439572](https://prts.wiki/index.php?title=%E4%BC%A4%E5%88%A4%E6%95%88%E6%9E%9C&oldid=439572)：处理顺序「事件优先级＞获取顺序」，「若伤害被某一效果成功归零/取消（如成功闪避、成功格挡、伤害减少至0），后续一部分伤判效果（如各类检测伤害予以闪避的效果、各类计次格挡效果）将不会继续处理，绝大部分效果（例如反伤、受伤计数等）仍可处理。」；[PRTS「术语释义」oldid=440223](https://prts.wiki/index.php?title=%E6%9C%AF%E8%AF%AD%E9%87%8A%E4%B9%89&oldid=440223) 护盾「每层护盾可以抵挡一次伤害」、屏障「可以吸收一定数值的伤害」「若无特殊说明，屏障可吸收全种类伤害」；[PRTS「游戏数据基础」oldid=440563](https://prts.wiki/index.php?title=%E6%B8%B8%E6%88%8F%E6%95%B0%E6%8D%AE%E5%9F%BA%E7%A1%80&oldid=440563)「闪避」：多个闪避相乘合并；一个 Buff 内的顺序、用完移除为推断 INF-0022；伤判中调用 Buff 行为表是设计决定，行为在表里而不在 Buff 上（[ADR 0054](../adr/0054-attributes-and-buffs-as-data.md)），用完移除时的 `spent` 同为设计决定；取消之后引擎自带的闪避、抵挡、护盾、屏障一律不再处理，「仍可处理」的效果由内容的 `afterCancel` 承担，为推断 INF-1083
 
 ### 伤害-12 抵挡与按来源的伤害
 
@@ -133,4 +133,4 @@
 - **别的禁疗单位**照常：对象选取受禁疗制约，普通攻击选不到它们；普通攻击锁定目标之后才持有禁疗的、治疗链跳到的，这一下照常无效。
 - 只用于上面这些治疗，以及 kit 自己的治疗与选择（兼容-4）。特性按治疗回复的元素值（职业-12）、天赋与技能说明的治疗（职业-29、职业-31、职业-33、技能-14）、伤害转治疗（职业-11）、行为上下文的 `heal`（职业-6）不在本条。
 
-- 来源：[PRTS「凯尔希」oldid=392151](https://prts.wiki/index.php?title=%E5%87%AF%E5%B0%94%E5%B8%8C&oldid=392151) 第一天赋的备注「可以强行选择干员Mon3tr和凯尔希的召唤物作为治疗目标」「治疗效果无视禁疗，但对象选取受禁疗制约」；[PRTS「Mon3tr(凯尔希的召唤物)」oldid=367977](https://prts.wiki/index.php?title=Mon3tr%28%E5%87%AF%E5%B0%94%E5%B8%8C%E7%9A%84%E5%8F%AC%E5%94%A4%E7%89%A9%29&oldid=367977) 备注「常态持有禁疗（可被凯尔希无视）」；[PRTS「Mon3tr」oldid=398999](https://prts.wiki/index.php?title=Mon3tr&oldid=398999) 第一天赋的备注「可以强行选择重构体作为治疗目标」「治疗效果无视禁疗，但对象选取受禁疗制约」；[PRTS「凯尔希·思衡托」oldid=441241](https://prts.wiki/index.php?title=%E5%87%AF%E5%B0%94%E5%B8%8C%C2%B7%E6%80%9D%E8%A1%A1%E6%89%98&oldid=441241) 第一天赋的备注「治疗效果无视禁疗，但目标选择受禁疗制约（除非该目标为Mon3tr(凯尔希的召唤物)，自身会将其视为无禁疗的单位）」；按单位回答、选择与治疗用同一个回答，同 Stronghold 的 `healThrough`（`server/sim/damage.js` 的 `heal`、`server/sim/battle/queries.js` 的 `injuredAlliesInKeys`，GPL-3.0-or-later）；不被友方治疗也不挡为推断 INF-1110；强行选择只用于普通攻击的治疗、无视禁疗只对能强行选择的单位为推断 INF-1111
+- 来源：[PRTS「凯尔希」oldid=392151](https://prts.wiki/index.php?title=%E5%87%AF%E5%B0%94%E5%B8%8C&oldid=392151) 第一天赋的备注「可以强行选择干员Mon3tr和凯尔希的召唤物作为治疗目标」「治疗效果无视禁疗，但对象选取受禁疗制约」；[PRTS「Mon3tr(凯尔希的召唤物)」oldid=367977](https://prts.wiki/index.php?title=Mon3tr%28%E5%87%AF%E5%B0%94%E5%B8%8C%E7%9A%84%E5%8F%AC%E5%94%A4%E7%89%A9%29&oldid=367977) 备注「常态持有禁疗（可被凯尔希无视）」；[PRTS「Mon3tr」oldid=398999](https://prts.wiki/index.php?title=Mon3tr&oldid=398999) 第一天赋的备注「可以强行选择重构体作为治疗目标」「治疗效果无视禁疗，但对象选取受禁疗制约」；[PRTS「凯尔希·思衡托」oldid=441241](https://prts.wiki/index.php?title=%E5%87%AF%E5%B0%94%E5%B8%8C%C2%B7%E6%80%9D%E8%A1%A1%E6%89%98&oldid=441241) 第一天赋的备注「治疗效果无视禁疗，但目标选择受禁疗制约（除非该目标为Mon3tr(凯尔希的召唤物)，自身会将其视为无禁疗的单位）」；按单位回答、选择与治疗用同一个回答，同 Stronghold 的 `healThrough`（`server/sim/damage.js` 的 `heal`、`server/sim/battle/queries.js` 的 `injuredAlliesInKeys`，GPL-3.0-or-later）；不被友方治疗也不挡为推断 INF-1106；强行选择只用于普通攻击的治疗、无视禁疗只对能强行选择的单位为推断 INF-1107
