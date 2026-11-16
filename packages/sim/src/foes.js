@@ -6,6 +6,7 @@ import { KIND } from '@aue/schema';
 import { statsOf } from './attrs.js';
 import { addBuff, removeBuff, makeBuff, retune, setLeft, setBaseMaxHp, removeTagged } from './buffs.js';
 import { setAmmo } from './skills.js';
+import { setSp } from './sp.js';
 import { inflict } from './status.js';
 import { launch } from './swing.js';
 import { dealDamage, heal, setHp, knockDown } from './damage.js';
@@ -32,6 +33,7 @@ import { placeTasting, tickTastings } from './tasting.js';
 import { readDeparted } from './exits.js';
 import { grantLootCards } from './loot.js';
 import { footballContext } from './football.js';
+import { bumpedHigh, seenBump } from './hitwall.js';
 
 /** @typedef {import('./types.js').World} World @typedef {import('./types.js').Content} Content @typedef {import('./types.js').Unit} Unit */
 /** @typedef {import('./types.js').EnemyDef} EnemyDef @typedef {import('./types.js').Blast} Blast @typedef {import('./types.js').Bolt} Bolt */
@@ -39,6 +41,12 @@ import { footballContext } from './football.js';
 
 /** The cooldown, in frames, of a skill used once (its record's cooldown below 0, 敌能-2): longer than any battle. */
 const ONCE = 2147483647;
+
+/**
+ * A skill's first cooldown in frames (敌能-2): its `initCooldown` seconds; one below 0 (the data's −1) is ready at once.
+ * @param {import('./types.js').FoeSkill} s @returns {number}
+ */
+const firstCooldown = (s) => (s.initCooldown < 0 ? 0 : secondsToFrames(s.initCooldown));
 
 /** A 直击 bolt's speed in tiles per second, and the radius it hits within (敌能-4). */
 export const BOLT_SPEED = 10;
@@ -73,7 +81,11 @@ export const BOLT_RADIUS = 0.3;
  *   (敌能-38); an enemy no ability asks about keeps no count
  * @property {boolean} unblocked its block ended since its last turn
  * @property {boolean} fell it fell into a 地穴 (地图-4)
+ * @property {() => boolean} bumpedHigh a 失衡 slide of its stopped against a 高地 tile since its last turn's `tick`
+ *   (位移-3, 敌能-150); the first call starts the note, so a collision before it does not count
  * @property {boolean} ready a skill's cooldown is over
+ * @property {(name: string) => boolean} readyOf whether another of its skills, by name, is ready — its cooldown over —; false for
+ *   a name it has no skill of (敌能-157)
  * @property {() => void} use a skill was used: its cooldown starts again — one with a cooldown below 0 is not ready again
  * @property {() => void} holdCooldown its skill's cooldown does not run this turn: called while a skill that lasts runs,
  *   or outside the mode it is bound to (敌能-2). Once a turn.
@@ -88,6 +100,8 @@ export const BOLT_RADIUS = 0.3;
  * @property {(u: Unit, key: string, value: number, mods: Record<string, number>) => void} setBuff gives a unit a buff of a key
  *   without an end, or retunes the one it has (属性-4)
  * @property {(t: Unit, n: number) => void} drainCost an operator's player loses n cost, down to 0 (费用-1)
+ * @property {(u: Unit) => boolean} device whether a unit is a 装置 (敌能-151): a device unit (装置-1), or an operator unit
+ *   whose record is one — profession 装置 (`TRAP`: a 携带物, 符文-6; a builder, 守御-4 …) or a 装置类 summon (敌能-54)
  * @property {() => Unit | null} blocker the unit blocking it, or null
  * @property {(id: number) => Unit | null} unit the unit of that id still in the list, or null: hidden, unselectable and
  *   already at 0 HP all still count; one that has left the list does not (敌能-67)
@@ -141,6 +155,8 @@ export const BOLT_RADIUS = 0.3;
  *   (路线-2, 敌能-48); a unit that is not flying is left as it is
  * @property {(u: Unit) => number} ammoOf shots left on a unit's running ammo skill, otherwise 0 (敌能-49, 技能-4)
  * @property {(u: Unit, n: number) => void} spendAmmo takes that many shots, not below 0, and does not end the skill (敌能-49)
+ * @property {(u: Unit) => void} clearSp a unit's SP to 0 (技能-2); a running skill goes on, a unit without a skill is left as
+ *   it is (敌能-157)
  * @property {(u: Unit, key: string, frames: number, mods: Record<string, number>) => void} renew sets that buff's frames
  *   left and replaces its modifiers; adds it when the unit has none (敌能-49)
  * @property {() => Unit[]} ours operators and our devices still on the field (敌能-49)
@@ -262,6 +278,17 @@ function deployableAt(c, row, col) {
 }
 
 /**
+ * Whether a unit is a 装置 (敌能-151): a device unit (装置-1), or an operator unit whose record is one — profession 装置
+ * (`TRAP`: a 携带物, 符文-6; a builder, 守御-4; the other cards' devices) or a 装置类 summon (`summon.device`, 敌能-54).
+ * @param {Content} c @param {Unit} u
+ */
+function deviceUnit(c, u) {
+  if (u.kind === KIND.DEVICE) return true;
+  const d = u.kind === KIND.OPERATOR ? c.operators[u.key] : undefined;
+  return d?.profession === 'TRAP' || d?.summon?.device === true;
+}
+
+/**
  * The context's `bolt` (敌能-4): a direct bolt from the enemy, and its event. Kept out of contextOf for its line budget.
  * @param {World} w @param {Unit} e @param {Parameters<FoeContext['bolt']>[0]} b
  */
@@ -294,6 +321,7 @@ function contextOf(w, c, e, of) {
     get taken() { if (!Object.hasOwn(ab, '@taken')) ab['@taken'] = 0; return ab['@taken']; },
     unblocked: (ab['@unblocked'] ?? 0) === 1,
     fell: (ab['@fell'] ?? 0) === 1,
+    bumpedHigh: () => bumpedHigh(ab),
     ready: skill !== null && (ab[`${name}.cd`] ?? 0) <= 0,
     use: () => { if (skill) ab[`${name}.cd`] = skill.cooldown < 0 ? ONCE : secondsToFrames(skill.cooldown); },
     // the turn's frame off the cooldowns comes after its tick (foeTick): one frame back is this turn held
@@ -314,6 +342,7 @@ function contextOf(w, c, e, of) {
     passengers: () => w.units.filter((u) => u.ab['@carrier'] === e.id).length,
     alight: () => { releasePassengers(w, c, e); },
     drainCost: (t, n) => { const p = t.kind === KIND.OPERATOR ? w.players[t.owner] : undefined; if (p) p.cost = Math.max(0, p.cost - n); },
+    device: (u) => deviceUnit(c, u),
     inLine: () => inLine(w, e),
     // `buff` and `all` are omitted when absent: a null field would change the hash of every blast (敌能-43, 敌能-86).
     blast: (b) => { w.blasts.push({ x: b.x, y: b.y, radius: b.radius, left: secondsToFrames(b.delay), air: b.air, src: b.sourced ? e.id : -1, type: b.type, amount: b.amount, status: b.status ?? null, ...(b.buff ? { buff: b.buff } : {}), ...(b.all ? { all: true } : {}) }); },
@@ -335,12 +364,13 @@ function contextOf(w, c, e, of) {
  * @param {World} w @param {Content} c @param {Unit} e @param {Record<string, number>} ab
  * @returns {Pick<FoeContext, 'setHp' | 'resetSkills' | 'onWay' | 'detour' | 'release' | 'placeDevice' | 'summon' | 'draw' | 'remove'
  *   | 'devour' | 'carryOff' | 'putBack' | 'unlock' | 'lockCost' | 'sealCard' | 'lend' | 'around' | 'enemies' | 'fly' | 'attackAgain' | 'ammoOf' | 'spendAmmo' | 'renew' | 'ours' | 'place' | 'steady' | 'behind'
- *   | 'course' | 'open' | 'planted' | 'summonNext' | 'grantLoot' | 'hurl'>}
+ *   | 'course' | 'open' | 'planted' | 'summonNext' | 'grantLoot' | 'hurl' | 'clearSp' | 'readyOf'>}
  */
 function lateContext(w, c, e, ab) {
   return {
     setHp: (t, hp) => { setHp(t, hp); },
-    resetSkills: () => { for (const s of defOf(c, e).skills ?? []) ab[`${s.key}.cd`] = secondsToFrames(s.initCooldown); },
+    resetSkills: () => { for (const s of defOf(c, e).skills ?? []) ab[`${s.key}.cd`] = firstCooldown(s); },
+    readyOf: (name) => (defOf(c, e).skills ?? []).some((s) => s.key === name) && (ab[`${name}.cd`] ?? 0) <= 0,
     onWay: (u) => wayKeys(c, e).includes(keyAt(c.level, u.x, u.y)),
     detour: (row, col) => { detour(c, e, row, col); },
     release: () => { release(e); },
@@ -362,6 +392,7 @@ function lateContext(w, c, e, ab) {
     spendAmmo: (u, n) => { const st = u.skill; if (st && ammoLeft(c, u) > 0) setAmmo(st, st.ammo - n); },
     renew: (u, key, frames, mods) => { renewBuff(e, u, key, frames, mods); },
     ours: () => w.units.filter(ourUnit),
+    clearSp: (u) => { if (u.skill) setSp(u.skill, 0); },
     ...moveMembers(w, c, e, ab),
   };
 }
@@ -545,7 +576,7 @@ function each(w, c, e, hook, run) {
  * @param {World} w @param {Content} c @param {Unit} e
  */
 export function foeSpawn(w, c, e) {
-  for (const s of defOf(c, e).skills ?? []) e.ab[`${s.key}.cd`] = secondsToFrames(s.initCooldown);
+  for (const s of defOf(c, e).skills ?? []) e.ab[`${s.key}.cd`] = firstCooldown(s);
   e.ab['@hp'] = e.hp;
   e.ab['@blocked'] = e.blockedBy >= 0 ? 1 : 0;
   each(w, c, e, 'spawn', (b, ctx) => b.spawn?.(ctx));
@@ -561,6 +592,7 @@ export function foeTick(w, c, e) {
   ab['@hurt'] = e.hp < (ab['@hp'] ?? e.hp) ? 1 : 0;
   ab['@unblocked'] = (ab['@blocked'] ?? 0) === 1 && blocked === 0 ? 1 : 0;
   each(w, c, e, 'tick', (b, ctx) => b.tick?.(ctx));
+  seenBump(ab);
   for (const s of defOf(c, e).skills ?? []) if ((ab[`${s.key}.cd`] ?? 0) > 0) ab[`${s.key}.cd`]--;
   ab['@hp'] = e.hp;
   ab['@blocked'] = e.blockedBy >= 0 ? 1 : 0;

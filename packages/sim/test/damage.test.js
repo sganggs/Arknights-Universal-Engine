@@ -188,6 +188,55 @@ test('[伤害-8] dodge: a draw only when the chance is above 0 and the hit can b
   assert.ok(h2 > 420 && h2 < 580, `two stacks miss 1 − 0.5² = 75 %: ${h2} of 2000 hit`);
 });
 
+test('[伤害-12] 无视闪避: the dodge is still drawn, a draw a hit as for any other, but it cannot cancel the hit; no dodge', () => {
+  const sure = mk(1), plain = mk(2);
+  sure.buffs.push(makeBuff({ key: 'sure', flags: { ignoreDodgePhys: true } }));
+  const dodger = () => {
+    const u = mk(3, { maxHp: 1e9 });
+    u.buffs.push(makeBuff({ key: 'dodge', mods: { dodgePhys: 0.5 } }));
+    return u;
+  };
+  const [wa, wb, wc] = [world(SEED), world(SEED), world(SEED)], [a, b, c] = [dodger(), dodger(), dodger()];
+  /** @type {any[]} */
+  const kept = [];
+  let landed = 0;
+  for (let i = 0; i < 40; i++) {
+    const own = { type: /** @type {const} */ ('phys'), amount: 10 }, hit = { type: /** @type {const} */ ('phys'), amount: 10, noDodgeCancel: true };
+    if (dealDamage(wa, sure, a, own) > 0) landed++;
+    if (dealDamage(wc, plain, c, hit) > 0) landed++;
+    kept.push(own, hit);
+    dealDamage(wb, plain, b, { type: 'phys', amount: 10 });
+  }
+  assert.equal(landed, 80, 'the source\'s 无视物理闪避 and the hit\'s own: every hit lands');
+  assert.ok(kept.every((d) => !d.dodged), 'not a dodge');
+  assert.deepEqual([wa.rng, wc.rng], [wb.rng, wb.rng], 'one draw a hit, as for a hit that can be dodged');
+  assert.ok(b.hp > 1e9 - 400, 'the plain source\'s hits are dodged about half the time');
+});
+
+test('[伤害-8] after a cancel or a drop to 0, later buffs do no dodge, 抵挡, shield, barrier or take; their afterCancel still runs', () => {
+  const u = mk(1), w = world();
+  /** @type {unknown[][]} */
+  const seen = [];
+  const obs = {
+    /** @type {(w: World, u: Unit, b: any, amount: number) => number} */
+    take: (_w, _u, b, amount) => { seen.push(['take', b.key]); return amount * 2; },
+    /** @type {(w: World, u: Unit, b: any, hit: any) => void} */
+    afterCancel: (_w, _u, b, hit) => { seen.push(['after', b.key, hit.dmg.type]); },
+  };
+  const c = /** @type {any} */ ({ behaviors: { buffs: { obs } } });
+  u.buffs.push(makeBuff({ key: 'wall', shieldHits: 1 }), makeBuff({ key: 'o1', act: 'obs' }), makeBuff({ key: 'bar', shield: 50, mods: { defFlat: 0 } }), makeBuff({ key: 'o2', act: 'obs' }));
+  assert.equal(takeDamage(w, u, 100, { type: 'phys', amount: 100 }, { c }), 0);
+  assert.deepEqual(seen, [['after', 'o1', 'phys'], ['after', 'o2', 'phys']], 'the ones after the shield: afterCancel, not take');
+  assert.equal(u.buffs.find((b) => b.key === 'bar')?.shield, 50, 'the barrier after it is not used');
+  seen.length = 0;
+  assert.equal(takeDamage(w, u, 100, { type: 'phys', amount: 100 }, { c }), (100 * 2 - 50) * 2, 'the layer used up: take, then the barrier');
+  assert.deepEqual(seen, [['take', 'o1'], ['take', 'o2']]);
+  seen.length = 0;
+  u.buffs.unshift(makeBuff({ key: 'zero', mods: { dmgTakenMul: 0 } }));
+  assert.equal(takeDamage(w, u, 100, { type: 'phys', amount: 100 }, { c }), 0, 'brought to 0 counts as a cancel');
+  assert.deepEqual(seen.map((s) => s[0]), ['after', 'after']);
+});
+
 test('[伤害-9] HP goes to 0, not below; damage is not rounded', () => {
   const w = world(), t = mk(1, { maxHp: 100 });
   assert.equal(dealDamage(w, null, t, { type: 'true', amount: 33.3 }), 33.3);

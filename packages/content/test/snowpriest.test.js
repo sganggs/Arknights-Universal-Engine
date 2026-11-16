@@ -311,10 +311,12 @@ function held(prep, pack = PACK, o = {}) {
   return [cast, cast ? -1 : box.e.ab['ChainBuff.cd']];
 }
 
-test('[敌能-142] silence, 冻结, 恐惧 and 缴械 hold 反自然馈赠 ready, as does no other enemy within 3.5; blocked, it still casts', () => {
+test('[敌能-142] [状态-12] silence, 冻结, 恐惧, 缴械, 强制缴械 and noAttack hold 反自然馈赠 ready, as does no other enemy within 3.5; blocked, it still casts', () => {
   assert.deepEqual(held((b) => { status.applyStatus(b.e, 'silence', { seconds: 30 }); }), [false, 0]);
   assert.deepEqual(held((b) => { status.applyStatus(b.e, 'freeze', { seconds: 30 }); }), [false, 0]);
   assert.deepEqual(held((b) => { status.applyStatus(b.e, 'fear', { seconds: 30 }); }), [false, 0]);
+  assert.deepEqual(held((b) => { status.applyStatus(b.e, 'disarm', { seconds: 30 }); }), [false, 0]);
+  assert.deepEqual(held((b) => { status.applyStatus(b.e, 'forceDisarm', { seconds: 30 }); }), [false, 0]);
   assert.deepEqual(held((b) => { flag(b.e, { noAttack: true }); }), [false, 0]);
   assert.deepEqual([held(() => {}, [['f1', 3.6, 1]]), held(() => {}, [['f1', 3.5, 1]])], [[false, 0], [true, -1]], 'from the priest: 3.6 is out, 3.5 in');
   const short = { rec: { rangeRadius: 2 } };

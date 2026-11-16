@@ -6,7 +6,7 @@ import { register } from 'node:module';
 import { pathToFileURL } from 'node:url';
 import { oracleDir, STRONGHOLD } from '@aue/testkit';
 import { createWorld, step, contentHash } from '@aue/sim';
-import { KIT_SOURCE, KIT_FILES, KITS_ENABLED, loadKits, matchContent } from '../src/index.js';
+import { KIT_SOURCE, KIT_FILES, KITS_ENABLED, loadKits, matchContent, chessKit } from '../src/index.js';
 import { loadUnderGrid } from '../src/compat/grid.js';
 
 /** The pinned commit's root as a URL. */
@@ -64,4 +64,18 @@ test('[兼容-6] [干员-15] a 傀儡师 with a kit: its 替身 keeps its range;
   const doll = (/** @type {any} */ c) => c.operators['char_1023_ghost2#0'].trait.doll;
   assert.deepEqual([doll(plain).attack, doll(plain).aura, doll(plain).range.length], [false, { moveMul: 0.4, scale: 0.8 }, 9], 'PUM-X 3: the engine\'s');
   assert.deepEqual([doll(kitted).attack, doll(kitted).aura, doll(kitted).range], [true, null, doll(plain).range]);
+});
+
+test('[兼容-5] a chess kit given to a match (chessKit) makes its default skill the spec of the selected one; the same factory unmarked leaves the piece without a spec', async () => {
+  const kit = { skill: { kind: 'duration' } };
+  const factory = () => kit;
+  for (const [name, given, want] of /** @type {[string, () => any, unknown][]} */ ([['chessKit', chessKit(factory), kit.skill], ['unmarked', () => kit, null]])) {
+    /** @type {any[]} */
+    const seen = [];
+    const c = await matchContent(match('char_112_siege'), { kits: { char_112_siege: given }, content: { seen: (b) => { seen.push(b); } } });
+    createWorld(c, { seed: 7, players: 1 });
+    const piece = seen[0].pieces.get('0|char_112_siege#0');
+    assert.ok(piece?.kit, 'the kit is installed');
+    assert.equal(piece.skill.spec ?? null, want, name);
+  }
 });

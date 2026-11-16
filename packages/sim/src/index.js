@@ -8,6 +8,7 @@ export { predefinedKey } from './predefined.js';
 export { reachKeys, placedReach, setRange, setExtraRange } from './reach.js';
 export { healsNow } from './modes.js';
 export { healsThrough, healHow } from './healthrough.js';
+export { disarmed } from './disarm.js';
 export { rangeCell, pickTarget, targetsOf, setAtkCd, traitScale, attackNow, boomerangStrike } from './combat.js';
 export * as dir from './dir.js';
 export * as body from './body.js';

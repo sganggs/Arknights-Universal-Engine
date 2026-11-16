@@ -3,6 +3,7 @@
 // of the engine can place (装置-3), so it is covered and idle. `charge`, `RefreshShield` and `occupy` are shared names:
 // only the blackboards below, with the layer cap or the marker of the page, are this family (关卡-2). They act only
 // through the context (ADR 0055).
+import { disarmed } from '@aue/sim';
 import { resetBarrier } from './mudshield.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').FoeContext} FoeContext */
@@ -78,14 +79,15 @@ const charge = Object.freeze({
 });
 
 /**
- * Able to cast now (敌能-143): ready, able to act, not in 失衡, not silenced, not feared, not kept from attacking, on the
- * field, not under 战栗 while blocked — the cast takes an attack's place, so it waits as 敌能-62's barrel does; in 失衡 the
- * turn only slides (位移-3), so the interval taken would stay pending until the slide ends.
+ * Able to cast now (敌能-143): ready, able to act, not in 失衡, not silenced, not feared, not kept from attacking (`noAttack`,
+ * 缴械 or 强制缴械, 状态-12), on the field, not under 战栗 while blocked — the cast takes an attack's place, so it waits as
+ * 敌能-62's barrel does; in 失衡 the turn only slides (位移-3), so the interval taken would stay pending until the slide
+ * ends.
  * @param {FoeContext} ctx
  */
 function mayCast(ctx) {
   const s = ctx.stats(ctx.self), f = s.flags;
-  return ctx.ready && !ctx.unbalanced && !s.disabled && !f.silence && !f.fear && !f.noAttack && !ctx.self.hidden && !(ctx.blocked && f.disarmedCombat);
+  return ctx.ready && !ctx.unbalanced && !s.disabled && !f.silence && !f.fear && !f.noAttack && !disarmed(ctx.self) && !ctx.self.hidden && !(ctx.blocked && f.disarmedCombat);
 }
 
 /**
