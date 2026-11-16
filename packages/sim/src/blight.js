@@ -159,11 +159,11 @@ export function giveBleed(t, damage, seconds) {
 
 /**
  * One tick of bleed (敌能-46): sourceless arts, so there is no source penetration or multiplier, and RES still applies.
- * `stopAt` keeps the target at 1 HP.
- * @param {World} w @param {Unit} u @param {import('./types.js').Buff} b
+ * `stopAt` keeps the target at 1 HP. With the content, as a trigger gets it (伤害-8).
+ * @param {World} w @param {Unit} u @param {import('./types.js').Buff} b @param {Content} [c]
  */
-export function bleedTick(w, u, b) {
-  dealDamage(w, null, u, { type: 'arts', amount: b.value, sourceless: true, stopAt: 1 });
+export function bleedTick(w, u, b, c) {
+  dealDamage(w, null, u, { type: 'arts', amount: b.value, sourceless: true, stopAt: 1 }, c);
 }
 
 /** Whether a unit stands on a 低地 tile (敌能-46). @param {Content} c @param {Unit} u */

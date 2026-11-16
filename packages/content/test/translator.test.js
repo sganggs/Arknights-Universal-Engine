@@ -236,12 +236,14 @@ test('[敌能-158] [伤害-8] [伤害-10] every hit that reaches its 伤判 is c
   assert.deepEqual([e.hp, counts(e)], [2420, [4, 1]], 'one count full: neither counts more');
 });
 
-test('[敌能-158] [元素-2] [元素-4] 元素损伤 still builds up; damage the engine deals without the content is not cancelled', () => {
+test('[敌能-158] [元素-2] [元素-4] [伤害-8] 元素损伤 still builds up; the damage of a burst it sets off is cancelled like any other, none of it counted', () => {
   const box = open(rec()), e = box.e;
-  assert.equal(elements.dealEp(box.w, e, 'FIRE', 100, null), 90, '损伤抵抗 10');
+  assert.equal(elements.dealEpFrom(box.w, e, 'FIRE', 100, { c: box.c }), 90, '损伤抵抗 10');
   assert.equal(e.ep.FIRE, 910);
-  assert.equal(damage.dealDamage(box.w, null, e, { type: 'elemental', amount: 500, sourceless: true }), 500);
-  assert.deepEqual([e.hp, counts(e)], [2000, [0, 0]]);
+  assert.equal(elements.dealEpFrom(box.w, e, 'FIRE', 5000, { c: box.c }), 4500, 'past the gauge: the burst begins');
+  assert.deepEqual([e.hp, counts(e)], [2500, [0, 0]], 'its damage is cancelled like the rest, and element damage counts for neither');
+  assert.equal(damage.dealDamage(box.w, null, e, { type: 'elemental', amount: 500, sourceless: true }), 500, 'a caller that gives no content gets none of it');
+  assert.equal(e.hp, 2000);
 });
 
 test('[敌能-158] [敌能-2] [时间-2] [帧-1] the 4th physical hit: at its next turn 2 s standing still in 原始形态, then 寻仇者形态\'s numbers for good', () => {
