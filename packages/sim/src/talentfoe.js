@@ -82,26 +82,29 @@ export function foeAfter(w, c, op, t, dmg) {
 
 /**
  * What one target 倍率 left for after a hit (foeAfter, 职业-28): one checked `post` only when its condition holds now
- * (职业-29); then its mark, and while the target has HP its status, 偷取, SP, arts damage, and its elemental damage while
- * a burst lasts or 元素损伤 over time (职业-29).
+ * (职业-29); then its mark, and while the target has HP its status, 偷取, SP, arts damage (with the content, 伤害-8), and
+ * its elemental damage while a burst lasts or 元素损伤 over time (职业-29).
  * @param {World} w @param {Content} c @param {{ op: Unit, t: Unit }} at @param {VsScale} v
  */
 function leftAfter(w, c, { op, t }, v) {
   if (v.post && !holds(w, c, { op, t }, v)) return;
   if (v.mark) mark(t, `${v.mark.arts ? 'markArts' : 'markDmg'}:${op.id}`, op, v.mark);
   if (t.hp <= 0) return;
-  overTime(w, op, t, v);
+  overTime(w, c, op, t, v);
   if (v.inflict) inflict(w, t, /** @type {import('./status.js').StatusKey} */ (v.inflict.key), { seconds: v.inflict.seconds, src: op });
   if (v.steal) steal(w, op, t, v.steal);
   if (v.sp && op.skill) gainSp(op.skill, v.sp);
   if (v.arts && v.later) addBuff(t, makeBuff({ key: `later:${op.id}:${w.frame}:${t.buffs.length}`, act: 'foeLater', src: op.id, value: traitOf(c, op).vs.indexOf(v), left: LATER_FRAMES }));
-  else if (v.arts) dealDamage(w, op, t, { type: 'arts', amount: statsOf(op).atk * v.arts, sourceless: true, throughSleep: true });
+  else if (v.arts) dealDamage(w, op, t, { type: 'arts', amount: statsOf(op).atk * v.arts, sourceless: true, throughSleep: true }, c);
 }
 
-/** The damage over time a target 倍率 leaves (职业-29): while a burst lasts, or 元素损伤. @param {World} w @param {Unit} op @param {Unit} t @param {VsScale} v */
-function overTime(w, op, t, v) {
+/**
+ * The damage over time a target 倍率 leaves (职业-29): while a burst lasts, or 元素损伤 (with the content).
+ * @param {World} w @param {Content} c @param {Unit} op @param {Unit} t @param {VsScale} v
+ */
+function overTime(w, c, op, t, v) {
   if (v.burstDot && v.el) burstDotOn(op, t, { el: v.el, scale: v.burstDot });
-  if (v.epDot) epDotOn(w, op, t, v.epDot);
+  if (v.epDot) epDotOn(w, c, op, t, v.epDot);
 }
 
 /** A mark of an operator on a target for `seconds` (职业-28): its value; the time starts again when it is there. @param {Unit} t @param {string} key @param {Unit} op @param {{ seconds: number, dmg?: number, arts?: number }} m */
@@ -154,7 +157,7 @@ export function foeBehaviors(c, holds) {
 /**
  * At the start of an operator's turn (职业-28): the attack it holds by stealing (stolenTurn); every second from 0.5 s
  * after it was deployed, each enemy asleep, with HP, on the field, not 隐匿 and selectable takes arts damage of
- * `sleepDot` × its attack (sourceless, through 沉睡).
+ * `sleepDot` × its attack (sourceless, through 沉睡, with the content: 伤害-8).
  * @param {World} w @param {Content} c @param {Unit} op
  */
 export function foeTurn(w, c, op) {
@@ -165,7 +168,7 @@ export function foeTurn(w, c, op) {
   if (since < half || (since - half) % every !== 0) return;
   const amount = statsOf(op).atk * t.sleepDot;
   for (const e of w.units.filter((u) => hostile(u) && u.hp > 0 && !u.hidden && statsOf(u).flags.sleep && !stealthed(u) && !statsOf(u).flags.untargetable)) {
-    dealDamage(w, op, e, { type: 'arts', amount, sourceless: true, throughSleep: true });
+    dealDamage(w, op, e, { type: 'arts', amount, sourceless: true, throughSleep: true }, c);
   }
 }
 

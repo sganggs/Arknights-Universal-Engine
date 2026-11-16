@@ -250,6 +250,7 @@
  * @property {number | 'blockCnt' | 'all'} targets a normal attack's maximum number of targets
  * @property {boolean} heal its normal attack heals allies instead (职业-2)
  * @property {number} hits hits per target of each attack
+ * @property {number} hitMul the share of its amount each of those hits takes (after the defences, 职业-3): 1 for all of it; below it, only the first hit gives 受击回复
  * @property {Record<string, number>} mods lasting modifiers while deployed
  * @property {Record<string, boolean>} flags lasting flags while deployed
  * @property {number} killCost cost gained when its attack or skill kills an enemy

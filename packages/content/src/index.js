@@ -12,7 +12,8 @@ import { c4Buffs } from './c4.js';
 import { heteroBuffs } from './heteroslime.js';
 import { pompeiiBuffs } from './pompeii.js';
 import { rotKnightBuffs } from './rotknights.js';
-import { operatorAt, teamTalentsAt } from './operators.js';
+import { translatorBuffs } from './translator.js';
+import { operatorAt, teamTalentsAt, TALENT_FIELDS } from './operators.js';
 import { TOKENS, tokenAt } from './tokens.js';
 import { teamFits, predefinedKey } from '@aue/sim';
 import { skillBehaviors } from './skills.js';
@@ -28,7 +29,7 @@ import { OFFICIAL_SOURCE } from './mods/source.js';
 import { deckKeys, seatOfKey, summonKey } from './deckkeys.js';
 
 /** The official behaviours: skills (技能-6), enemy abilities (敌能-2), the chalice's 伤判 (敌能-41), the mudshield barrier (敌能-66) and W's planted C4 (敌能-76). */
-const BEHAVIORS = Object.freeze({ skills: skillBehaviors, foes: foeBehaviors, buffs: { ...chaliceBuffs, ...mudShieldBuffs, ...c4Buffs, ...heteroBuffs, ...pompeiiBuffs, ...rotKnightBuffs } });
+const BEHAVIORS = Object.freeze({ skills: skillBehaviors, foes: foeBehaviors, buffs: { ...chaliceBuffs, ...mudShieldBuffs, ...c4Buffs, ...heteroBuffs, ...pompeiiBuffs, ...rotKnightBuffs, ...translatorBuffs } });
 
 /**
  * Enemies with their PRTS extras (敌能-5…) and attack timings (攻击-2); an ability that still lacks values its behaviour
@@ -85,7 +86,8 @@ export function levelContent(id, difficulty) {
  * kept (职业-16) —: a kit applies its talents itself (兼容-6).
  * @param {import('@aue/sim').OperatorDef} op @returns {import('@aue/sim').OperatorDef}
  */
-function withoutTalents({ talentBb, talentMods, talentTrait, fieldTalents, rangeTalents, critTalents, timedTalents, deployTalents, ...rest }) {
+function withoutTalents(op) {
+  const rest = /** @type {import('@aue/sim').OperatorDef} */ (Object.fromEntries(Object.entries(op).filter(([k]) => !TALENT_FIELDS.includes(k))));
   const doll = rest.trait?.doll;
   return doll ? { ...rest, trait: { ...rest.trait, doll: { ...doll, attack: true, aura: null } } } : rest;
 }
