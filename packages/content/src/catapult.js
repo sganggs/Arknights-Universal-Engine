@@ -18,8 +18,11 @@ const BROOD_BOUND = 0.2;
 
 /** 自制投石机's `Attack` (敌能-106). @param {Record<string, unknown>} bb */
 export const stonesShape = (bb) => exact(bb, STONES);
-/** 投嗣育母's `Attack` (敌能-106): `enemy_key` alone. @param {Record<string, unknown>} bb */
-export const broodShape = (bb) => Object.keys(bb).length === 1 && typeof bb.enemy_key === 'string' && bb.enemy_key !== '';
+/**
+ * 投嗣育母's `Attack` (敌能-106): `enemy_key` alone, or with the content's `page` marker — the same key is other
+ * enemies' `Attack` too, and 敌能-153 covers only the read page. @param {Record<string, unknown>} bb
+ */
+export const broodShape = (bb) => typeof bb.enemy_key === 'string' && bb.enemy_key !== '' && Object.keys(bb).every((k) => k === 'enemy_key' || k === 'page');
 
 /** Whether a behaviour of this name is this file's, by its shape (关卡-2); any other name passes. @param {string} name @param {Record<string, unknown>} bb */
 export const catapultOwns = (name, bb) => name !== 'IntoFire' || exact(bb, ['move_speed']);

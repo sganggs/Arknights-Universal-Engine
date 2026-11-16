@@ -294,5 +294,29 @@
     "stronghold": "钉到 v0.3.1 后，server/sim/ai.js 在 profile 有 funnelMul 且 funnelBodyHits 不是 0 时，先打默认 1 记本体（攻击力 × 技能倍率，不乘浮游倍率），再打一记带 funnel 标签的追加，金额再乘 funnelMul。v0.2.4 的 professions.js 把同一条斜坡放在 dmgMul 上，整下攻击乘这条倍率，没有另加的本体。驭械术师的职业档案省略 funnelBodyHits，因此取默认 1。",
     "reason": "职业-12 引 PRTS「分支特性信息/data」oldid=427899：「浮游单元初始造成相当于干员攻击力20%的法术伤害，每次对上次攻击的同一目标进行攻击时该数值增加15，上限110%」。条文把这写成这一下攻击的倍率。v0.3.1 把浮游伤害写成本体之外的追加，并在注释里标了 [ASSUMED]。对照从 v0.2.4 换到 v0.3.1 之后，澄闪技能未挡住普通攻击的那几下多出一记约 100% 攻击力的命中（套件差分里的 383）。",
     "status": "有效"
+  },
+  {
+    "id": "DIF-0038",
+    "clause": "兼容-4",
+    "ours": "kit 给单位换档案或写档案的一项（unit.profile），引擎自己的攻击不读，兼容层只读选目标与可否选中的几项（maxTargets、priority、allInRange、hitAllBlocked、canHitFly、groundOnly、hitSleep、skipEnemy、rangeTiles、attackRangeRadius）。其余的项记着不使用，每个单位每一项记一条 `compat: profile.<项> is not provided yet`：浮游单元的倍率（funnel、funnelMul、dmgMul）、hits、splashRadius、shockTimes、auraRatio、selfHeal、heal、dmgType、noAttack、atkScale。投掷手的浮游倍率仍是引擎特性数据里的。",
+    "stronghold": "攻击循环读单位的 profile：kit 在技能开始时把 funnelMul、dmgMul 换成自己的函数或把 funnel.max 乘一个系数（洛洛、耶拉），之后的攻击就按它算。",
+    "reason": "引擎的浮游倍率、段数、溅射、光环比例、自疗、治疗等是特性数据（职业-12 等），攻击结算不读档案。让这些项起作用要把特性数据改成可被 kit 覆盖，是引擎的改动，没有做。受影响的棋子 kit 与项：洛洛 rockr（funnel、funnelMul、dmgMul）、耶拉 kjera（funnelMul、dmgMul）、whitw2（hits、funnel）、mlyss 的召唤物（hits）、rosmon（splashRadius、shockTimes）、cetsyr 的两个棋子条目 4_25 与 5_09（auraRatio）、excu2（selfHeal）、papyrs（heal）、skadi2 与隐德来希 etlchi 的召唤物（noAttack）、siege2 的召唤物（dmgType）。这些写入不再静默：以前整份档案的赋值会抛错，现在记一条缺口。技能里这些项的变化没有生效。",
+    "status": "有效"
+  },
+  {
+    "id": "DIF-0039",
+    "clause": "兼容-4",
+    "ours": "kit 的拉（pull、pullToFront）与推的距离是引擎的物理：拉是一秒的拖拽，力随离目标点的距离衰减，停在拉的人前 0.6708 格；返回的是要走的距离（INF-1091）。",
+    "stronghold": "拉按受力等级一次算出要走的格数并立刻位移，急停半径由 kit 给（歌蕾蒂娅用 0.05），受力等级为负时只拉一部分路。",
+    "reason": "位移-4 的拉照 PRTS「推与拉」的力与时间写成一秒的拖拽，Stronghold 的拉是它的简化。落点与时刻的差异在 0.04 格以内（INF-1091 的实测）；kit 的 stop 选项没有对应。",
+    "status": "有效"
+  },
+  {
+    "id": "DIF-0040",
+    "clause": "兼容-4",
+    "ours": "kit 写棋子 base 里的部署费用（cost）和再部署时间（respawnTime）：值记在棋子上、读回得到，牌组的费用与再部署时间仍按引擎的，不变。每个单位每个名字记一条 `compat: base.cost is not provided yet`（`base.respawnTime` 同）。",
+    "stronghold": "kit 改的费用和再部署时间就是棋子下一次部署的费用和等待时间：减费（wildmn、gravel、svash2、mlyss 的 base.cost）、缩短再部署时间（skadi 的 base.respawnTime）都真的生效。",
+    "reason": "引擎的牌组按干员的记录算费用与再部署时间（兼容-4 的「立刻重新部署」等也走牌组），没有给 kit 改它们的口子；接上要让牌组读一份可被 kit 覆盖的值，是引擎的改动，没有做。这几名干员 kit 里靠改费用、改再部署时间起作用的部分没有生效，其余照常。",
+    "status": "有效"
   }
 ]

@@ -147,7 +147,8 @@ const enemyShape = obj({
 }, {
   tags: list(str, 0, 16), talents: dict(dict(either(num(), str), 64), 64), immune: list(str, 0, 16), dmgType: oneOf('arts'), shared: bool, neutral: bool, deathLife: int(0, 99),
   epDamageResistance: num(-1000, 1000), epResistance: num(-1000, 1000),
-  skills: list(obj({ key: str, sp: int(0, 999), cooldown: num(-1, 1e6), initCooldown: num(0, 1e6), bb: dict(either(num(), str), 64) }), 0, 16),
+  // a cooldown up to 1e9 s as the extraction takes it (敌能-1): the data has ones far longer than any battle
+  skills: list(obj({ key: str, sp: int(0, 999), cooldown: num(-1, 1e9), initCooldown: num(0, 1e9), bb: dict(either(num(), str), 64) }), 0, 16),
 });
 
 const build = obj({ elite: int(0, 2), level, potential: int(1, 6), trust: int(0, 200), skill: int(-1, 2), skillLevel: int(1, 10) }, { module: int(-1, 2), moduleLevel: int(1, 3) });
