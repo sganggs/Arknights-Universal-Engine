@@ -4,7 +4,7 @@
 // the context (ADR 0055), except an arrow's blast: it is the expiry of a buff on the carrier, as W's C4 is (敌能-76), so
 // it still goes off once 凋零骑士 has left.
 
-import { attrs, body, constants, damage, targeting } from '@aue/sim';
+import { attrs, body, constants, damage, disarmed, targeting } from '@aue/sim';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').FoeContext} FoeContext */
 /** @typedef {import('@aue/sim').Unit} Unit @typedef {import('@aue/sim').World} World @typedef {import('@aue/sim').Buff} Buff */
@@ -71,13 +71,13 @@ export function knightCross(ctx, mods) {
 
 /**
  * Whether it could start a normal attack this frame (敌人攻击-1, 状态-5), so a skill may take that turn (敌能-62): able to
- * act, not silenced (the skills can be), not 缴械 (`noAttack`, which the page names), not feared, not under 战栗 while
- * blocked, not disappeared, not in 失衡 (it does not attack then, 位移-3). The attack's own cooldown is not waited for
- * (INF-0921). @param {FoeContext} ctx
+ * act, not silenced (the skills can be), no `noAttack`, not 缴械 or 强制缴械 (状态-12; the page names 缴械), not feared,
+ * not under 战栗 while blocked, not disappeared, not in 失衡 (it does not attack then, 位移-3). The attack's own cooldown
+ * is not waited for (INF-0921). @param {FoeContext} ctx
  */
 function mayStrike(ctx) {
   const s = ctx.stats(ctx.self), f = s.flags;
-  return !s.disabled && !f.silence && !f.noAttack && !f.fear && !(ctx.blocked && f.disarmedCombat) && !ctx.self.hidden && !ctx.unbalanced;
+  return !s.disabled && !f.silence && !f.noAttack && !disarmed(ctx.self) && !f.fear && !(ctx.blocked && f.disarmedCombat) && !ctx.self.hidden && !ctx.unbalanced;
 }
 
 /**

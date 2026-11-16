@@ -15,8 +15,6 @@ import { lostLifePassed } from './lostlife.js';
 const SECOND = 'maceSecond';
 /** The second form's 隐匿 (索敌-2: an enemy's, off while blocked, back 3 s after). */
 const HIDE = 'maceHide';
-/** 【瞬息杀机】's 强制缴械 on our units: a key no other ability gives. */
-const DISARM = 'maceDisarm';
 /** One of 锏's skills was cast this frame: the others wait. Lasts the rest of the frame. */
 const CAST = 'maceCast';
 /** 敌能-18's rebirth buff (avenger.js). */
@@ -162,7 +160,7 @@ function circle(ctx, second) {
 
 /**
  * 【瞬息杀机】 (`ClearSp`, 敌能-157): in the second form, each turn 敌能-89's 已损失生命值判定 at `hp_ratio`, from a full
- * HP; passed, every unit of ours within `range_radius` loses all its SP and gets `duration` s of 强制缴械 (`noAttack`)
+ * HP; passed, every unit of ours within `range_radius` loses all its SP and gets `duration` s of 强制缴械 (状态-12)
  * and 阻回. A talent: no state of 锏's stops it.
  * @type {FoeBehavior}
  */
@@ -172,7 +170,7 @@ const ClearSp = Object.freeze({
     const seconds = ctx.bb.duration;
     for (const u of ours(ctx, ctx.bb.range_radius)) {
       ctx.clearSp(u);
-      ctx.addBuff(u, { key: DISARM, left: ctx.frames(seconds), flags: { noAttack: true } });
+      ctx.applyStatus(u, 'forceDisarm', { seconds });
       ctx.applyStatus(u, 'noSp', { seconds });
     }
   },

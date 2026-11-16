@@ -3,20 +3,24 @@
 // to the engine's unit while it is deployed, unbound in between — so the hooks its kit installs once see every
 // deployment. An enemy is the engine's unit itself. Fields Stronghold's kits keep their own state in (`mem`, `trait`)
 // live here, outside the engine's state (ADR 0057).
-import { KIND, attrs, body, traits, buffs, status, damage, blocking, dir, elements, routes, reachKeys, setRange, setAtkCd } from '@aue/sim';
+import { KIND, attrs, body, traits, buffs, status, damage, blocking, dir, elements, routes, reachKeys, setRange, setAtkCd, deck } from '@aue/sim';
 import { ShSkill } from './skill.js';
-import { STATUS_NAME, buffKeyOf, buffNameOf, shFlagsOf } from './mods.js';
+import { STATUS_NAME, ELEMENT, buffKeyOf, buffNameOf, shFlagsOf } from './mods.js';
 import { STAND_INS } from './standins.js';
+import { setRespawn } from './players.js';
 
 /** @typedef {import('@aue/sim').Unit} Unit @typedef {import('@aue/sim').Buff} Buff @typedef {import('./battle.js').ShBattle} ShBattle */
 
 /** Frames a second (时间-1). */
 const FPS = 30;
 
+/** Whether a unit is 寒冷 (状态-5: its cold status in effect), which Stronghold keeps as the flag `cold`. @param {Unit} u */
+const chilled = (u) => attrs.activeBuffs(u.buffs).some((x) => x.key === 'cold' || x.key === 'enemyCold');
+
 
 /**
  * A buff as a kit sees it: its key, the status it is (Stronghold's name), who gave it, its data, the seconds left, its
- * modifiers (which a kit may replace: the holder's HP keeps its ratio, 属性-4), flags, barrier and 护盾 layers.
+ * modifiers (which a kit may replace: the holder's HP keeps its ratio, 属性-4), flags and shield.
  */
 export class ShBuff {
   /** @param {ShBattle} b @param {Unit} holder @param {Buff} buff */
@@ -26,6 +30,8 @@ export class ShBuff {
     this.holder = holder;
     /** @type {Buff} */
     this.buff = buff;
+    /** when the kit first saw it: buffs it sees are ordered by it, as Stronghold's acquisition sequence (兼容-4) */
+    this.seq = ++b.buffSeq;
   }
   /** Its key as Stronghold names it (a burst's is `<element>Burst`). */
   get key() { return buffNameOf(this.buff.key); }
@@ -34,8 +40,6 @@ export class ShBuff {
   get flags() { return this.buff.flags; }
   get shield() { return this.buff.shield; }
   set shield(v) { damage.setShield(this.holder, this.buff, v); }
-  /** Its 护盾 layers left (伤害-8): 年's kit counts the broken ones. */
-  get shieldHits() { return this.buff.shieldHits; }
   get value() { return this.buff.value; }
   /** The unit that gave it, or null. */
   get source() { return this.b.unitById(this.buff.src); }
@@ -49,6 +53,57 @@ export class ShBuff {
   set stacks(n) { buffs.setStacks(this.holder, this.buff, Number(n)); }
   get mods() { return this.buff.mods; }
   set mods(m) { buffs.retune(this.holder, this.buff, this.buff.value, m ?? {}); }
+}
+
+/**
+ * The fields of a unit's attack profile that something in the layer reads when a kit writes them: the selection of targets
+ * and of what may be selected (`maxTargets`, `priority`, `allInRange`, `hitAllBlocked`, `canHitFly`, `groundOnly`, `hitSleep`,
+ * `skipEnemy`, `rangeTiles`, `attackRangeRadius`; 索敌-2), which the layer's target helpers take from the profile a kit passes
+ * them. The engine's own attack reads none of the unit's profile: a write to any other field is kept and has no effect, and
+ * is recorded as a gap (ShUnit.noteGap).
+ */
+const PROFILE_READ = Object.freeze(new Set(['maxTargets', 'priority', 'allInRange', 'hitAllBlocked', 'canHitFly', 'groundOnly', 'hitSleep', 'skipEnemy', 'rangeTiles', 'attackRangeRadius']));
+
+/** Whether a kit's write changes a profile field: the same value (also a copy of an object) is not a change. @param {unknown} a @param {unknown} b */
+function sameField(a, b) {
+  if (a === b) return true;
+  if (typeof a !== 'object' || typeof b !== 'object' || !a || !b) return false;
+  try { return JSON.stringify(a) === JSON.stringify(b); } catch { return false; }
+}
+
+/** The base attributes a piece's content record keeps under other names than the engine's unit does. @type {Readonly<Record<string, string>>} */
+const RECORD_NAME = Object.freeze({ bat: 'baseAttackTime' });
+
+/**
+ * A piece's `base` (see ShUnit.base): a record that reads what a kit set, else the deploy cost and 再部署时间 of the
+ * operator's content record, else the engine's unit while it is deployed, else its content record; writes are kept with
+ * the piece (`baseSet`) and, but for the cost and the 再部署时间, put on the engine's unit while deployed.
+ * @param {ShUnit} p @returns {Record<string, any>}
+ */
+function pieceBase(p) {
+  const record = () => /** @type {Record<string, any>} */ (p.b.c.operators[p.defId] ?? {});
+  const known = (/** @type {string | symbol} */ k) => typeof k === 'string';
+  return new Proxy({}, {
+    get: (_t, k) => {
+      if (!known(k)) return undefined;
+      const key = /** @type {string} */ (k);
+      if (Object.hasOwn(p.baseSet, key)) return p.baseSet[key];
+      if (key === 'cost') return record().cost ?? 0;
+      if (key === 'respawnTime') return record().respawnTime ?? deck.DEFAULT_RESPAWN;
+      if (p.u && Object.hasOwn(p.u.base, key)) return /** @type {Record<string, any>} */ (p.u.base)[key];
+      return record()[RECORD_NAME[key] ?? key];
+    },
+    set: (_t, k, v) => {
+      if (!known(k)) return true;
+      const key = /** @type {string} */ (k);
+      p.baseSet[key] = v;
+      // the deck's rules stay the engine's (兼容-4): the cost and the 再部署时间 a kit writes are kept and not used
+      if (key === 'cost' || key === 'respawnTime') p.noteGap(`base.${key}`);
+      else if (p.u) /** @type {Record<string, any>} */ (p.u.base)[key] = v;
+      return true;
+    },
+    has: (_t, k) => known(k) && (Object.hasOwn(p.baseSet, /** @type {string} */ (k)) || k === 'cost' || k === 'respawnTime' || !!(p.u && Object.hasOwn(p.u.base, /** @type {string} */ (k))) || Object.hasOwn(record(), /** @type {string} */ (RECORD_NAME[/** @type {string} */ (k)] ?? k))),
+  });
 }
 
 export class ShUnit {
@@ -84,7 +139,37 @@ export class ShUnit {
     /** @type {Map<number, { afterHit: Function }>} what a kit gave single attacks of it, by the attack's mark (兼容-4) */
     this.attackOverrides = new Map();
     this.attackMarks = 0;
+    // What Stronghold's battle content beyond the kits reads of a unit (兼容-7):
+    /** @type {string[]} the equipment a piece carries (its seat's facts) */
+    this.items = [];
+    /** @type {string | null} why a piece last left the field (the engine's `death` reason) */
+    this.removeReason = null;
+    /** when a piece last left the field, in battle seconds */
+    this.deathAt = -Infinity;
+    /** when it last attacked in this deployment, in battle seconds */
+    this.lastAttackAt = -Infinity;
+    /** @type {Record<string, any> | null} what a 联防 field carried in: none in these modes */
+    this.carry = null;
+    /** a free redeployment was given for its next deployment, and without cost (players.js redeploy) */
+    this.freeNext = false;
+    this.freeCost = false;
+    /** when a piece that left may come back, in battle seconds (Stronghold's respawnAt): set at each exit, kept after */
+    this.backAt = Infinity;
+    /** in its exit's own `death` event before the engine set its card, and what content set for it then (players.js) */
+    this.leaving = false;
+    /** @type {number | null} */
+    this.backWanted = null;
   }
+
+  /** Its player as Stronghold's battle content reads it (兼容-7), or null. */
+  get player() { return this.b.getPlayer(this.ownerId); }
+  /**
+   * When a piece that left the field may be deployed again, in battle seconds, as Stronghold keeps it: set as it leaves
+   * (Infinity in a knock-out's own `death` event, before the engine sets it), kept until it leaves again; content may
+   * set it (players.js setRespawn).
+   */
+  get respawnAt() { return this.backAt; }
+  set respawnAt(t) { setRespawn(this.b, this, Number(t)); }
 
   /**
    * Keeps what a kit gave one attack of it under the attack's mark — the mark given, or a new one — and returns the mark.
@@ -103,7 +188,10 @@ export class ShUnit {
   get deployed() { return !!this.u && this.b.w.units.includes(this.u); }
   /** On the field with HP left. */
   get alive() { return this.deployed && /** @type {Unit} */ (this.u).hp > 0; }
-  get removed() { return !this.deployed; }
+  /** Gone for good, as Stronghold's: an operator's piece never is (it may be deployed again); another unit off the field is. */
+  get removed() { return this.pieceId < 0 && !this.deployed; }
+  /** A kit writes `removed = false` to leave a piece where it is; a piece is never removed (see the getter), so a write has nothing to do. @param {boolean} _v */
+  set removed(_v) {}
   /** A piece's id for the whole battle (as Stronghold's board pieces); another unit's engine id, −1 off the field. */
   get id() { return this.pieceId >= 0 ? this.pieceId : this.u ? this.u.id : -1; }
   get name() { return this.def?.name ?? this.defId; }
@@ -140,9 +228,11 @@ export class ShUnit {
     const u = this.u;
     if (!u) return null;
     const s = attrs.statsOf(u);
-    return { ...s, flags: shFlagsOf(s.flags, elements.bursting(u)) };
+    return { ...s, flags: shFlagsOf(s.flags, elements.bursting(u), chilled(u)) };
   }
   get maxHp() { return this.u ? attrs.statsOf(this.u).maxHp ?? 0 : 0; }
+  /** The most 元素损伤 it can take before a burst (元素-2: its element value's maximum). */
+  get gaugeMax() { return this.u ? attrs.statsOf(this.u).maxEp ?? 0 : 0; }
   get atk() { return this.u ? attrs.statsOf(this.u).atk ?? 0 : 0; }
   get hpRatio() { const m = this.maxHp; return m > 0 ? this.hp / m : 0; }
   /** The enemies it blocks. */
@@ -151,23 +241,59 @@ export class ShUnit {
     return id < 0 ? [] : this.b.w.units.filter((e) => e.kind === KIND.ENEMY && e.blockedBy === id).map((e) => this.b.unitOf(e));
   }
   /** Its attribute flags now (stun, sleep, …). */
-  get flags() { return this.u ? shFlagsOf(attrs.statsOf(this.u).flags, elements.bursting(this.u)) : {}; }
+  get flags() { return this.u ? shFlagsOf(attrs.statsOf(this.u).flags, elements.bursting(this.u), chilled(this.u)) : {}; }
   /** @param {string} k */
   hasFlag(k) { return !!this.flags[k]; }
   /** An air unit (飞行, 浮空…, 属性-2). */
   get isFlying() { return !!this.u && attrs.statsOf(this.u).flying; }
-  /**
-   * Its own 行动方式 as Stronghold names it (兼容-4): an enemy's FLY or WALK — the engine's, which 敌能-34 and 敌能-48 change;
-   * not its route's, and not the air units' (isFlying) —, GROUND for the others: operators, summons and devices (a device
-   * is an 'enemy'-side unit here, an ally with no motion of its own in Stronghold).
-   */
-  get motion() { return this.u?.kind !== KIND.ENEMY ? 'GROUND' : this.u.base.motion === 'FLY' ? 'FLY' : 'WALK'; }
   /** On the field and not stunned, frozen, asleep or otherwise kept from acting. */
   get canAct() { return this.alive && !this.hidden && !attrs.statsOf(/** @type {Unit} */ (this.u)).disabled; }
   /** Its 重量等级. */
   get weight() { return this.u ? attrs.statsOf(this.u).massLevel ?? 0 : 0; }
-  /** Its base attributes (属性-1). @returns {Record<string, any> | null} */
-  get base() { return this.u?.base ?? null; }
+  /**
+   * Its base attributes (属性-1), as Stronghold's unit record holds them: for an operator's piece always a record, also
+   * between deployments — its attributes from the engine's unit while deployed, from its content record before —, with its
+   * deploy `cost` and `respawnTime` too (兼容-4). What a kit writes stays with the piece: attributes are put on each
+   * deployment's unit; the cost and the 再部署时间 are kept only (the deck's rules stay the engine's, 兼容-4). Another
+   * unit's is the engine unit's own, null off the field.
+   * @returns {Record<string, any> | null}
+   */
+  get base() {
+    if (this.pieceId < 0) return this.u?.base ?? null;
+    return this.#baseView ??= pieceBase(this);
+  }
+  /** @type {Set<string> | null} the unsupported parts of buff specs and the written fields that do nothing, already recorded (battle.js noteUnsupported, noteGap) */
+  gaps = null;
+  /**
+   * Records that a kit wrote something the engine does not use (`profile.<field>`, `base.cost`): `compat: <name> is not
+   * provided yet`, once for each unit and name, so that a kit whose write does nothing shows in the errors.
+   * @param {string} name
+   */
+  noteGap(name) {
+    const mark = `gap|${name}`;
+    if ((this.gaps ??= new Set()).has(mark)) return;
+    this.gaps.add(mark);
+    this.b.errors.push({ label: name, who: this.defId, message: `compat: ${name} is not provided yet` });
+  }
+  /** What a kit set in the piece's `base`, by name (a piece's; see base). @type {Record<string, any>} */
+  baseSet = {};
+  /** @type {Record<string, any> | null} */
+  #baseView = null;
+  /** The profile a kit set (see profile): null until it sets one or writes a field. @type {Record<string, any> | null} */
+  #profileSet = null;
+  /**
+   * Its element gauges as Stronghold keeps them (元素-1…元素-3): how much of each gauge is filled — the maximum less the
+   * engine's value of the element —, by Stronghold's name; `necrosis` has no element of the engine's: always 0.
+   */
+  get elem() {
+    const u = this.u, out = { burn: 0, neural: 0, necrosis: 0, apoptosis: 0, erosion: 0 };
+    if (!u) return out;
+    const max = attrs.statsOf(u).maxEp ?? 0;
+    for (const [name, el] of Object.entries(ELEMENT)) out[/** @type {keyof typeof out} */ (name)] = Math.max(0, max - elements.epOf(u, el));
+    return out;
+  }
+  /** When it came on the field, as an order (a later one is larger): the order enemies pick their targets by (兼容-5 aggroCmp). */
+  get aggroSeq() { return this.u ? this.u.born * 1000 + this.u.bornN : 0; }
   /** The unit that blocks it, or null. @returns {ShUnit | null} */
   get blockedBy() {
     const id = this.u?.blockedBy ?? -1;
@@ -189,14 +315,39 @@ export class ShUnit {
   markDirty() {}
   /**
    * What its attacks may select, as Stronghold's profile names it: an operator's trait (职业-1) — flying units when it can
-   * hit them, its funnel's 倍率 (职业-12); an enemy's none.
+   * hit them, its funnel's 倍率 (职业-12); another unit's has only what a kit wrote.
    * @returns {Record<string, any>}
    */
   get profile() {
-    if (!this.u || this.u.kind !== KIND.OPERATOR) return {};
-    const t = traits.traitOf(this.b.c, this.u);
-    const tiles = t.rangeTiles === true || this.kit?.trait?.rangeTiles === true;
-    return { canHitFly: t.antiAir, heal: t.heal, dmgType: this.u.base.dmgType, ...(t.funnel ? { funnel: { ...t.funnel } } : {}), ...(tiles ? { rangeTiles: true } : {}) };
+    /** @type {Record<string, any>} */
+    let own = { ...this.#profileSet };
+    if (this.u?.kind === KIND.OPERATOR) {
+      const t = traits.traitOf(this.b.c, this.u);
+      const tiles = t.rangeTiles === true || this.kit?.trait?.rangeTiles === true;
+      own = { canHitFly: t.antiAir, heal: t.heal, dmgType: this.u.base.dmgType, ...(t.funnel ? { funnel: { ...t.funnel } } : {}), ...(tiles ? { rangeTiles: true } : {}), ...this.#profileSet };
+    }
+    // a kit that writes a field of it (`unit.profile.funnel = …`) keeps it
+    return new Proxy(own, { set: (target, k, v) => {
+      const key = /** @type {string} */ (k);
+      if (typeof k === 'string' && !PROFILE_READ.has(k) && !sameField(target[key], v)) this.noteGap(`profile.${k}`);
+      target[key] = v;
+      (this.#profileSet ??= {})[key] = v;
+      return true;
+    } });
+  }
+  /**
+   * A kit may give the unit another profile (`unit.profile = { ...unit.profile, … }`); it stands for every deployment, null
+   * takes it back. What the layer reads of it is the selection of targets (PROFILE_READ). The engine's own attack reads no
+   * field of it, so a field that is changed and not read — a funnel's 倍率, `hits`, `splashRadius`, `atkScale` — is kept,
+   * has no effect and is recorded once for the unit and field (noteGap).
+   * @param {Record<string, any> | null} v
+   */
+  set profile(v) {
+    if (v && typeof v === 'object') {
+      const now = this.profile;
+      for (const k of Object.keys(v)) if (!PROFILE_READ.has(k) && !sameField(now[k], v[k])) this.noteGap(`profile.${k}`);
+    }
+    this.#profileSet = v && typeof v === 'object' ? { ...v } : null;
   }
   get sp() { return this.skill?.sp ?? 0; }
   get spMax() { return this.skill?.spCost ?? 0; }
@@ -206,10 +357,10 @@ export class ShUnit {
   /** The buff of a key it has — the one in effect (状态-2) —, or null; Stronghold's burst names find the engine's bursts. @param {string} key */
   findBuff(key) {
     const k = buffKeyOf(key), u = this.u, buff = u ? attrs.activeBuffs(u.buffs).find((x) => x.key === k) ?? u.buffs.find((x) => x.key === k) : undefined;
-    return buff && u ? new ShBuff(this.b, u, buff) : null;
+    return buff && u ? this.b.buffOf(u, buff) : null;
   }
   /** @param {string} key */
   hasBuff(key) { const k = buffKeyOf(key); return !!this.u?.buffs.some((x) => x.key === k); }
   /** Its buffs, in acquisition order. */
-  get buffs() { const u = this.u; return u ? u.buffs.map((x) => new ShBuff(this.b, u, x)) : []; }
+  get buffs() { const u = this.u; return u ? u.buffs.map((x) => this.b.buffOf(u, x)) : []; }
 }

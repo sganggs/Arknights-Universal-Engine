@@ -145,28 +145,28 @@ test('[敌能-157] [敌能-89] 瞬息杀机: in the second form, past each `hp_r
   const { c, w, e } = arena(mace({ skill: NO_SKILLS, bb: { ClearSp: { hp_ratio: 0.3, duration: 6, range_radius: 2.1 } } }), ops, { tune: skilled, man: true });
   const g = opAt(w, 1, 4), sn = opAt(w, 0, 2), man = unitOf(w, MAN);
   downTo(w, c, e, 0.6);
-  assert.deepEqual([g.skill?.sp, has(g, 'maceDisarm')], [30, false], 'not in the first form');
+  assert.deepEqual([g.skill?.sp, has(g, 'forceDisarm')], [30, false], 'not in the first form');
   step(w, c, [[0, { type: 'skill', unit: sn.id }]]);
   assert.equal(sn.skill?.active, true);
   secondForm(w, c, e);
   downTo(w, c, e, 0.71);
-  assert.equal(has(g, 'maceDisarm'), false, '29% lost: below 30%');
+  assert.equal(has(g, 'forceDisarm'), false, '29% lost: below 30%');
   downTo(w, c, e, 0.69);
   for (const u of [g, sn]) {
     assert.equal(u.skill?.sp, 0, 'SP cleared');
-    assert.equal(u.buffs.find((b) => b.key === 'maceDisarm')?.left, 180, '6 s of 强制缴械');
-    assert.deepEqual([attrs.statsOf(u).flags.noAttack, attrs.statsOf(u).flags.noSp], [true, true]);
+    assert.equal(u.buffs.find((b) => b.key === 'forceDisarm')?.left, 180, '6 s of 强制缴械');
+    assert.deepEqual([attrs.statsOf(u).flags.forceDisarm, attrs.statsOf(u).flags.noAttack, attrs.statsOf(u).flags.noSp], [true, undefined, true]);
   }
   assert.equal(sn.skill?.active, true, 'a running skill goes on');
-  assert.ok(!man.buffs.some((b) => b.key === 'maceDisarm' || b.key === 'noSp'), 'not a neutral unit');
+  assert.ok(!man.buffs.some((b) => b.key === 'forceDisarm' || b.key === 'noSp'), 'not a neutral unit');
   run(w, c, 179);
-  assert.deepEqual([g.skill?.sp, has(g, 'maceDisarm'), has(g, 'noSp')], [0, true, true], 'no SP back under 阻回');
+  assert.deepEqual([g.skill?.sp, has(g, 'forceDisarm'), has(g, 'noSp')], [0, true, true], 'no SP back under 阻回');
   step(w, c);
-  assert.deepEqual([g.skill?.sp, has(g, 'maceDisarm'), has(g, 'noSp')], [0, false, false], 'both end after 6 s (180 frames)');
+  assert.deepEqual([g.skill?.sp, has(g, 'forceDisarm'), has(g, 'noSp')], [0, false, false], 'both end after 6 s (180 frames)');
   downTo(w, c, e, 0.05);
-  assert.equal(g.buffs.filter((b) => b.key === 'maceDisarm').length, 1, '31% → 95% lost: one pass across the 60% and 90% stages');
+  assert.equal(g.buffs.filter((b) => b.key === 'forceDisarm').length, 1, '31% → 95% lost: one pass across the 60% and 90% stages');
   downTo(w, c, e, 0.04);
-  assert.equal(g.buffs.filter((b) => b.key === 'maceDisarm').length, 1, 'no stage left until it dies');
+  assert.equal(g.buffs.filter((b) => b.key === 'forceDisarm').length, 1, 'no stage left until it dies');
 });
 
 test('[敌能-157] 瞬息杀机 reaches only units within its radius: the same loss with `range_radius` 1.5 leaves the guard at distance 2 alone, and one that took off; the second player\'s sniper is reached', () => {
@@ -177,9 +177,9 @@ test('[敌能-157] 瞬息杀机 reaches only units within its radius: the same l
   secondForm(w, c, e);
   buffs.addBuff(ar, buffs.makeBuff({ key: 'up', flags: { liftoff: true } }));
   downTo(w, c, e, 0.74);
-  assert.ok((g.skill?.sp ?? 0) > 0 && !has(g, 'maceDisarm'), 'the guard at distance 2 keeps its SP');
-  assert.deepEqual([sn.owner, sn.skill?.sp, has(sn, 'maceDisarm')], [1, 0, true], 'the sniper at distance 1 does not');
-  assert.ok((ar.skill?.sp ?? 0) > 0 && !has(ar, 'maceDisarm'), 'one that took off is out of a ground enemy\'s reach (阻挡-2)');
+  assert.ok((g.skill?.sp ?? 0) > 0 && !has(g, 'forceDisarm'), 'the guard at distance 2 keeps its SP');
+  assert.deepEqual([sn.owner, sn.skill?.sp, has(sn, 'forceDisarm')], [1, 0, true], 'the sniper at distance 1 does not');
+  assert.ok((ar.skill?.sp ?? 0) > 0 && !has(ar, 'forceDisarm'), 'one that took off is out of a ground enemy\'s reach (阻挡-2)');
 });
 
 test('[敌能-157] [状态-7] [状态-9] 沉默 and 静默: its data makes it immune to 沉默, so its skills go on; a 锏 without that immunity casts none under 沉默; 静默 stops both skills, not its talents', () => {
@@ -205,10 +205,10 @@ test('[敌能-157] [状态-7] [状态-9] 沉默 and 静默: its data makes it im
   status.applyStatus(e, 'mute', {});
   assert.ok(attrs.statsOf(e).flags.mute && (g.skill?.sp ?? 0) > 0);
   downTo(w, c, e, 0.7);
-  assert.deepEqual([g.skill?.sp, has(g, 'maceDisarm')], [0, true], '瞬息杀机 lets out under 静默 (a talent)');
+  assert.deepEqual([g.skill?.sp, has(g, 'forceDisarm')], [0, true], '瞬息杀机 lets out under 静默 (a talent)');
 });
 
-test('[敌能-157] [职业-13] 瞬息杀机\'s 强制缴械 keeps our operators from starting an attack; a swing already under way still lands (不在本条)', () => {
+test('[敌能-157] [状态-12] 瞬息杀机\'s 强制缴械 cancels a swing under way and keeps our operators from attacking while it lasts', () => {
   const tune = (/** @type {any} */ k) => { Object.assign(k.operators.guard, { atk: 1000, baseAttackTime: 3, attack: { duration: 1, hit: 0.5 } }); };
   const { c, w, e } = arena(mace({ skill: NO_SKILLS }), [], { tune });
   secondForm(w, c, e);
@@ -218,11 +218,14 @@ test('[敌能-157] [职业-13] 瞬息杀机\'s 强制缴械 keeps our operators 
   const g = opAt(w, 1, 2);
   for (let i = 0; i < 200 && !(g.swing && g.swing.since === 0); i++) step(w, c);
   const lands = w.frame - 1 + (g.swing?.wind ?? 0);
-  downTo(w, c, e, 0.7);
-  assert.ok(has(g, 'maceDisarm') && g.swing !== null && lands > w.frame, 'disarmed with a swing under way');
+  assert.ok(g.swing !== null && lands > w.frame + 1, 'a swing under way');
   /** @type {number[]} */
   const after = [];
   bus.on(w, 'hit', (x) => { if (x.source === g) after.push(w.frame); });
+  downTo(w, c, e, 0.7);
+  assert.equal(has(g, 'forceDisarm'), true, '强制缴械');
+  step(w, c);
+  assert.equal(g.swing, null, 'the swing under way is cancelled on its turn');
   run(w, c, 200);
-  assert.deepEqual(after, [lands], 'that swing lands; no new one starts while it lasts');
+  assert.deepEqual(after, [], 'it never lands, and no new one starts while 强制缴械 lasts');
 });

@@ -25,7 +25,6 @@ import { loadUnderGrid } from '../src/compat/grid.js';
 import { defOf, tokenDefOf } from '../src/compat/records.js';
 import { kitsBehaviors, withKitTrait } from '../src/compat/kits.js';
 import { STATUS_NAME } from '../src/compat/mods.js';
-import { SHIELD_KEEP } from '../src/compat/shields.js';
 import { loadTraining, operatorAt } from '../src/operators.js';
 import { TOKENS, loadToken, tokenAt } from '../src/tokens.js';
 
@@ -64,16 +63,13 @@ function traitOf(list) {
   return { key: 'trait', mods };
 }
 
-/** Whether a buff's flags change something: the compat layer's SHIELD_KEEP only keeps a spent kit shield (兼容-4). @param {any} b */
-const flagsChange = (b) => Object.entries(b.flags ?? {}).some(([k, on]) => on && k !== SHIELD_KEEP);
-
 /**
  * Buffs as key → sorted mods, without the ones that change nothing, the skill's and this harness's own (`kitdiff:`); the
  * branch trait's as one (traitOf); unit ids in keys read as roles (roleKey).
  * @param {any[]} list @param {Map<number, string>} roles
  */
 const buffMap = (list, roles) => Object.fromEntries([traitOf(list), ...list.filter((b) => !OUR_TRAIT.has(b.key) && !String(b.key).startsWith('trait:')).map((b) => ({ ...b, key: roleKey(roles, String(b.key)) }))]
-  .filter((b) => !String(b.key).startsWith('skill') && !String(b.key).startsWith('kitdiff:') && (Object.keys(b.mods ?? {}).length > 0 || flagsChange(b)))
+  .filter((b) => !String(b.key).startsWith('skill') && !String(b.key).startsWith('kitdiff:') && (Object.keys(b.mods ?? {}).length > 0 || Object.values(b.flags ?? {}).some(Boolean)))
   .map((b) => /** @type {[string, unknown]} */ ([b.key, Object.fromEntries(Object.entries(b.mods ?? {}).sort(byKey).map(([k, v]) => [k, Math.round(Number(v) * 1e6) / 1e6]))]))
   .sort(byKey));
 
@@ -280,12 +276,22 @@ const close = (x, y) => Math.abs(x - y) <= Math.max(1, Math.abs(y) * 0.005);
 const near = (a, b) => a.every((x) => b.some((y) => close(x, y))) && b.every((y) => a.some((x) => close(x, y)));
 
 /**
- * The differences of one kit's skills between Stronghold and us; none for each skill that matches.
- * @param {string} charId @returns {Promise<{ skill: number, diffs: string[] }[]>}
+ * A kit's factory from the copy of the content: from `file` when given (a kit of another Stronghold tree,
+ * AUE_STRONGHOLD_DIR), else from the pinned one's file.
+ * @param {string} kitRoot @param {string} charId @param {string | undefined} file
  */
-export async function kitDiff(charId) {
+async function factoryOf(kitRoot, charId, file) {
+  return (await loadUnderGrid(() => import(kitRoot + (file ?? KIT_FILES[charId])))).default[charId];
+}
+
+/**
+ * The differences of one kit's skills between Stronghold and us; none for each skill that matches. `file`: the kit's file
+ * in the content, for a kit outside the pinned list.
+ * @param {string} charId @param {string} [file] @returns {Promise<{ skill: number, diffs: string[] }[]>}
+ */
+export async function kitDiff(charId, file) {
   const { harness, kitRoot, createRng } = await setUp();
-  const factory = (await loadUnderGrid(() => import(kitRoot + KIT_FILES[charId]))).default[charId], t = await loadTraining(charId);
+  const factory = await factoryOf(kitRoot, charId, file), t = await loadTraining(charId);
   const m = t.modules.length - 1, uni = m >= 0 ? t.modules[m].id : null, out = [];
   for (let skill = 0; skill < t.skills.length; skill++) {
     TRACE.on = process.env['AUE_KITDIFF_TRACE'] === `${charId}:${skill}`;

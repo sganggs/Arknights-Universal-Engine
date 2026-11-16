@@ -24,7 +24,9 @@
 3. **模组**：召唤者装备模组时，模组这一级给这个召唤物的属性（`tokenAttributeBlackboard`）直接加算；模组里标为召唤物的部分（`isToken`）按天赋序号替换召唤物的天赋候选，或加上新的天赋（干员-7 的做法）。
 4. **技能**：召唤物带的技能是它和召唤者所带技能同一序号的技能槽，技能等级取召唤者的；这个槽为空时召唤物没有技能。
 
-- 来源：[PRTS「模板:召唤物信息」oldid=434786](https://prts.wiki/index.php?title=%E6%A8%A1%E6%9D%BF%3A%E5%8F%AC%E5%94%A4%E7%89%A9%E4%BF%A1%E6%81%AF&oldid=434786) 等级一栏的说明「对应持有者的等级」，属性按精英 0/1/2 分列；[PRTS「狼群」oldid=406212](https://prts.wiki/index.php?title=%E7%8B%BC%E7%BE%A4&oldid=406212)「第二天赋2条件=精英2 潜能5」；[PRTS「令」oldid=435035](https://prts.wiki/index.php?title=%E4%BB%A4&oldid=435035) 模组「可以使用5个属性更强的召唤物……“清平”：生命上限+150，攻击+45」；数据：召唤物的 potentialRanks 为空、favorKeyFrames 全为 0，天赋候选的 requiredPotentialRank，uniequip 的 tokenAttributeBlackboard 与 isToken；精英化阶段跟随召唤者为推断 INF-0131
+同一卡组里同一干员的几份（同步-9）各有自己的召唤物记录（键带那一份的结尾）和召唤物卡，按各自的练度组装；内容召唤（召唤-6）用召唤者那一份的记录。
+
+- 来源：[PRTS「模板:召唤物信息」oldid=434786](https://prts.wiki/index.php?title=%E6%A8%A1%E6%9D%BF%3A%E5%8F%AC%E5%94%A4%E7%89%A9%E4%BF%A1%E6%81%AF&oldid=434786) 等级一栏的说明「对应持有者的等级」，属性按精英 0/1/2 分列；[PRTS「狼群」oldid=406212](https://prts.wiki/index.php?title=%E7%8B%BC%E7%BE%A4&oldid=406212)「第二天赋2条件=精英2 潜能5」；[PRTS「令」oldid=435035](https://prts.wiki/index.php?title=%E4%BB%A4&oldid=435035) 模组「可以使用5个属性更强的召唤物……“清平”：生命上限+150，攻击+45」；数据：召唤物的 potentialRanks 为空、favorKeyFrames 全为 0，天赋候选的 requiredPotentialRank，uniequip 的 tokenAttributeBlackboard 与 isToken；精英化阶段跟随召唤者为推断 INF-0131；几份各有召唤物：[PRTS「卫戍协议/帮助」oldid=450519](https://prts.wiki/index.php?title=%E5%8D%AB%E6%88%8D%E5%8D%8F%E8%AE%AE%2F%E5%B8%AE%E5%8A%A9&oldid=450519)「多个同名召唤物（例如辅助-召唤师、特种-陷阱师干员的召唤物）自动堆叠至1个手牌区槽位，复数个干员的同名召唤物不会互相堆叠」
 
 ### 召唤-3 持有上限与场上数量上限
 
@@ -70,9 +72,9 @@
 
 - 特性写「不会受到攻击」的，或实体类型为装置的：敌方不能选中它（`untargetable`，索敌-2）；
 - 备注写它（常态）持有的异常效果：禁疗（`healFree`）、无敌（`invincible`）、孤立（友方的治疗不选中它，`noAllyHeal`，另记标记 `isolated`）、不可阻挡（`unblockable`）、静默（`mute`）、不死（`undying`，状态-5）；备注写「无法撤退」的不能撤退（`noRetreat`，撤退-1）；
-- 备注写它免疫的异常效果：晕眩、冻结、寒冷、沉睡、浮空、沉默、恐惧、麻痹、麻痹震颤（状态-7）。
+- 备注写它免疫的异常效果：晕眩、冻结、沉睡、浮空、沉默、恐惧、麻痹、麻痹震颤（状态-7）。
 
-对战栗的免疫，引擎还没有对应的标记，暂不生效。
+对寒冷、战栗的免疫，引擎还没有对应的标记，暂不生效。
 
 - 来源：[PRTS「模板:召唤物信息」oldid=434786](https://prts.wiki/index.php?title=%E6%A8%A1%E6%9D%BF%3A%E5%8F%AC%E5%94%A4%E7%89%A9%E4%BF%A1%E6%81%AF&oldid=434786) 实体类型的说明「装置类：通常无法被任何常规手段选中，仅可被少数特殊方式选中或被筛选」；各召唤物 PRTS 页面的特性与备注（`packages/content/data/summons.json`，每条记录页面和版本），例如「中继器」备注「持有无敌、禁疗、孤立」；[PRTS「异常效果」oldid=440606](https://prts.wiki/index.php?title=%E5%BC%82%E5%B8%B8%E6%95%88%E6%9E%9C&oldid=440606) 各效果的含义；装置不被敌方选中为推断 INF-0135
 

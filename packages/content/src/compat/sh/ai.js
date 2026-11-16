@@ -1,7 +1,6 @@
 // Stands in for Stronghold's server/sim/ai.js (兼容-2): the names its operator kits import — a unit's attack profile now
 // (its trait's, compat/unit.js, with its running skill spec's attack and targeting, as Stronghold's effectiveProfile) and
-// the targets an attack of it would take (acquireTargets); a heal chain's next jump and an attack with a profile of the
-// kit's (kitstubs.js, 兼容-4); the rest still gaps.
+// the targets an attack of it would take (acquireTargets); the rest still gaps.
 import { traits } from '@aue/sim';
 import { gap } from './gap.js';
 import { sortEnemyTargets } from './targeting.js';
@@ -37,8 +36,20 @@ export function acquireTargets(b, u, prof) {
   return n >= cands.length ? cands : cands.slice(0, n);
 }
 
-export { chainHealNext, performAttack } from '../kitstubs.js';
-export const attackCountdown = gap('ai.attackCountdown');
+export const chainHealNext = gap('ai.chainHealNext');
+export const performAttack = gap('ai.performAttack');
+
+/**
+ * One tick off an attack cooldown, in seconds (兼容-4): what is left within 1e-9 of 0 is 0, so that a cooldown of a whole
+ * number of frames ends on its frame (one second counted down in thirty steps of 1/30 leaves 2.1e-16 in floating point).
+ * @param {number} cd @param {number} dt
+ */
+export function attackCountdown(cd, dt) {
+  const left = cd - dt;
+  return left > 1e-9 ? left : 0;
+}
+
+export const compileRoute = gap('ai.compileRoute');
 
 /** The targeting keys a skill spec may override. */
 const TARGETING = Object.freeze(['maxTargets', 'priority', 'allInRange', 'canHitFly']);

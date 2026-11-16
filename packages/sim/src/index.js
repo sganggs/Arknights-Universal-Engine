@@ -7,7 +7,7 @@ export { deployProblem, fitsTile } from './commands.js';
 export { predefinedKey } from './predefined.js';
 export { reachKeys, placedReach, setRange, setExtraRange } from './reach.js';
 export { healsNow } from './modes.js';
-export { healsThrough, healHow } from './healthrough.js';
+export { disarmed } from './disarm.js';
 export { rangeCell, pickTarget, targetsOf, setAtkCd, traitScale, attackNow, boomerangStrike } from './combat.js';
 export * as dir from './dir.js';
 export * as body from './body.js';
@@ -51,7 +51,6 @@ export { BEHAVIOR_API_VERSION, CONTEXT_MEMBERS, SKILL_CONTEXT_MEMBERS } from './
 export { hashNumbers, HASH_START, contentHash, canonicalJson } from './hash.js';
 export { teamFits } from './aura.js';
 export { reserveIds } from './units.js';
-export { healJump } from './chain.js';
 
 /** @typedef {import('./types.js').Content} Content */
 /** @typedef {import('./types.js').DeviceDef} DeviceDef */

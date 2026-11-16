@@ -3,7 +3,7 @@
 // (`DriftSand`) on the cross of the highest max HP unit, cast in place of an attack. 沙狱 (`SandStorm`) is a zone the
 // engine has no object for and 标记 (`Mark`) only draws marks: both stay uncovered (关卡-2). Acts only through the
 // context (ADR 0055).
-import { body } from '@aue/sim';
+import { body, disarmed } from '@aue/sim';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').FoeContext} FoeContext @typedef {import('@aue/sim').Unit} Unit */
 
@@ -72,14 +72,14 @@ const enrage = Object.freeze({
 
 /**
  * Whether this frame's normal attack could start (敌人攻击-1), so the skill may take its place (INF-0914): the attack
- * cooldown is out and no swing is under way; it can act, has attack, has not disappeared and is not in 失衡; neither
- * 缴械 nor 恐惧, nor 战栗 while blocked; not silenced (技能默认可被沉默).
+ * cooldown is out and no swing is under way; it can act, has attack, has not disappeared and is not in 失衡; no
+ * `noAttack`, neither 缴械 nor 强制缴械 (状态-12) nor 恐惧, nor 战栗 while blocked; not silenced (技能默认可被沉默).
  * @param {FoeContext} ctx
  */
 function freeTurn(ctx) {
   const self = ctx.self, s = ctx.stats(self), f = s.flags;
   if (self.atkCd > 0 || self.swing || self.hidden || ctx.unbalanced) return false;
-  if (s.disabled || !(s.atk > 0) || f.noAttack || f.fear || f.silence) return false;
+  if (s.disabled || !(s.atk > 0) || f.noAttack || disarmed(self) || f.fear || f.silence) return false;
   return !(f.disarmedCombat && ctx.blocked);
 }
 

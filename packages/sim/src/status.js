@@ -8,7 +8,6 @@ import { liftoffRefused } from './targeting.js';
 import { makeBuff, addBuff, removeBuff, consumeStack, count, decayRate } from './buffs.js';
 import { emit, hasHook } from './bus.js';
 import { noteFear, noteAttract } from './induce.js';
-import { heldBefore, announce, palsyKept } from './hookmore.js';
 
 /** @typedef {import('./types.js').Unit} Unit @typedef {import('./types.js').Buff} Buff */
 /** @typedef {import('./attrs.js').Stats} Stats */
@@ -38,9 +37,8 @@ const valued = (mods) => ({ rule: 'max', mods, value: null });
 /** The status catalogue (状态-5). Keys follow the Stronghold interface where it has one. */
 export const STATUS = Object.freeze({
   stun: status({ flags: { stun: true }, resist: true }),
-  // Both colds carry 寒冷's flag; their −30 counts only while the flag takes effect (状态-5, 状态-7: attrs.js counted).
-  cold: status({ flags: { cold: true }, mods: () => ({ aspd: -30 }), resist: true }),
-  enemyCold: status({ flags: { cold: true }, mods: () => ({ aspd: -30 }), resist: true }),
+  cold: status({ mods: () => ({ aspd: -30 }), resist: true }),
+  enemyCold: status({ mods: () => ({ aspd: -30 }), resist: true }),
   freeze: status({ flags: { freeze: true }, mods: () => ({ resFlat: -15 }), resist: true }),
   enemyFreeze: status({ flags: { freeze: true }, resist: true }),
   sleep: status({ flags: { sleep: true } }),
@@ -90,12 +88,8 @@ export const STATUS = Object.freeze({
 /** Frames from the options: given frames, or seconds converted (时间-2), or −1 for no end. @param {StatusOptions} o */
 const framesOf = (o) => o.frames ?? (o.seconds === undefined ? -1 : secondsToFrames(o.seconds));
 
-/**
- * Whether the unit is immune to a flag (状态-7): by its data, or by the flag `immune:<flag>` of a buff that takes effect
- * — the data's immunities are given as the same immunity when the unit is made (PRTS 异常效果).
- * @param {Unit} u @param {string} flag
- */
-const immuneTo = (u, flag) => (u.base.immune ?? []).includes(flag) || !!statsOf(u).flags[`immune:${flag}`];
+/** Whether the unit is immune to a flag (状态-7). @param {Unit} u @param {string} flag */
+const immuneTo = (u, flag) => (u.base.immune ?? []).includes(flag);
 
 /**
  * The buff a status gives (状态-5): a heavy unit (重量 > 3) halves 浮空 and 缚地 by decaying them twice as fast, its
@@ -115,8 +109,7 @@ export function statusBuff(key, target, o = {}) {
 /**
  * Cold (状态-6). A friendly cold meets a friendly cold already there: the pair becomes a friendly freeze lasting the
  * longer of the two. An enemy cold on a unit with an enemy cold or freeze becomes an enemy freeze. A unit immune to
- * freezing, by its data or a buff, just gets colder; immune to 寒冷 alone, it still freezes (INF-1152). Colds pair only
- * here, as one is given: those held when an immunity ends wait for the next (INF-1151).
+ * freezing just gets colder.
  * @param {Unit} target @param {Buff} cold @returns {Buff}
  */
 function applyCold(target, cold) {
@@ -166,27 +159,16 @@ export function applyStatus(target, key, o = {}) {
 /**
  * A status in a battle (状态-5, 钩子-3): refused for 起飞 before the event (阻挡-2); then the `beforeStatus` event — a
  * handler may cancel it, change its frames (−1 for no end; none left cancels it) or its strength (the status's value) —
- * then the status, and the `statusApplied` event when it took hold (钩子-5). Taking off inside the handler does not
- * cancel it: the check already passed.
+ * then the status. Taking off inside the handler does not cancel it: the check already passed.
  * @param {import('./types.js').World} w @param {Unit} target @param {StatusKey} key @param {StatusOptions} [o] @returns {Buff | null}
  */
 export function inflict(w, target, key, o = {}) {
   if (liftoffRefused(o.src ?? null, target)) return null;
-  if (!hasHook(w, 'beforeStatus')) return given(w, target, key, o);
+  if (!hasHook(w, 'beforeStatus')) return giveStatus(target, key, o);
   const k = emit(w, 'beforeStatus', { source: o.src ?? null, target, status: key, frames: framesOf(o), strength: o.value, cancel: false });
   const frames = Number.isFinite(k.frames) ? Math.trunc(k.frames) : framesOf(o);
   if (k.cancel || target.hp <= 0 || (frames <= 0 && frames !== -1)) return null;
-  return given(w, target, key, { ...o, frames, seconds: undefined, value: k.strength });
-}
-
-/**
- * A battle's status given (状态-5), then its `statusApplied` event when it took hold (钩子-5): `entered` compares with
- * the statuses held just before, after any `beforeStatus` handler.
- * @param {import('./types.js').World} w @param {Unit} target @param {StatusKey} key @param {StatusOptions} o @returns {Buff | null}
- */
-function given(w, target, key, o) {
-  const had = heldBefore(w, target);
-  return announce(w, target, o.src ?? null, had, giveStatus(target, key, o));
+  return giveStatus(target, key, { ...o, frames, seconds: undefined, value: k.strength });
 }
 
 /** 麻痹 loses a layer every this many frames at a 综合抵抗衰减率 of 1 (状态-8: 10 s). */
@@ -213,15 +195,14 @@ const palsyDecay = {
 export const STATUS_BEHAVIORS = Object.freeze({ palsy: palsyDecay });
 
 /**
- * 麻痹 at an enemy's attack (状态-8): when its 麻痹 takes effect, one layer goes — unless, in a battle `w`, a handler of
- * the `palsyTrigger` event keeps it (钩子-5) —, the enemy gets 0.5 s of 麻痹震颤 and the attack is interrupted.
- * Returns whether it was.
- * @param {Unit} e @param {import('./types.js').World} [w]
+ * 麻痹 at an enemy's attack (状态-8): when its 麻痹 takes effect, one layer goes, the enemy gets 0.5 s of 麻痹震颤 and
+ * the attack is interrupted. Returns whether it was.
+ * @param {Unit} e
  */
-export function palsyInterrupts(e, w) {
+export function palsyInterrupts(e) {
   const b = e.kind === KIND.ENEMY && statsOf(e).flags.palsy ? e.buffs.find((x) => x.key === 'palsy') : undefined;
   if (!b) return false;
-  if (!w || !palsyKept(w, e, b)) consumeStack(e, b);
+  consumeStack(e, b);
   applyStatus(e, 'palsyShake', { frames: PALSY_SHAKE_FRAMES });
   return true;
 }

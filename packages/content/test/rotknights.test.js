@@ -244,14 +244,14 @@ test('[敌能-145] [敌能-62] neither skill starts while it cannot act or, with
   }
 });
 
-test('[敌能-145] [敌能-62] 蓄力锤 waits for a turn it could attack in: unblocked, 缴械, feared or under 战栗 it stays ready, then starts on the first turn it may', () => {
+test('[敌能-145] [敌能-62] [状态-12] 蓄力锤 waits for a turn it could attack in: unblocked, 缴械, 强制缴械, noAttack, feared or under 战栗 it stays ready, then starts on the first turn it may', () => {
   const lone = field([[ROT, rotDef(), 2, 1]], [['sniper', 0, 2]]);
   play(lone, 700);
   assert.deepEqual([lone.es[0].ab['ChargeAttack.cd'] ?? 0, lone.es[0].ab['ChargeAttack.ch'] ?? 0], [0, 0], 'nobody blocks it');
   step(lone.w, lone.c, [[0, { type: 'deploy', op: 'guard', row: 1, col: 2, dir: 0 }]]);
   play(lone, 703);
   assert.ok(lone.es[0].ab['ChargeAttack.ch'] > 0, 'blocked, it starts');
-  for (const flags of /** @type {Record<string, boolean>[]} */ ([{ noAttack: true }, { fear: true }, { disarmedCombat: true }])) {
+  for (const flags of /** @type {Record<string, boolean>[]} */ ([{ disarm: true }, { forceDisarm: true }, { noAttack: true }, { fear: true }, { disarmedCombat: true }])) {
     const box = field([[ROT, rotDef(), 2, 1]], [['guard', 1, 2]]);
     const rot = box.es[0];
     buffs.addBuff(rot, buffs.makeBuff({ key: 'hold', flags, left: 700 }));
@@ -390,8 +390,9 @@ test('[敌能-145] 爆炸箭 reaches as far as its normal attack: its own attack
   assert.deepEqual([has(short.op('guard'), 'blastArrow'), short.es[0].ab['TripleAttack.cd'] ?? 0], [0, 0], 'radius 2.3: nobody in reach, it stays ready');
 });
 
-test('[敌能-145] [敌能-62] 爆炸箭 waits for a turn it could attack in: under 缴械 or 恐惧, or 战栗 while blocked, it stays ready', () => {
+test('[敌能-145] [敌能-62] [状态-12] 爆炸箭 waits for a turn it could attack in: under 缴械, 强制缴械, noAttack or 恐惧, or 战栗 while blocked, it stays ready', () => {
   for (const [flags, ops] of /** @type {[Record<string, boolean>, [string, number, number][]][]} */ ([
+    [{ disarm: true }, [['sniper', 0, 2]]], [{ forceDisarm: true }, [['sniper', 0, 2]]],
     [{ noAttack: true }, [['sniper', 0, 2]]], [{ fear: true }, [['sniper', 0, 2]]], [{ disarmedCombat: true }, [['guard', 1, 2]]],
   ])) {
     const box = field([[WITHER, witherDef(), 2, 1]], ops);

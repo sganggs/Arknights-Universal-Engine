@@ -46,11 +46,27 @@ function reflected(w, src, value, c) {
  * @type {NonNullable<import('@aue/sim').buffs.Behavior['take']>}
  */
 function take(w, u, b, amount, hit) {
-  const bb = hit.c?.enemies[u.key]?.talents?.Shield;
-  if (!bb || !heteroShield(bb)) return amount;
+  const bb = shieldOf(u, hit);
+  if (!bb) return amount;
   const typed = hit.dmg.type === 'phys' || hit.dmg.type === 'arts', src = hit.src;
   const landed = !src || src.kind === KIND.DEVICE || reflected(w, src, bb.value, hit.c);
   return typed && landed ? amount * (1 - bb.damage_resistance) : amount;
+}
+
+/**
+ * After an earlier 伤判 effect cancelled the hit or brought it to 0 (伤害-8: 反伤 is still dealt with): a sourced hit
+ * from anything but a device still tries the 反伤 (敌能-102). Nothing is left to halve.
+ * @type {NonNullable<import('@aue/sim').buffs.Behavior['afterCancel']>}
+ */
+function afterCancel(w, u, b, hit) {
+  const bb = shieldOf(u, hit), src = hit.src;
+  if (bb && src && src.kind !== KIND.DEVICE) reflected(w, src, bb.value, hit.c);
+}
+
+/** 异质源石虫's `Shield` blackboard, when this one has it (敌能-102). @param {import('@aue/sim').Unit} u @param {import('@aue/sim').buffs.TakeHit} hit */
+function shieldOf(u, hit) {
+  const bb = hit.c?.enemies[u.key]?.talents?.Shield;
+  return bb && heteroShield(bb) ? bb : null;
 }
 
 /** `BlockMcreep` and `M1Start` (敌能-102): nothing to act on. @type {FoeBehavior} */
@@ -59,5 +75,5 @@ const idle = Object.freeze({});
 /** The behaviours of this file, by name; `Shield` dispatches here by its shape (blockdamage.js). @type {Readonly<Record<string, FoeBehavior>>} */
 export const heteroBehaviors = Object.freeze({ BlockMcreep: idle, M1Start: idle });
 
-/** The 屏障's take (敌能-102). @type {Readonly<Record<string, import('@aue/sim').buffs.Behavior>>} */
-export const heteroBuffs = Object.freeze({ [BARRIER]: { take } });
+/** The 屏障's take, and its 反伤 after a cancel (敌能-102). @type {Readonly<Record<string, import('@aue/sim').buffs.Behavior>>} */
+export const heteroBuffs = Object.freeze({ [BARRIER]: { take, afterCancel } });

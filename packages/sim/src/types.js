@@ -565,7 +565,7 @@
  * the operator's skill runs (`skillGround`), has less than `value` of its maximum HP (`hpBelow`), has a 重量等级 of at least
  * `value` (`heavy`), stands on the line of tiles straight in front of the operator (`front`), on its tile or the 8 around
  * (`near`), is in an element burst (`burst`), stands on a ground tile (`onGround`), or the hit is the skill's (`skill`);
- * `noDodge`: such a physical hit cannot be dodged; × `ep` on the 元素损伤 it deals the target, an elite or leader (`elite`).
+ * `noDodge`: no dodge cancels such a physical hit, though it is drawn (伤害-12); × `ep` on the 元素损伤 it deals the target, an elite or leader (`elite`).
  * From talents (职业-24): the target is blocked by no unit (`unblocked`), not by the operator (`notOwnBlocked`), has more
  * than `value` of its maximum HP (`hpAbove`), a 重量等级 of at most `value` (`light`), the tag `tag` (`tag`), a ranged
  * attack (`rangedFoe`), the status `status` (`status`); `defFlat`, `defPct` more 无视防御 for the hit. From talents on the

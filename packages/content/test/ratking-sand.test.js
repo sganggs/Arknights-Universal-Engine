@@ -209,13 +209,15 @@ test('[敌能-144] 唱沙: it waits for its attack cooldown, then takes that att
   assert.equal(attacksOf(step(box.w, box.c), box.e).length, 1);
 });
 
-test('[敌能-144] 唱沙: stun, silence, 恐惧, 缴械 and 失衡 hold it, ready, until they end; silence immunity does not', () => {
+test('[敌能-144] [状态-12] 唱沙: stun, silence, 恐惧, 缴械, 强制缴械, noAttack and 失衡 hold it, ready, until they end; silence immunity does not', () => {
   /** @type {[string, (e: Unit) => void][]} */
   const holds = [
     ['stun', (e) => { status.applyStatus(e, 'stun', { seconds: 1 }); }],
     ['silence', (e) => { status.applyStatus(e, 'silence', { seconds: 1 }); }],
     ['fear', (e) => { status.applyStatus(e, 'fear', { seconds: 1 }); }],
-    ['缴械', (e) => { buffs.addBuff(e, buffs.makeBuff({ key: 'testDisarm', flags: { noAttack: true }, left: 30 })); }],
+    ['缴械', (e) => { status.applyStatus(e, 'disarm', { seconds: 1 }); }],
+    ['强制缴械', (e) => { status.applyStatus(e, 'forceDisarm', { seconds: 1 }); }],
+    ['noAttack', (e) => { buffs.addBuff(e, buffs.makeBuff({ key: 'testNoAttack', flags: { noAttack: true }, left: 30 })); }],
     ['失衡', (e) => { e.slide = { vx: 0, vy: 0, hard: 0 }; }],
     ['攻击力 0', (e) => { buffs.addBuff(e, buffs.makeBuff({ key: 'testNoAtk', mods: { atkMul: 0 }, left: 30 })); }],
   ];
@@ -233,6 +235,12 @@ test('[敌能-144] 唱沙: stun, silence, 恐惧, 缴械 and 失衡 hold it, rea
   ready(immune.e);
   step(immune.w, immune.c);
   assert.equal(lost(immune.ops.g), 800);
+  const shielded = field(still({ immune: [] }), [['g', 2, 2, 1e6]]);
+  status.applyStatus(shielded.e, 'disarm', { seconds: 1 });
+  status.applyStatus(shielded.e, 'invincible', { seconds: 1 });
+  ready(shielded.e);
+  step(shielded.w, shielded.c);
+  assert.equal(lost(shielded.ops.g), 800, '缴械 does nothing while it is 无敌 (状态-12)');
 });
 
 test('[敌能-144] 唱沙: not while it has disappeared or a swing of its is under way', () => {

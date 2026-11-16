@@ -4,7 +4,7 @@
 // one of ours within `radius`, physical damage and 神经损伤 on all of ours there, in place of a normal attack. 卢西恩's
 // `blink` is 弑君者's and leaves a 不祥幻影 (blink.js). They act only through the context (ADR 0055).
 
-import { targeting } from '@aue/sim';
+import { disarmed, targeting } from '@aue/sim';
 import { blinkedNow } from './blink.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').FoeContext} FoeContext @typedef {import('@aue/sim').Unit} Unit */
@@ -69,12 +69,13 @@ function dodge(ctx) {
 
 /**
  * Whether it could start a normal attack this frame (敌人攻击-1, 状态-5), so the skill may take that turn (敌能-62,
- * 敌能-145): able to act, not silenced (the skill can be), not 缴械, not feared, not under 战栗 while blocked, not
- * disappeared, not in 失衡. The attack's own cooldown is not waited for (INF-0921). @param {FoeContext} ctx
+ * 敌能-145): able to act, not silenced (the skill can be), no `noAttack`, not 缴械 or 强制缴械 (状态-12), not feared, not
+ * under 战栗 while blocked, not disappeared, not in 失衡. The attack's own cooldown is not waited for (INF-0921).
+ * @param {FoeContext} ctx
  */
 function mayCast(ctx) {
   const s = ctx.stats(ctx.self), f = s.flags;
-  return !s.disabled && !f.silence && !f.noAttack && !f.fear && !(ctx.blocked && f.disarmedCombat) && !ctx.self.hidden && !ctx.unbalanced;
+  return !s.disabled && !f.silence && !f.noAttack && !disarmed(ctx.self) && !f.fear && !(ctx.blocked && f.disarmedCombat) && !ctx.self.hidden && !ctx.unbalanced;
 }
 
 /**

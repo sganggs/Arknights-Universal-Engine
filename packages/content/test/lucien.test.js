@@ -353,11 +353,13 @@ test('[敌能-156] AOE takes the attack: no normal attack on its frame, the atta
   assert.equal(box.e.ab['aoe.cd'], 299);
 });
 
-test('[敌能-156] AOE gate: stun, silence (不祥幻影), 缴械, 恐惧, 消失 and 失衡 hold it ready; 卢西恩 cannot be silenced', () => {
+test('[敌能-156] [状态-12] AOE gate: stun, silence (不祥幻影), 缴械, 强制缴械, noAttack, 恐惧, 消失 and 失衡 hold it ready; 卢西恩 cannot be silenced', () => {
   /** @type {[string, (e: Unit) => void][]} */
   const holds = [
     ['stun', (e) => { status.applyStatus(e, 'stun', { seconds: 1 }); }],
     ['silence', (e) => { status.applyStatus(e, 'silence', { seconds: 1 }); }],
+    ['缴械', (e) => { status.applyStatus(e, 'disarm', { seconds: 1 }); }],
+    ['强制缴械', (e) => { status.applyStatus(e, 'forceDisarm', { seconds: 1 }); }],
     ['noAttack', (e) => { buffs.addBuff(e, buffs.makeBuff({ key: 'disarm', flags: { noAttack: true }, left: 30 })); }],
     ['fear', (e) => { buffs.addBuff(e, buffs.makeBuff({ key: 'scare', flags: { fear: true }, left: 30 })); }],
     ['hidden', (e) => { e.hidden = true; }],

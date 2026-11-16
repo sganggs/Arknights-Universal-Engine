@@ -3,6 +3,7 @@
 // Skill `ChainBuff` (反自然馈赠): in the attack's turn, a chain over other enemies, each taking a share of its 攻击力 as
 // arts damage and gaining speed for some seconds. Only the blackboards the read page marks with `page` are these;
 // 空洞雪祀 has the same keys without it and stays uncovered (关卡-2). It acts only through the context (ADR 0055).
+import { disarmed } from '@aue/sim';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').FoeContext} FoeContext @typedef {import('@aue/sim').Unit} Unit */
 /** @typedef {Parameters<NonNullable<import('@aue/sim').FoeBehavior['attack']>>[1]} AttackMods */
@@ -43,13 +44,13 @@ const dist2 = (a, b) => (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y);
 
 /**
  * Whether its normal attack may start this frame (敌人攻击-1), the turn 反自然馈赠 takes (敌能-142; the 技能 header's
- * 「大多数技能释放会占用攻击间隔」): it can act and attack — not in 失衡, not 恐惧, no `noAttack` (缴械), not 战栗 while
- * blocked —, its cooldown is out and no swing is under way.
+ * 「大多数技能释放会占用攻击间隔」): it can act and attack — not in 失衡, not 恐惧, no `noAttack`, not 缴械 or 强制缴械
+ * (状态-12), not 战栗 while blocked —, its cooldown is out and no swing is under way.
  * @param {FoeContext} ctx
  */
 function attackTurn(ctx) {
   const e = ctx.self, s = ctx.stats(e), f = s.flags;
-  if (s.disabled || s.atk <= 0 || e.hidden || ctx.unbalanced || f.noAttack || f.fear || (f.disarmedCombat && ctx.blocked)) return false;
+  if (s.disabled || s.atk <= 0 || e.hidden || ctx.unbalanced || f.noAttack || disarmed(e) || f.fear || (f.disarmedCombat && ctx.blocked)) return false;
   return e.atkCd <= 0 && !e.swing;
 }
 
