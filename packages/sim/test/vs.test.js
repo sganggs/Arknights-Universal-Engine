@@ -80,7 +80,7 @@ test('[职业-17] the target conditions: flying, below an HP share, heavy, strai
   assert.deepEqual([fly, low, heavy, ahead, beside, hot].map((t) => scaled(w, c, op, t)), [[200, 1], [300, 1], [500, 1], [700, 1], [1100, 1], [100, 13]]);
   const dodge = /** @type {any} */ ({ type: 'phys', amount: 1 }), arts = /** @type {any} */ ({ type: 'arts', amount: 1 });
   vsDamage(w, c, op, ahead, dodge); vsDamage(w, c, op, ahead, arts);
-  assert.deepEqual([dodge.canDodge, arts.canDodge], [false, undefined], 'in front: its physical hit is not dodged');
+  assert.deepEqual([dodge.noDodgeCancel, dodge.canDodge, arts.noDodgeCancel], [true, undefined, undefined], 'in front: a dodge cannot cancel its physical hit (伤害-12)');
   op.skill = /** @type {any} */ ({ active: true });
   assert.deepEqual([scaled(w, c, op, low)[0], scaled(w, c, op, fly)[0]], [300 * 17, 200], 'ground ones while the skill runs');
 });

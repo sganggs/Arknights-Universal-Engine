@@ -123,7 +123,7 @@ test('[关卡-2] more co-op levels: act2multi_rm01, act1multi_06, act1multi_hard
   assert.throws(() => levelAt('act1multi_rm07', 'FOUR_STAR'), /runes not supported yet: env_gbuff_new_with_verify, env_system_new/);
   assert.throws(() => levelAt('act1multi_02', 'NORMAL'), /runes not supported yet: env_system_new/);
   assert.throws(() => levelAt('nope', 'NORMAL'), /no level nope/);
-  assert.deepEqual(uncoveredAbilities([{ talents: { dead: {}, Light: {}, DmgUp: {}, boom: { radius: 1, delay: 0 }, x: {} }, skills: [{ key: 'PowerHit' }, { key: 'y' }] }].map((e) => /** @type {any} */ (e))), ['x', 'y']);
+  assert.deepEqual(uncoveredAbilities([{ talents: { dead: {}, Light: {}, DmgUp: {}, boom: { radius: 1, delay: 0 }, x: {} }, skills: [{ key: 'PowerHit', bb: { atk: 0.8 } }, { key: 'y' }] }].map((e) => /** @type {any} */ (e))), ['x', 'y']);
   assert.deepEqual(uncoveredAbilities([{ talents: { boom: { radius: 1 }, ranged: {} }, skills: [{ key: 'CrossAttack', bb: { bolts: 3, hold: 0, charge: 0 } }] }].map((e) => /** @type {any} */ (e))), ['boom', 'ranged'],
     'a behaviour lacking values it needs (FOE_NEEDS) is none yet');
 });

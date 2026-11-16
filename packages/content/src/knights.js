@@ -7,6 +7,7 @@
 
 import { KIND } from '@aue/sim';
 import { facilityAttack, scaleShape } from './enhance.js';
+import { wardenEnhance } from './jakill.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').FoeContext} FoeContext @typedef {import('@aue/sim').Unit} Unit */
 
@@ -43,12 +44,13 @@ function exact(bb, keys) {
 
 /**
  * Whether a talent of this name, with this blackboard, is this family's (敌能-71, 敌能-85). Any other name is not
- * this family's concern.
+ * this family's concern. 杰斯顿·威廉姆斯's `enhance` passes too: it only holds the numbers its `reborn` reads (敌能-146),
+ * and the layers below stay on the boiling shape.
  * @param {string} name @param {Record<string, unknown> | null | undefined} bb
  */
 export function knightOwns(name, bb) {
   if (name === 'buff') return exact(bb, ARMOUR_KEYS) || exact(bb, ZEAL_KEYS);
-  if (name === 'enhance') return exact(bb, BLOOD_KEYS) || scaleShape(bb);
+  if (name === 'enhance') return exact(bb, BLOOD_KEYS) || scaleShape(bb) || wardenEnhance(bb);
   return true;
 }
 

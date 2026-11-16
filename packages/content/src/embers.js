@@ -91,7 +91,7 @@ function onTick(ctx) {
 }
 
 /**
- * Behaviours by talent or skill name. `BornAnim` is covered and does nothing (敌能-45), as `AtkUp` does.
+ * Behaviours by talent or skill name. `BornAnim` is covered and does nothing (敌能-45).
  * `aura` is not here: that name is 敌能-28, and this blackboard is a different ability.
  * @type {Readonly<Record<string, FoeBehavior>>}
  */

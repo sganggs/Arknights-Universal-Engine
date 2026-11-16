@@ -2,8 +2,8 @@
 // keys (状态-5) and elements with their bursts' buffs (元素-1, 元素-3), both ways. Modifier keys are the same in both (the engine took Stronghold's names, ADR 0012); one
 // the engine does not know stays on the buff and changes nothing.
 
-/** Stronghold's flags → the engine's. @type {Readonly<Record<string, string>>} */
-const FLAG = Object.freeze({ invulnerable: 'invincible', bind: 'root', noHeal: 'noAllyHeal', tremble: 'disarmedCombat' });
+/** Stronghold's flags → the engine's (反隐 `reveal` is the engine's `unstealth`, 索敌-2). @type {Readonly<Record<string, string>>} */
+const FLAG = Object.freeze({ invulnerable: 'invincible', bind: 'root', noHeal: 'noAllyHeal', tremble: 'disarmedCombat', reveal: 'unstealth' });
 
 /** Stronghold's status names → the engine's. @type {Readonly<Record<string, string>>} */
 const STATUS_KEY = Object.freeze({ bind: 'root', resist: 'buffres', tremble: 'disarmedCombat' });
@@ -45,13 +45,15 @@ const FLAG_NAME = Object.freeze(Object.fromEntries(Object.entries(FLAG).map(([k,
 
 /**
  * A unit's attribute flags as a kit reads them: the engine's, also under Stronghold's names where it names them
- * otherwise, and `burstLock` during an element burst (元素-3).
- * @param {Record<string, boolean>} flags @param {boolean} bursting @returns {Record<string, boolean>}
+ * otherwise, `burstLock` during an element burst (元素-3) and `cold` while it is 寒冷 (the engine's cold status has no
+ * flag of its own, 状态-5).
+ * @param {Record<string, boolean>} flags @param {boolean} bursting @param {boolean} [cold] @returns {Record<string, boolean>}
  */
-export function shFlagsOf(flags, bursting) {
+export function shFlagsOf(flags, bursting, cold = false) {
   const out = { ...flags };
   for (const [k, on] of Object.entries(flags)) if (on && Object.hasOwn(FLAG_NAME, k)) out[FLAG_NAME[k]] = true;
   if (bursting) out.burstLock = true;
+  if (cold) out.cold = true;
   return out;
 }
 

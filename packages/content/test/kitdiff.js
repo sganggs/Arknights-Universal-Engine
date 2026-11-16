@@ -280,12 +280,22 @@ const close = (x, y) => Math.abs(x - y) <= Math.max(1, Math.abs(y) * 0.005);
 const near = (a, b) => a.every((x) => b.some((y) => close(x, y))) && b.every((y) => a.some((x) => close(x, y)));
 
 /**
- * The differences of one kit's skills between Stronghold and us; none for each skill that matches.
- * @param {string} charId @returns {Promise<{ skill: number, diffs: string[] }[]>}
+ * A kit's factory from the copy of the content: from `file` when given (a kit of another Stronghold tree,
+ * AUE_STRONGHOLD_DIR), else from the pinned one's file.
+ * @param {string} kitRoot @param {string} charId @param {string | undefined} file
  */
-export async function kitDiff(charId) {
+async function factoryOf(kitRoot, charId, file) {
+  return (await loadUnderGrid(() => import(kitRoot + (file ?? KIT_FILES[charId])))).default[charId];
+}
+
+/**
+ * The differences of one kit's skills between Stronghold and us; none for each skill that matches. `file`: the kit's file
+ * in the content, for a kit outside the pinned list.
+ * @param {string} charId @param {string} [file] @returns {Promise<{ skill: number, diffs: string[] }[]>}
+ */
+export async function kitDiff(charId, file) {
   const { harness, kitRoot, createRng } = await setUp();
-  const factory = (await loadUnderGrid(() => import(kitRoot + KIT_FILES[charId]))).default[charId], t = await loadTraining(charId);
+  const factory = await factoryOf(kitRoot, charId, file), t = await loadTraining(charId);
   const m = t.modules.length - 1, uni = m >= 0 ? t.modules[m].id : null, out = [];
   for (let skill = 0; skill < t.skills.length; skill++) {
     TRACE.on = process.env['AUE_KITDIFF_TRACE'] === `${charId}:${skill}`;

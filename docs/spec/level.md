@@ -82,9 +82,9 @@
 
 ### 关卡-8 测试中的关卡
 
-少数关卡在测试中：堡垒守御的 `act1multi_fortress_rm01`（IG-DF-1、IG-DF-4）和 `act1multi_fortress_hard-01`（IG-S-5），阵地足球的 `act1multi_football`（IG-FT-1、IG-FT-2），以及关卡文件自己写明在测试中的（`testing: true`，如 mod 新加的关卡、别的项目转来的场地）。它们的敌人有还没有行为的能力时（关卡-2）也照常加载：这些能力不起作用（缺数值的能力从敌人身上去掉），内容把它们记在关卡上（`uncovered`，按第一次出现的顺序），平台据此在房间和战斗里标明「部分敌人能力未实现」。其他关卡仍然拒绝加载。`uncovered` 只含这一难度出场的敌人（关卡-2 的四种）；只在 `enemyDbRefs` 里、从这四种到不了的不算。
+少数关卡在测试中：堡垒守御的 `act1multi_fortress_rm01`（IG-DF-1、IG-DF-4）和 `act1multi_fortress_hard-01`（IG-S-5），阵地足球的 `act1multi_football`（IG-FT-1、IG-FT-2），以及关卡文件自己写明在测试中的（`testing: true`，如 mod 新加的关卡、别的项目转来的场地）。它们的敌人有还没有行为的能力时（关卡-2）也照常加载：这些能力不起作用（缺数值的能力从敌人身上去掉），内容把它们记在关卡上（`uncovered`，按第一次出现的顺序），平台据此在房间和战斗里标明「部分敌人能力未实现」。关卡放置的装置没有说明时（装置-3）也一样：这种装置不上场，它的键记在 `uncovered` 里，排在敌人能力之后（如卫戍协议昆图斯一关里，盐风主教昆图斯的技能召出的子代 trap_039_dstnta：隐匿的幼体长成后摄食周围目标，引擎还没有会攻击的装置）。其他关卡仍然拒绝加载。`uncovered` 只含这一难度出场的敌人（关卡-2 的四种）；只在 `enemyDbRefs` 里、从这四种到不了的不算。
 
-- 来源：设计决定：先让堡垒守御的核心规则（守御-1…守御-6）能实际对局、按需补齐敌人能力；未实现的能力明确标出，不冒充原版；关卡文件自带的标记供 mod 和以 AUE 为内核的项目（Stronghold Protocol 的 aue 分支）使用；`uncovered` 只含关卡-2 的出场敌人，为设计决定
+- 来源：设计决定：先让堡垒守御的核心规则（守御-1…守御-6）能实际对局、按需补齐敌人能力；未实现的能力明确标出，不冒充原版；关卡文件自带的标记供 mod 和以 AUE 为内核的项目（Stronghold Protocol 的 aue 分支）使用；`uncovered` 只含关卡-2 的出场敌人，为设计决定；子代：数据：character_table trap_039_dstnta 的描述「<幼体>形态时<$ba.invisible>隐匿</>，之后解除<$ba.invisible>隐匿</>并<摄食>周围目标；可以受到我方攻击」，技能 sktok_dstnta「使目标<$ba.stun>晕眩</>并持续受到物理与神经损伤」，关卡 level_act1autochess_h07_04 的分支 `dslily_dstnta` 激活它的四个预部署单位；enemy_database 的 enemy_1521_dslily（盐风主教昆图斯）技能 `SummonTentac` 的 blackboard `branch_id` 为 `dslily_dstnta`，图鉴「【断裂生殖】召唤子代缠绕我方单位使其晕眩」
 
 ### 关卡-6 装置数据
 

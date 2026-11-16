@@ -3,6 +3,8 @@
 // absorbs only arts: a typed shield (伤害-8 `shieldType`) that also carries modifiers is not removed when it fully
 // absorbs, and take is not called once the hit is already 0, so the bonus would last a frame too long (INF-0489).
 import { buffs } from '@aue/sim';
+// 鼠王's `shield` is another read shape of this talent (敌能-144): its barrier also uses this file's take.
+import { ratShield, ratBarrier } from './ratking.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior */
 
@@ -14,11 +16,12 @@ const ACT = 'mudShield';
 const SHIELD_KEYS = new Set(['dynamic', 'max_hp', 'attack_speed', PAGE]);
 
 /**
- * Whether a talent named `shield` is this barrier (敌能-66). Any other name is not this family's concern.
+ * Whether a talent named `shield` is this barrier (敌能-66) or 鼠王's (敌能-144). Any other name is not this family's concern.
  * @param {string} name @param {Record<string, unknown>} bb
  */
 export function shieldOwns(name, bb) {
   if (name !== 'shield') return true;
+  if (ratShield(bb)) return true;
   if (typeof bb.dynamic !== 'number' || typeof bb.max_hp !== 'number' || typeof bb.attack_speed !== 'number') return false;
   for (const k of Object.keys(bb)) if (!SHIELD_KEYS.has(k)) return false;
   return true;
@@ -42,8 +45,8 @@ function grant(ctx) {
   ctx.addBuff(ctx.self, { key: ACT, act: ACT, value: amount, mods: { hpPct: ctx.bb.max_hp, aspd: ctx.bb.attack_speed } });
 }
 
-/** @type {FoeBehavior} */
-const shield = Object.freeze({ spawn: grant });
+/** The mud barrier (敌能-66), or 鼠王's by its shape (敌能-144). @type {FoeBehavior} */
+const shield = Object.freeze({ spawn: (ctx) => { if (ratShield(ctx.bb)) ratBarrier(ctx, ACT); else grant(ctx); } });
 
 /**
  * 泥岩's 刷新屏障 (敌能-143): this barrier set back to the amount of a blackboard of its shape — the buff there retuned to

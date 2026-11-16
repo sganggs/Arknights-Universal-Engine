@@ -3,10 +3,10 @@
 // cost, buffs and statuses on the engine's own. Kit code runs with the level's grid size (兼容-1); a kit's handler that
 // throws is skipped and recorded (Stronghold isolates content errors the same way). Times are seconds to the kits and
 // whole frames to the engine (时间-2).
-import { secondsToFrames } from '@aue/math';
+import { FPS, hypot, secondsToFrames } from '@aue/math';
 import { KIND, bus, buffs, status, traits, blocking, displacement, draw, weightedPick, setExtraRange, attackNow } from '@aue/sim';
 import { withGrid } from './grid.js';
-import { ShUnit } from './unit.js';
+import { ShUnit, ShBuff } from './unit.js';
 import { STATUS_NAME, ELEMENT_NAME, statusKeyOf, modsOf, flagsOf, buffKeyOf } from './mods.js';
 import { KIT_BUFF, hooksOf, runHook } from './buffhooks.js';
 import { shieldOf, raiseMerged } from './shields.js';
@@ -15,8 +15,10 @@ import { ShProjectiles } from './projectiles.js';
 import * as field from './field.js';
 import * as summoning from './summons.js';
 import { ShGrid } from './tiles.js';
-import { CompatGap } from './sh/gap.js';
+import { CompatGap, gap } from './sh/gap.js';
 import { effectiveProfile } from './sh/ai.js';
+import { shData } from './sh/data.js';
+import * as players from './players.js';
 
 /** @typedef {import('@aue/sim').World} World @typedef {import('@aue/sim').Content} Content @typedef {import('@aue/sim').Unit} Unit */
 /** @typedef {(ctx: any, b: ShBattle) => void} Handler */
@@ -49,7 +51,7 @@ const elementDmg = (d) => ({
  * @type {Record<string, (b: ShBattle, k: Record<string, any>) => Record<string, any>>}
  */
 const SHAPES = {
-  deploy: (b, k) => ({ unit: sh(b, k.unit), initial: k.initial, ...(k.move ? { move: true } : {}) }),
+  deploy: (b, k) => ({ unit: sh(b, k.unit), initial: !!k.initial || !b.started, ...(k.move ? { move: true } : {}) }),
   death: (b, k) => ({ unit: sh(b, k.unit), reason: k.reason, killer: sh(b, k.killer), dying: false }),
   kill: (b, k) => ({ killer: sh(b, k.killer), victim: sh(b, k.victim) }),
   enemySpawn: (b, k) => ({ enemy: sh(b, k.enemy) }),
@@ -109,8 +111,8 @@ const BACK = {
 const shapeOf = (b, name, k) => (Object.hasOwn(SHAPES, name) ? SHAPES[name](b, k) : k);
 
 export class ShBattle {
-  /** @param {World} w @param {Content} c */
-  constructor(w, c) {
+  /** @param {World} w @param {Content} c @param {{ players?: (players.PlayerInput | null | undefined)[] }} [o] Stronghold's players' inputs, by seat (兼容-7) */
+  constructor(w, c, o = {}) {
     /** @type {World} */
     this.w = w;
     /** @type {Content} */
@@ -122,6 +124,12 @@ export class ShBattle {
     this.errors = [];
     /** @type {WeakMap<object, any>} the data a kit stored with a buff */
     this.buffData = new WeakMap();
+    /** @type {WeakMap<object, ShBuff>} the buff a kit sees for each of the engine's buffs: one object for the buff's whole life */
+    this.shBuffs = new WeakMap();
+    /** how many buffs a kit has seen: Stronghold's acquisition order of them */
+    this.buffSeq = 0;
+    /** @type {ShUnit | null} whose kit code runs now: handlers a kit registers without an owner are the running one's (errors name it) */
+    this.who = null;
     /** @type {WeakMap<object, import('./buffhooks.js').Hooks>} the callbacks of a kit's buff (buffhooks.js) */
     this.buffHooks = new WeakMap();
     /** @type {Map<string, ShUnit>} the deck pieces, by `seat|key` */
@@ -137,9 +145,28 @@ export class ShBattle {
     this.rng = makeRng(w);
     /** the kits' own shots (projectiles.js) */
     this.projectiles = new ShProjectiles(this);
-    /** Stronghold's data source as kits read it: raw summon records (summons.js rawToken). */
-    this.data = Object.freeze({ rawToken: (/** @type {string} */ id) => summoning.rawToken(this, id) });
+    /**
+     * Stronghold's data source as content reads it: raw summon records (summons.js rawToken) — a raw enemy record, a gap —
+     * and its game data (`raw`, sh/data.js; empty without it).
+     */
+    this.data = Object.freeze({ rawToken: (/** @type {string} */ id) => summoning.rawToken(this, id), rawEnemy: gap('data.rawEnemy'), get raw() { return shData() ?? {}; } });
+    /** whether the handler that sends the hpDamage transfers is on (transfer) */
+    this.transfersOn = false;
+    /** Stronghold's players (兼容-7), by seat; none without their inputs. */
+    this.players = (o.players ?? []).map((x, seat) => players.makePlayer(this, seat, x ?? {}));
+    /** Stronghold's battle flags (`flags`): in-battle layer gains are on, as in its normal battles. */
+    this.battleFlags = { layerGainsEnabled: true };
+    /** @type {string | null} Stronghold's mode: none */
+    this.modeId = null;
   }
+
+  /** Stronghold's battle flags. */
+  get flags() { return this.battleFlags; }
+  /** Stronghold's battle kind: a normal battle. */
+  get kind() { return 'normal'; }
+
+  /** The field's rectangle as Stronghold's: the whole level. */
+  get rect() { return { r0: 0, r1: this.c.level.height - 1, c0: 0, c1: this.c.level.width - 1 }; }
 
   /** Battle seconds: the frame's start (Stronghold's tickCount × dt, the same in every handler of a frame). */
   get time() { return this.w.frame * TICK; }
@@ -161,6 +188,13 @@ export class ShBattle {
       s = new ShUnit(this, { kind: op ? 'op' : 'enemy', key: u.key, ownerId: u.owner, def: d ? { name: d.name, profession: /** @type {any} */ (d).profession ?? null } : null, unit: u });
       this.others.set(u, s);
     }
+    return s;
+  }
+
+  /** The buff of a unit as a kit sees it: the same object each time for one buff. @param {Unit} u @param {import('@aue/sim').Buff} buff @returns {ShBuff} */
+  buffOf(u, buff) {
+    let s = this.shBuffs.get(buff);
+    if (!s) { s = new ShBuff(this, u, buff); this.shBuffs.set(buff, s); }
     return s;
   }
 
@@ -189,23 +223,47 @@ export class ShBattle {
 
   /** Runs kit code: with the level's grid, an error recorded and skipped. @template T @param {() => T} fn @param {string} label @param {unknown} owner @returns {T | undefined} */
   safe(fn, label, owner) {
+    const before = this.who, who = owner instanceof ShUnit ? owner : before;
+    this.who = who;
     try {
       return withGrid(this.c.level, fn);
     } catch (e) {
-      this.errors.push({ label, who: owner instanceof ShUnit ? owner.defId : '', message: String(e instanceof Error ? e.message : e) });
+      this.errors.push({ label, who: who?.defId ?? '', message: String(e instanceof Error ? e.message : e) });
       return undefined;
+    } finally {
+      this.who = before;
     }
+  }
+
+  /** Stronghold's map of the events that have handlers, read by name (`_hooks.dodge`). @returns {Record<string, true | undefined>} */
+  get _hooks() {
+    const w = this.w;
+    return new Proxy({}, { get: (_t, name) => (typeof name === 'string' && bus.hasHook(w, name) ? true : undefined) });
   }
 
   /** @param {string} name @param {Handler} fn @param {{ priority?: number, owner?: unknown, once?: boolean }} [o] */
   on(name, fn, o = {}) {
+    const who = o.owner ?? this.who;
+    if (name === 'hpDamage' && !this.transfersOn) this.transfersOn = !!bus.on(this.w, 'hpDamage', (k) => this.transfer(k), { priority: -Infinity });
     return bus.on(this.w, name, (k) => {
       let ctx = this.shapes.get(k);
       if (!ctx) { ctx = shapeOf(this, name, k); this.shapes.set(k, ctx); }
-      this.safe(() => fn(ctx, this), `hook:${name}`, o.owner);
+      this.safe(() => fn(ctx, this), `hook:${name}`, who);
       if (ctx.stopPropagation) k.stopPropagation = true;
       if (Object.hasOwn(BACK, name)) BACK[name](ctx, k);
     }, o);
+  }
+
+  /**
+   * After every `hpDamage` handler: the shares they set aside (sh/attack.js reserveTransfer) go where they were meant,
+   * each with the hit's tags and the transfers' (Stronghold's applyTransfers).
+   * @param {Record<string, any>} k
+   */
+  transfer(k) {
+    const entries = this.shapes.get(k)?.transfers?.entries;
+    if (!entries?.length) return;
+    const tags = [...new Set([...(k.dmg?.tags ?? []), ...entries.map((/** @type {{ tag: string }} */ e) => e.tag)])];
+    for (const e of entries) this.safe(() => e.apply(e.amount, tags), 'transfer', null);
   }
 
   /** @param {any} h a handle from `on` */
@@ -219,13 +277,13 @@ export class ShBattle {
 
   /** @param {number} seconds @param {(b: ShBattle, s: any) => void} fn @param {{ owner?: unknown }} [o] */
   after(seconds, fn, o = {}) {
-    const t = bus.after(this.w, secondsToFrames(Math.max(0, Number(seconds) || 0)), () => this.safe(() => fn(this, t), 'after', o.owner), o);
+    const who = o.owner ?? this.who, t = bus.after(this.w, secondsToFrames(Math.max(0, Number(seconds) || 0)), () => this.safe(() => fn(this, t), 'after', who), o);
     return t;
   }
 
   /** @param {number} seconds @param {(b: ShBattle, s: any) => void} fn @param {{ owner?: unknown, immediate?: boolean }} [o] */
   every(seconds, fn, o = {}) {
-    const t = /** @type {any} */ (bus.every(this.w, secondsToFrames(Math.max(TICK, Number(seconds) || TICK)), () => { t.count++; this.safe(() => fn(this, t), 'every', o.owner); }, o));
+    const who = o.owner ?? this.who, t = /** @type {any} */ (bus.every(this.w, secondsToFrames(Math.max(TICK, Number(seconds) || TICK)), () => { t.count++; this.safe(() => fn(this, t), 'every', who); }, o));
     t.count = 0;
     return t;
   }
@@ -286,6 +344,64 @@ export class ShBattle {
     return displacement.push(this.w, this.c, e.u, Number(force), { from, dir: o.dir ?? null, fixed: !!o.fixed, anyAngle: !!o.fixedAngle, toward: !!o.inward, effect: !!o.effect }) ? 1 : 0;
   }
 
+  /**
+   * Stronghold's pull (位移-4): 力度 `force` on an enemy toward the point `to`; `center` is whose centre the enemy stops
+   * short of (the puller, default `to`). The engine's pull is its own (位移-4): a second of dragging with a force that falls
+   * off, and the stop distance is its own; the `stop` and `keepFacing` options have no counterpart. The distance it
+   * returns is how far the enemy has to go — to `to`, or to the stop point before `center` —, 0 when nothing is pulled
+   * (an enemy the puller blocks is not, a force the enemy's weight takes away, one that cannot be displaced) (推断 INF-1091).
+   * @param {ShUnit} e @param {number} force @param {{ to?: { x: number, y: number } | null, center?: { x: number, y: number, side?: string } | null }} [o]
+   */
+  pull(e, force, o = {}) {
+    const t = e?.u, to = o.to;
+    if (!t || !e.alive || !to) return 0;
+    if (o.center && o.center.side === 'ally' && e.blockedBy === o.center) return 0;
+    const dest = { x: Number(to.x), y: Number(to.y) }, by = o.center ? { x: Number(o.center.x), y: Number(o.center.y) } : dest;
+    const goes = Math.min(hypot(t.x - dest.x, t.y - dest.y), hypot(t.x - by.x, t.y - by.y) - displacement.PULL_STOP);
+    return displacement.pull(this.w, this.c, t, Number(force), { to: dest, by }) ? Math.max(0, goes) : 0;
+  }
+
+  /**
+   * A pull to the front of an ally (位移-4): toward the point half a tile ahead of it, stopping short of its centre.
+   * @param {ShUnit} e @param {ShUnit} unit @param {number} force
+   */
+  pullToFront(e, unit, force) {
+    if (!unit) return 0;
+    const f = unit.fwd;
+    return this.pull(e, force, { to: { x: unit.x + f[1] * displacement.PULL_POINT, y: unit.y + f[0] * displacement.PULL_POINT }, center: unit });
+  }
+
+  /**
+   * How far a push of 力度 `force` would take an enemy on open ground (位移-2, 位移-3), in tiles: its speed by the 受力等级
+   * and the slide's friction, frame by frame as the engine runs it — a ballistic push moves at once, an `effect` one from
+   * the next frame —; 0 for an enemy that cannot be displaced or a force the weight takes away.
+   * @param {ShUnit} e @param {number} force @param {{ effect?: boolean }} [o]
+   */
+  pushDistance(e, force, o = {}) {
+    const t = e?.u;
+    if (!t || !e.alive || !displacement.displaceable(t)) return 0;
+    const level = displacement.forceLevel(t, Number(force));
+    if (level <= -3) return 0;
+    /** @type {number} */
+    let v = displacement.PUSH_SPEED[/** @type {keyof typeof displacement.PUSH_SPEED} */ (String(Math.min(3, level)))], hard = displacement.HARD_FRAMES, d = o.effect ? 0 : v / FPS;
+    do {
+      v = Math.max(0, v - displacement.FRICTION / FPS);
+      d += v / FPS;
+      hard = Math.max(0, hard - 1);
+    } while (v > displacement.STOP_SPEED || hard > 0);
+    return d;
+  }
+
+  /**
+   * Whether a tile is on a player's own board: where the player may deploy (INF-0352). The levels' boards are the player's
+   * whole field, so this is `onFieldBoard` for a player that is there.
+   * @param {unknown} player @param {number} r @param {number} c
+   */
+  onOwnBoard(player, r, c) { return !!player && field.onFieldBoard(this, r, c); }
+
+  /** An enemy spawned by a kit: a gap (兼容-4). Its enemies are the content's; a kit's own enemy record has no place in it. */
+  spawnEnemy() { throw new CompatGap('battle.spawnEnemy'); }
+
   /** A kit's shot (projectiles.js). @param {Record<string, any>} p */
   addProjectile(p) { return this.projectiles.add(p); }
 
@@ -299,14 +415,48 @@ export class ShBattle {
   allyTargetsInRadius() { return []; }
   /** @param {ShUnit} u @param {Record<string, any>} [profile] */
   blockedTargets(u, profile) { return field.blockedTargets(u, profile); }
-  /** @param {ShUnit | null} source @param {ShUnit} target @param {Record<string, any>} dmg */
-  dealDamage(source, target, dmg) { return field.dealDamage(this, source, target, dmg); }
-  /** @param {ShUnit | null} source @param {ShUnit} target @param {number} amount @param {Record<string, any>} [opts] */
-  heal(source, target, amount, opts) { return field.heal(this, source, target, amount, opts); }
-  /** @param {ShUnit} target @param {number} amount @param {{ source?: ShUnit | null, tags?: string[] }} [o] */
-  loseHp(target, amount, o) { return field.loseHp(this, target, amount, o); }
-  /** @param {ShUnit} unit */
-  retreat(unit) { field.retreat(this, unit); }
+  /**
+   * Damage (field.js): `(source, target, dmg, opts?)`, or v0.3.2's request `({ source, credit, target, amount, type, … })`.
+   * @param {...any} args
+   */
+  dealDamage(...args) { return field.damageCall(this, args); }
+  /**
+   * A heal (field.js): `(source, target, amount, opts?)`, or v0.3.2's request `({ source, target, amount, mode, … })`.
+   * @param {...any} args
+   */
+  heal(...args) {
+    if (args.length !== 1) return field.heal(this, args[0], args[1], args[2], args[3]);
+    const { source = null, target, amount, ...opts } = args[0] ?? {};
+    return field.heal(this, source, target, amount, opts);
+  }
+  /**
+   * 生命流失 (field.js): `(target, amount, opts?)`, or v0.3.2's request `({ source, credit, target, amount, type, … })`.
+   * @param {...any} args
+   */
+  dealHPLose(...args) { return field.hpLossCall(this, args); }
+  /** The name before v0.3.2. @param {ShUnit} target @param {number} amount @param {Record<string, any>} [o] */
+  loseHp(target, amount, o) { return field.loseHp(this, target, amount, o ?? {}); }
+  /** 元素损伤 (v0.3.2's request, field.js). @param {Record<string, any>} req */
+  dealElementDamage(req) { return field.elementDamage(this, req); }
+  /**
+   * Element recovery (field.js): `(target, amount, element?)`, or v0.3.2's request `({ target, amount, element })`.
+   * @param {...any} args
+   */
+  healElement(...args) {
+    const r = args.length === 1 ? args[0] ?? {} : { target: args[0], amount: args[1], element: args[2] ?? null };
+    return field.healElement(r.target, r.amount, r.element ?? null);
+  }
+  /** The name before v0.3.2. @param {ShUnit} target @param {number} amount @param {string | null} [element] */
+  reduceElement(target, amount, element = null) { return field.healElement(target, amount, element); }
+  /**
+   * A retreat (撤退-1). 突袭's (`reason` 'raid'), which Stronghold follows at once with a redeployment on another tile that
+   * keeps the SP, is a gap: the unit stays (兼容-7).
+   * @param {ShUnit} unit @param {{ reason?: string }} [o]
+   */
+  retreat(unit, o = {}) {
+    if (o?.reason === 'raid') throw new CompatGap('battle.retreat.raid');
+    field.retreat(this, unit);
+  }
   /** @param {ShUnit} unit @param {number} r @param {number} c @param {{ clearSp?: boolean }} [o] */
   moveRedeploy(unit, r, c, o) { return field.moveRedeploy(this, unit, r, c, o); }
 
@@ -351,24 +501,62 @@ export class ShBattle {
    * @param {number} id
    */
   getPlayer(id) {
+    if (this.players[id]) return this.players[id];
     const p = this.w.players[id], b = this;
     return p ? { id, mirror: false, get dp() { return p.cost; }, get units() { return b.allyUnits.filter((u) => u.ownerId === id); } } : null;
   }
 
+  // ---- Stronghold's players (players.js, 兼容-7) -----------------------------------------------------------------
+
+  /**
+   * An in-battle layer gain (the `layerGain` event first; at most 999 a bond). The layers added.
+   * @param {number} pid @param {string} bondId @param {number} n @param {string} [reason] @param {{ source?: any, tile?: [number, number] }} [o]
+   */
+  addLayers(pid, bondId, n, reason = '', o = {}) { return players.addLayers(this, pid, bondId, n, { ...o, reason }); }
+  /** 规程's temporary layers. @param {number} pid @param {string} bondId @param {number} n */
+  addTempLayers(pid, bondId, n) { return players.addTempLayers(this, pid, bondId, n); }
+  /** 「立刻重新部署」: the next deployment without 再部署时间 (and cost, `free`). @param {ShUnit} unit @param {{ free?: boolean, tile?: unknown, keepSp?: boolean }} [o] */
+  redeploy(unit, o) { return players.redeploy(this, unit, o); }
+  /** A knocked-out operator lying on its tile (`(unit)`): none in these modes — the fallen leave the field. */
+  isDown() { return false; }
+  /** Where a fallen operator would come back: the tile it left. @param {ShUnit} u @returns {[number, number]} */
+  restTile(u) { return [u.tileR, u.tileC]; }
+  /** A damage info as Stronghold makes one: physical, no amount, ×1, no tags, then what is given. @param {Record<string, any>} [o] */
+  makeDamage(o = {}) { return { type: 'phys', amount: 0, mul: 1, tags: [], ...o }; }
+
   /**
    * A buff (兼容-4): Stronghold's refresh rule as the engine's (状态-2); seconds as frames; one that `persist`s is given
-   * again at every deployment of the unit; on a unit off the field only such a one is kept, for its next deployment.
-   * @param {ShUnit} unit @param {Record<string, any>} spec
+   * again at every deployment of the unit; on a unit off the field only such a one is kept, for its next deployment. The
+   * buff given as the kit sees it (the one in effect, for a buff that took the place of or joined another), or null.
+   * @param {ShUnit} unit @param {Record<string, any>} spec @returns {ShBuff | null}
    */
   addBuff(unit, spec) {
+    this.noteUnsupported(unit, spec);
     if (spec.persist) unit.persist = [...unit.persist.filter((x) => x.key !== spec.key), spec];
-    if (unit.deployed) this.giveBuff(unit, spec);
+    const given = unit.deployed ? this.giveBuff(unit, spec) : null;
+    return given && unit.u ? this.buffOf(unit.u, given) : null;
   }
 
-  /** @param {ShUnit} unit @param {Record<string, any>} spec */
+  /**
+   * What a kit's buff spec asks that the engine's buffs do not carry yet (兼容-4): the callbacks of the damage judgement
+   * (`injury`, `observeInjury`) and `damageReduction`. The buff is given without them, and the gap is recorded once for
+   * each unit and key, so that a kit whose buff does less than it says shows in the errors.
+   * @param {ShUnit} unit @param {Record<string, any>} spec
+   */
+  noteUnsupported(unit, spec) {
+    for (const name of UNSUPPORTED_BUFF) {
+      if (spec[name] === undefined || spec[name] === null) continue;
+      const mark = `${spec.key}|${name}`;
+      if ((unit.gaps ??= new Set()).has(mark)) continue;
+      unit.gaps.add(mark);
+      this.errors.push({ label: `buff.${name}`, who: unit.defId, message: `compat: buff.${name} is not provided yet (buff ${spec.key})` });
+    }
+  }
+
+  /** The buff in effect for a spec, or null when none was given. @param {ShUnit} unit @param {Record<string, any>} spec @returns {import('@aue/sim').Buff | null} */
   giveBuff(unit, spec) {
     const u = /** @type {Unit} */ (unit.u), there = u.buffs.find((x) => x.key === spec.key);
-    if (there && spec.refresh === 'keep') return;
+    if (there && spec.refresh === 'keep') return there;
     if (there && !RULES[spec.refresh ?? 'replace']) buffs.removeBuff(u, there);
     const h = hooksOf(spec);
     const b = buffs.makeBuff({ key: spec.key, src: spec.source?.u?.id ?? -1, rule: /** @type {any} */ (RULES[spec.refresh] ?? 'queue'), mods: modsOf(spec.mods),
@@ -379,6 +567,7 @@ export class ShBattle {
     if (spec.data !== undefined) this.buffData.set(b, spec.data);
     if (h) this.buffHooks.set(b, h.hooks);
     raiseMerged(u, buffs.addBuff(u, b), b, spec.refresh);
+    return inEffect(u, b);
   }
 
   /**
@@ -395,12 +584,17 @@ export class ShBattle {
     return true;
   }
 
-  /** @param {ShUnit} unit @param {string | { key: string }} which */
+  /**
+   * A buff off a unit: all of a key's, or the one buff a kit holds (an `addBuff`'s result; `null` and `undefined` remove
+   * nothing). A held buff is removed alone, whatever others of its key the unit has.
+   * @param {ShUnit} unit @param {string | { key: string, buff?: import('@aue/sim').Buff } | null | undefined} which
+   */
   removeBuff(unit, which) {
-    const name = typeof which === 'string' ? which : which.key, key = buffKeyOf(name), u = unit.u;
-    unit.persist = unit.persist.filter((x) => x.key !== name);
+    if (which === null || which === undefined) return;
+    const name = typeof which === 'string' ? which : which.key, key = buffKeyOf(name), u = unit.u, held = typeof which === 'string' ? undefined : which.buff;
+    if (!held) unit.persist = unit.persist.filter((x) => x.key !== name);
     if (!u) return;
-    for (const b of u.buffs.filter((x) => x.key === key)) {
+    for (const b of u.buffs.filter((x) => (held ? x === held : x.key === key))) {
       buffs.removeBuff(u, b);
       runHook(this, u, b, 'onRemove');
     }
@@ -419,6 +613,12 @@ export class ShBattle {
     return status.inflict(this.w, /** @type {Unit} */ (target.u), /** @type {any} */ (k), { frames, src: o.source?.u ?? null, value: o.value }) !== null;
   }
 }
+
+/** The buff in effect for one just added: itself, or the buff of its key it joined or took the place of. @param {Unit} u @param {import('@aue/sim').Buff} b */
+const inEffect = (u, b) => (u.buffs.includes(b) ? b : u.buffs.find((x) => x.key === b.key) ?? null);
+
+/** The parts of a kit's buff spec the engine's buffs do not carry (noteUnsupported). */
+const UNSUPPORTED_BUFF = Object.freeze(['injury', 'observeInjury', 'damageReduction']);
 
 /** A buff's seconds as frames left, −1 for none. @param {number | undefined} seconds */
 const framesLeft = (seconds) => (seconds === undefined || seconds === Infinity ? -1 : secondsToFrames(Math.max(0, seconds)));
