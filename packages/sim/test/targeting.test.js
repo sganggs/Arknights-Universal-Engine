@@ -365,6 +365,18 @@ test('[索敌-5] the unit blocking the enemy comes first, whatever its taunt and
   assert.deepStrictEqual(ids(T.sortAllies(mk(100), [old, fresh, taunting], FPS)), [2, 3, 1], 'not blocked: taunt, then newest');
 });
 
+test('[索敌-5] a 特殊优先级 comes after the blocker and before taunt and age; several are compared in order', () => {
+  const old = mk(1, { kind: 0, base: { tauntLevel: -2 }, born: 0, bornN: 1 });
+  const taunting = mk(2, { kind: 0, base: { tauntLevel: 2 }, born: 90, bornN: 1 });
+  const fresh = mk(3, { kind: 0, born: 120, bornN: 1 });
+  const one = (/** @type {any} */ u) => [u.id === 1 ? 0 : 1];
+  assert.deepStrictEqual(ids(T.sortAllies(mk(100), [fresh, taunting, old], FPS, one)), [1, 2, 3], 'ranked first, then taunt, then newest');
+  assert.deepStrictEqual(ids(T.sortAllies(mk(100, { blockedBy: 3 }), [fresh, taunting, old], FPS, one)), [3, 1, 2], 'the blocker still first');
+  const two = (/** @type {any} */ u) => [u.id === 3 ? 0 : 1, u.id === 2 ? 0 : 1];
+  assert.deepStrictEqual(ids(T.sortAllies(mk(100), [fresh, taunting, old], FPS, two)), [3, 2, 1], 'the first rank, then the second');
+  assert.deepStrictEqual(ids(T.sortAllies(mk(100), [old, fresh, taunting], FPS, () => [0])), [2, 3, 1], 'one rank for all: as without');
+});
+
 test('[索敌-5] units of the same frame: the one created later in it (higher bornN) comes first', () => {
   const a = mk(1, { kind: 0, born: 40, bornN: 1 }), b = mk(2, { kind: 0, born: 40, bornN: 2 }), c = mk(3, { kind: 0, born: 40, bornN: 3 });
   assert.deepStrictEqual(ids(T.sortAllies(mk(100), [a, b, c], FPS)), [3, 2, 1]);

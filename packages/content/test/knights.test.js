@@ -272,7 +272,7 @@ test('[敌能-71] silence does not stop a layer', () => {
 test('[敌能-71] [关卡-2] other buff and enhance shapes, and these without the page marker (保鲜膜骑士, 劈柴骑士), stay uncovered', () => {
   const row = (/** @type {Record<string, Record<string, number>>} */ talents) => uncoveredAbilities([/** @type {any} */ ({ talents })]);
   assert.deepEqual(row({ buff: { duration: 20, attack_speed: 100, def: 0.5 } }), ['buff']);
-  assert.deepEqual(row({ enhance: { atk_scale: 1.5 } }), ['enhance']);
+  // `{ atk_scale }` is 敌能-122, covered there. This list is the shapes that stay 敌能-71's gap.
   assert.deepEqual(row({ enhance: { magic_resistance: 50, atk: 700, def: 1000, base_attack_time: -1.5, move_speed: 0.3 } }), ['enhance']);
   assert.deepEqual(row({ buff: { ...ARMOUR }, enhance: { ...STACK } }), ['buff', 'enhance']);
   assert.deepEqual(row({ buff: { ...ARMOUR, page: 1 }, enhance: { ...STACK, page: 1 } }), []);

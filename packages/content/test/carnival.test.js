@@ -2,7 +2,7 @@
 // two players' 隐匿 and modes, 狂欢式演奏, 领舞者's two beats, the damage cut, blocks and ram, the beer, the balloon.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createWorld, step, attrs } from '@aue/sim';
+import { createWorld, step, attrs, deck } from '@aue/sim';
 import { tinyContent, oneWave, spawnAt } from '@aue/testkit';
 import { foeBehaviors, withFoeExtras, uncoveredAbilities } from '../src/foes.js';
 
@@ -62,6 +62,34 @@ test('[敌能-97] 巡游爵士乐手: 隐匿 with 孤立 and no attack while not
   const notes = hitsBy(ev, e).filter((h) => h.damage === 150);
   assert.ok(notes.length >= 4, `notes: ${notes.length}`);
   assert.ok(notes.every((h) => h.damage === 150 && (h.target === g.id || h.target === s.id)), 'arts at 20% on res 0');
+});
+
+test('[敌能-97] [敌能-2] 狂欢式演奏\'s cooldown: the first runs while hidden; once it has played, the next waits while it plays and outside 反击模式', () => {
+  const { c, w, e } = open('enemy_10034_cnvsax_2', def({ skills: [{ key: 'fire', cooldown: 10, initCooldown: 3, sp: 0, bb: SAX }] }));
+  const cd = () => e.ab['fire.cd'] ?? 0, lock = () => e.ab['fire.lock'] ?? 0;
+  put(w, c, 'sniper', 0, 2);
+  e.x = 1.6;
+  run(w, c, 120);
+  assert.equal(cd(), 0, 'the first cooldown runs in 初始模式');
+  const g = put(w, c, 'guard', 1, 2);
+  e.x = g.x; e.y = g.y;
+  for (let i = 0; i < 30 && !(lock() > 0); i++) step(w, c);
+  assert.ok(lock() > 0, 'plays once blocked');
+  const held = cd();
+  assert.ok(held > 0);
+  run(w, c, 90);
+  assert.equal(cd(), held, 'held while it plays');
+  while (lock() > 0) step(w, c);
+  assert.equal(cd(), held - 1, 'the frame the playing ends counts');
+  run(w, c, 30);
+  assert.equal(cd(), held - 31, 'runs from the end, in 反击模式');
+  deck.withdraw(w, c, g);
+  run(w, c, 30);
+  assert.equal(e.ab['fire.mode'], 0, '初始模式 again');
+  const paused = cd();
+  run(w, c, 60);
+  assert.equal(cd(), paused, 'paused outside 反击模式');
+  assert.ok(paused > 0);
 });
 
 test('[敌能-98] 领舞者: each second, while hidden those within 1.5 take its 攻击力 as arts; blocked, those within 2.0', () => {

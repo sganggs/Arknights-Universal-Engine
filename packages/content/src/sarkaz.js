@@ -89,21 +89,31 @@ const Creation = Object.freeze({
  * one for `hit_duration` seconds — standing, no normal attacks, 沉默反制 (silence cleared and kept off) — dealing
  * `atk_scale` of its 攻击力 as arts damage each second; at the end the target and the units on the four tiles next to it
  * take `ep_damage_ratio` of it as 凋亡损伤. The target gone or the enemy unable to act, the channel stops.
+ * @param {FoeContext} ctx
+ */
+function castDeathEye(ctx) {
+  const s = ctx.stats(ctx.self);
+  if (!ctx.ready || s.disabled || s.flags.silence) return;
+  const [t] = ctx.order(ctx.foes(ctx.self.base.rangeRadius + 0.25));
+  if (!t) return;
+  ctx.use();
+  ctx.state.set('target', t.id);
+  ctx.state.set('left', ctx.frames(ctx.bb.hit_duration));
+  ctx.state.set('t', 0);
+  ctx.removeBuff(ctx.self, 'silence');
+  ctx.addBuff(ctx.self, { key: 'deathEye', flags: { 'immune:silence': true, root: true, noAttack: true } });
+}
+
+/**
+ * 死亡之眼 (敌能-29): a channel, or a new one. Its cooldown waits while the channel runs: it counts from the channel's
+ * end, finished or stopped (the pages' 冷却时间 note).
  * @type {FoeBehavior}
  */
 const DeathEye = Object.freeze({
   tick: (ctx) => {
-    if (ctx.state.get('left') > 0) { channel(ctx); return; }
-    const s = ctx.stats(ctx.self);
-    if (!ctx.ready || s.disabled || s.flags.silence) return;
-    const [t] = ctx.order(ctx.foes(ctx.self.base.rangeRadius + 0.25));
-    if (!t) return;
-    ctx.use();
-    ctx.state.set('target', t.id);
-    ctx.state.set('left', ctx.frames(ctx.bb.hit_duration));
-    ctx.state.set('t', 0);
-    ctx.removeBuff(ctx.self, 'silence');
-    ctx.addBuff(ctx.self, { key: 'deathEye', flags: { 'immune:silence': true, root: true, noAttack: true } });
+    if (ctx.state.get('left') > 0) channel(ctx);
+    else castDeathEye(ctx);
+    if (ctx.state.get('left') > 0) ctx.holdCooldown();
   },
 });
 
@@ -157,18 +167,15 @@ const Awake = Object.freeze({
   },
 });
 
-/** A mercenary's 自缚 when its blackboard gives no `unmove_duration` (敌能-32), in seconds. */
-const STANDBY_BIND = 150;
-
 /**
- * 待命 and 临战 (敌能-32): it comes in standing by — no normal attacks, and for `unmove_duration` seconds (150 when the
- * data gives none) unable to move —; below `hp_ratio` of its maximum HP, or under a sentry's alarm, it takes up arms
- * for good: 移动速度 + `move_speed` (直接乘算).
+ * 待命 and 临战 (敌能-32): it comes in standing by — no normal attacks, and for `unmove_duration` seconds unable to
+ * move (a `revive` without it is not this talent, 敌能-153) —; below `hp_ratio` of its maximum HP, or under a sentry's
+ * alarm, it takes up arms for good: 移动速度 + `move_speed` (直接乘算).
  * @type {FoeBehavior}
  */
 const revive = Object.freeze({
   spawn: (ctx) => {
-    const bind = ctx.bb.unmove_duration ?? STANDBY_BIND;
+    const bind = ctx.bb.unmove_duration;
     ctx.addBuff(ctx.self, { key: 'standby', flags: { noAttack: true } });
     if (bind > 0) ctx.addBuff(ctx.self, { key: 'standby:bind', flags: { root: true }, left: ctx.frames(bind) });
   },

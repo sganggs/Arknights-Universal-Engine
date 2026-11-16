@@ -5,6 +5,7 @@ import { FPS, secondsToFrames } from '@aue/math';
 import { skills } from '@aue/sim';
 import rangeTable from '../data/ranges.json' with { type: 'json' };
 import { textExtra } from './skilltext.js';
+import { textExtra2 } from './skilltext2.js';
 
 /** @typedef {import('@aue/sim').SkillDef} SkillDef @typedef {import('@aue/sim').SkillBehavior} SkillBehavior */
 
@@ -330,6 +331,7 @@ function extraOf(level, own) {
   const has = (/** @type {object} */ o) => Object.keys(o).length > 0;
   // 技能-14 reads the sentences 技能-9 leaves, on the same text (closing-skill segments already gone).
   const extra = { ...(has(mods) ? { mods } : {}), ...(has(flags) ? { flags } : {}), ...(has(attack) ? { attack } : {}), ...textExtra(level, bb, said) };
+  Object.assign(extra, textExtra2(level, bb, said)); // 技能-15, on the same text
   return has(extra) ? { extra } : {};
 }
 

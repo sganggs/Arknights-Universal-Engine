@@ -201,16 +201,16 @@ function shell(name, resist, more = {}) {
   return /** @type {any} */ ({ name, maxHp: 1000, atk: 100, def: 0, res: 0, moveSpeed: 1, talents: { Weakness: { damage_resistance: resist }, WeaknessUI: { value: 0 }, ...more } });
 }
 
-test('[敌能-118] the five are covered; a damage_resistance-only Weakness, and the designers\' weakness, stay uncovered', () => {
+test('[敌能-118] the five are covered; a damage_resistance-only Weakness, and a lowercase weakness without 敌能-132\'s front, stay uncovered', () => {
   for (const row of [...BACK, ...FRONT]) {
     const def = withFoeExtras(row.key, foe(row));
     assert.equal(def.talents?.Weakness?.[row.front ? 'front' : 'back'], 1, row.key);
     assert.equal(def.talents?.Weakness?.[row.front ? 'back' : 'front'], undefined, row.key);
     assert.deepEqual(uncoveredAbilities([def]), [], row.key);
   }
+  // 圆仔 and the two 驮兽补给员 are 敌能-119's (crowd.test.js)
   /** @type {[string, number][]} */
   const openRows = [
-    ['enemy_2085_skzjxd', 0.8], ['enemy_2085_skzjxd_2', 0.8], ['enemy_4007_murino', 0.85], ['enemy_4007_murino_2', 0.95],
     ['enemy_1311_mhkryk', 0.8], ['enemy_1311_mhkryk_2', 0.8], ['enemy_15053_dqtrtl', 0.8], ['enemy_15055_dqrhcr', 0.8],
   ];
   for (const [key, resist] of openRows) assert.deepEqual(uncoveredAbilities([withFoeExtras(key, shell(key, resist))]), ['Weakness'], key);

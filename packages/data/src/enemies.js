@@ -86,9 +86,15 @@ function readEnemy(data, key, dp) {
 const bbValue = (o, p) => (typeof o.valueStr === 'string' && o.valueStr !== '' ? o.valueStr : asNumber(o.value, `${p}.value`, -1e9, 1e9));
 
 /**
+ * The longest skill cooldown or first cooldown taken, in seconds (敌能-1): the data writes 9999, 99999 … up to 1e8
+ * (enemy_6027_bqthie) for a skill that does not come back within a battle; past this a value is no data but an error.
+ */
+export const MAX_COOLDOWN = 1e9;
+
+/**
  * An enemy's talents and skills (敌能-1): the talent blackboard grouped by the part of each key before its first `.`;
  * the skills with their cooldowns, SP cost (up to 99999: 9999 is a skill never charged) and blackboards; an entry with a
- * text keeps the text.
+ * text keeps the text. A cooldown may be far longer than any battle (敌能-1: up to 1e8 s in the data) and is kept as it is.
  * @param {Record<string, unknown>} data @param {string} dp
  * @returns {{ talents?: Record<string, Record<string, number | string>>, skills?: { key: string, cooldown: number, initCooldown: number, sp: number, bb: Record<string, number | string> }[] }}
  */
@@ -107,8 +113,8 @@ function abilitiesOf(data, dp) {
       return [asString(e.key, `${sp}.blackboard[${j}].key`), bbValue(e, `${sp}.blackboard[${j}]`)];
     }));
     return {
-      key: asString(field(o, 'prefabKey', sp), `${sp}.prefabKey`), cooldown: asNumber(field(o, 'cooldown', sp), `${sp}.cooldown`, -1, 1e6),
-      initCooldown: asNumber(field(o, 'initCooldown', sp), `${sp}.initCooldown`, -1, 1e6), sp: asInt(o.spCost ?? 0, `${sp}.spCost`, 0, 99999), bb,
+      key: asString(field(o, 'prefabKey', sp), `${sp}.prefabKey`), cooldown: asNumber(field(o, 'cooldown', sp), `${sp}.cooldown`, -1, MAX_COOLDOWN),
+      initCooldown: asNumber(field(o, 'initCooldown', sp), `${sp}.initCooldown`, -1, MAX_COOLDOWN), sp: asInt(o.spCost ?? 0, `${sp}.spCost`, 0, 99999), bb,
     };
   });
   return { ...(Object.keys(talents).length > 0 ? { talents } : {}), ...(skills.length > 0 ? { skills } : {}) };

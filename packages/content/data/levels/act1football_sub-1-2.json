@@ -51478,6 +51478,29 @@
         }
       ]
     },
+    "enemy_1277_sgman": {
+      "name": "家族士兵",
+      "maxHp": 3500,
+      "atk": 320,
+      "def": 120,
+      "res": 10,
+      "moveSpeed": 1,
+      "baseAttackTime": 1.8,
+      "rangeRadius": 0,
+      "applyWay": "MELEE",
+      "motion": "WALK",
+      "massLevel": 1,
+      "levelType": "NORMAL",
+      "lifePointReduce": 1,
+      "immune": [
+        "silence"
+      ],
+      "talents": {
+        "DeathRattle": {
+          "sp": 20
+        }
+      }
+    },
     "enemy_1281_sgcar": {
       "name": "家族专用轿车",
       "maxHp": 10000,

@@ -1,6 +1,6 @@
 // 神经损伤 on the recorders' attacks, and from a designer to the unit blocking it (docs/spec/foes.md 敌能-65).
-// The pages name 神经, so the element is fixed (元素-1 id 1) and no content `el` is added. `weakness` is not here:
-// it needs a facing the simulation does not settle. These act only through the context (ADR 0055).
+// The pages name 神经, so the element is fixed (元素-1 id 1) and no content `el` is added. The designers' `weakness`
+// is not here: it is 敌能-132 (designer.js). These act only through the context (ADR 0055).
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').FoeContext} FoeContext */
 

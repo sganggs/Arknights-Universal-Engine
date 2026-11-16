@@ -1,5 +1,8 @@
 // 迷路的巨像's 眩晕击 (docs/spec/foes.md 敌能-83). `StunAttack` is shared with other blackboards; only the
-// three-number shape this page marks with `page` throws. The others stay uncovered (关卡-2) and do nothing here.
+// three-number shape this page marks with `page` throws. 纠缠藤蔓's two-number shape is 致幻缠绕 (敌能-140, vine.js), the
+// same one behaviour told apart by shape. The others stay uncovered (关卡-2) and do nothing here.
+
+import { tangleShape, tangle } from './vine.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior */
 /** @typedef {import('@aue/sim').FoeContext} FoeContext */
@@ -8,16 +11,20 @@
 /** Keys 眩晕击 may hold. `page` is the page marker (敌能-83); `range_radius` belongs to another shape. */
 const STONE_KEYS = new Set(['atk_scale', 'stun', 'page']);
 
-/**
- * Whether a talent or skill of this name, with this blackboard, is 眩晕击 (敌能-83). Any other name is not this
- * family's concern: the caller still asks FOE_NEEDS. A `StunAttack` with another key, or without `page`, is not.
- * @param {string} name @param {Record<string, unknown>} bb
- */
-export function stunAttackOwns(name, bb) {
-  if (name !== 'StunAttack') return true;
+/** Whether a `StunAttack` blackboard is 眩晕击's (敌能-83): `atk_scale`, `stun` and `page`, no other key. @param {Record<string, unknown>} bb */
+function stoneShape(bb) {
   if (typeof bb.atk_scale !== 'number' || typeof bb.stun !== 'number' || typeof bb.page !== 'number') return false;
   for (const k of Object.keys(bb)) if (!STONE_KEYS.has(k)) return false;
   return true;
+}
+
+/**
+ * Whether a talent or skill of this name, with this blackboard, is 眩晕击 (敌能-83) or 纠缠藤蔓's 致幻缠绕 (敌能-140). Any
+ * other name is not this family's concern: the caller still asks FOE_NEEDS. A `StunAttack` of another shape is not.
+ * @param {string} name @param {Record<string, unknown>} bb
+ */
+export function stunAttackOwns(name, bb) {
+  return name !== 'StunAttack' || stoneShape(bb) || tangleShape(bb);
 }
 
 /** Centre distance squared (敌能-83): compared without a hypotenuse. @param {Unit} a @param {Unit} b */
@@ -48,7 +55,7 @@ function stoneTarget(ctx) {
  * @param {FoeContext} ctx
  */
 function throwStone(ctx) {
-  if (!stunAttackOwns('StunAttack', ctx.bb)) return;
+  if (!stoneShape(ctx.bb)) return;
   const s = ctx.stats(ctx.self);
   if (!ctx.ready || s.disabled || s.flags.silence) return;
   const t = stoneTarget(ctx);
@@ -57,5 +64,12 @@ function throwStone(ctx) {
   ctx.hurl(t, { type: 'phys', amount: s.atk * ctx.bb.atk_scale, status: { key: 'stun', seconds: ctx.bb.stun } });
 }
 
+/**
+ * The one `StunAttack` (敌能-83, 敌能-140): 眩晕击's shape throws on its turn and leaves its attacks alone; 致幻缠绕's makes
+ * the attack that starts with its points gathered the skill's, and never throws.
+ * @type {FoeBehavior}
+ */
+const StunAttack = Object.freeze({ tick: throwStone, attack: (ctx, mods) => (tangleShape(ctx.bb) ? tangle(ctx, mods) : mods) });
+
 /** @type {Readonly<Record<string, FoeBehavior>>} */
-export const rockmanBehaviors = Object.freeze({ StunAttack: Object.freeze({ tick: throwStone }) });
+export const rockmanBehaviors = Object.freeze({ StunAttack });

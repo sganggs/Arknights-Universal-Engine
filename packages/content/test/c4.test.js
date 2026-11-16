@@ -178,7 +178,21 @@ test('[敌能-76] the first drop below half clears the cooldown once; the next c
   assert.ok(cd > 1);
   damage.setHp(e, 1);
   step(w, c);
-  assert.equal(e.ab['C4.cd'], cd - 1);
+  // held while this cast runs (the cooldown counts from its end), and not cleared a second time
+  assert.equal(e.ab['C4.cd'], cd);
+});
+
+test('[敌能-76] [敌能-2] the cooldown waits while the cast runs: the next cast comes 20 s after the cast ends, not after it starts', () => {
+  const { c, w, e } = arena(wOf(5), [['guard', 1, 0]]);
+  assert.equal(e.ab['C4.ch'], FUSE);
+  const held = e.ab['C4.cd'];
+  step(w, c);
+  assert.equal(e.ab['C4.cd'], held);
+  while (e.ab['C4.ch'] > 0) step(w, c);
+  const end = w.frame;
+  assert.equal(e.ab['C4.cd'], secondsToFrames(20) - 1);
+  while (!(e.ab['C4.ch'] > 0) && w.frame < end + 2000) step(w, c);
+  assert.equal(w.frame - end, secondsToFrames(20));
 });
 
 test('[敌能-76] a unit that leaves before the blast takes nothing', () => {

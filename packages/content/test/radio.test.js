@@ -79,19 +79,21 @@ function dropped(box, u, quiet, more) {
   return was - sanity(u);
 }
 
-test('[敌能-65] recorders are covered; designers stay refused on weakness; a bad ratio stays uncovered', () => {
+test('[敌能-65] recorders and designers are covered (the designers\' weakness is 敌能-132); a bad ratio stays uncovered', () => {
   for (const key of ['enemy_10094_crstf', 'enemy_10094_crstf_2']) {
     assert.deepEqual(gaps(key, enemy({ ep: { ep_damage_ratio: 0.2 } })), [], key);
     assert.equal(FOE_EXTRAS[key], undefined, key);
   }
   const shy = enemy({ weakness: { damage_resistance: 0.8 }, block: { ep_damage_ratio: 0.15 } }, { applyWay: 'NONE' });
   const obey = enemy({ weakness: { damage_resistance: 0.8 }, block: { ep_damage_ratio: 0.2 } }, { applyWay: 'NONE' });
-  assert.deepEqual(gaps('enemy_10097_crshd', shy), ['weakness']);
-  assert.deepEqual(gaps('enemy_10097_crshd_2', obey), ['weakness']);
-  assert.equal(FOE_EXTRAS.enemy_10097_crshd, undefined);
+  assert.deepEqual(gaps('enemy_10097_crshd', shy), []);
+  assert.deepEqual(gaps('enemy_10097_crshd_2', obey), []);
+  // the designers' extras are 敌能-132's marker on `weakness`; `block` takes nothing from them
+  assert.equal(FOE_EXTRAS.enemy_10097_crshd.talents?.block, undefined);
+  assert.equal(FOE_EXTRAS.enemy_10097_crshd_2.talents?.block, undefined);
   assert.deepEqual(gaps('enemy_10094_crstf', enemy({ ep: {} })), ['ep']);
   assert.deepEqual(gaps('enemy_10094_crstf', enemy({ ep: { ep_damage_ratio: 0.2, el: 1 } })), ['ep']);
-  assert.deepEqual(gaps('enemy_10097_crshd', enemy({ weakness: { damage_resistance: 0.8 }, block: { ep_damage_ratio: 0.15, el: 1 } }, { applyWay: 'NONE' })), ['weakness', 'block']);
+  assert.deepEqual(gaps('enemy_10097_crshd', enemy({ weakness: { damage_resistance: 0.8 }, block: { ep_damage_ratio: 0.15, el: 1 } }, { applyWay: 'NONE' })), ['block']);
 });
 
 test('[敌能-65] a recorder hit adds 20% of its current ATK as 神经损伤, on both pages', () => {

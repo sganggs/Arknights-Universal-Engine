@@ -147,7 +147,8 @@ const enemyShape = obj({
 }, {
   tags: list(str, 0, 16), talents: dict(dict(either(num(), str), 64), 64), immune: list(str, 0, 16), dmgType: oneOf('arts'), shared: bool, neutral: bool, deathLife: int(0, 99),
   epDamageResistance: num(-1000, 1000), epResistance: num(-1000, 1000),
-  skills: list(obj({ key: str, sp: int(0, 999), cooldown: num(-1, 1e6), initCooldown: num(0, 1e6), bb: dict(either(num(), str), 64) }), 0, 16),
+  // a cooldown up to 1e9 s as the extraction takes it (敌能-1): the data has ones far longer than any battle
+  skills: list(obj({ key: str, sp: int(0, 999), cooldown: num(-1, 1e9), initCooldown: num(0, 1e9), bb: dict(either(num(), str), 64) }), 0, 16),
 });
 
 const build = obj({ elite: int(0, 2), level, potential: int(1, 6), trust: int(0, 200), skill: int(-1, 2), skillLevel: int(1, 10) }, { module: int(-1, 2), moduleLevel: int(1, 3) });
@@ -181,7 +182,7 @@ const levelBody = obj({
   id: str, code: str, name: str, width: int(1, 64), height: int(1, 64), bgm: str, view: list(num(), 0, 16),
   options: obj({ characterLimit: int(0, 99), costIncreaseTime: num(0.01, 3600), initialCost: int(0, 999), maxCost: int(0, 999), maxLifePoint: int(1, 999), moveMultiplier: num(0.01, 100) }),
   tiles: list(list(tile, 1, 64), 1, 64), routes: list(route, 0, 4096), waves: list(obj({ preDelay: num(0, 3600), postDelay: num(0, 3600), maxWait: num(-1, 1e6), fragments: list(fragment, 0, 64) }, { tag: int(0, 99), penalty: bool }), 0, 256),
-  predefines: list(obj({ key: str, alias: str, row: int(0, 63), col: int(0, 63), dir: oneOf('UP', 'DOWN', 'LEFT', 'RIGHT'), hidden: bool }, { build }), 0, 256),
+  predefines: list(obj({ key: str, alias: str, row: int(0, 63), col: int(0, 63), dir: oneOf('UP', 'DOWN', 'LEFT', 'RIGHT'), hidden: bool }, { build, mainSkillLvl: int(1, 10) }), 0, 256),
   stages: list(obj({ alias: str, goal: int(0, 1e6), objective: oneOf('protect', 'target', 'survive', 'tower'), rest: int(0, 3600), time: int(0, 36000), task: dict(str, 8) }, { advanced: int(0, 1e6), enemy: str }), 0, 16),
 }, {
   blockEdges: list(obj({ row: int(0, 63), col: int(0, 63), dir: oneOf('UP', 'DOWN', 'LEFT', 'RIGHT'), mask: oneOf('WALK_ONLY') }), 0, 1024),

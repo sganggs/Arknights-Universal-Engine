@@ -13236,6 +13236,26 @@
         }
       }
     },
+    "enemy_1069_icebrk_2": {
+      "name": "雪怪小队破冰者",
+      "maxHp": 25000,
+      "atk": 1100,
+      "def": 600,
+      "res": 20,
+      "moveSpeed": 0.7,
+      "baseAttackTime": 3,
+      "rangeRadius": 1.9,
+      "applyWay": "MELEE",
+      "motion": "WALK",
+      "massLevel": 3,
+      "levelType": "ELITE",
+      "lifePointReduce": 1,
+      "talents": {
+        "atkup": {
+          "atk_scale": 3
+        }
+      }
+    },
     "enemy_1073_dscout": {
       "name": "萨卡兹哨兵",
       "maxHp": 4000,
@@ -14002,6 +14022,54 @@
         }
       }
     },
+    "enemy_1220_dzoms": {
+      "name": "大君之触",
+      "maxHp": 1500,
+      "atk": 280,
+      "def": 100,
+      "res": 10,
+      "moveSpeed": 1,
+      "baseAttackTime": 2.5,
+      "rangeRadius": 0,
+      "applyWay": "MELEE",
+      "motion": "WALK",
+      "massLevel": 0,
+      "levelType": "NORMAL",
+      "lifePointReduce": 0,
+      "talents": {
+        "dmg_res": {
+          "damage_resistance": 0.9
+        },
+        "buff_to_blocker": {
+          "max_valid_stack_cnt": 6,
+          "block_cnt": 1
+        }
+      }
+    },
+    "enemy_1220_dzoms_2": {
+      "name": "仁慈之触",
+      "maxHp": 1500,
+      "atk": 380,
+      "def": 100,
+      "res": 10,
+      "moveSpeed": 1,
+      "baseAttackTime": 2.5,
+      "rangeRadius": 0,
+      "applyWay": "MELEE",
+      "motion": "WALK",
+      "massLevel": 0,
+      "levelType": "NORMAL",
+      "lifePointReduce": 0,
+      "talents": {
+        "dmg_res": {
+          "damage_resistance": 0.9
+        },
+        "buff_to_blocker": {
+          "max_valid_stack_cnt": 6,
+          "block_cnt": 1
+        }
+      }
+    },
     "enemy_1221_dzomg": {
       "name": "大君之赐",
       "maxHp": 3000,
@@ -14279,6 +14347,39 @@
       ],
       "shared": true
     },
+    "enemy_1273_stmgun": {
+      "name": "伦蒂尼姆城防自行炮",
+      "maxHp": 15000,
+      "atk": 600,
+      "def": 1500,
+      "res": 10,
+      "moveSpeed": 0.5,
+      "baseAttackTime": 6,
+      "rangeRadius": 3,
+      "applyWay": "RANGED",
+      "motion": "WALK",
+      "massLevel": 4,
+      "levelType": "ELITE",
+      "lifePointReduce": 1,
+      "immune": [
+        "silence"
+      ],
+      "tags": [
+        "machine"
+      ],
+      "skills": [
+        {
+          "key": "Cannon",
+          "cooldown": 25,
+          "initCooldown": 10,
+          "sp": 0,
+          "bb": {
+            "atk_scale": 0.55
+          }
+        }
+      ],
+      "shared": true
+    },
     "enemy_1275_dwlock": {
       "name": "萨卡兹王庭军术师",
       "maxHp": 12000,
@@ -14407,6 +14508,58 @@
         }
       },
       "shared": true
+    },
+    "enemy_1361_dthrow": {
+      "name": "萨卡兹子裔轰击者",
+      "maxHp": 6000,
+      "atk": 450,
+      "def": 150,
+      "res": 40,
+      "moveSpeed": 0.8,
+      "baseAttackTime": 3,
+      "rangeRadius": 2,
+      "applyWay": "RANGED",
+      "motion": "WALK",
+      "massLevel": 1,
+      "levelType": "NORMAL",
+      "lifePointReduce": 1,
+      "tags": [
+        "sarkaz"
+      ],
+      "talents": {
+        "Attack": {
+          "attack@projectile_delay_time": 4,
+          "delay": 1,
+          "enemy_key": "enemy_1220_dzoms",
+          "attack@projectile_radius": 1.1
+        }
+      }
+    },
+    "enemy_1361_dthrow_2": {
+      "name": "萨卡兹子裔毁击者",
+      "maxHp": 8000,
+      "atk": 550,
+      "def": 150,
+      "res": 40,
+      "moveSpeed": 0.8,
+      "baseAttackTime": 3,
+      "rangeRadius": 2,
+      "applyWay": "RANGED",
+      "motion": "WALK",
+      "massLevel": 1,
+      "levelType": "NORMAL",
+      "lifePointReduce": 1,
+      "tags": [
+        "sarkaz"
+      ],
+      "talents": {
+        "Attack": {
+          "attack@projectile_delay_time": 4,
+          "delay": 1,
+          "enemy_key": "enemy_1220_dzoms_2",
+          "attack@projectile_radius": 1.1
+        }
+      }
     }
   },
   "devices": {}

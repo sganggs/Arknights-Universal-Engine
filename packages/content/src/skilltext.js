@@ -217,3 +217,6 @@ export function textExtra(level, bb, said) {
     ...(hitScale ? { hitScale: /** @type {const} */ ('attack') } : {}),
   };
 }
+
+// 技能-15 splits the same way (skilltext2.js).
+export { clauses };

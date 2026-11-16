@@ -19,7 +19,7 @@ import { traitWhiles } from './whiles.js';
 import { afterOwnHit, attacked, hitSp, caughtSp } from './riders.js';
 import { reachKeys } from './reach.js';
 import { ALLY_COLLIDER_RADIUS } from './constants.js';
-import { foeTargets, foeAttack, foeHit, foeLanded, foeCancelHit, isFoeOf } from './foes.js';
+import { foeTargets, foeRank, foeAttack, foeHit, foeLanded, foeCancelHit, isFoeOf } from './foes.js';
 import { makeBuff, addBuff, removeBuff } from './buffs.js';
 import { tileOf } from './body.js';
 import { tickSkill, beforeAttack, attackMods, afterAttack } from './skills.js';
@@ -38,6 +38,7 @@ import { sameTargetStep, attackerHit, critScale, powerAttack, ammoChance } from 
 import { timedAttack, attackEnded } from './talenttime.js';
 import { lowestArts } from './talentfoe.js';
 import { palsyCut, epOnHit, healDotOn } from './talentelem.js';
+import { disarmed } from './disarm.js';
 
 /** @typedef {import('./types.js').World} World @typedef {import('./types.js').Unit} Unit @typedef {import('./types.js').Content} Content */
 /** @typedef {import('./types.js').Cell} Cell @typedef {import('./attrs.js').Stats} Stats */
@@ -112,17 +113,28 @@ export const pickTarget = (w, c, op) => targetsOf(w, c, op)[0] ?? null;
  * @typedef {{ type: import('./types.js').DamageType, amount: number, times: number, element: string, ep: number, splash?: import('./types.js').Splash | null,
  *   aftershock?: number, chain?: import('./types.js').Chain | null, ranged?: boolean, hitStatus?: { key: import('./status.js').StatusKey, seconds: number, value?: number, prob?: number } | null,
  *   hitDebuff?: { seconds: number, mods: Record<string, number> }, displace?: { pull: boolean, force: number, along?: boolean },
- *   skill?: boolean, hit?: 'splash' | 'chain' | 'aftershock', mark?: number, frozen?: number, packed?: { cnt: number, atk: number }, aftershocks?: number, ignoreDef?: number, ignoreSelect?: boolean }} Load
+ *   skill?: boolean, hit?: 'splash' | 'chain' | 'aftershock', mark?: number, frozen?: number, packed?: { cnt: number, atk: number }, aftershocks?: number, ignoreDef?: number, ignoreSelect?: boolean,
+ *   facScale?: number, plain?: number, atkMul?: number, vsBuff?: { key: string, scale: number } }} Load
  */
+
+/**
+ * `vsBuff.scale` on a target that holds a buff of `vsBuff.key` as the hit is worked out, otherwise 1 (敌能-141: a hit on
+ * a unit in 【国度】). @param {Load} load @param {Unit} t
+ */
+function vsBuffMul(load, t) {
+  const v = load.vsBuff;
+  return v && t.buffs.some((b) => b.key === v.key) ? v.scale : 1;
+}
 
 /**
  * A hit's damage, with where it comes from (钩子-3, the names of Stronghold's content): an attack's hit on its target,
  * on one splashed or jumped to; an aftershock is a splash and no attack's hit; whether the skill made it; a projectile's.
- * Its amount × `frozen` on a target 冻结 as the hit is worked out (敌能-27).
+ * Its amount × `frozen` on a target 冻结 as the hit is worked out (敌能-27), × `vsBuff` on a target holding that buff
+ * (敌能-141); both before the target's defences.
  * @param {Load} load @param {Unit} t @returns {import('./damage.js').Damage}
  */
 function damageOf(load, t) {
-  const amount = load.frozen && statsOf(t).flags.freeze ? load.amount * load.frozen : load.amount;
+  const amount = (load.frozen && statsOf(t).flags.freeze ? load.amount * load.frozen : load.amount) * vsBuffMul(load, t);
   const how = load.hit, d = /** @type {import('./damage.js').Damage} */ ({ type: load.type, amount, isAttack: how !== 'aftershock', isSkill: !!load.skill, isProjectile: !!load.ranged,
     ...(load.ignoreDef ? { defIgnorePct: load.ignoreDef } : {}), ...(load.ignoreSelect ? { ignoreSelect: true } : {}) });
   if (how === 'splash' || how === 'aftershock') d.isSplash = true;
@@ -257,17 +269,36 @@ function afterDamage(w, c, h) {
 const atkOf = (a, pct) => (pct ? computeStats({ base: a.base, buffs: [...a.buffs, makeBuff({ key: 'attackBonus', mods: { atkPct: pct } })] }).atk : statsOf(a).atk);
 
 /**
- * What an attack carries to each target (攻击-2): its type, the attack × 攻击力倍率 (the attack's × the attacker's, 伤害-6),
- * hits, 元素损伤. @param {Unit} a @param {AttackMods} mods @returns {Load}
+ * 敌能-141's `vsBuff` on a load, left off every other load so their shots hash as before. Outside loadOf, which has no
+ * room for one more branch. @param {AttackMods} mods
  */
-const loadOf = (a, mods) => ({
-  type: mods.type ?? a.base.dmgType, amount: atkOf(a, mods.atkPct) * mods.scale * statsOf(a).atkScaleMul, times: mods.times, element: mods.element ?? '',
-  ep: (mods.ep ?? 0) + (mods.epScale ? statsOf(a).atk * mods.epScale : 0),
-  ...(mods.hitStatus ? { hitStatus: mods.hitStatus } : {}), ...(mods.hitDebuff ? { hitDebuff: mods.hitDebuff } : {}), ...(mods.displace ? { displace: mods.displace } : {}), ...(mods.skill ? { skill: true } : {}), ...(mods.mark ? { mark: mods.mark } : {}),
-  ...(mods.frozen ? { frozen: mods.frozen } : {}), ...(mods.ignoreDef ? { ignoreDef: mods.ignoreDef } : {}),
-  ...(mods.splash ? { splash: mods.splash } : {}),
-  ...(mods.ignoreSelect ? { ignoreSelect: true } : {}),
-});
+const vsBuffOf = (mods) => (mods.vsBuff ? { vsBuff: mods.vsBuff } : {});
+
+/**
+ * An enemy's chain on a load (敌能-142); an operator's comes from its trait in loadFor. Absent otherwise, so no hash
+ * changes. Outside loadOf, which has no room for one more branch. @param {AttackMods} mods
+ */
+const chainLoadOf = (mods) => (mods.chain ? { chain: mods.chain } : {});
+
+/**
+ * What an attack carries to each target (攻击-2): its type, the attack × 攻击力倍率 (the attack's × the attacker's, 伤害-6),
+ * hits, 元素损伤. `facScale` keeps the attack before `scale` (`plain`) and the attacker's 倍率 (`atkMul`) so a facility
+ * hit can use `facScale` in place of `scale` (敌能-122). @param {Unit} a @param {AttackMods} mods @returns {Load}
+ */
+const loadOf = (a, mods) => {
+  const plain = atkOf(a, mods.atkPct), atkMul = statsOf(a).atkScaleMul;
+  return {
+    type: mods.type ?? a.base.dmgType, amount: plain * mods.scale * atkMul, times: mods.times, element: mods.element ?? '',
+    ep: (mods.ep ?? 0) + (mods.epScale ? statsOf(a).atk * mods.epScale : 0),
+    ...(mods.hitStatus ? { hitStatus: mods.hitStatus } : {}), ...(mods.hitDebuff ? { hitDebuff: mods.hitDebuff } : {}), ...(mods.displace ? { displace: mods.displace } : {}), ...(mods.skill ? { skill: true } : {}), ...(mods.mark ? { mark: mods.mark } : {}),
+    ...(mods.frozen ? { frozen: mods.frozen } : {}), ...(mods.ignoreDef ? { ignoreDef: mods.ignoreDef } : {}),
+    ...vsBuffOf(mods),
+    ...chainLoadOf(mods),
+    ...(mods.splash ? { splash: mods.splash } : {}),
+    ...(mods.ignoreSelect ? { ignoreSelect: true } : {}),
+    ...(typeof mods.facScale === 'number' ? { facScale: mods.facScale, plain, atkMul } : {}),
+  };
+};
 
 /**
  * The units an enemy's tile splash reaches (敌能-7, 敌能-8): those it may attack on the target's tile and the four tiles
@@ -286,16 +317,29 @@ function areaOf(w, a, t, area, through = false) {
 }
 
 /**
+ * 敌能-122: a 守御-3 facility (`t.fac`) takes this attack at `facScale` in place of `scale`. The extra fields leave
+ * the load, so a projectile does not carry them into the state hash.
+ * @param {Unit} t @param {Load} load @returns {Load}
+ */
+function facilityHit(t, load) {
+  if (typeof load.facScale !== 'number') return load;
+  const { facScale, plain, atkMul, ...rest } = load;
+  if (!t.fac || typeof plain !== 'number' || typeof atkMul !== 'number') return rest;
+  return { ...rest, amount: plain * facScale * atkMul };
+}
+
+/**
  * An operator's attack against one target (职业-8, 职业-11, 职业-12, 职业-14): its amount × the trait's 倍率 for enemies
  * it does not block or its summons block, its zone's 倍率 and its funnel's, and the trait's splash, aftershock and chain;
- * an enemy's as it is.
+ * an enemy's as it is, with a facility's 倍率 already in place of `scale` (敌能-122).
  * @param {World} w @param {Content} c @param {Unit} a @param {Unit} t @param {Load} load @returns {Load}
  */
 function loadFor(w, c, a, t, load) {
-  if (a.kind !== KIND.OPERATOR) return load;
+  const hit = facilityHit(t, load);
+  if (a.kind !== KIND.OPERATOR) return hit;
   const tr = traitOf(c, a);
   return {
-    ...load, amount: load.amount * traitScale(w, c, a, t) * funnelScale(c, a, t), splash: tr.skillSplash && inSkill(a) ? tr.skillSplash : tr.splash, aftershock: tr.aftershock, chain: tr.chain,
+    ...hit, amount: hit.amount * traitScale(w, c, a, t) * funnelScale(c, a, t), splash: tr.skillSplash && inSkill(a) ? tr.skillSplash : tr.splash, aftershock: tr.aftershock, chain: tr.chain,
     ...(tr.aftershocks !== 1 ? { aftershocks: tr.aftershocks } : {}),
     ...(tr.packed ? { packed: tr.packed } : {}),
   };
@@ -348,11 +392,12 @@ export function impact(w, c, src, t, load) {
 
 /**
  * A damage chain's jumps after its first target was hit (职业-11): each next enemy takes the hits at the chain's share
- * of the one before.
+ * of the one before. An enemy's chain (敌能-142) jumps to our side and reaches flying units: an enemy page's header note
+ * says attacks 「默认可对空」, and an enemy has no trait to say otherwise.
  * @param {World} w @param {Content} c @param {Unit | null} src @param {Unit} t @param {Load} load
  */
 function jumpHits(w, c, src, t, load) {
-  const ch = /** @type {import('./types.js').Chain} */ (load.chain), antiAir = !src || traitOf(c, src).antiAir;
+  const ch = /** @type {import('./types.js').Chain} */ (load.chain), antiAir = ch.side === 'friendly' || !src || traitOf(c, src).antiAir;
   let amount = load.amount;
   for (const u of chainOf(w, c, t, ch, { heals: false, antiAir })) {
     amount *= ch.scale;
@@ -638,7 +683,8 @@ function crit(op, out, k) {
 /**
  * Every operator's turn this frame (攻击-1). It lets go of what its block count no longer holds (阻挡-3); its skill runs
  * (技能-2…技能-4); then, if it can act (not 晕眩, 冻结 …), its attack — one that cannot act neither attacks nor counts
- * its cooldown down, and loses the swing it was in (攻击-2).
+ * its cooldown down, and loses the swing it was in (攻击-2); one under 缴械 or 强制缴械 the same, and it stands idle
+ * (状态-12: no reload, no stored energy either).
  * @param {World} w @param {Content} c
  */
 export function operatorsAttack(w, c) {
@@ -649,8 +695,9 @@ export function operatorsAttack(w, c) {
     traitWhiles(w, c, op);
     tickSkill(w, c, op);
     skillIdle(op, traitOf(c, op));
-    if (!statsOf(op).disabled) operatorAttack(w, c, op);
-    else op.swing = null;
+    if (statsOf(op).disabled) op.swing = null;
+    else if (disarmed(op)) { op.swing = null; op.anim = ANIM.IDLE; }
+    else operatorAttack(w, c, op);
   }
 }
 
@@ -741,7 +788,7 @@ function takeHold(e) {
  * An enemy's attack this frame (敌人攻击-1, 攻击-2): like an operator's — a swing under way goes on; the cooldown counts
  * down while it can act; when it is out and there is a target, the first in the official order (索敌-5) — as many as
  * its abilities' mods say (敌能-2), one by default — are locked and a swing starts — not while it is blocked under 战栗 (状态-5; a swing under way goes on). One that cannot act, has no
- * attack or has disappeared loses its swing. A hit that asked for its next attack at once (敌能-44) clears the cooldown
+ * attack or has disappeared loses its swing, and so does one under 缴械 or 强制缴械 (状态-12). A hit that asked for its next attack at once (敌能-44) clears the cooldown
  * before it is counted. Returns whether it is attacking this frame (it does not walk).
  * @param {World} w @param {Content} c @param {Unit} e
  */
@@ -749,6 +796,8 @@ export function enemyAttack(w, c, e) {
   const s = statsOf(e);
   // 恐惧 cancels a swing already under way, unlike 战栗 (状态-10, INF-0293). It is not one of the eight 阻止攻击 flags.
   if (s.disabled || s.atk <= 0 || e.hidden || s.flags.noAttack || s.flags.fear) { e.swing = null; return false; }
+  // 缴械 and 强制缴械 are two of the eight: the attack stops as for one that cannot act, and the enemy may walk (状态-12).
+  if (disarmed(e)) { e.swing = null; return false; }
   const swinging = e.swing !== null;
   if (e.swing) advanceSwing(w, c, e);
   takeAgain(e);
@@ -756,7 +805,7 @@ export function enemyAttack(w, c, e) {
   if (e.atkCd > 0) { e.atkCd--; return swinging; }
   if (e.swing) return true;
   if (s.flags.disarmedCombat && e.blockedBy >= 0) return false;
-  const order = sortAllies(e, foeTargets(w, c, e, enemyTargets(w, e)), FPS);
+  const order = sortAllies(e, foeTargets(w, c, e, enemyTargets(w, e)), FPS, foeRank(w, c, e));
   if (order.length === 0) return swinging;
   const mods = foeAttack(w, c, e, { scale: 1, times: 1, targets: 1, skill: false });
   startSwing(w, c, e, order.slice(0, Math.max(1, mods.targets)), mods);

@@ -117,17 +117,17 @@ function assertUnreadShapes() {
   assert.equal(gaps({ reborn: { duration: 5, page: 1, hp_ratio: 1 } }).includes('reborn'), true);
 }
 
-/** 泰特斯 in rm01 loses both names; the level list keeps `reborn` because 丑东西 is unmarked. */
+/** 泰特斯 in rm01 loses both names; 丑东西's marked `reborn` is covered too (敌能-125), so the level list has none. */
 function assertRm01() {
   const enemies = /** @type {any} */ (rm01).enemies;
   const titusGap = uncoveredAbilities([withFoeExtras(TITUS, enemies[TITUS])]);
   assert.equal(titusGap.includes('reborn'), false);
   assert.equal(titusGap.includes(SKILL), false);
   const ugly = uncoveredAbilities([withFoeExtras('enemy_1512_mcmstr', enemies.enemy_1512_mcmstr)]);
-  assert.equal(ugly.includes('reborn'), true);
+  assert.equal(ugly.includes('reborn'), false);
   const uncovered = levelAt('act1multi_fortress_rm01', 'NORMAL').level.uncovered || [];
   assert.equal(uncovered.includes(SKILL), false);
-  assert.equal(uncovered.includes('reborn'), true);
+  assert.equal(uncovered.includes('reborn'), false);
   const loaded = levelContent('act1multi_fortress_rm01', 'NORMAL');
   const t = loaded.enemies[TITUS];
   const rb = talentOf(t, 'reborn');
@@ -137,7 +137,7 @@ function assertRm01() {
   const skill0 = (t.skills || [])[0];
   assert.equal(skill0.bb.atk, -0.5);
   assert.equal(skill0.initCooldown, 10);
-  assert.equal(talentOf(loaded.enemies.enemy_1512_mcmstr, 'reborn'), undefined);
+  assert.deepEqual(talentOf(loaded.enemies.enemy_1512_mcmstr, 'reborn'), { duration: 10, page: 1 });
 }
 
 test('[敌能-78] the three read pages are covered; other reborn shapes stay gaps; rm01 drops AtkDesWeaken for 泰特斯', () => {

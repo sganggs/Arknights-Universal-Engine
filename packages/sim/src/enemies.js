@@ -9,6 +9,7 @@ import { foeTick, foeUnbalanceEnd, carried } from './foes.js';
 import { slideStep } from './displacement.js';
 import { induceStep } from './induce.js';
 import { statsOf } from './attrs.js';
+import { crowdTurn } from './lr.js';
 
 /** @typedef {import('./types.js').World} World @typedef {import('./types.js').Unit} Unit @typedef {import('./types.js').Content} Content */
 
@@ -76,5 +77,10 @@ function enemyTurn(w, c, e) {
 
 /** Every enemy's turn, in creation order (帧-1); a passenger has none (敌能-16). @param {World} w @param {Content} c */
 export function enemiesAct(w, c) {
-  for (const e of w.units) if (e.kind === KIND.ENEMY && e.hp > 0 && !carried(e)) enemyTurn(w, c, e);
+  for (const e of w.units) {
+    if (e.kind !== KIND.ENEMY || e.hp <= 0 || carried(e)) continue;
+    enemyTurn(w, c, e);
+    // a facing an ability holds (敌能-119) is applied after the turn, over the turns the turn made (敌能-90)
+    crowdTurn(w, e);
+  }
 }

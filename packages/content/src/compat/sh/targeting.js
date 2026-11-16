@@ -74,4 +74,70 @@ export function sortEnemyTargets(battle, attacker, cands, priority) {
   return cands;
 }
 
-export const aggroCmp = gap('targeting.aggroCmp');
+/**
+ * The 仇恨值 order of two allies for an enemy (兼容-5; negative: `a` first): the higher taunt level first, then the one
+ * that came on the field later (`aggroSeq`) — the order enemies pick whom to attack by, after their own special priorities.
+ * @param {{ s?: { taunt?: number } | null, aggroSeq?: number, deploySeq?: number }} a @param {{ s?: { taunt?: number } | null, aggroSeq?: number, deploySeq?: number }} b
+ */
+export function aggroCmp(a, b) {
+  const ta = a.s?.taunt || 0, tb = b.s?.taunt || 0;
+  if (ta !== tb) return tb - ta;
+  return (b.aggroSeq || b.deploySeq || 0) - (a.aggroSeq || a.deploySeq || 0);
+}
+
+/**
+ * A facing-RIGHT range grid with its 攻击范围扩大 (Stronghold's extendedGrid, the relative form of absoluteRangeKeys):
+ * the whole tiles 1 … ⌊extend⌋ beyond the far (+dCol) end of each row, at most the level's width; duplicates and junk
+ * entries dropped.
+ * @param {readonly unknown[] | null | undefined} grid @param {number} [extend] @returns {[number, number][]}
+ */
+export function extendedGrid(grid, extend = 0) {
+  /** @type {[number, number][]} */
+  const out = [];
+  const seen = new Set();
+  const add = (/** @type {number} */ dr, /** @type {number} */ dc) => { const k = `${dr},${dc}`; if (!seen.has(k)) { seen.add(k); out.push([dr, dc]); } };
+  if (!Array.isArray(grid)) return out;
+  const cells = /** @type {[number, number][]} */ (grid.filter((p) => Array.isArray(p) && Number.isInteger(p[0]) && Number.isInteger(p[1])));
+  for (const [dr, dc] of cells) add(dr, dc);
+  if (!(extend > 0) || !Number.isFinite(extend)) return out;
+  /** @type {Map<number, number>} */
+  const far = new Map();
+  for (const [dr, dc] of cells) far.set(dr, Math.max(far.get(dr) ?? -Infinity, dc));
+  for (const [dr, mx] of far) for (let k = 1; k <= Math.min(extend, COLS); k++) add(dr, mx + k);
+  return out;
+}
+
+/**
+ * The enemies an attack born on a cell may take (Stronghold's birthCellTargets, 莱塔尼亚): those within the profile's
+ * attack radius of the cell by their colliders that stand on it and that it may select.
+ * @param {{ foesInColliderRadius?: (x: number, y: number, r: number) => Target[] }} battle @param {unknown} attacker
+ * @param {Record<string, any> | null | undefined} profile @param {{ row: number, col: number } | null | undefined} cell @returns {Target[]}
+ */
+export function birthCellTargets(battle, attacker, profile, cell) {
+  if (!cell || !Number.isInteger(cell.row) || !Number.isInteger(cell.col) || !Number.isFinite(profile?.attackRangeRadius) || !battle?.foesInColliderRadius) return [];
+  return battle.foesInColliderRadius(cell.col, cell.row, profile?.attackRangeRadius)
+    .filter((e) => !!e.u && body.bodyOnTile(e.u, cell.row, cell.col) && canTargetEnemy(attacker, e, profile));
+}
+
+/**
+ * The candidates of a unit's local birth mode (Stronghold's birthLocalTargets), or null without one: those on its cell;
+ * none ends the mode for good.
+ * @param {any} battle @param {{ mem?: Record<string, any> } | null | undefined} attacker @param {Record<string, any> | null | undefined} profile
+ * @returns {Target[] | null}
+ */
+export function birthLocalTargets(battle, attacker, profile) {
+  const mem = attacker?.mem;
+  if (!mem?.lethaniaBirthMode) return null;
+  const targets = birthCellTargets(battle, attacker, profile, mem.lethaniaBirthCell);
+  if (targets.length) return targets;
+  mem.lethaniaBirthMode = false;
+  mem.lethaniaBirthTargetIds = [];
+  return null;
+}
+
+// What the enemies' side may select of ours (Stronghold's enemy content, not the kits): gaps — the engine's enemies select
+// by its own rules (敌人攻击-1).
+export const canTargetAlly = gap('targeting.canTargetAlly');
+export const areaSelectable = gap('targeting.areaSelectable');
+export const auraSelectable = gap('targeting.auraSelectable');
+export const sortAllyTargets = gap('targeting.sortAllyTargets');

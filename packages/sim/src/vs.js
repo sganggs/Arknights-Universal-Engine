@@ -107,7 +107,7 @@ function heldOn(op, t, dmg, v) {
 function scaleHit(dmg, v) {
   if (v.atk) dmg.amount *= v.atk;
   if (v.dmg) dmg.mul = (dmg.mul ?? 1) * v.dmg;
-  if (v.noDodge && dmg.type === 'phys') dmg.canDodge = false;
+  if (v.noDodge && dmg.type === 'phys') dmg.noDodgeCancel = true;
   if (v.defFlat) dmg.defIgnoreFlat = (dmg.defIgnoreFlat ?? 0) + v.defFlat;
   if (v.defPct) dmg.defIgnorePct = (dmg.defIgnorePct ?? 0) + v.defPct;
 }

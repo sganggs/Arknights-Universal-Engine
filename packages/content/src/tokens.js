@@ -7,6 +7,7 @@ import pages from '../data/summons.json' with { type: 'json' };
 import { moduleAt, recordAt, statsAt } from './operators.js';
 import { talentsAt, unlockedAt } from './talents.js';
 import { grantAt as grantText, lifeAt, skillEndAt } from './summontext.js';
+import { withRole } from './summonroles.js';
 
 /** @typedef {import('./operators.js').Training} Training @typedef {import('./operators.js').Build} Build */
 /** @typedef {import('./operators.js').Module['levels'][number]} ModuleLevel @typedef {import('./operators.js').ModulePart} ModulePart */
@@ -134,14 +135,15 @@ export const grantAt = (owner, b, id, name) => grantText(owner, b, id, name, TOK
 const deviceOf = (page) => (page?.device === true ? { device: true } : {});
 
 /**
- * A summon at its owner's training as @aue/sim reads it (召唤-2…召唤-4, 召唤-7…召唤-11): its record, with its PRTS
- * position and effects, and `summon` — its limits, what the owner's deployment adds to its card, what its skill gives and
- * when, how long it stays and what its owner's skill's end does to it, 部署占用数, 再部署策略, whether it stays when the
- * owner leaves, a tactical point's forms, and whether it is a 装置.
+ * A summon at its owner's training as @aue/sim reads it (召唤-2…召唤-4, 召唤-7…召唤-12): its record with its attack role
+ * (召唤-12), its PRTS position and effects, and `summon` — its limits, what the owner's deployment adds to its card, what
+ * its skill gives and when, how long it stays and what its owner's skill's end does to it, 部署占用数, 再部署策略, whether
+ * it stays when the owner leaves, a tactical point's forms, and whether it is a 装置.
  * @param {Training} token @param {string} id @param {Training} owner @param {Build} b @returns {import('@aue/sim').OperatorDef}
  */
 export function tokenAt(token, id, owner, b) {
-  const tb = tokenBuild(token, b), mod = tokenModule(owner, b, id), page = Object.hasOwn(SUMMON_PAGES, id) ? SUMMON_PAGES[id] : null, rec = recordAt(token, tb, mod);
+  const tb = tokenBuild(token, b), mod = tokenModule(owner, b, id), page = Object.hasOwn(SUMMON_PAGES, id) ? SUMMON_PAGES[id] : null;
+  const rec = withRole(recordAt(token, tb, mod), id, token.description);
   return {
     ...withEffects(rec, page), ...(page?.position ? { position: /** @type {'MELEE' | 'RANGED'} */ (page.position) } : {}),
     summon: { ...limitsAt(token, tb, mod), ...cardOf(token, id, owner, b), ...leavingOf(token, id, owner, b), occupy: page?.occupy ?? 0,

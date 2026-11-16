@@ -8,6 +8,8 @@ import { applyStatus } from '../src/status.js';
 import { statsOf } from '../src/attrs.js';
 import { creditedDamage } from '../src/traits.js';
 import { dealEp } from '../src/elements.js';
+import { chainOf } from '../src/chain.js';
+import { addBuff, makeBuff } from '../src/buffs.js';
 
 /** @typedef {import('../src/types.js').Unit} Unit */
 
@@ -70,6 +72,29 @@ test('[职业-11] a damage chain: the nearest enemy within the radius, each jump
   const g2 = two.put('guard', 1, 1);
   two.foe(1, 2); two.foe(1, 3); two.foe(1, 4);
   assert.equal(two.run(2).filter((e) => e.type === 'hit' && e.id === g2.id).length, 2, 'max counts the first target');
+});
+
+test('[职业-11] [敌能-142] an enemy\'s chain (side friendly) jumps on our side: the nearest operator, never an enemy, not one that took off', () => {
+  const { w, c, foe, put } = arena(() => {});
+  const g1 = put('guard', 1, 1), g2 = put('g2', 1, 2), g3 = put('g3', 1, 3), e = foe(1, 1.4);
+  const how = { heals: false, antiAir: true };
+  const ours = { max: 3, scale: 0.5, radius: 2.1, cells: null };
+  /** @type {import('../src/types.js').Chain} */
+  const theirs = { ...ours, side: 'friendly' };
+  assert.deepEqual(chainOf(w, c, g1, theirs, how).map((u) => u.id), [g2.id, g3.id], 'g2 (1.0 away), then g3 (1.0 from g2); the enemy 0.4 away is not on its side');
+  assert.deepEqual(chainOf(w, c, g1, ours, how).map((u) => u.id), [e.id], 'without the side it is an operator\'s chain: enemies only');
+  addBuff(g2, makeBuff({ key: 'up', flags: { liftoff: true } }));
+  assert.deepEqual(chainOf(w, c, g1, theirs, how).map((u) => u.id), [g3.id], 'one that took off is skipped (阻挡-2)');
+});
+
+test('[职业-11] an operator\'s damage chain jumps to a flying enemy only when its trait is anti-air', () => {
+  for (const antiAir of [false, true]) {
+    const { foe, put, run } = arena((c) => { c.operators.guard.trait = { chain: { max: 2, scale: 0.5, radius: 1.7, cells: null }, ...(antiAir ? { antiAir: true } : {}) }; });
+    const guard = put('guard', 1, 1), a = foe(1, 2), bird = foe(1, 3);
+    bird.base = { ...bird.base, motion: 'FLY' };
+    const hits = run(2).filter((e) => e.type === 'hit' && e.id === guard.id).map((e) => e.target);
+    assert.deepEqual(hits, antiAir ? [a.id, bird.id] : [a.id], antiAir ? 'anti-air: the flyer 1.0 from a is the jump' : 'not anti-air: the flyer is passed over');
+  }
 });
 
 test('[职业-11] a heal chain: among its cells around each target, the lowest 生命比例 — full HP too — then the latest deployed', () => {

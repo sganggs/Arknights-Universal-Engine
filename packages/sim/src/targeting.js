@@ -165,7 +165,7 @@ export const FILTERS = Object.freeze({
   ALL: null,
 });
 
-/** Lexicographic comparison of reference values. @param {number[]} a @param {number[]} b */
+/** Lexicographic comparison of reference values. @param {readonly number[]} a @param {readonly number[]} b */
 function compareKeys(a, b) {
   for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i] - b[i];
   return 0;
@@ -227,14 +227,19 @@ export function sortHealTargets(cands) {
 /** The 仇恨值 of one of our units from its creation (索敌-5). @param {Unit} u @param {number} fps */
 const hatredOfCharacter = (u, fps) => characterHatred(statsOf(u).taunt, u.born / fps, u.bornN);
 
+/** No 特殊优先级: every candidate ties on it (索敌-5). @type {readonly number[]} */
+const NO_RANK = Object.freeze([]);
+
 /**
- * An enemy's candidates in the official order (索敌-5): the unit blocking it, 仇恨值 high to low at a precision of 0.1 —
- * so the last deployed first — then the order the candidates come in.
- * @param {Unit} enemy @param {readonly Unit[]} cands @param {number} fps @returns {Unit[]}
+ * An enemy's candidates in the official order (索敌-5): the unit blocking it, its abilities' 特殊优先级 (`rank`, lower
+ * first, compared in order), 仇恨值 high to low at a precision of 0.1 — so the last deployed first — then the order the
+ * candidates come in.
+ * @param {Unit} enemy @param {readonly Unit[]} cands @param {number} fps @param {(a: Unit) => readonly number[]} [rank]
+ * @returns {Unit[]}
  */
-export function sortAllies(enemy, cands, fps) {
-  const rows = cands.map((a) => ({ a, b: a.id === enemy.blockedBy ? 0 : 1, h: precisionKey(hatredOfCharacter(a, fps)) }));
-  return insertionSort(rows, (x, y) => x.b - y.b || y.h - x.h).map((r) => r.a);
+export function sortAllies(enemy, cands, fps, rank) {
+  const rows = cands.map((a) => ({ a, b: a.id === enemy.blockedBy ? 0 : 1, p: rank ? rank(a) : NO_RANK, h: precisionKey(hatredOfCharacter(a, fps)) }));
+  return insertionSort(rows, (x, y) => x.b - y.b || compareKeys(x.p, y.p) || y.h - x.h).map((r) => r.a);
 }
 
 /** The first n of an ordered list (索敌-3: 目标数). @template T @param {readonly T[]} list @param {number} n @returns {T[]} */

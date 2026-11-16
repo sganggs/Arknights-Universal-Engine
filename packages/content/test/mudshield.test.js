@@ -104,7 +104,8 @@ test('[敌能-66] [关卡-2] 覆面大锤客的同形黑板没有页面标记，
   assert.deepEqual(uncoveredAbilities([rock]), ['shield']);
   assert.deepEqual(uncoveredAbilities([tail]), ['shield']);
   assert.equal(FOE_EXTRAS.enemy_15059_dqhmmr, undefined);
-  assert.equal(FOE_EXTRAS.enemy_1511_mdrock, undefined);
+  // 泥岩's page is read in 敌能-143: its row gives the marker; the bare record above still has none.
+  assert.equal(FOE_EXTRAS.enemy_1511_mdrock?.talents?.shield?.page, 1);
   const read = withoutIncomplete(withFoeExtras('enemy_1091_mdhmmr', /** @type {EnemyDef} */ ({ name: 'a', maxHp: 1, atk: 0, def: 0, res: 0, moveSpeed: 1, talents: { shield: { ...SHAPE } } })));
   assert.equal(read.talents?.shield?.page, 1);
   assert.deepEqual(uncoveredAbilities([read]), []);

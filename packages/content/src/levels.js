@@ -135,8 +135,10 @@ function teamPlayers(football, spawned) {
 }
 
 /**
- * The enemies a level's waves and branches spawn (关卡-2, 守御-6) — in 阵地足球 every team's players (足球-6) —, and
- * those their abilities bring in turn (a split, a summon, a rebirth as another: an enemy key in a blackboard, 敌能-22).
+ * The enemies that appear at this difficulty (关卡-2): SPAWN keys of the waves and branches after `level_enemy_replace`,
+ * 阵地足球's players those spawns may draw (足球-6) when the table has them, and enemies their ability blackboards name
+ * that the table has (敌能-22), and theirs in turn. An enemy only in `enemyDbRefs`, never reached this way, does not
+ * appear and is not counted.
  * @param {any[]} waves @param {Record<string, any[]> | undefined} branches @param {Record<string, any>} enemies the level's records
  * @param {import('@aue/sim').FootballRules} [football]
  */
@@ -199,9 +201,9 @@ function difficultyAt(id, difficulty, levels) {
 /**
  * A level at a difficulty (关卡-2), as @aue/sim's level and enemies; `attack` adds each enemy's attack timing; the
  * effects of its runes on our units (`runes`, 符文-1…5 on every seat). Throws for a level with runes not supported at that difficulty, whose enemies there have abilities with no
- * behaviour yet — unless it is being tested (one of TESTING, or a level file that says so, `testing: true`): then the
- * level names them (`uncovered`, 关卡-8) —, or with devices not
- * profiled yet (装置-3).
+ * behaviour yet, or that places devices not profiled yet (装置-3) — unless it is being tested (one of TESTING, or a level
+ * file that says so, `testing: true`): then those abilities do nothing, those devices stay off the field (no record)
+ * and the level names both (`uncovered`, 关卡-8).
  * @param {string} id @param {Difficulty} difficulty @param {(key: string) => object} [attack]
  * @param {Readonly<Record<string, any>>} [levels] the extracted levels to take it from (LEVELS)
  * @returns {{ level: import('@aue/sim').Content['level'], enemies: Record<string, EnemyDef>, blockAdd: number, runes: import('./runes.js').RuneEffect[],
@@ -212,14 +214,15 @@ export function levelAt(id, difficulty, attack = () => ({}), levels = LEVELS) {
   const { waves, branches } = replacedSpawns(raw.level, d.replace);
   const football = withStadium(id, footballOf(id, raw.level.football)), group = stadiumGroup(football);
   const used = spawnedKeys(waves, branches, raw.enemies, football);
-  const missing = uncoveredAbilities(Object.entries(raw.enemies).filter(([k]) => used.has(k)).map(([k, e]) => withFoeExtras(k, /** @type {EnemyDef} */ (e))));
-  if (missing.length > 0 && !beingTested(id, raw)) throw new RangeError(`level ${id} at ${difficulty}: enemy abilities not supported yet: ${missing.join(', ')}`);
+  const missing = uncoveredAbilities(Object.entries(raw.enemies).filter(([k]) => used.has(k)).map(([k, e]) => withFoeExtras(k, /** @type {EnemyDef} */ (e)))), tested = beingTested(id, raw);
+  if (missing.length > 0 && !tested) throw new RangeError(`level ${id} at ${difficulty}: enemy abilities not supported yet: ${missing.join(', ')}`);
   // a carried unit's card (符文-6) is no device on the field: carried.js makes it; a device never placed needs no profile
   const unplaced = unplacedDevices(raw.level, waves, branches);
   const dev = profiledDevices(Object.fromEntries(Object.entries(raw.devices ?? {}).filter(([k]) => !Object.hasOwn(CARRIED, k) && (Object.hasOwn(DEVICE_PROFILES, k) || !unplaced.has(k)))));
-  if (dev.missing.length > 0) throw new RangeError(`level ${id}: devices not supported yet: ${dev.missing.join(', ')}`);
+  if (dev.missing.length > 0 && !tested) throw new RangeError(`level ${id}: devices not supported yet: ${dev.missing.join(', ')}`);
+  const uncovered = [...missing, ...dev.missing];
   return {
-    level: { ...raw.level, ...(football ? { football } : {}), waves, ...(branches ? { branches } : {}), ...(missing.length > 0 ? { uncovered: missing } : {}), hiddenGroups: group ? [...d.hiddenGroups, group] : d.hiddenGroups, ...(dev.works ? { works: dev.works } : {}),
+    level: { ...raw.level, ...(football ? { football } : {}), waves, ...(branches ? { branches } : {}), ...(uncovered.length > 0 ? { uncovered } : {}), hiddenGroups: group ? [...d.hiddenGroups, group] : d.hiddenGroups, ...(dev.works ? { works: dev.works } : {}),
       options: optionsAt(raw.level.options, d) },
     enemies: Object.fromEntries(Object.entries(raw.enemies).filter(([k]) => used.has(k))
       .map(([k, e]) => [k, { ...talentsMultiplied(k, multiplied(k, /** @type {EnemyDef} */ (e), d.enemyMul), d.talentMul ?? []), ...attack(k) }])),
