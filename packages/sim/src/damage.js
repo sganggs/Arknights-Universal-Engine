@@ -36,6 +36,9 @@ import { stealthed, liftoffRefused } from './targeting.js';
  * @property {boolean} [canDodge]
  * @property {boolean} [noDodgeCancel] 无视闪避 (伤害-12): the target's dodges are still drawn, but none cancels this hit
  * @property {boolean} [hpLoss] @property {boolean} [noHurtSp] gives no 受击回复 (技能-2: 敌能-103's burn)
+ * @property {'precomputed' | 'resolved'} [calculation] how far its amount is already calculated: `precomputed` sets off no
+ *   `damageCalculate` (a hit that content adds from inside that event, so it does not set it off again), `resolved` is the
+ *   same (the engine has no further calculation of its own to skip)
  * @property {boolean} [dodged] set by the 伤判 when the hit was dodged or missed (伤害-8; 敌能-2's `landed`)
  * @property {boolean} [sourceless] 无来源 though credited to its source: the events see no source, the kill is its source's,
  *   without the source's penetration and multiplier (伤害-7)
@@ -204,7 +207,7 @@ function tagMul(m, tags, pa) {
  * physical from a source whose flags ignore 物理闪避 (`ignoreDodgePhys`). The dodge is drawn all the same.
  * @param {Damage} dmg @param {Unit | null} src
  */
-const dodgeProof = (dmg, src) => !!dmg.noDodgeCancel || (dmg.type === 'phys' && !!src && !!statsOf(src).flags.ignoreDodgePhys);
+export const dodgeProof = (dmg, src) => !!dmg.noDodgeCancel || (dmg.type === 'phys' && !!src && !!statsOf(src).flags.ignoreDodgePhys);
 
 /**
  * One buff's 伤判 effects on a hit, in a fixed order within the buff: dodge, 抵挡, taken multipliers, shield, barrier
@@ -268,8 +271,12 @@ function reachable(e) {
   return e.kind === KIND.ENEMY && e.hp > 0 && !f.invincible && !stealthed(e) && !f.untargetable;
 }
 
-/** A dodge or a miss (伤害-8): the `dodge` event (钩子-3), and one more on the target's `dodges` tracker (职业-26). @param {World} w @param {Unit} u @param {Unit | null} src @param {Damage} dmg */
-function dodged(w, u, src, dmg) {
+/**
+ * A dodge or a miss (伤害-8): the `dodge` event (钩子-3), and one more on the target's `dodges` tracker (职业-26). Content
+ * whose `take` dodges a hit calls it too, so the hit counts as dodged like one of the engine's own.
+ * @param {World} w @param {Unit} u @param {Unit | null} src @param {Damage} dmg
+ */
+export function dodged(w, u, src, dmg) {
   dmg.dodged = true;
   emit(w, 'dodge', { source: src, target: u, dmg });
   const t = tracker(u, 'dodges');
@@ -313,16 +320,27 @@ export function takeDamage(w, u, amount, dmg, from = {}) {
       behaviorOf(from.c, b)?.afterCancel?.(w, u, b, { dmg, src, credit, tags, c: from.c });
       continue;
     }
-    const hits = b.shieldHits;
-    const hit = { dmg, src, credit, tags, c: from.c };
-    left = judge(w, u, b, left, hit);
-    // The layer is already spent, and the buff may already be gone: the object still shows the drop (部署-8).
-    if (b.tag === 'shieldBreak' && b.shieldHits < hits) brokeShield(u, b.n, from.c);
-    if (left > 0) left = applyTake(w, u, b, left, hit);
-    if (left < 0) dodged(w, u, src, dmg);
+    left = turnOf(w, u, b, left, { dmg, src, credit, tags, c: from.c });
     gone = !(left > 0);
   }
   return gone ? 0 : left;
+}
+
+/**
+ * One buff's turn in the 伤判 (伤害-8): its own effects, a broken deployment-shield layer (部署-8), `spent` when that
+ * used up its shield and it went, then `take` while damage is left; a dodge is the `dodge` event. The damage left.
+ * @param {World} w @param {Unit} u @param {Buff} b @param {number} amount
+ * @param {{ dmg: Damage, src: Unit | null, credit: Unit | null, tags: readonly string[], c?: import('./types.js').Content }} hit
+ */
+function turnOf(w, u, b, amount, hit) {
+  const hits = b.shieldHits, held = u.buffs.includes(b);
+  let left = judge(w, u, b, amount, hit);
+  // The layer is already spent, and the buff may already be gone: the object still shows the drop (部署-8).
+  if (b.tag === 'shieldBreak' && b.shieldHits < hits) brokeShield(u, b.n, hit.c);
+  if (held && !u.buffs.includes(b)) behaviorOf(hit.c, b)?.spent?.(w, u, b);
+  if (left > 0) left = applyTake(w, u, b, left, hit);
+  if (left < 0) dodged(w, u, hit.src, hit.dmg);
+  return left;
 }
 
 /** A buff's behaviour in the content (伤害-8): by `act`, or the buff's key. @param {import('./types.js').Content | undefined} c @param {Buff} b */
@@ -363,12 +381,12 @@ function countedLoss(flags, dmg, amount) {
  * Takes HP (伤害-9): never below 1 for an undying unit (不死; its maximum when below 1); at 0 or below the unit is at 0
  * and leaves the field at the end of the frame (帧-1) — unless a `fatal` handler prevents it (钩子-3): then it keeps 1 HP
  * (its maximum when below 1). A 特殊生命值 unit (敌能-39) loses 1 instead of `amount`, or 0 when its type filter rejects
- * the hit (敌能-43), except for 生命流失; the event and the return stay `amount`. Then the `damaged` event. The
- * hit counts as its source's (the kill's), also when the events see none.
+ * the hit (敌能-43), except for 生命流失; the event and the return stay `amount`. Then the `damageApplied` event (not
+ * for 生命流失) and the `damaged` event. The hit counts as its source's (the kill's), also when the events see none.
  * @param {World} w @param {Unit | null} src @param {Unit} t @param {number} amount @param {Damage} dmg
  */
 function loseHp(w, src, t, amount, dmg) {
-  const seen = seenOf(src, dmg), s = statsOf(t);
+  const seen = seenOf(src, dmg), s = statsOf(t), before = t.hp;
   const hurt = !dmg.hpLoss && amount > 0 ? tracker(t, 'lastHurt') : undefined;
   if (hurt) stamp(hurt, w.frame);
   t.hp -= countedLoss(s.flags, dmg, amount);
@@ -379,6 +397,7 @@ function loseHp(w, src, t, amount, dmg) {
     if (saved && t.hp < 1) t.hp = Math.min(1, statsOf(t).maxHp);
   }
   w.events.push({ type: 'hit', id: src ? src.id : -1, target: t.id, damage: amount });
+  if (!dmg.hpLoss && amount > 0 && hasHook(w, 'damageApplied')) emit(w, 'damageApplied', { source: seen, credit: src, target: t, dmg, kind: 'damage', amount, hpRemoved: Math.max(0, before - t.hp) });
   if (hasHook(w, 'damaged')) emit(w, 'damaged', { source: seen, credit: src, target: t, amount, type: dmg.type, dmg });
   return amount;
 }
@@ -414,18 +433,50 @@ function untouchable(target, dmg) {
 function hitStops(w, src, target, dmg) {
   if (untouchable(target, dmg) || target.hidden) return true;
   if (!dmg.ignoreSelect && liftoffRefused(dmg.sourceless ? null : src, target)) return true;
-  return !hitGoesOn(w, src, target, dmg);
+  return !hitGoesOn(w, src, target, dmg) || !calculated(w, src, target, dmg);
 }
 
 /**
- * The `hit` event before the defences (钩子-3): whether the hit goes on — not cancelled, the target still on the field
- * with HP, not made invincible by a handler.
+ * Whether a hit goes on after a handler had it — not cancelled, the target still on the field with HP, not made
+ * invincible by a handler.
+ * @param {World} w @param {Unit} target @param {Damage} dmg
+ */
+const goesOn = (w, target, dmg) => !dmg.cancel && target.hp > 0 && w.units.includes(target) && !untouchable(target, dmg);
+
+/**
+ * The `hit` event before the defences (钩子-3): whether the hit goes on.
  * @param {World} w @param {Unit | null} src @param {Unit} target @param {Damage} dmg
  */
 function hitGoesOn(w, src, target, dmg) {
   if (!hasHook(w, 'hit')) return true;
   emit(w, 'hit', { source: seenOf(src, dmg), credit: src, target, dmg });
-  return !dmg.cancel && target.hp > 0 && w.units.includes(target) && !untouchable(target, dmg);
+  return goesOn(w, target, dmg);
+}
+
+/**
+ * The `damageCalculate` event, the source's own calculation (钩子-3), right after `hit` and before the defences: a handler
+ * may change the hit or deal hits of its own — with `calculation` `precomputed`, which do not set it off again. A hit with
+ * no source for the events, and one that says its amount is calculated, has none. Whether the hit goes on.
+ * @param {World} w @param {Unit | null} src @param {Unit} target @param {Damage} dmg
+ */
+function calculated(w, src, target, dmg) {
+  const seen = seenOf(src, dmg);
+  if (!seen || dmg.calculation !== undefined || !hasHook(w, 'damageCalculate')) return true;
+  emit(w, 'damageCalculate', { source: seen, credit: src, target, dmg });
+  return goesOn(w, target, dmg);
+}
+
+/**
+ * The `damageApplying` event, the target's before its 伤判 (钩子-3): a handler may change the damage that goes to the
+ * 伤判 (not below 0; a number that is not finite is 0) or cancel the hit. The damage that goes on, or null when the hit
+ * does not.
+ * @param {World} w @param {Unit | null} src @param {Unit} target @param {number} amount @param {Damage} dmg @returns {number | null}
+ */
+function applying(w, src, target, amount, dmg) {
+  if (!hasHook(w, 'damageApplying')) return amount;
+  const k = emit(w, 'damageApplying', { source: seenOf(src, dmg), credit: src, target, amount, dmg });
+  if (dmg.cancel || target.hp <= 0 || !w.units.includes(target)) return null;
+  return Number.isFinite(k.amount) ? Math.max(0, k.amount) : 0;
 }
 
 /**
@@ -497,10 +548,10 @@ function heldAbove(amount, hp, stopAt) {
  * Deals a hit (伤害-7): nothing to a unit already at 0 HP; 生命流失 goes straight to the HP; nothing to an invincible
  * unit (无敌, 沉睡, disappeared: 路线-4); nothing from a ground enemy or a hostile device onto a unit that took off
  * (起飞, 阻挡-2) — judged once, before `hit`, so a handler that lifts the target does not cancel this hit; otherwise the
- * `hit` event, then the hit counts for 受击回复 (技能-2) — and, for an enemy, its on-hit tally (敌能-38) — and for
+ * `hit` event and the `damageCalculate` event, then the hit counts for 受击回复 (技能-2) — and, for an enemy, its on-hit tally (敌能-38) — and for
  * its source's rune SP (符文-4; given the content), then the target's defences, `mul`, an attack's floor by its source's
- * talents (职业-31; given the content), the source's multiplier, the 工事 multiplier (地图-3; given the content), the target's 伤判
- * effects, the `hpDamage` event, then the HP. A `sourceless` hit takes neither its source's penetration nor its
+ * talents (职业-31; given the content), the source's multiplier, the 工事 multiplier (地图-3; given the content), the `damageApplying`
+ * event, the target's 伤判 effects, the `hpDamage` event, then the HP. A `sourceless` hit takes neither its source's penetration nor its
  * multipliers, and its events see no source (`credit` names it). Returns the damage that reached the HP (伤害-9): for
  * 特殊生命值 (敌能-39) that is still the calculated damage, while the HP itself falls by 1.
  * @param {World} w @param {Unit | null} src @param {Unit} target @param {Damage} dmg @param {import('./types.js').Content} [c]
@@ -517,7 +568,9 @@ export function dealDamage(w, src, target, dmg, c) {
   let amount = mitigate(dmg.amount, dmg.type, statsOf(target), penetration(ss, dmg)) * /** @type {number} */ (dmg.mul);
   amount = floored(c, seen, target, dmg, amount);
   if (ss) amount *= dealtMul(ss, dmg.type) * (c && seen ? worksMul(c, seen, target) : 1);
-  amount = hpDamage(w, src, target, takeDamage(w, target, amount, dmg, { src: seen, credit: src, tags: tagsOf(c, seen), ...(c ? { c } : {}) }), dmg);
+  const final = applying(w, src, target, amount, dmg);
+  if (final === null) return 0;
+  amount = hpDamage(w, src, target, takeDamage(w, target, final, dmg, { src: seen, credit: src, tags: tagsOf(c, seen), ...(c ? { c } : {}) }), dmg);
   amount = heldAbove(amount, target.hp, dmg.stopAt);
   return amount > 0 ? loseHp(w, src, target, amount, dmg) : 0;
 }
@@ -542,16 +595,27 @@ export function setHp(u, hp) {
 }
 
 /**
- * Heals (伤害-11): the amount times the healer's 治疗倍率 and the target's 受到治疗倍率, nothing under 禁疗, never above
- * the maximum HP; a `heal` handler may change the amount before it is applied (钩子-3) and sees whether it is the
- * healer's trait's self-heal (`trait`, 职业-9). A unit no ally may heal (`noAllyHeal`, 职业-9) takes heals only from
- * itself, and those even under 禁疗; one that is `free` of 禁疗 (职业-29) heals under it. Returns the HP restored.
- * @param {World} w @param {Unit | null} src @param {Unit} target @param {number} amount @param {{ trait?: boolean, free?: boolean }} [how]
+ * Whether 禁疗 or 不被友方治疗 voids a heal (伤害-11): a unit no ally may heal (`noAllyHeal`, 职业-9) takes heals only from
+ * itself, and those even under 禁疗; one `free` of 禁疗 (职业-29) heals under it; one the healer heals `through` its 禁疗
+ * (伤害-13) is held back by neither.
+ * @param {Unit | null} src @param {Unit} target @param {import('./attrs.js').Stats} ts the target's @param {{ free?: boolean, through?: boolean }} how
+ */
+function healRefused(src, target, ts, how) {
+  if (how.through) return false;
+  const own = src === target && ts.flags.noAllyHeal === true;
+  return !!(ts.flags.noAllyHeal && src !== target) || !!(ts.flags.healFree && !own && !how.free);
+}
+
+/**
+ * Heals (伤害-11): the amount times the healer's 治疗倍率 and the target's 受到治疗倍率, nothing under 禁疗 (healRefused),
+ * never above the maximum HP; a `heal` handler may change the amount before it is applied (钩子-3) and sees whether it is
+ * the healer's trait's self-heal (`trait`, 职业-9). Returns the HP restored.
+ * @param {World} w @param {Unit | null} src @param {Unit} target @param {number} amount @param {{ trait?: boolean, free?: boolean, through?: boolean }} [how]
  */
 export function heal(w, src, target, amount, how = {}) {
   if (target.hp <= 0) return 0;
-  const ts = statsOf(target), own = src === target && ts.flags.noAllyHeal === true;
-  if ((ts.flags.noAllyHeal && src !== target) || (ts.flags.healFree && !own && !how.free)) return 0;
+  const ts = statsOf(target);
+  if (healRefused(src, target, ts, how)) return 0;
   let amt = amount * (src ? statsOf(src).healingDealtMul : 1) * ts.healingTakenMul;
   if (hasHook(w, 'heal')) {
     const k = emit(w, 'heal', { source: src, target, amount: amt, trait: how.trait === true });
