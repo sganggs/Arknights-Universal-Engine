@@ -170,7 +170,8 @@ export const traitTargets = (t, op) => (t.targets === 'all' ? Infinity : t.targe
  * operator may attack now (false: it may not); what an attack turn without a target does (true: it stored, its attack
  * interval starts again; false: nothing; undefined: the engine's own rule — 职业-6, 职业-12); which enemies it does not
  * select now (`skip`: true for one); whether it takes the place of the branch's own deployment effects for this operator
- * (true: no trait buff or upkeep from the engine).
+ * (true: no trait buff or upkeep from the engine); which allies its operator heals through their 禁疗 (`healThrough`: true
+ * for one, 伤害-13).
  * @typedef {object} TraitBehavior
  * @property {(ctx: TraitContext) => void} [deploy]
  * @property {(ctx: TraitContext, target: Unit) => void} [hit]
@@ -179,6 +180,7 @@ export const traitTargets = (t, op) => (t.targets === 'all' ? Infinity : t.targe
  * @property {(ctx: TraitContext) => boolean | undefined} [store]
  * @property {(ctx: TraitContext) => boolean | undefined} [own]
  * @property {(ctx: TraitContext, target: Unit) => boolean | undefined} [skip]
+ * @property {(ctx: TraitContext, target: Unit) => boolean | undefined} [healThrough]
  */
 
 /** Gives the owner cost, up to the level's maximum (费用-1). @param {World} w @param {Content} c @param {number} seat @param {number} n */
