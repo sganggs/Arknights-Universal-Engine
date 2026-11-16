@@ -268,6 +268,7 @@ function bind(b, u) {
   battles.set(u, b);
   piece.skill?.applyCost();
   for (const spec of piece.persist) b.giveBuff(piece, spec);
+  piece.applyShock();
 }
 
 /**

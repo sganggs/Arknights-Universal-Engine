@@ -298,9 +298,9 @@
   {
     "id": "DIF-0038",
     "clause": "兼容-4",
-    "ours": "kit 给单位换档案或写档案的一项（unit.profile），引擎自己的攻击不读，兼容层读选目标与可否选中的几项（maxTargets、priority、allInRange、hitAllBlocked、canHitFly、groundOnly、hitSleep、skipEnemy、rangeTiles、attackRangeRadius），以及有浮游单元的单位的 funnel 与 funnelMul（funnelMul 写成空即关掉浮游单元，funnel 换上新的 init、delta、max：引擎经特性行为读，职业-6）。其余的项记着不使用，每个单位每一项记一条 `compat: profile.<项> is not provided yet`：dmgMul、hits、splashRadius、shockTimes、auraRatio、selfHeal、heal、dmgType、noAttack、atkScale。档案里有单位的特性数据（canHitFly、heal、dmgType、hits、浮游单元、命中状态）和 kit 自己的 trait，部署前的棋子也有，kit 原样写回的不记。投掷手的浮游倍率仍是引擎特性数据里的。",
+    "ours": "kit 给单位换档案或写档案的一项（unit.profile），引擎自己的攻击不读档案对象。兼容层读选目标与可否选中的几项（maxTargets、priority、allInRange、hitAllBlocked、canHitFly、groundOnly、hitSleep、skipEnemy、rangeTiles、attackRangeRadius），有浮游单元的单位的 funnel 与 funnelMul（funnelMul 写成空即关掉浮游单元，funnel 换上新的 init、delta、max：引擎经特性行为读，职业-6），以及 splashRadius 与 shockTimes：站着时改之后每次攻击的溅射半径和余震次数（职业-8 的 profileShock 增益，只改这两项；次数为 max(1, floor(shockTimes)−1)，半径只替换已有溅射），写回则取回。其余的项记着不使用，每个单位每一项记一条 `compat: profile.<项> is not provided yet`：dmgMul、hits、auraRatio、selfHeal、heal、dmgType、noAttack、atkScale。档案里有单位的特性数据（canHitFly、heal、dmgType、hits、有溅射时的半径、有余震时的 shockTimes、浮游单元、命中状态）和 kit 自己的 trait，部署前的棋子也有，kit 原样写回的不记。投掷手的浮游倍率仍是引擎特性数据里的。没有溅射或不带余震的单位写下半径和次数也认，只是改不到攻击。",
     "stronghold": "攻击循环读单位的 profile：kit 在技能开始时把 funnelMul、dmgMul 换成自己的函数或把 funnel.max 乘一个系数（洛洛、耶拉），之后的攻击就按它算。",
-    "reason": "引擎的段数、溅射、光环比例、自疗、治疗等是特性数据（职业-12 等），攻击结算不读档案。让这些项起作用要把特性数据改成可被 kit 覆盖，是引擎的改动，除浮游单元外没有做。受影响的棋子 kit 与项：whitw2（hits）、mlyss 的召唤物（hits）、rosmon（splashRadius、shockTimes）、cetsyr 的两个棋子条目 4_25 与 5_09（auraRatio）、excu2（selfHeal）、papyrs（heal）、skadi2 与隐德来希 etlchi 的召唤物（noAttack）、siege2 的召唤物（dmgType）；kit 自己的 trait.funnelMul（耶拉、malist）见 DIF-0045。这些写入不再静默：以前整份档案的赋值会抛错，现在记一条缺口。技能里这些项的变化没有生效。",
+    "reason": "引擎的段数、光环比例、自疗、治疗等是特性数据（职业-12 等），攻击结算不读档案。让这些项起作用要把特性数据改成可被 kit 覆盖，是引擎的改动，除浮游单元和溅射半径、余震次数外没有做。受影响的棋子 kit 与项：whitw2（hits）、mlyss 的召唤物（hits）、cetsyr 的两个棋子条目 4_25 与 5_09（auraRatio）、excu2（selfHeal）、papyrs（heal）、skadi2 与隐德来希 etlchi 的召唤物（noAttack）、siege2 的召唤物（dmgType）；kit 自己的 trait.funnelMul（耶拉、malist）见 DIF-0045。这些写入不再静默：以前整份档案的赋值会抛错，现在记一条缺口。技能里这些项的变化没有生效。splashRadius 与 shockTimes 在单位站着时生效（迷迭香棋子 S2：半径与余震次数；职业-8，结算仍与主命中同一帧）。",
     "status": "有效"
   },
   {
