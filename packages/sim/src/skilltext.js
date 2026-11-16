@@ -6,7 +6,7 @@ import { KIND } from '@aue/schema';
 import { statsOf } from './attrs.js';
 import { addBuff, makeBuff, removeBuff, stamp } from './buffs.js';
 import { heal, setShield } from './damage.js';
-import { dealEp } from './elements.js';
+import { dealEpFrom } from './elements.js';
 import { reachKeys } from './reach.js';
 import { inflict } from './status.js';
 import { inKeys, rangeKeys, sortHealTargets } from './targeting.js';
@@ -92,7 +92,7 @@ function foeNear(op, u, ground) {
 function strike(w, c, op, e, x) {
   if (e.hp <= 0) return;
   creditedDamage(w, c, op, e, { type: x.type, amount: statsOf(op)[x.stat] * x.scale, isAttack: false, isSkill: true, canDodge: false });
-  if (x.element && x.epScale) dealEp(w, e, x.element, statsOf(op).atk * x.epScale, op);
+  if (x.element && x.epScale) dealEpFrom(w, e, x.element, statsOf(op).atk * x.epScale, { src: op, c });
   if (x.silence && e.hp > 0) inflict(w, e, 'silence', { seconds: x.silence, src: op });
 }
 

@@ -332,3 +332,72 @@ test('[职业-12] 要塞: a ranged attack with its splash on what is in its rang
   const mine = foe(1, 1), ev2 = run(60);
   assert.ok(!ev2.some((x) => x.type === 'shot' && x.id === op.id) && ev2.some((x) => x.type === 'hit' && x.id === op.id && x.target === mine.id), 'melee on its own tile');
 });
+
+test('[职业-3] hits that take a share each: every hit its share of the amount, after the defences; only the first gives 受击回复', () => {
+  const seen = /** @type {[number, number | undefined, boolean][]} */ ([]);
+  const { w, foe, put, run } = arena((c) => { c.operators.guard = { ...c.operators.guard, trait: { hits: 2, hitMul: 0.5 } }; });
+  bus.on(w, 'hit', (k) => { if (k.dmg.isAttack) seen.push([k.dmg.amount, k.dmg.mul, k.dmg.noHurtSp === true]); });
+  const guard = put('guard', 1, 1);
+  foe(1, 2);
+  const hits = run(70).filter((x) => x.type === 'hit' && x.id === guard.id).map((x) => x.damage);
+  assert.deepEqual(hits.slice(0, 4), [25, 25, 25, 25], 'two hits of half of ATK 50 for each attack, a foe without defence');
+  assert.deepEqual(seen.slice(0, 4), [[50, 0.5, false], [50, 0.5, true], [50, 0.5, false], [50, 0.5, true]], 'the second of an attack gives no 受击回复');
+});
+
+test('[技能-3] [职业-12] an AUTO skill of an operator that attacks only while its skill runs starts as soon as it is ready', () => {
+  const starts = /** @type {number[]} */ ([]);
+  const { w, foe, put, run } = arena((c) => { c.operators.guard = { ...c.operators.guard, skill: { ...skill(2), type: 'AUTO', cost: 2, init: 0 }, trait: { attackInSkill: true } }; });
+  bus.on(w, 'skillStart', () => { starts.push(w.frame); });
+  const guard = put('guard', 1, 1);
+  foe(1, 2);
+  const ev = run(150);
+  assert.ok(starts.length >= 1 && starts[0] <= 62, `started at its second SP: ${starts}`);
+  assert.ok(ev.some((x) => x.type === 'hit' && x.id === guard.id), 'and attacked in it');
+});
+
+test('[职业-6] [职业-12] a trait behaviour says which funnel its operator has: none, or other numbers than the trait\'s', () => {
+  /** @type {{ funnel: { init: number, delta: number, max: number } | null | undefined }} */
+  const said = { funnel: undefined };
+  const { w, foe, put, run } = arena((c) => {
+    c.operators.sniper = { ...c.operators.sniper, branch: 'b', trait: { funnel: { init: 0.2, delta: 0.15, max: 1.1 } } };
+    c.behaviors = { traits: { b: { funnel: () => said.funnel } } };
+  });
+  const amounts = /** @type {number[]} */ ([]);
+  bus.on(w, 'hit', (k) => { if (k.dmg.isAttack) amounts.push(Math.round(k.dmg.amount * 100) / 100); });
+  const op = put('sniper', 2, 2);
+  foe(1, 2);
+  run(130);
+  assert.deepEqual(amounts.slice(0, 3), [6, 10.5, 15], 'it says nothing: the trait\'s');
+  amounts.length = 0;
+  const counted = buffOf(op, 'funnel')?.n;
+  said.funnel = null;
+  run(130);
+  assert.deepEqual(amounts.slice(0, 3), [30, 30, 30], 'none: ATK 30 each time, and no count');
+  assert.equal(buffOf(op, 'funnel')?.n, counted, 'the count stayed where it was');
+  amounts.length = 0;
+  said.funnel = { init: 0.5, delta: 0, max: 0.5 };
+  run(130);
+  assert.deepEqual(amounts.slice(0, 3), [15, 15, 15], 'other numbers');
+});
+
+test('[职业-6] [职业-13] a trait behaviour says how much the regeneration aura gives each operator: more, less, or none', () => {
+  /** @type {(a: number) => number | undefined} */
+  let say = () => undefined;
+  const asked = /** @type {number[]} */ ([]);
+  const { run, put } = arena((cc) => {
+    cc.operators.g2 = { ...cc.operators.guard };
+    cc.operators.sniper = { ...cc.operators.sniper, branch: 'b', atk: 300, trait: { noAttack: true, free: true, regenAura: 0.1 } };
+    cc.behaviors = { traits: { b: { regen: (/** @type {any} */ ctx, /** @type {Unit} */ t, /** @type {number} */ amount) => { asked.push(t.id); return say(amount); } } } };
+  });
+  const guard = put('guard', 1, 2), bard = put('sniper', 2, 2), far = put('g2', 1, 0);
+  run(2);
+  const regen = () => guard.buffs.find((b) => b.key === `aura:${bard.id}`)?.mods.hpRegen;
+  assert.equal(regen(), 30, 'it says nothing: the amount');
+  assert.ok(asked.includes(guard.id) && !asked.includes(far.id), 'asked for the operators in its range only');
+  say = (a) => a * 2;
+  run(2);
+  assert.equal(regen(), 60, 'more');
+  say = () => 0;
+  run(2);
+  assert.equal(regen(), undefined, 'none: no buff');
+});
