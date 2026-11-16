@@ -206,7 +206,8 @@ const plainResolved = (dmg, s) => dmg.type === 'true' && (!s || !!dmg.sourceless
 
 /**
  * Damage from a unit, or from none (伤害-7): an operator's is credited with a kill (职业-5); 元素损伤 (`type` 'element')
- * goes to the target's element (元素-2). Returns the HP taken (the 元素损伤 dealt).
+ * goes to the target's element (元素-2), with the battle's content for a burst it sets off (伤害-8). Returns the HP taken
+ * (the 元素损伤 dealt).
  * @param {ShBattle} b @param {ShUnit | null} source @param {ShUnit} target @param {Record<string, any>} dmg
  */
 export function dealDamage(b, source, target, dmg) {
@@ -214,7 +215,7 @@ export function dealDamage(b, source, target, dmg) {
   if (!t || !target.alive) return 0;
   if (dmg.type === 'element') {
     const el = ELEMENT[dmg.element];
-    return el ? elements.dealEp(b.w, t, el, Number(dmg.amount) || 0, s) : 0;
+    return el ? elements.dealEpFrom(b.w, t, el, Number(dmg.amount) || 0, { src: s, c: b.c }) : 0;
   }
   if (dmg.calculation === 'resolved' && !plainResolved(dmg, s)) throw new CompatGap('attack.calculation.resolved');
   if (dmg.onApplied != null) throw new CompatGap('attack.onApplied');
