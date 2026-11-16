@@ -92,7 +92,7 @@ function onTick(ctx) {
 
 /**
  * Behaviours by talent or skill name. `BornAnim` is covered and does nothing (敌能-45).
- * `aura` is not here. The stack-capped shape is 敌能-28; 深池逐火's shape is 敌能-159, on the one `aura` object.
+ * `aura` is not here: that name is 敌能-28, and this blackboard is a different ability.
  * @type {Readonly<Record<string, FoeBehavior>>}
  */
 export const emberBehaviors = Object.freeze({

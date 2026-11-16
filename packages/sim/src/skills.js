@@ -9,7 +9,7 @@ import { actorContext, traitOf } from './traits.js';
 import { addBuff, makeBuff, removeBuff } from './buffs.js';
 import { throwAlchemy } from './alchemy.js';
 import { heal } from './damage.js';
-import { emit, hasHook } from './bus.js';
+import { emit } from './bus.js';
 import { grantSummons, endSummons } from './summons.js';
 import { restartCharge } from './modes.js';
 import { talentSkillEnd, talentSkillStart } from './talentfx.js';
@@ -50,11 +50,13 @@ import { openSkillText2, tickSkillText2, closeSkillText2 } from './skilltext2.js
  */
 
 /**
- * A skill's behaviour (ADR 0055). `trigger` says when an AUTO skill starts: as soon as it is ready, or when the
- * operator is about to attack. `attack` may change the mods of the attacks the skill makes. `timing` may give the
- * operator's skill another kind and time than its record's (技能-6).
+ * A skill's behaviour (ADR 0055). `trigger` says when an AUTO skill starts: as soon as it is ready (`'ready'`), or when the
+ * operator is about to attack (`'attack'`). A function works it out when it is asked, and may answer `undefined` — no
+ * opinion, the engine's own rule applies — or `'never'` (anything else than the two) — not now. `attack` may change the
+ * mods of the attacks the skill makes. `timing` may give the operator's skill another kind and time than its record's
+ * (技能-6).
  * @typedef {object} SkillBehavior
- * @property {'ready' | 'attack' | ((ctx: SkillContext) => 'ready' | 'attack')} [trigger]
+ * @property {'ready' | 'attack' | ((ctx: SkillContext) => 'ready' | 'attack' | 'never' | undefined)} [trigger]
  * @property {(ctx: SkillContext) => { kind?: SkillKind, seconds?: number } | null} [timing]
  * @property {(ctx: SkillContext) => void} [start]
  * @property {(ctx: SkillContext) => void} [tick]
@@ -283,17 +285,19 @@ export function canClose(c, op) {
 }
 
 /**
- * When an AUTO skill starts (技能-3): as its behaviour says — or as its behaviour works out now —, else an instant one,
- * or one of an operator that makes no normal attacks (职业-13), as soon as it is ready and the others as the operator is
- * about to attack — one that throws a 炼金单元 at the enemies needs a target (技能-13).
- * @param {World} w @param {Content} c @param {Unit} op @returns {'ready' | 'attack'}
+ * When an AUTO skill starts (技能-3): as its behaviour says — or as its behaviour works out now; a function that answers
+ * `undefined` has no opinion and the default stands —, else an instant one, or one of an operator that makes no normal
+ * attacks (职业-13) or makes them only while its skill runs (职业-12), as soon as it is ready and the others as the
+ * operator is about to attack — one that throws a 炼金单元 at the enemies needs a target (技能-13). Anything that is not
+ * `'ready'` or `'attack'` means not now.
+ * @param {World} w @param {Content} c @param {Unit} op @returns {string}
  */
 function triggerOf(w, c, op) {
-  const t = behaviorOf(c, defOf(c, op).id).trigger;
-  if (typeof t === 'function') return t(contextOf(w, c, op));
-  const def = defOf(c, op);
-  if (t === undefined && def.alchemy) return def.alchemy.at === 'enemy' ? 'attack' : 'ready';
-  return t ?? (kindOf(def) === 'instant' || traitOf(c, op).noAttack ? 'ready' : 'attack');
+  const def = defOf(c, op), t = behaviorOf(c, def.id).trigger, given = typeof t === 'function' ? t(contextOf(w, c, op)) : t;
+  if (given !== undefined) return given;
+  if (def.alchemy) return def.alchemy.at === 'enemy' ? 'attack' : 'ready';
+  const tr = traitOf(c, op);
+  return kindOf(def) === 'instant' || tr.noAttack || tr.attackInSkill ? 'ready' : 'attack';
 }
 
 /**
@@ -392,9 +396,18 @@ function healAfterHit(w, c, op, mods) {
 }
 
 /**
+ * An ammo skill spends a shot (技能-4): one fewer, then the `ammoUsed` event (钩子-3) with the shots left.
+ * @param {World} w @param {Unit} op @param {import('./types.js').SkillState} st
+ */
+function spendShot(w, op, st) {
+  st.ammo--;
+  emit(w, 'ammoUsed', { unit: op, left: st.ammo });
+}
+
+/**
  * After an operator attacked (技能-2, 技能-4, 技能-9): the HP the attack gives it back; a next-attack skill ends; an ammo
- * skill spends a shot — unless an `attack` handler made it free (钩子-3) — and then the `ammoUsed` event; an attack the
- * skill did not make gives one SP to a skill that recovers by attacking.
+ * skill spends a shot — unless an `attack` handler made it free (钩子-3), and tells it by `ammoUsed`; an attack the skill did not make gives one SP to a
+ * skill that recovers by attacking.
  * @param {World} w @param {Content} c @param {Unit} op @param {AttackMods} mods @param {boolean} [noAmmo]
  */
 export function afterAttack(w, c, op, mods, noAmmo = false) {
@@ -405,16 +418,6 @@ export function afterAttack(w, c, op, mods, noAmmo = false) {
   if (mods.skill && st.armed) endSkill(w, c, op, 'instant');
   else if (mods.skill && st.ammo > 0 && !noAmmo) spendShot(w, op, st);
   else if (!mods.skill && st.spType === 'attack' && !statsOf(op).flags.noSp) gainSp(st, 1);
-}
-
-/**
- * A shot of a running ammo skill spent by its attack (技能-4), then the `ammoUsed` event (钩子-3) with the shots left, when
- * it has a handler: content that counts or refunds shots (Stronghold's 拉特兰 bond and kits listen to it).
- * @param {World} w @param {Unit} op @param {SkillState} st
- */
-function spendShot(w, op, st) {
-  st.ammo--;
-  if (hasHook(w, 'ammoUsed')) emit(w, 'ammoUsed', { unit: op, left: st.ammo });
 }
 
 /** A newly deployed operator's passive skill starts (技能-3). @param {World} w @param {Content} c @param {Unit} op */

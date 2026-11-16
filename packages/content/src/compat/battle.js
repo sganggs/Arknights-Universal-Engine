@@ -32,8 +32,11 @@ export const TICK = 1 / 30;
 /** Stronghold's buff refresh rules → the engine's same-key rules (状态-2). @type {Record<string, string>} */
 const RULES = { extend: 'extend', stack: 'stack', independent: 'independent' };
 
-/** A unit as a kit sees it, or null. @param {ShBattle} b @param {Unit | null | undefined} u */
-const sh = (b, u) => (u ? b.unitOf(u) : null);
+/** A unit as a kit sees it, or null; a unit a kit already sees (its own emit's) stays. @param {ShBattle} b @param {Unit | ShUnit | null | undefined} u */
+const sh = (b, u) => (u ? (u instanceof ShUnit ? u : b.unitOf(u)) : null);
+
+/** A hit's context for `hit` and `damageCalculate` (兼容-4): the engine's damage info as it is. @param {ShBattle} b @param {Record<string, any>} k */
+const hitShape = (b, k) => ({ source: sh(b, k.source), target: sh(b, k.target), dmg: k.dmg, credit: sh(b, k.credit) });
 
 /**
  * An element hit's damage info as Stronghold's (兼容-4): its element by Stronghold's name; the amount, multiplier and
@@ -57,7 +60,13 @@ const SHAPES = {
   kill: (b, k) => ({ killer: sh(b, k.killer), victim: sh(b, k.victim) }),
   enemySpawn: (b, k) => ({ enemy: sh(b, k.enemy) }),
   tick: (_b, k) => ({ dt: k.frames * TICK }),
-  hit: (b, k) => ({ source: sh(b, k.source), target: sh(b, k.target), dmg: k.dmg, credit: sh(b, k.credit) }),
+  hit: hitShape,
+  damageCalculate: hitShape,
+  damageApplying: (b, k) => ({ ...hitShape(b, k), get amount() { return k.amount; }, set amount(v) { k.amount = v; } }),
+  damageApplied: (b, k) => ({ ...hitShape(b, k), kind: k.kind, amount: k.amount, hpRemoved: k.hpRemoved }),
+  statusApplied: (b, k) => ({ source: sh(b, k.source), target: sh(b, k.target), status: STATUS_NAME[k.status] ?? k.status,
+    duration: k.frames < 0 ? Infinity : k.frames * TICK, value: k.strength, entered: k.entered }),
+  ammoUsed: (b, k) => ({ unit: sh(b, k.unit), left: k.left, skill: sh(b, k.unit)?.skill ?? null }),
   dodge: (b, k) => ({ source: sh(b, k.source), target: sh(b, k.target), dmg: k.dmg }),
   damaged: (b, k) => ({ source: sh(b, k.source), target: sh(b, k.target), amount: k.amount, type: k.type, dmg: k.dmg, credit: sh(b, k.credit) }),
   hpDamage: (b, k) => ({ source: sh(b, k.source), target: sh(b, k.target), dmg: k.dmg, credit: sh(b, k.credit),
@@ -80,17 +89,9 @@ const SHAPES = {
     get duration() { return k.frames < 0 ? Infinity : k.frames * TICK; }, set duration(v) { k.frames = v === Infinity ? -1 : secondsToFrames(Math.max(0, Number(v) || 0)); },
     get value() { return k.strength; }, set value(v) { k.strength = v; }, get cancel() { return k.cancel; }, set cancel(v) { k.cancel = v; } }),
   // 钩子-5's events (兼容-8)
-  statusApplied: (b, k) => ({ source: sh(b, k.source), target: sh(b, k.target), status: STATUS_NAME[k.status] ?? k.status,
-    duration: k.frames < 0 ? Infinity : k.frames * TICK, value: k.strength, entered: k.entered }),
   enemyAttackStart: (b, k) => ({ enemy: sh(b, k.enemy), targets: k.targets.map((/** @type {Unit} */ t) => b.unitOf(t)) }),
   palsyTrigger: (b, k) => ({ enemy: sh(b, k.enemy), buff: b.buffOf(k.enemy, k.buff), get keep() { return k.keep; }, set keep(v) { k.keep = v; } }),
   blocked: (b, k) => ({ blocker: sh(b, k.blocker), enemy: sh(b, k.enemy) }),
-  // 钩子-3's ammoUsed with the kit's unit and skill; a kit's own emit (its extra shots) already has them and is handed on as it is
-  ammoUsed: (b, k) => {
-    if (k.unit instanceof ShUnit) return k;
-    const u = sh(b, k.unit);
-    return { unit: u, left: k.left, skill: u?.skill ?? null };
-  },
 };
 
 /**
@@ -128,10 +129,21 @@ const BACK = {
 };
 
 /**
- * An engine event's context as Stronghold's (兼容-4); a custom event's as it is.
+ * The events Stronghold sends that the engine does not (兼容-4): a kit that listens to one never hears the engine —
+ * recorded when it listens (ShBattle.noteEvent) —, though the kit's own `emit` of it still reaches its handlers.
+ * @type {ReadonlySet<string>}
+ */
+const NOT_EMITTED = new Set(['damageOutput', 'damageBeforeApply', 'damageCalculateTarget', 'block', 'projectileStep', 'spGain',
+  'hpChanged', 'modifierApplied', 'elementApplied', 'enemyLeak', 'battleEnd']);
+
+/** Whether a context is one a kit emitted itself, its units already as kits see them. @param {Record<string, any>} k */
+const fromKit = (k) => Object.values(k).some((v) => v instanceof ShUnit);
+
+/**
+ * An engine event's context as Stronghold's (兼容-4); a custom event's, and one a kit emitted itself, as it is.
  * @param {ShBattle} b @param {string} name @param {Record<string, any>} k @returns {Record<string, any>}
  */
-const shapeOf = (b, name, k) => (Object.hasOwn(SHAPES, name) ? SHAPES[name](b, k) : k);
+const shapeOf = (b, name, k) => (Object.hasOwn(SHAPES, name) && !fromKit(k) ? SHAPES[name](b, k) : k);
 
 export class ShBattle {
   /** @param {World} w @param {Content} c @param {{ players?: (players.PlayerInput | null | undefined)[] }} [o] Stronghold's players' inputs, by seat (兼容-7) */
@@ -145,6 +157,8 @@ export class ShBattle {
     this.grid = new ShGrid(c.level);
     /** @type {{ label: string, who: string, message: string }[]} handler errors, recorded and skipped */
     this.errors = [];
+    /** @type {Set<string>} the events no unit listens to for, already recorded (noteEvent) */
+    this.eventGaps = new Set();
     /** @type {WeakMap<object, any>} the data a kit stored with a buff */
     this.buffData = new WeakMap();
     /** @type {WeakMap<object, ShBuff>} the buff a kit sees for each of the engine's buffs: one object for the buff's whole life */
@@ -163,6 +177,8 @@ export class ShBattle {
     this.shapes = new WeakMap();
     /** @type {Record<string, any> | null} the kit of the token spawnToken is placing (summons.js) */
     this.pendingKit = null;
+    /** @type {Readonly<Record<string, Function>> | null} the kits Stronghold's tokens module defines, by summon id (kits.js); none without the module */
+    this.tokenKits = null;
     /** @type {Record<string, any> | null} the options of the kit's heal under way (field.js heal) */
     this.healOpts = null;
     this.rng = makeRng(w);
@@ -267,6 +283,7 @@ export class ShBattle {
   /** @param {string} name @param {Handler} fn @param {{ priority?: number, owner?: unknown, once?: boolean }} [o] */
   on(name, fn, o = {}) {
     const who = o.owner ?? this.who;
+    if (NOT_EMITTED.has(name)) this.noteEvent(name, who);
     if (name === 'hpDamage' && !this.transfersOn) this.transfersOn = !!bus.on(this.w, 'hpDamage', (k) => this.transfer(k), { priority: -Infinity });
     return bus.on(this.w, name, (k) => {
       let ctx = this.shapes.get(k);
@@ -275,6 +292,19 @@ export class ShBattle {
       if (ctx.stopPropagation) k.stopPropagation = true;
       if (Object.hasOwn(BACK, name)) BACK[name](ctx, k);
     }, o);
+  }
+
+  /**
+   * Records that a kit listens to an event the engine never sends (NOT_EMITTED): `compat: event.<name> is not emitted yet`, once
+   * for each unit and event — one registered with no unit running is once for the battle —, so that a kit that waits for
+   * what does not come shows in the errors.
+   * @param {string} name @param {unknown} who the unit the handler is registered for
+   */
+  noteEvent(name, who) {
+    const holder = who instanceof ShUnit ? who : null, seen = holder ? (holder.gaps ??= new Set()) : this.eventGaps, mark = `event|${name}`;
+    if (seen.has(mark)) return;
+    seen.add(mark);
+    this.errors.push({ label: `event.${name}`, who: holder?.defId ?? '', message: `compat: event.${name} is not emitted yet` });
   }
 
   /**
@@ -361,14 +391,18 @@ export class ShBattle {
 
   /**
    * Stronghold's push (位移-2): 力度 `force` on an enemy from `from`'s centre — along `dir` ({x, y}) when given, `fixed`
-   * / `fixedAngle` waiving the corrections, `inward` towards `from`, `effect` an effect's push. 1 when the force takes
-   * hold — a speed, or a 静态刚体 entering 失衡 (位移-5) — else 0 (the slide that follows takes its frames, 位移-3).
+   * / `fixedAngle` waiving the corrections, `inward` towards `from`, `effect` an effect's push. The tiles it moves the
+   * enemy, as Stronghold's push says them — so a kit can tell that a wall stopped it short —: the step a ballistic push takes
+   * now and the slide that follows (位移-3) to where it ends, a wall stopping it; 0 when the force does not take hold or
+   * moves nothing, a 静态刚体 (位移-5) included (DIF-0050).
    * @param {ShUnit} e @param {number} force @param {{ from?: { x: number, y: number } | null, dir?: { x: number, y: number } | null, fixed?: boolean, fixedAngle?: boolean, inward?: boolean, effect?: boolean }} [o]
    */
   push(e, force, o = {}) {
-    if (!e?.u || !e.alive) return 0;
-    const from = o.from ? { x: Number(o.from.x), y: Number(o.from.y) } : { x: e.x, y: e.y };
-    return displacement.push(this.w, this.c, e.u, Number(force), { from, dir: o.dir ?? null, fixed: !!o.fixed, anyAngle: !!o.fixedAngle, toward: !!o.inward, effect: !!o.effect }) ? 1 : 0;
+    const u = e?.u;
+    if (!u || !e.alive) return 0;
+    const from = o.from ? { x: Number(o.from.x), y: Number(o.from.y) } : { x: e.x, y: e.y }, x0 = u.x, y0 = u.y;
+    if (!displacement.push(this.w, this.c, u, Number(force), { from, dir: o.dir ?? null, fixed: !!o.fixed, anyAngle: !!o.fixedAngle, toward: !!o.inward, effect: !!o.effect })) return 0;
+    return hypot(u.x - x0, u.y - y0) + displacement.slideTravel(this.c, u);
   }
 
   /**
@@ -567,9 +601,9 @@ export class ShBattle {
   }
 
   /**
-   * What a kit's buff spec asks that the engine's buffs do not carry yet (兼容-4): the callbacks of the damage judgement
-   * (`injury`, `observeInjury`) and `damageReduction`. The buff is given without them, and the gap is recorded once for
-   * each unit and key, so that a kit whose buff does less than it says shows in the errors.
+   * What a kit's buff spec asks that the engine's buffs do not carry yet (兼容-4): an empty shield that stays
+   * (`keepEmptyShield`; the engine drops a buff that is only a used-up shield, 伤害-8). The buff is given without it, and
+   * the gap is recorded once for each unit and key, so that a kit whose buff does less than it says shows in the errors.
    * @param {ShUnit} unit @param {Record<string, any>} spec
    */
   noteUnsupported(unit, spec) {
@@ -584,12 +618,12 @@ export class ShBattle {
 
   /** The buff in effect for a spec, or null when none was given. @param {ShUnit} unit @param {Record<string, any>} spec @returns {import('@aue/sim').Buff | null} */
   giveBuff(unit, spec) {
-    const u = /** @type {Unit} */ (unit.u), there = u.buffs.find((x) => x.key === spec.key);
+    const u = /** @type {Unit} */ (unit.u), key = buffKeyOf(spec.key), there = u.buffs.find((x) => x.key === key);
     if (there && spec.refresh === 'keep') return there;
     if (there && !RULES[spec.refresh ?? 'replace']) buffs.removeBuff(u, there);
     const h = hooksOf(spec);
-    const b = buffs.makeBuff({ key: spec.key, src: spec.source?.u?.id ?? -1, rule: /** @type {any} */ (RULES[spec.refresh] ?? 'queue'), mods: modsOf(spec.mods),
-      flags: flagsOf(spec.flags), stacks: spec.stacks ?? 1, maxStacks: spec.maxStacks ?? 1, left: framesLeft(spec.duration),
+    const b = buffs.makeBuff({ key, src: spec.source?.u?.id ?? -1, rule: /** @type {any} */ (RULES[spec.refresh] ?? 'queue'), mods: modsOf(spec.mods),
+      flags: flagsOf(spec.flags), stacks: spec.stacks ?? 1, maxStacks: spec.maxStacks ?? 1, left: framesLeft(spec.duration), ...judgedOf(spec),
       ...(h ? { act: KIT_BUFF, every: h.every, fixed: true } : {}),
       // its barrier, layers and their type (shields.js; after the flags: they may come with the one that keeps them spent)
       ...shieldOf(spec) });
@@ -607,7 +641,7 @@ export class ShBattle {
   applyStrongest(target, key, o = {}) {
     const v = Number(o.value);
     if (!target?.alive || !(Number(o.duration) > 0) || !Number.isFinite(v) || typeof o.mods !== 'function') return false;
-    const b = buffs.makeBuff({ key, src: o.source?.u?.id ?? -1, rule: 'max', value: v, mods: modsOf(o.mods(v)), left: framesLeft(o.duration) });
+    const b = buffs.makeBuff({ key: buffKeyOf(key), src: o.source?.u?.id ?? -1, rule: 'max', value: v, mods: modsOf(o.mods(v)), left: framesLeft(o.duration) });
     this.buffData.set(b, { value: v });
     buffs.addBuff(/** @type {Unit} */ (target.u), b);
     return true;
@@ -668,7 +702,16 @@ const inEffect = (u, b) => (u.buffs.includes(b) ? b : u.buffs.find((x) => x.key 
 const statusKeysNamed = (name) => (Object.hasOwn(STAND_INS, name) ? [name] : Object.keys(status.STATUS).filter((k) => (STATUS_NAME[k] ?? k) === name));
 
 /** The parts of a kit's buff spec the engine's buffs do not carry (noteUnsupported). */
-const UNSUPPORTED_BUFF = Object.freeze(['injury', 'observeInjury', 'damageReduction']);
+const UNSUPPORTED_BUFF = Object.freeze(['keepEmptyShield']);
+
+/**
+ * What a kit buff brings to the engine's 伤判 (伤害-8): its `injuryPriority` as the event priority. Its 护盾 layers,
+ * 屏障 and the types they take are `shieldOf`'s (shields.js).
+ * @param {Record<string, any>} spec
+ */
+function judgedOf(spec) {
+  return Number.isFinite(spec.injuryPriority) ? { prio: Number(spec.injuryPriority) } : {};
+}
 
 /** A buff's seconds as frames left, −1 for none. @param {number | undefined} seconds */
 const framesLeft = (seconds) => (seconds === undefined || seconds === Infinity ? -1 : secondsToFrames(Math.max(0, seconds)));

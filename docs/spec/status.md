@@ -57,7 +57,7 @@ Buff 的行为（触发时、到期时做什么）按行为键查找，不存在
 
 ### 状态-5 异常状态目录
 
-战斗中（攻击带的状态、元素爆发、天赋与技能、敌人能力）施加状态之前先发 `beforeStatus` 事件（钩子-3），处理函数可以取消，或改它的帧数、数值。起飞的单位不受行动方式为地面的敌人或未浮空的敌对装置施加的状态，这一拒绝在 `beforeStatus` 之前（阻挡-2）；没有来源的、空中敌人的、同阵营的照常施加。
+战斗中（攻击带的状态、元素爆发、天赋与技能、敌人能力）施加状态之前先发 `beforeStatus` 事件（钩子-3），处理函数可以取消，或改它的帧数、数值；状态施加上之后发 `statusApplied` 事件（钩子-3），带这次的帧数、数值和目标此前有没有这个状态（`entered`）。起飞的单位不受行动方式为地面的敌人或未浮空的敌对装置施加的状态，这一拒绝在 `beforeStatus` 之前（阻挡-2）；没有来源的、空中敌人的、同阵营的照常施加。
 
 | 键 | 名称 | 效果 | 可抵抗 | 同名规则 |
 |---|---|---|---|---|
@@ -110,15 +110,16 @@ Buff 的行为（触发时、到期时做什么）按行为键查找，不存在
 - 两类寒冷、冻结互不干预。冻结免疫的单位，寒冷不会变为冻结。
 - 冻结免疫来自单位数据还是生效的 Buff 的标记 `immune:freeze`（状态-7）都一样：新寒冷照常作为寒冷加上，已有的寒冷、冻结不变。免疫结束时，已有的寒冷不会自己叠成冻结，之后施加的寒冷再按上面两条处理（推断 INF-1151）。只免疫寒冷、不免疫冻结的单位，寒冷照样叠成冻结（推断 INF-1152）。
 - 敌人施加 `cold` 或 `freeze` 时，按敌方寒冷、敌方冻结处理。
+- 变为冻结的寒冷，同冻结自己被施加一样：先发这条冻结的 `beforeStatus` 事件，处理函数取消时不变为冻结，这条寒冷照常加上（如同冻结免疫）；加上之后发的 `statusApplied` 是冻结的，不是这条寒冷的。
 
-- 来源：[PRTS「术语释义」oldid=440223](https://prts.wiki/index.php?title=%E6%9C%AF%E8%AF%AD%E9%87%8A%E4%B9%89&oldid=440223) 寒冷：「对已具有敌方寒冷或敌方冻结的敌人施加的敌方寒冷会变为敌方冻结」「友方寒冷始终需要两两一对产生友方冻结，持续时间取双方之中最高」「具有冻结免疫的单位身上的任何寒冷都不会尝试变为冻结」；敌方冻结的持续时间、原有寒冷是否保留为推断 INF-0018；[PRTS「异常效果」oldid=422666](https://prts.wiki/index.php?title=%E5%BC%82%E5%B8%B8%E6%95%88%E6%9E%9C&oldid=422666)：开启了异常抗性的干员与敌人「将在初始化时会获得对应的异常免疫（AbnormalImmune）」，与 Buff 给的异常免疫是同一种；数据：ArknightsGameData 17759cc8 的 battle/buff_template_data.json，`e2c_cold` 在 `ON_BUFF_START` 先查持有者有没有冻结的异常免疫（`CheckAbnormalImmune` FROZEN），没有才建 `e2c_freeze`；免疫结束后已有的寒冷不叠为推断 INF-1151，只免疫寒冷时照样叠为推断 INF-1152
+- 来源：[PRTS「术语释义」oldid=440223](https://prts.wiki/index.php?title=%E6%9C%AF%E8%AF%AD%E9%87%8A%E4%B9%89&oldid=440223) 寒冷：「对已具有敌方寒冷或敌方冻结的敌人施加的敌方寒冷会变为敌方冻结」「友方寒冷始终需要两两一对产生友方冻结，持续时间取双方之中最高」「具有冻结免疫的单位身上的任何寒冷都不会尝试变为冻结」；敌方冻结的持续时间、原有寒冷是否保留为推断 INF-0018；寒冷变为冻结时的 `beforeStatus` 与 `statusApplied` 取自 Stronghold v0.4.0 的 `server/sim/battle/status.js`（GPL-3.0-or-later），其中冻结作为一次施加再次进入 applyStatus，所以也发这两个事件；`statusApplied` 的帧数是 `beforeStatus` 之后、抵抗之前的（抵抗在引擎里是更快的流失，状态-8，Stronghold 的是施加时缩短，DIF-0053）；[PRTS「异常效果」oldid=422666](https://prts.wiki/index.php?title=%E5%BC%82%E5%B8%B8%E6%95%88%E6%9E%9C&oldid=422666)：开启了异常抗性的干员与敌人「将在初始化时会获得对应的异常免疫（AbnormalImmune）」，与 Buff 给的异常免疫是同一种；数据：ArknightsGameData 17759cc8 的 battle/buff_template_data.json，`e2c_cold` 在开始时先查持有者有没有冻结的异常免疫，没有才建 `e2c_freeze`；免疫结束后已有的寒冷不叠为推断 INF-1151，只免疫寒冷时照样叠为推断 INF-1152
 
 ### 状态-7 免疫与施加条件
 
 - **免疫**：单位对某个标记免疫时，带这个标记的 Buff 仍在列表里，但这个标记不生效；免疫结束后重新生效。免疫由单位数据给出，或由生效的 Buff 的标记 `immune:<标记名>` 给出（如 职业-10 的阻挡时免疫）。停顿没有自己的标记：持有 `immune:sluggish` 时停顿施加不上，不添加 Buff（敌能-47）。寒冷（状态-5）的效果就是它的修饰器：对标记 `cold` 免疫时，带这个标记的 Buff 的修饰器（攻击速度 −30）也不计入；Buff 仍在列表里，时间照常流逝，免疫结束后重新计入（推断 INF-1150）。敌人数据的异常抗性里没有寒冷，寒冷免疫由内容给出：单位数据里的 `cold`（如城防路障，装置-3；页面写着寒冷免疫的召唤物，召唤-7），或 Buff 的标记 `immune:cold`（如足球，足球-2）。冻结免疫只让冻结的标记不生效，友方冻结的法术抗性 −15 照常计入（推断 INF-1153）。
 - **不生效的施加**：浮空不对空中单位生效，缚地不对地面单位生效，恐惧不对角色类单位生效；这时不添加 Buff。持续时间为 0 帧的状态也不添加。
 
-- 来源：[PRTS「异常效果」oldid=440606](https://prts.wiki/index.php?title=%E5%BC%82%E5%B8%B8%E6%95%88%E6%9E%9C&oldid=440606)：免疫令对应的异常效果「无法生效，无法被检测」，不移除带有它的 Buff；[PRTS「术语释义」oldid=440223](https://prts.wiki/index.php?title=%E6%9C%AF%E8%AF%AD%E9%87%8A%E4%B9%89&oldid=440223)：浮空「触发效果时不会对空中单位生效」，缚地「触发效果时不会对地面单位生效」，恐惧「效果无法对角色类单位生效」；[PRTS「异常效果」oldid=422666](https://prts.wiki/index.php?title=%E5%BC%82%E5%B8%B8%E6%95%88%E6%9E%9C&oldid=422666)：寒冷 COLD「此异常效果相关机制主要由Buff实现，并非异常本身的效果」，冻结 FROZEN「术语冻结的法抗增减为Buff效果，非异常效果冻结本身的效果」，异常抗性的变量里没有寒冷；数据：ArknightsGameData 17759cc8 的 battle/buff_template_data.json，`c2e_cold` 在 `ON_BUFF_ENABLE`、`ON_ABNORMAL_FLAG_DIRTY` 时，持有者的 COLD 不生效就结束派生的 `c2e_cold[debuff]`，生效、又没有 `c2e_freeze[holder]` 时再建它；`abnormalImmunes` 可以单独列 COLD（如 `enemy_tenaci_abnormal_listener`）；enemy_database 的异常抗性只有 stunImmune、silenceImmune、sleepImmune、frozenImmune、levitateImmune、disarmedCombatImmune、fearedImmune、palsyImmune、attractImmune、teleportImmune、groundBoundImmune；寒冷的修饰器随标记为推断 INF-1150，冻结的法术抗性照常计入为推断 INF-1153
+- 来源：[PRTS「异常效果」oldid=440606](https://prts.wiki/index.php?title=%E5%BC%82%E5%B8%B8%E6%95%88%E6%9E%9C&oldid=440606)：免疫令对应的异常效果「无法生效，无法被检测」，不移除带有它的 Buff；[PRTS「术语释义」oldid=440223](https://prts.wiki/index.php?title=%E6%9C%AF%E8%AF%AD%E9%87%8A%E4%B9%89&oldid=440223)：浮空「触发效果时不会对空中单位生效」，缚地「触发效果时不会对地面单位生效」，恐惧「效果无法对角色类单位生效」；[PRTS「异常效果」oldid=422666](https://prts.wiki/index.php?title=%E5%BC%82%E5%B8%B8%E6%95%88%E6%9E%9C&oldid=422666)：寒冷 COLD「此异常效果相关机制主要由Buff实现，并非异常本身的效果」，冻结 FROZEN「术语冻结的法抗增减为Buff效果，非异常效果冻结本身的效果」，异常抗性的变量里没有寒冷；数据：ArknightsGameData 17759cc8 的 battle/buff_template_data.json，`c2e_cold` 在启用时和持有者的异常效果变化时，持有者的 COLD 不生效就结束派生的 `c2e_cold[debuff]`，生效、又没有 `c2e_freeze[holder]` 时再建它；`abnormalImmunes` 可以单独列 COLD（如 `enemy_tenaci_abnormal_listener`）；enemy_database 的异常抗性只有 stunImmune、silenceImmune、sleepImmune、frozenImmune、levitateImmune、disarmedCombatImmune、fearedImmune、palsyImmune、attractImmune、teleportImmune、groundBoundImmune；寒冷的修饰器随标记为推断 INF-1150，冻结的法术抗性照常计入为推断 INF-1153
 
 ### 状态-8 麻痹
 

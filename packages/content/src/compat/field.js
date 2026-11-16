@@ -220,7 +220,8 @@ export function dealDamage(b, source, target, dmg) {
   if (dmg.calculation === 'resolved' && !plainResolved(dmg, s)) throw new CompatGap('attack.calculation.resolved');
   if (dmg.onApplied != null) throw new CompatGap('attack.onApplied');
   const hit = hitOf(dmg);
-  return s && s.kind === KIND.OPERATOR ? traits.creditedDamage(b.w, b.c, s, t, hit) : damage.dealDamage(b.w, s, t, hit);
+  // with the content, so the target's buff behaviours (a kit buff's 伤判 callbacks, 伤害-8) see the hit
+  return s && s.kind === KIND.OPERATOR ? traits.creditedDamage(b.w, b.c, s, t, hit) : damage.dealDamage(b.w, s, t, hit, b.c);
 }
 
 /**
@@ -359,8 +360,8 @@ function mayMove(b, unit, r, c) {
 
 /**
  * Stronghold's moveRedeploy: a living ally's 移动 (部署-9) that keeps its buffs, skill and HP, as Stronghold's does
- * (DIF-0034) — unlike the pinned Stronghold, not its element values or a burst; where it may not (mayMove), false and
- * nothing changes. `clearSp`: its SP emptied first, unless a timed skill runs. A new deployment of its piece
+ * (DIF-0034), except that its element values start afresh and a burst ends (DIF-0058); where it may not (mayMove), false
+ * and nothing changes. `clearSp`: its SP emptied first, unless a timed skill runs. A new deployment of its piece
  * (`deploySeq`).
  * @param {ShBattle} b @param {ShUnit} unit @param {number} r @param {number} c @param {{ clearSp?: boolean }} [o]
  */

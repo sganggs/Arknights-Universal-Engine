@@ -15,6 +15,7 @@ import { makeBall } from '../src/ball.js';
 import { createWorld, step } from '../src/index.js';
 import { makeEnemy } from '../src/units.js';
 import { auras } from '../src/aura.js';
+import { on } from '../src/bus.js';
 
 /** @typedef {import('../src/types.js').Unit} Unit @typedef {import('../src/types.js').World} World */
 
@@ -90,6 +91,22 @@ test('[状态-6] [状态-7] immune to freezing by a buff flag as by its data: tw
   for (const u of [opData, opBuff, opBare]) for (const n of [50, 40, 35]) applyStatus(u, 'cold', { src: foe, frames: n });
   const colds = [['enemyCold', 50], ['enemyCold', 40], ['enemyCold', 35]];
   assert.deepEqual([held(opData), held(opBuff), held(opBare)], [colds, colds, [['enemyCold', 50], ['enemyFreeze', 40], ['enemyFreeze', 35]]]);
+});
+
+test('[状态-6] [钩子-3] two colds in a battle on a unit immune to freezing by a buff: no beforeStatus and no statusApplied of a freeze, the second a cold that is not new; one without the immunity is announced a freeze', () => {
+  const op = mk(9, {}, KIND.OPERATOR), foe = mk(8);
+  // the cold's giver, its key, the kind it falls on
+  for (const [src, key, kind] of /** @type {[Unit, string, number][]} */ ([[op, 'cold', KIND.ENEMY], [foe, 'enemyCold', KIND.OPERATOR]])) {
+    const immune = mk(1, {}, kind), bare = mk(2, {}, kind), w = world([immune, bare, op, foe]);
+    addBuff(immune, immunity('freeze'));
+    /** @type {any[][]} */
+    const seen = [];
+    on(w, 'beforeStatus', (k) => seen.push([k.target.id, 'before', k.status]));
+    on(w, 'statusApplied', (k) => seen.push([k.target.id, 'applied', k.status, k.entered]));
+    for (const t of [immune, bare]) for (let i = 0; i < 2; i++) inflict(w, t, /** @type {any} */ (key), { src, seconds: 2 });
+    assert.deepEqual(seen.filter((x) => x[0] === 1).map((x) => x.slice(1)), [['before', key], ['applied', 'cold', true], ['before', key], ['applied', 'cold', false]], `${key}: two colds, never a freeze`);
+    assert.deepEqual(seen.filter((x) => x[0] === 2).map((x) => x.slice(1)), [['before', key], ['applied', 'cold', true], ['before', key], ['before', 'freeze'], ['applied', 'freeze', true]], 'without the immunity the pair is a freeze');
+  }
 });
 
 test('[状态-6] the immunity to freezing ends with colds held: they stay colds; the next cold pairs as 状态-6 says (INF-1151)', () => {

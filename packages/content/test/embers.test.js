@@ -108,9 +108,9 @@ function covered(extra = {}) {
   };
 }
 
-test('[敌能-45] [敌能-159] these aura blackboards are covered with the revive; a stack cap is still 敌能-28', () => {
+test('[敌能-45] aura stays uncovered for these blackboards; a stack cap still covers 敌能-28', () => {
   const guard = covered({ damage_resistance: 0.5 });
-  assert.deepEqual(uncoveredAbilities([covered(), covered(), guard].map((e) => /** @type {any} */ (e))), []);
+  assert.deepEqual(uncoveredAbilities([covered(), covered(), guard].map((e) => /** @type {any} */ (e))), ['aura']);
   assert.deepEqual(uncoveredAbilities([/** @type {any} */ ({ talents: { aura: { atk: 0.15, max_valid_stack_cnt: 6 } } })]), []);
   assert.deepEqual(uncoveredAbilities([/** @type {any} */ ({ talents: { aura: {
     'enemy_dsuply_t[attr_buff].atk': 0.1, 'enemy_dsuply_t[attr_buff].max_valid_stack_cnt': 5, ep_damage_ratio: 0.1,

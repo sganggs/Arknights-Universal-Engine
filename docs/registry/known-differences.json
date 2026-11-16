@@ -266,8 +266,8 @@
   {
     "id": "DIF-0034",
     "clause": "部署-9",
-    "ours": "一般方式的移动不保留 Buff 与技能状态（运行中的技能结束），清空技力，部署时的效果再次生效，再按移动前的生命比例流失生命；Stronghold 的 kit 在兼容层里用保留方式，与 Stronghold 相同。保留方式下元素值回到最大值、元素爆发结束（INF-1170），Stronghold 两者都保留。",
-    "stronghold": "server/sim/battle/tiles.js moveRedeploy：生命、Buff 和运行中的技能都保留，只发 deploy 事件（move）；clearSp 时清空技力。元素值与元素爆发（爆发冷却的 Buff）也保留。",
+    "ours": "一般方式的移动不保留 Buff 与技能状态（运行中的技能结束），清空技力，部署时的效果再次生效，再按移动前的生命比例流失生命；Stronghold 的 kit 在兼容层里用保留方式，与 Stronghold 相同。",
+    "stronghold": "server/sim/battle/tiles.js moveRedeploy：生命、Buff 和运行中的技能都保留，只发 deploy 事件（move）；clearSp 时清空技力。",
     "reason": "PRTS「术语释义」移动：「除非具有特殊设置，否则执行移动行为时：不会继承任何Buff、技能状态…可以通过移动行为多次触发部署时触发的效果…部署完成后，立刻流失一次生命值以匹配移动前的生命比例；部署时将清空技力」。",
     "status": "有效"
   },
@@ -298,9 +298,9 @@
   {
     "id": "DIF-0038",
     "clause": "兼容-4",
-    "ours": "kit 给单位换档案或写档案的一项（unit.profile），引擎自己的攻击不读，兼容层只读选目标与可否选中的几项（maxTargets、priority、allInRange、hitAllBlocked、canHitFly、groundOnly、hitSleep、skipEnemy、rangeTiles、attackRangeRadius）。其余的项记着不使用，每个单位每一项记一条 `compat: profile.<项> is not provided yet`：浮游单元的倍率（funnel、funnelMul、dmgMul）、hits、splashRadius、shockTimes、auraRatio、selfHeal、heal、dmgType、noAttack、atkScale。投掷手的浮游倍率仍是引擎特性数据里的。",
+    "ours": "kit 给单位换档案或写档案的一项（unit.profile），引擎自己的攻击不读，兼容层读选目标与可否选中的几项（maxTargets、priority、allInRange、hitAllBlocked、canHitFly、groundOnly、hitSleep、skipEnemy、rangeTiles、attackRangeRadius），以及有浮游单元的单位的 funnel 与 funnelMul（funnelMul 写成空即关掉浮游单元，funnel 换上新的 init、delta、max：引擎经特性行为读，职业-6）。其余的项记着不使用，每个单位每一项记一条 `compat: profile.<项> is not provided yet`：dmgMul、hits、splashRadius、shockTimes、auraRatio、selfHeal、heal、dmgType、noAttack、atkScale。档案里有单位的特性数据（canHitFly、heal、dmgType、hits、浮游单元、命中状态）和 kit 自己的 trait，部署前的棋子也有，kit 原样写回的不记。投掷手的浮游倍率仍是引擎特性数据里的。",
     "stronghold": "攻击循环读单位的 profile：kit 在技能开始时把 funnelMul、dmgMul 换成自己的函数或把 funnel.max 乘一个系数（洛洛、耶拉），之后的攻击就按它算。",
-    "reason": "引擎的浮游倍率、段数、溅射、光环比例、自疗、治疗等是特性数据（职业-12 等），攻击结算不读档案。让这些项起作用要把特性数据改成可被 kit 覆盖，是引擎的改动，没有做。受影响的棋子 kit 与项：洛洛 rockr（funnel、funnelMul、dmgMul）、耶拉 kjera（funnelMul、dmgMul）、whitw2（hits、funnel）、mlyss 的召唤物（hits）、rosmon（splashRadius、shockTimes）、cetsyr 的两个棋子条目 4_25 与 5_09（auraRatio）、excu2（selfHeal）、papyrs（heal）、skadi2 与隐德来希 etlchi 的召唤物（noAttack）、siege2 的召唤物（dmgType）。这些写入不再静默：以前整份档案的赋值会抛错，现在记一条缺口。技能里这些项的变化没有生效。",
+    "reason": "引擎的段数、溅射、光环比例、自疗、治疗等是特性数据（职业-12 等），攻击结算不读档案。让这些项起作用要把特性数据改成可被 kit 覆盖，是引擎的改动，除浮游单元外没有做。受影响的棋子 kit 与项：whitw2（hits）、mlyss 的召唤物（hits）、rosmon（splashRadius、shockTimes）、cetsyr 的两个棋子条目 4_25 与 5_09（auraRatio）、excu2（selfHeal）、papyrs（heal）、skadi2 与隐德来希 etlchi 的召唤物（noAttack）、siege2 的召唤物（dmgType）；kit 自己的 trait.funnelMul（耶拉、malist）见 DIF-0045。这些写入不再静默：以前整份档案的赋值会抛错，现在记一条缺口。技能里这些项的变化没有生效。",
     "status": "有效"
   },
   {
@@ -317,6 +317,150 @@
     "ours": "kit 写棋子 base 里的部署费用（cost）和再部署时间（respawnTime）：值记在棋子上、读回得到，牌组的费用与再部署时间仍按引擎的，不变。每个单位每个名字记一条 `compat: base.cost is not provided yet`（`base.respawnTime` 同）。",
     "stronghold": "kit 改的费用和再部署时间就是棋子下一次部署的费用和等待时间：减费（wildmn、gravel、svash2、mlyss 的 base.cost）、缩短再部署时间（skadi 的 base.respawnTime）都真的生效。",
     "reason": "引擎的牌组按干员的记录算费用与再部署时间（兼容-4 的「立刻重新部署」等也走牌组），没有给 kit 改它们的口子；接上要让牌组读一份可被 kit 覆盖的值，是引擎的改动，没有做。这几名干员 kit 里靠改费用、改再部署时间起作用的部分没有生效，其余照常。",
+    "status": "有效"
+  },
+  {
+    "id": "DIF-0041",
+    "clause": "兼容-4",
+    "ours": "kit 增益的伤判回调在引擎的伤判里运行，次序与 Stronghold 有三处不同：同一增益里先算引擎自己的闪避、抵挡、倍率、护盾、屏障，再算 kit 的固定减伤和 injury；一个增益自己的护盾或闪避取消了伤害时，它自己的 observeInjury 不调用；injury 里 defer 的回调在这个增益的轮次末尾运行，不等扣除生命之后。抵挡成功没有 block 事件。",
+    "stronghold": "同一增益里先乘倍率、减固定减伤、再用护盾、再调 injury、最后判定闪避；每个增益不论谁取消了伤害都调用 observeInjury；defer 的回调在扣除生命之后运行；抵挡发 block 事件。",
+    "reason": "引擎的伤判（伤害-8）给内容的口子是 take 和 afterCancel：take 在增益自己的效果之后、伤害仍大于 0 时才调用，取消之后只调用后面增益的 afterCancel，扣除生命之后没有口子。第二期下半的棋子 kit 里，伤判回调的增益都不带护盾和闪避，也没有用 defer 的，次序的不同在这些 kit 上不起作用；同时带护盾和伤判回调的增益会有差异。",
+    "status": "有效"
+  },
+  {
+    "id": "DIF-0042",
+    "clause": "兼容-5",
+    "ours": "kit 说明的触发规则只读 NEVER、MANUAL、SP_FULL、ALWAYS、CUSTOM_RANGE、SKILL_RANGE、DEFAULT（含 allies 与治疗技能）；ACTIVE_RANGE、SEARCH、TAKE_DAMAGE、GDGLOW_SKILL_2、AUTO_STOP 与 kit 另加的触发范围（addTriggerRange）按基础规则、不读；数据里的触发规则也不读（引擎的技能记录没有）。带 allies 的 DEFAULT 与治疗技能在条件成立后按引擎的时机发动，之后友方恢复了也不撤回；没有敌人时，带攻击键的技能不会发动。",
+    "stronghold": "全部读：TAKE_DAMAGE 在受击时发动，ACTIVE_RANGE、SEARCH、GDGLOW_SKILL_2 与另加的触发范围每帧检查各自的条件，数据里的触发规则（重装的 TAKE_DAMAGE 等）是默认；带 allies 的 DEFAULT 在攻击检查时即使没有敌人也发动（取代这次攻击），友方在攻击前恢复了就撤回这次发动、退回充能。",
+    "reason": "棋子 kit 在说明里写的规则只有前几种；其余的来自数据（引擎的技能记录没有触发规则），或由 kit 自己的处理发动（受击时 kit 自己调 activate，如缇缇的二技能）。读数据里的规则要让技能记录带上它，是内容与数据的改动，没有做；撤回、没有敌人时发动，要引擎的攻击检查在没有目标时也问一次发动，是引擎攻击的改动，没有做。",
+    "status": "有效"
+  },
+  {
+    "id": "DIF-0043",
+    "clause": "兼容-5",
+    "ours": "kit 看到的 beforeAttack 与 boomerangCaught 事件里的 isSkill 是引擎的：技能运行时的每次攻击都为真，不看说明有没有攻击或索敌覆盖。命中的伤害、attack 事件、命中回调与回旋投射物的命中回调里的 isSkill 按说明。",
+    "stronghold": "这些事件里的 isSkill 都是攻击档案的：只在技能的说明有攻击或索敌覆盖时为真。",
+    "reason": "beforeAttack 与 boomerangCaught 的上下文由 battle.js 的事件对照给出，那里没有按说明改写；v0.4.0 的棋子 kit 里读 isSkill 的是 damaged 与 hit 里的 dmg 和 attack 事件，没有读这两个事件的。",
+    "status": "有效"
+  },
+  {
+    "id": "DIF-0044",
+    "clause": "兼容-5",
+    "ours": "秘术师的储存能量弹并入随之放出的那次攻击：主目标的 onEachHit、afterHit、attack.onHit 与 onHit 在这次攻击的第一份命中之后调用，参数里的 dealt 不含后落的弹；attackId 一个目标一个。",
+    "stronghold": "这些回调在一次 resolveHit 的全部命中（含储存能量）打完之后调用，dealt 是这次攻击对主目标的总伤害；attackId 一次攻击一个，各目标共用。",
+    "reason": "引擎的 attackHit 每个目标每次落地发一个，dealt 是那一次的合计；储存能量弹落成各自的 attackHit，先到的带着回调走，后面的并入这次攻击（INF-1099）。等所有弹落完再调用，要引擎在攻击结束时汇总，没有做。读 dealt 的棋子 kit 里没有秘术师，不受影响。",
+    "status": "有效"
+  },
+  {
+    "id": "DIF-0045",
+    "clause": "兼容-5",
+    "ours": "kit 的 `trait` 里兼容层认的项起作用：回调（canAttack、skipEnemy、storeEnergy、healThrough、dmgMul、hitsFn、afterHit、afterAttack、onEachHit、boomerangOnward）、自己的 install，和对应引擎特性数据的 splashRadius、onHitStatus、hits、hitDmgMul、maxTargets、noAttackUnlessSkill、hitSleep、rangeTiles、blockFly、dollNoAttack（rampInit 引擎从模组的数据里取同一个值）。其余的项没有作用，每个棋子每一项记一条 `compat: trait.<项> is not provided yet`：priority、heal、dmgType、noAttack、canHitFly、selfHeal、selfHealFilter、funnelMul、funnelBodyHits、splashScale、shockTimes 等。",
+    "stronghold": "kit 的 trait 逐项覆盖职业的档案（Object.assign(p, kitTrait)），攻击循环按档案进行：priority 排候选，heal 与 healThrough 定治疗的方式与对象，dmgType 定伤害类型，canHitFly 与 noAttack 定能否选中飞行单位、是否攻击，funnelMul 与 funnelBodyHits 定浮游单元的伤害。",
+    "reason": "引擎的这些项是特性数据（职业-1…职业-3、职业-11、职业-12），攻击结算不读档案；逐项接上要给特性数据加对应的字段，没有一项是这一步的目标，所以不再静默丢掉，记成缺口。差分里钉住的 kit 与项：priority（poca、typhon）、heal（cgbird、monstr）、dmgType（hsgma2）；这些 kit 的命中与状态没有因此不同，差分只多一行缺口。",
+    "status": "有效"
+  },
+  {
+    "id": "DIF-0046",
+    "clause": "兼容-4",
+    "ours": "kit 读写的 unit.trait 里，解放者的 ramp 是引擎蓄力 Buff 的攻击加成，写入落到最近的一级（共 steps 级，每级 atk ÷ steps）；浮游单元的 funnelTarget、funnelScale 是引擎浮游 Buff 记的上次目标与连续次数，funnelMap 只有上次目标这一项（它的 t 永远不是现在）；技能结束事件里引擎的蓄力已经回到 0，kit 在技能结束时读到的 ramp 是 0。",
+    "stronghold": "ramp 是浮点数，每秒加 rampMax ÷ rampTime，技能结束的事件里职业自己的处理（优先度 0）才把它清零，优先度更高的 kit 处理函数还读得到技能期间的 ramp（玛恩纳 S2 的「击倒敌人后不重置」靠它）；funnelMap 是对每个目标各记一份倍率。",
+    "reason": "引擎把解放者的蓄力做成按级累加的 Buff（职业-12，DIF-0036），在技能结束时先清零再发 skillEnd；浮游单元一次只数一个目标（职业-12）。所以玛恩纳 S2 的保留蓄力、雷茨2 的同类逻辑读到 0，仍不生效（以前 trait 是空对象，同样不生效）；耶拉两个浮游单元各锁一个目标时，各自的倍率没有分开记。",
+    "status": "有效"
+  },
+  {
+    "id": "DIF-0047",
+    "clause": "兼容-5",
+    "ours": "kit 的 trait.onHitStatus 换掉职业特性给每次命中的状态，技能运行时引擎照旧另给技能攻击的状态（技能的 attack.onHitStatus）：两个状态都施加，同名的取较长。",
+    "stronghold": "effectiveProfile 在技能有攻击覆盖时用技能的 onHitStatus 代替档案的，只施加技能的那一个。",
+    "reason": "引擎的命中状态在特性（职业-4）与技能的攻击（技能-5）里各有一份，攻击结算两份都用。两个状态相同、或技能的更长时没有差别（格雷伊 S：技能 0.64 秒、天赋 0.4 秒）；技能的更短或不同键时，这里多一个特性的状态。",
+    "status": "有效"
+  },
+  {
+    "id": "DIF-0048",
+    "clause": "兼容-4",
+    "ours": "带 kit 的吟游者，kit 没有自己的 trait.install 时，生命回复由引擎的光环给（职业-13）：每帧维持的 Buff `aura:<吟游者的 id>`，量先经 bardRegen 事件（kit 有处理函数时）。",
+    "stronghold": "installBard 每 0.25 秒给范围内每名友方一个 `trait:bard:<吟游者的 id>`，持续 0.5 秒，量经 bardRegen。",
+    "reason": "引擎的光环 Buff 跟着范围每帧同步（职业-13），不是限时重给的 Buff；每秒的回复量相同，Buff 的键和刷新方式不同。读那个键的 kit 没有（魔王、斯卡蒂 2 只用事件与 bardRegen 函数）。",
+    "status": "有效"
+  },
+  {
+    "id": "DIF-0050",
+    "clause": "兼容-4",
+    "ours": "push 返回的是敌人被推动的格数，按推的那一刻算出来：弹道推动当帧的一步，加上之后的失衡滑行逐帧积分到停下，遇墙或地图边缘就停在那里（引擎的位移-3）；这是对将发生的滑行的预计，推完当时单位只走了一步，其余在之后的帧里走。静态刚体受力进入失衡，返回 0。",
+    "stronghold": "push 当场用 displace 每 0.1 格一步把敌人移到停下，返回实际走的格数；静态刚体不动，返回 0。",
+    "reason": "引擎的推只给敌人一个速度，位移在之后的帧里按摩擦逐帧发生（位移-2、位移-3），push 返回时还没走完。预计与 Stronghold 的结果在空地上相等（弹道与特效的理想距离，PRTS 推与拉）；遇墙时引擎以一帧的步长停下、Stronghold 以 0.1 格的步长停下，停下的位置可以差一步，见行者这样的 kit 比较的是「少于应走的距离减 0.05」，所以撞墙时都判为撞墙，贴着墙的边界情形可以不同。另外，推一个静态刚体以前返回 1（力起了作用），现在同 Stronghold 为 0。",
+    "status": "有效"
+  },
+  {
+    "id": "DIF-0051",
+    "clause": "钩子-3",
+    "ours": "引擎在 damageApplying 之前就已经给了目标受击回复（技能-2）、记了敌人的受击计数（敌能-38）和来源的符文技力（符文-4），所以被 damageApplying 的处理函数取消的伤害，这几项已经算了；damageApplied 在扣生命之后、damaged 之前发。",
+    "stronghold": "受击回复在扣生命之后才算（applyHpDecrease 里的 onDamaged），被 damageApplying 取消的伤害没有；damageApplied 在扣生命之后、hpChanged 与 modifierApplied 之后、damaged 之前发。",
+    "reason": "引擎的受击回复、受击计数、符文技力在伤判之前、不论伤判结果如何都算（技能-2、敌能-38、符文-4：被闪避的伤害也算），damageApplying 放在它们和防御计算之后；改成在扣生命之后算会改动引擎自己干员与敌人的结果。蒂比的紧急赶场通知（受到伤害前触发技能、闪避这次伤害）在这里取消伤害后，目标多得一次受击回复。",
+    "status": "有效"
+  },
+  {
+    "id": "DIF-0052",
+    "clause": "兼容-4",
+    "ours": "spawnToken 没有给 kit 时，只对有 kit 的干员的召唤物，用 tokens 模块的 kits 里这个召唤物的 kit；别的干员的召唤物（引擎自己的干员）没有 kit，仍是引擎自己的处理。",
+    "stronghold": "战斗对每个造出的召唤物（setupUnitKit）都用 tokens 模块的 kits[召唤物 id]，没有时用通用 kit。",
+    "reason": "引擎自己的干员的召唤物按引擎的规则运行（召唤-1…召唤-6）；再装 tokens 的 kit 会让两套规则同时作用在同一个召唤物上。通用 kit（genericKit，Stronghold 按技能说明生成的效果）没有对应：召唤物在模块里没有 kit 时仍没有 kit，它的技能按引擎的通用效果（技能-5）。",
+    "status": "有效"
+  },
+  {
+    "id": "DIF-0053",
+    "clause": "钩子-3",
+    "ours": "statusApplied 的 frames（给 kit 的 duration 秒数）是 beforeStatus 之后的长度，没有计入抵抗：可抵抗的状态（晕眩、寒冷、冻结、恐惧、诱导、麻痹）的抵抗在引擎里是更快的流失（状态-8），不缩短施加的长度。",
+    "stronghold": "statusApplied 的 duration 已经按目标的抵抗缩短（duration × (1 − 抵抗)）。",
+    "reason": "引擎按官方的做法让抵抗加快状态的流失，而不是改施加时的时长（状态-8）。读状态名、来源、目标与 entered 的 kit 与内容（halo2、titi、lumen、aroma 的 kit，规程的盟约、装备、盟约的处理函数）不受影响；Stronghold v0.4.0 里没有处理函数读 statusApplied 的 duration（逐个看过），所以对照里没有差异，只有目标带抵抗时 duration 会比 Stronghold 的长。",
+    "status": "有效"
+  },
+  {
+    "id": "DIF-0054",
+    "clause": "兼容-4",
+    "ours": "kit 登记 damageOutput、damageBeforeApply、damageCalculateTarget、block、projectileStep、spGain、hpChanged、modifierApplied、elementApplied、enemyLeak、battleEnd 时，引擎不发这些事件，只记一条缺口（compat: event.<名字> is not emitted yet，每个单位每个事件一次）；逐个 kit 的对照里它显为一条 errors 行（slent2 的 spGain）。",
+    "stronghold": "这些事件在它的结算、技能、敌人行动、投射物与战斗生命周期里照常发出，kit 的处理函数被调用。",
+    "reason": "引擎没有这些事件的对应点：伤害输出与应用前的两步属于 Stronghold 的有序结算里引擎没有的阶段，技力获得、投射物步进、阻挡、生命变化等要在引擎各自的流程里加事件，没有做。kit 自己 emit 的这些事件照常到它的处理函数。逐个 kit 的对照里这个 kit 的技能效果与 Stronghold 一致（对照的情形没有触发这些事件），显出的只是这条缺口记录。",
+    "status": "有效"
+  },
+  {
+    "id": "DIF-0055",
+    "clause": "兼容-4",
+    "ours": "kit 的屏障或护盾层把一次伤害整个吸收（剩下 0）时，这一下不扣除生命，也没有 `damaged` 事件（伤害-7 第 9 步只在剩下的伤害大于 0 时有）：kit 的 `damaged` 处理函数看不到它，兼容层不补发。",
+    "stronghold": "整次被吸收的一下也以 0 发 `damaged`：v0.3.1 的 server/sim/damage.js dealDamage 在 absorbShields 之后总是调用 applyHpLoss，后者以剩下的量（可以是 0）发 damaged；v0.4.0 的 server/sim/attack/effects.js 里整次被吸收时 notifyZero 也让这一下以 0 通知。`hpDamage` 两边都只在剩下大于 0 时发。",
+    "reason": "引擎的伤害结算只在剩下的伤害大于 0 时才有 `damaged`（伤害-7）；以 0 补发要在伤判之后另有一个事件，没有做。固定提交里靠被整个吸收的那一下的 kit：林「计出万全」在 damaged 里把琉璃璧补满（`!(c.amount > 0)`），「韬光」对它也抽技力；斥罪「荆棘环身」对它也反击；年 PRO-X 每破一层护盾的攻防与技力在 damaged 里算，S2「铜印」的反击也在 damaged 里；机械师 S2 的屏障被打破（超额防护把那一下改成 0）后，爆发和新的屏障在 damaged 里给。这里它们要等下一次扣除生命的伤害，或者不发生。",
+    "status": "有效"
+  },
+  {
+    "id": "DIF-0056",
+    "clause": "兼容-4",
+    "ours": "kit 给的持久（`persist`）屏障与护盾层，单位每次部署时按 kit 给的量重新给上，不是离场时剩下的。",
+    "stronghold": "单位离场时留下持久的增益对象本身，下次部署接着用，剩下的屏障量和层数也跟着留下（v0.3.1 的 server/sim/battle/deploy.js）。",
+    "reason": "兼容层记下的持久增益是 kit 给的说明，部署时重新造（兼容-4「部署」）。固定提交的 72 个干员 kit 都不给持久的屏障或护盾层，所以对照里没有差异。",
+    "status": "有效"
+  },
+  {
+    "id": "DIF-0057",
+    "clause": "元素-3",
+    "ours": "元素爆发的伤害（侵蚀的物理 800、灼燃的法术 1200、凋亡每秒的法术 100 等干员一侧的伤害）可以被闪避：按它的伤害类型看物理闪避、近战物理闪避、法术闪避（元素-3、元素-4）。",
+    "stronghold": "v0.3.1 的 server/sim/damage.js 在 resolveBurst 里把爆发的伤害设为 canDodge: false（541、549 行），不能闪避。v0.4.0 的 attack/element.js 已改为可以闪避，所以这条差异只存在于固定版本上。",
+    "reason": "官方数据里爆发的伤害是无来源伤害，免除的取消原因一栏为 NONE，什么取消都不免（推断 INF-1161；INF-0037 已推翻）；爆发的伤害算近战途径为推断 INF-1160。基准对局与逐 kit 的对照里爆发都落在敌人身上，或落在没有闪避的单位上，所以对照里没有差异；有物理闪避、法术闪避或近战物理闪避的干员受到敌人一侧的爆发时才会不同。",
+    "status": "有效"
+  },
+  {
+    "id": "DIF-0058",
+    "clause": "部署-9",
+    "ours": "保留方式的移动（兼容层里 Stronghold 的 kit 用，DIF-0034）还把元素值回到最大值、结束正在进行的元素爆发：爆发 Buff 与随它结束的凋亡的阻回、静默去掉；爆发开始时给的晕眩、侵蚀的防御力降低照旧保留（推断 INF-1170、INF-1171）。",
+    "stronghold": "server/sim/battle/tiles.js moveRedeploy 只保留生命、Buff 和技能，不碰元素值：元素值与元素爆发（爆发冷却的 Buff）也都保留。它自己的注释写明官方「除技能点名的以外什么都不继承」，保留其余是 Stronghold 作者的取舍。",
+    "reason": "PRTS「术语释义」移动：「本质上为一次特殊的撤退-再部署行为」，「除非具有特殊设置，否则执行移动行为时：不会继承任何Buff、技能状态」；再部署的单位每种元素值都是最大值、没有爆发（元素-1），按官方的做法元素值与爆发也不继承。对照里没有差异，只有 kit 在元素值不满或爆发中移动时才不同。",
+    "status": "有效"
+  },
+  {
+    "id": "DIF-0059",
+    "clause": "兼容-4",
+    "ours": "grid.waypoints 给的是引擎地面流场（寻路-1、寻路-2）平滑后的指向：等长的路线里不偏向「经过近战干员不能部署的地面格更少」的一条；地穴（地图-4）的代价与视线、对地面单位封闭的格边（地图-2）照引擎的规则；所用的是关卡自己的地块，建成的液压式高台和阻挡路线的装置所在格不算障碍物。",
+    "stronghold": "v0.3.1 的 server/sim/grid.js：流场另加「可阻挡地面优先」——等长的路线里改走经过近战干员不能部署的地面格（地板、出怪点、保护目标等）更少、深水区不更多的一条；没有地穴与封闭的格边；所用的是战斗里实时的格子。",
+    "reason": "引擎的寻路是官方的做法（寻路-1、寻路-2），可阻挡地面优先是 Stronghold 自己加的。随机地图上只有道路与高台时，路线点与固定提交的逐位相同，有地板时与它的官方指针相同（推断 INF-1180、INF-1181）。固定提交里唯一调用它的是酒神的诱导，只看路线点是否为空，能不能到只在封闭的格边上不同，所以对照里没有差异；对局里这一步目前也走不到。",
     "status": "有效"
   }
 ]

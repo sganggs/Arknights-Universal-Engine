@@ -36,7 +36,7 @@ function field(o) {
   const c = /** @type {any} */ ({ level: level(o.n ?? 0), enemies: { slime: { name: 'slime', maxHp: 1e6, atk: 0, def: 0, res: 0, moveSpeed: 1 } }, operators: o.ops, decks: [Object.keys(o.ops)] });
   const box = /** @type {{ b: ShBattle | null }} */ ({ b: null });
   const skillOf = (/** @type {string} */ k) => (o.ops[k].skill ? { id: o.ops[k].skill.id, bb: {} } : null);
-  const entries = Object.fromEntries(Object.entries(o.kits ?? {}).map(([k, f]) => [k, { factory: f, def: { name: k, skill: skillOf(k), raw: {} } }]));
+  const entries = Object.fromEntries(Object.entries(o.kits ?? {}).map(([k, f]) => [k, { factory: f, def: { name: k, skill: skillOf(k), subProf: o.ops[k].branch ?? null, raw: {} } }]));
   c.behaviors = kitsBehaviors(entries, (x) => { box.b = x; });
   const w = createWorld(c, { seed: 1, players: 1 });
   /** @param {number} frames @param {any[]} [cmds] */
@@ -62,7 +62,8 @@ const give = (u, key, o) => buffs.addBuff(/** @type {any} */ (u.u), buffs.makeBu
  */
 function chainField() {
   const kit = () => ({ skills: {}, trait: { healThrough: (/** @type {any} */ _h, /** @type {ShUnit} */ a) => { if (a.defId === 'g5') throw new Error('no'); return a.defId === 'g4'; } } });
-  const ops = Object.fromEntries(['medic', 'g1', 'g2', 'g3', 'g4', 'g5', 'g6'].map((k) => [k, plain(k)]));
+  // the medic has a branch: a kit's trait answers through its branch's behaviour (职业-6), the engine's one reading of healThrough
+  const ops = Object.fromEntries(['medic', 'g1', 'g2', 'g3', 'g4', 'g5', 'g6'].map((k) => [k, plain(k, k === 'medic' ? { branch: 'chainhealer' } : {})]));
   const m = field({ ops, kits: { medic: kit } });
   m.run(1, [deploy('medic', 0, 0), deploy('g1', 2, 2), deploy('g2', 2, 3)]);
   m.run(2, [deploy('g3', 1, 2)]);

@@ -1,6 +1,6 @@
-// More of the engine's events (docs/spec/hooks.md 钩子-5): statusApplied after a status took hold, enemyAttackStart as an
-// enemy's attack lands before 麻痹 is checked — its handlers may cancel the attack —, palsyTrigger as 麻痹 interrupts an
-// attack, whose `keep` leaves the layer; and none of them changes the state while their handlers do nothing.
+// More of the engine's events (docs/spec/hooks.md 钩子-5): enemyAttackStart as an enemy's attack lands before 麻痹 is
+// checked — its handlers may cancel the attack —, palsyTrigger as 麻痹 interrupts an attack, whose `keep` leaves the
+// layer; and neither changes the state while its handlers do nothing.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { tinyContent } from '@aue/testkit';
@@ -12,7 +12,6 @@ import { applyStatus, inflict, PALSY_SHAKE_FRAMES } from '../src/status.js';
 import { dealDamage } from '../src/damage.js';
 import { dealEp } from '../src/elements.js';
 import { addBuff, makeBuff } from '../src/buffs.js';
-import { statsOf } from '../src/attrs.js';
 
 /** @typedef {import('../src/types.js').Unit} Unit @typedef {import('../src/types.js').World} World */
 
@@ -187,43 +186,11 @@ test('[钩子-5] 麻痹 cutting an attack 2 s in: palsyTrigger, no enemyAttackSt
   assert.deepEqual([log, shot.shots.length, layersOf(im.slime)], [['strike'], 1, 1], 'it lands; the layer stays, without effect');
 });
 
-test('[钩子-5] statusApplied after a status took hold: what took hold, its frames after beforeStatus, its value, whether it is new', () => {
-  const { w, guard, slime } = field(), seen = /** @type {any[]} */ ([]);
-  on(w, 'beforeStatus', (k) => { if (k.status === 'stun') k.frames += 9; if (k.status === 'sleep') k.cancel = true; });
-  on(w, 'statusApplied', (k) => seen.push([k.status, k.frames, k.strength, k.entered, k.source?.key ?? null, k.target.key]));
-  inflict(w, slime, 'stun', { seconds: 1.7, src: guard });
-  inflict(w, slime, 'stun', { seconds: 1, src: guard });
-  inflict(w, slime, 'sleep', { seconds: 1 });
-  inflict(w, slime, 'groundbind', { seconds: 1 });
-  inflict(w, slime, 'fragile', { seconds: 2, value: 0.25 });
-  inflict(w, slime, 'palsy', {});
-  inflict(w, slime, 'palsy', {});
-  inflict(w, slime, 'cold', { seconds: 3, src: guard });
-  inflict(w, slime, 'cold', { seconds: 4, src: guard });
-  inflict(w, guard, 'cold', { seconds: 2, src: slime });
-  assert.deepEqual(seen, [
-    ['stun', 60, 0, true, 'guard', 'slime'], ['stun', 39, 0, false, 'guard', 'slime'], ['fragile', 60, 0.25, true, null, 'slime'],
-    ['palsy', -1, 0, true, null, 'slime'], ['palsy', -1, 0, false, null, 'slime'], ['cold', 90, 0, true, 'guard', 'slime'],
-    ['freeze', 120, 0, true, 'guard', 'slime'], ['enemyCold', 60, 0, true, 'slime', 'guard'],
-  ], '1.7 s + 9 frames; a second stun is no entry; cancelled, refused (缚地 on the ground): none; the cold pair is a freeze; an enemy\'s cold');
-  assert.deepEqual([layersOf(slime), slime.buffs.some((b) => b.key === 'cold')], [2, false]);
-});
-
-test('[钩子-5] statusApplied on a unit immune to the status: its buff is added all the same (状态-7), so the event comes; one a beforeStatus handler gave just before makes it no entry', () => {
-  const { w, slime } = field((cc) => { cc.enemies.slime.immune = ['stun']; }), seen = /** @type {any[]} */ ([]);
-  on(w, 'beforeStatus', (k) => { if (k.status === 'silence') applyStatus(k.target, 'silence', { seconds: 1 }); });
-  on(w, 'statusApplied', (k) => seen.push([k.status, k.frames, k.entered]));
-  inflict(w, slime, 'stun', { seconds: 1 });
-  inflict(w, slime, 'silence', { seconds: 2 });
-  assert.deepEqual(seen, [['stun', 30, true], ['silence', 60, false]]);
-  assert.deepEqual([!!statsOf(slime).flags.stun, slime.buffs.filter((b) => b.key === 'silence').length], [false, 2], 'the stun without effect; two silences');
-});
-
 test('[钩子-5] with handlers that do nothing, every frame hashes as without them', () => {
   /** @param {boolean} hooked */
   const play = (hooked) => {
     const { w, c, guard, slime } = field();
-    for (const name of ['statusApplied', 'enemyAttackStart', 'palsyTrigger']) if (hooked) on(w, name, () => {});
+    for (const name of ['enemyAttackStart', 'palsyTrigger']) if (hooked) on(w, name, () => {});
     for (let i = 0; i < 2; i++) inflict(w, slime, 'palsy', { src: guard });
     const hashes = [];
     for (let i = 0; i < 400; i++) {

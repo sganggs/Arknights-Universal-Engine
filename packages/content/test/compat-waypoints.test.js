@@ -180,3 +180,21 @@ test('[兼容-4] the 行动方式 a kit reads: an enemy\'s own FLY or WALK, whic
   const box = b.unitOf(w.units.find((/** @type {any} */ u) => u.kind === KIND.DEVICE));
   assert.deepEqual([box.side, box.motion], ['enemy', 'GROUND']);
 });
+
+test('[兼容-4] a kit that writes motion, as Stronghold’s content does: an enemy takes FLY or WALK the engine’s way, its leg planned again; any other write changes nothing and is a gap, never an error', () => {
+  const { w, c, b } = tiny();
+  step(w, c, [[0, { type: 'deploy', op: 'guard', row: 1, col: 2, dir: 0 }]]);
+  for (let i = 0; i < 30; i++) step(w, c);
+  const slime = w.units.find((/** @type {any} */ u) => u.key === 'slime'), guard = w.units.find((/** @type {any} */ u) => u.key === 'guard');
+  const s = b.unitOf(slime), g = b.unitOf(guard);
+  assert.ok(slime.path.length > 0, 'it has a plan');
+  s.motion = 'FLY';
+  assert.deepEqual([slime.base.motion, s.motion, slime.path.length], ['FLY', 'FLY', 0], 'flying, its leg planned again');
+  s.motion = 'WALK';
+  assert.deepEqual([slime.base.motion, s.motion], ['WALK', 'WALK']);
+  g.motion = 'GROUND';
+  assert.deepEqual([g.motion, b.errors], ['GROUND', []], 'the value it has: nothing');
+  g.motion = 'FLY';
+  g.motion = 'FLY';
+  assert.deepEqual([g.motion, b.errors.map((/** @type {any} */ e) => [e.label, e.message])], ['GROUND', [['motion', 'compat: motion is not provided yet']]], 'an ally cannot take off: one gap');
+});

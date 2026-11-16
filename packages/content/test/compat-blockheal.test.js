@@ -142,7 +142,7 @@ test('[兼容-4] [伤害-13] healThrough as Stronghold reads it: any truthy answ
   assert.deepEqual(truthy.b.injuredAlliesInKeys(piece.rangeKeys, piece).map((a) => a.defId), ['pet'], 'the ally itself as the answer');
   assert.equal(truthy.b.heal(piece, truthy.b.unitOf(p1), 50), 50);
   const skill = { id: 's', type: 'AUTO', sp: 'time', cost: 2, init: 2, charges: 1, duration: 0, ammo: false, bb: {} };
-  const sk = match({ medic: { skills: { s: { kind: 'duration', duration: 30, attack: { healThrough: () => true } } } } }, false, skill);
+  const sk = match({ medic: { skills: { s: { kind: 'duration', duration: 30, trigger: 'SP_FULL', attack: { healThrough: () => true } } } } }, false, skill);
   const m2 = sk.put('medic', 2, 2), p2 = sk.put('pet', 1, 2);
   status.applyStatus(p2, 'healFree', {});
   p2.hp = 600;
