@@ -40,14 +40,14 @@ const SKILLS = new Set(['ChangeToB', 'ChangeToC', 'ChangeToD']);
 const exact = (bb, keys) => Object.keys(bb).length === keys.length && keys.every((k) => typeof bb[k] === 'number');
 
 /**
- * The read pages' `Passive` (敌能-158, INF-1090): the data's two counts and the page's `change`, every one a number
+ * The read pages' `Passive` (敌能-158, INF-1190): the data's two counts and the page's `change`, every one a number
  * (关卡-2). The two counts without `change` are not this shape.
  * @param {Record<string, unknown>} bb @returns {boolean}
  */
 export const translatorShape = (bb) => exact(bb, ['phy_max_count', 'magic_max_count', 'change']);
 
 /**
- * Whether a talent or skill of this family's other names has its shape (关卡-2, INF-1090); any other name passes.
+ * Whether a talent or skill of this family's other names has its shape (关卡-2, INF-1190); any other name passes.
  * @param {string} name @param {Record<string, unknown>} bb @returns {boolean}
  */
 export function translatorOwns(name, bb) {
@@ -73,7 +73,7 @@ export function translatorSpawn(ctx) {
 const full = (b) => (b.key === PHYS || b.key === ARTS) && b.n >= b.value;
 
 /**
- * The form due at this turn (敌能-158, INF-1092): a block, else a full physical count, else a full arts count; 0 for
+ * The form due at this turn (敌能-158, INF-1192): a block, else a full physical count, else a full arts count; 0 for
  * none. A block is made in its turn after this tick (阻挡-1), so one seen here came before the hits counted since then.
  * @param {FoeContext} ctx
  */
@@ -85,7 +85,7 @@ function due(ctx) {
 }
 
 /**
- * The change starts (敌能-158, INF-1093): no more counting, `change` seconds standing still in 原始形态.
+ * The change starts (敌能-158, INF-1193): no more counting, `change` seconds standing still in 原始形态.
  * @param {FoeContext} ctx @param {number} form
  */
 function begin(ctx, form) {
@@ -98,7 +98,7 @@ function begin(ctx, form) {
 }
 
 /**
- * The change ends (敌能-158, INF-1094, INF-1097): 原始形态 goes; the form's buff holds its Mode talent's numbers for good,
+ * The change ends (敌能-158, INF-1194, INF-1197): 原始形态 goes; the form's buff holds its Mode talent's numbers for good,
  * and 幽灵's no attack and no block. A Mode talent the record lacks adds no numbers.
  * @param {FoeContext} ctx
  */
@@ -117,7 +117,7 @@ function finish(ctx) {
 const formOf = (ctx) => (ctx.state.get('done') === 1 ? ctx.state.get('form') : 0);
 
 /**
- * 寻仇者形态 below half its maximum HP (敌能-158, INF-1095): 攻击力 + `Mode_Fuchou_Anger.atk`, directly multiplied; one buff,
+ * 寻仇者形态 below half its maximum HP (敌能-158, INF-1195): 攻击力 + `Mode_Fuchou_Anger.atk`, directly multiplied; one buff,
  * gone again at half or more.
  * @param {FoeContext} ctx
  */
@@ -144,7 +144,7 @@ export function translatorTick(ctx) {
 }
 
 /**
- * 寻仇者形态 attacks only what blocks it (敌能-158, INF-1095); the others keep the candidates (特战术师: the ranged ones).
+ * 寻仇者形态 attacks only what blocks it (敌能-158, INF-1195); the others keep the candidates (特战术师: the ranged ones).
  * @param {FoeContext} ctx @param {Unit[]} cands @returns {Unit[]}
  */
 export function translatorTargets(ctx, cands) {
@@ -154,7 +154,7 @@ export function translatorTargets(ctx, cands) {
 }
 
 /**
- * The forms' attacks (敌能-158, INF-1095, INF-1096): 寻仇者 physical; 特战术师 arts at `Mode_Shushi_Passive.targets` targets.
+ * The forms' attacks (敌能-158, INF-1195, INF-1196): 寻仇者 physical; 特战术师 arts at `Mode_Shushi_Passive.targets` targets.
  * @param {FoeContext} ctx @param {AttackMods} mods @returns {AttackMods}
  */
 export function translatorAttack(ctx, mods) {
@@ -169,7 +169,7 @@ export function translatorAttack(ctx, mods) {
 const TALLY = Object.freeze({ phys: PHYS, arts: ARTS });
 
 /**
- * 原始形态's 伤判 (敌能-158, INF-1091, INF-1092): every hit that reaches it is cancelled; a physical or an arts one is
+ * 原始形态's 伤判 (敌能-158, INF-1191, INF-1192): every hit that reaches it is cancelled; a physical or an arts one is
  * counted first, while neither count is full. `n` is written only in buffs.js (ADR 0045).
  * @type {NonNullable<import('@aue/sim').buffs.Behavior['take']>}
  */
