@@ -9,6 +9,7 @@ import { STATUS_NAME, ELEMENT, buffKeyOf, buffNameOf, shFlagsOf } from './mods.j
 import { STAND_INS } from './standins.js';
 import { setRespawn } from './players.js';
 import { traitOfPiece, funnelNext } from './traitview.js';
+import { syncShock } from './shock.js';
 
 /** @typedef {import('@aue/sim').Unit} Unit @typedef {import('@aue/sim').Buff} Buff @typedef {import('./battle.js').ShBattle} ShBattle */
 
@@ -62,13 +63,16 @@ export class ShBuff {
  * The fields of a unit's attack profile that something in the layer reads when a kit writes them: the selection of targets
  * and of what may be selected (`maxTargets`, `priority`, `allInRange`, `hitAllBlocked`, `canHitFly`, `groundOnly`, `hitSleep`,
  * `skipEnemy`, `rangeTiles`, `attackRangeRadius`; 索敌-2), which the layer's target helpers take from the profile a kit passes
- * them. The engine's own attack reads no other field of the unit's profile, but for a unit that has a funnel (职业-12) its `funnel`
- * and `funnelMul` (off when it is null), through the trait behaviour (ShUnit.funnelOverride): a write to any other is kept and
- * has no effect, and is recorded as a gap (ShUnit.noteGap).
+ * them. A unit with a funnel (职业-12) also has `funnel` and `funnelMul` read (off when `funnelMul` is null), through the trait
+ * behaviour (ShUnit.funnelOverride). `splashRadius` and `shockTimes` are not read here: a write of them is put on the unit
+ * as the `profileShock` buff (shock.js, 职业-8). A write of any other field is kept, has no effect, and is recorded as a gap
+ * (ShUnit.noteGap).
  */
 const PROFILE_READ = Object.freeze(new Set(['maxTargets', 'priority', 'allInRange', 'hitAllBlocked', 'canHitFly', 'groundOnly', 'hitSleep', 'skipEnemy', 'rangeTiles', 'attackRangeRadius']));
 /** The profile fields the engine reads of a unit with a funnel. */
 const FUNNEL_FIELDS = Object.freeze(new Set(['funnel', 'funnelMul']));
+/** The profile fields a kit's write puts on the unit's attacks (shock.js): honoured on every unit, so not a gap. */
+const SHOCK_FIELDS = Object.freeze(new Set(['splashRadius', 'shockTimes']));
 
 /**
  * The fields of a kit's own `trait` the layer honours (兼容-5): the callbacks it runs (specs.js KIT_TRAIT_BEHAVIOR, onAttackHit,
@@ -392,15 +396,24 @@ export class ShUnit {
       if (typeof k === 'string' && this.#unread(k) && !sameField(target[key], v)) this.noteGap(`profile.${k}`);
       target[key] = v;
       (this.#profileSet ??= {})[key] = v;
+      if (typeof k === 'string' && SHOCK_FIELDS.has(k)) this.applyShock();
       return true;
     } });
   }
-  /** Whether a write to a profile field has no effect: nothing reads it (PROFILE_READ), the funnel's fields of a unit without a funnel. @param {string} k */
-  #unread(k) { return !PROFILE_READ.has(k) && !(FUNNEL_FIELDS.has(k) && !!this.#traitData()?.funnel); }
+  /** Whether a write to a profile field has no effect: nothing reads it (PROFILE_READ, SHOCK_FIELDS), the funnel's fields of a unit without a funnel. @param {string} k */
+  #unread(k) { return !PROFILE_READ.has(k) && !SHOCK_FIELDS.has(k) && !(FUNNEL_FIELDS.has(k) && !!this.#traitData()?.funnel); }
+  /**
+   * The splash radius and aftershock count a kit wrote, on the deployed unit (兼容-4). Off the field the profile keeps
+   * them and the next deployment puts them on (kits.js bind).
+   */
+  applyShock() {
+    if (this.u && this.deployed) syncShock(this.u, this.#profileSet, this.#traitData());
+  }
   /** The part of its profile the trait data gives (profile). @param {import('@aue/sim').TraitDef} t @returns {Record<string, any>} */
   #traitProfile(t) {
     const st = t.hitStatus, d = this.b.c.operators[this.defId];
     return { canHitFly: t.antiAir, heal: t.heal, dmgType: this.u?.base.dmgType ?? d?.dmgType, hits: t.hits, ...(t.rangeTiles ? { rangeTiles: true } : {}),
+      ...(t.splash ? { splashRadius: t.splash.radius } : {}), ...(t.aftershock > 0 ? { shockTimes: t.aftershocks + 1 } : {}),
       ...(t.funnel ? { funnel: { ...t.funnel }, funnelMul: this.#funnelMul } : {}),
       ...(st ? { onHitStatus: { key: STATUS_NAME[st.key] ?? st.key, duration: st.seconds, ...(st.value !== undefined ? { value: st.value } : {}) } } : {}) };
   }
@@ -420,8 +433,8 @@ export class ShUnit {
   #funnelMul = (_b, _u, target) => funnelNext(this, target?.u ?? null);
   /**
    * A kit may give the unit another profile (`unit.profile = { ...unit.profile, … }`); it stands for every deployment, null
-   * takes it back. What the layer reads of it is the selection of targets (PROFILE_READ). The engine's own attack reads no
-   * other field of it, so a field that is changed and not read — `hits`, `splashRadius`, `atkScale` — is kept,
+   * takes it back. What the layer reads of it is the selection of targets (PROFILE_READ), and `splashRadius` / `shockTimes`
+   * (SHOCK_FIELDS, put on the unit while it stands). A field that is changed and not read — `hits`, `atkScale` — is kept,
    * has no effect and is recorded once for the unit and field (noteGap).
    * @param {Record<string, any> | null} v
    */
@@ -431,6 +444,7 @@ export class ShUnit {
       for (const k of Object.keys(v)) if (this.#unread(k) && !sameField(now[k], v[k])) this.noteGap(`profile.${k}`);
     }
     this.#profileSet = v && typeof v === 'object' ? { ...v } : null;
+    this.applyShock();
   }
   get sp() { return this.skill?.sp ?? 0; }
   get spMax() { return this.skill?.spCost ?? 0; }

@@ -28,7 +28,7 @@ import { palsyInterrupts, inflict } from './status.js';
 import { draw } from './rng.js';
 import { dealEpFrom, rampageAttack, restoreEp } from './elements.js';
 import { mayAttack, healsNow, healerNow, inSkill, skillIdle, holdFrames, modeMods, releaseEnergy, healOrder, funnelScale, fortressTargets, fortressSplash } from './modes.js';
-import { traitOf, traitOfDef, traitTargets, traitHit, traitKill, traitDealt, traitAsk, traitSkip, summonHeld, dollNow } from './traits.js';
+import { traitOf, traitOfDef, traitTargets, traitHit, traitKill, traitDealt, traitAsk, traitSkip, summonHeld, dollNow, splashNow, aftershockCount } from './traits.js';
 import { timingOf, windupFrames, shoots, launch, flyShots, boomerangOut, PALSY_CUT_FRAMES } from './swing.js';
 import { talentSp, hurtAttackSp } from './talentfx.js';
 import { epHealMul } from './talentmore.js';
@@ -347,10 +347,11 @@ function facilityHit(t, load) {
 function loadFor(w, c, a, t, load) {
   const hit = facilityHit(t, load);
   if (a.kind !== KIND.OPERATOR) return hit;
-  const tr = traitOf(c, a);
+  const tr = traitOf(c, a), splash = splashNow(a, tr.skillSplash && inSkill(a) ? tr.skillSplash : tr.splash);
+  const shocks = aftershockCount(a, tr.aftershock, tr.aftershocks);
   return {
-    ...hit, amount: hit.amount * traitScale(w, c, a, t) * funnelScale(w, c, a, t), splash: tr.skillSplash && inSkill(a) ? tr.skillSplash : tr.splash, aftershock: tr.aftershock, chain: tr.chain,
-    ...(tr.aftershocks !== 1 ? { aftershocks: tr.aftershocks } : {}),
+    ...hit, amount: hit.amount * traitScale(w, c, a, t) * funnelScale(w, c, a, t), splash, aftershock: tr.aftershock, chain: tr.chain,
+    ...(shocks !== 1 ? { aftershocks: shocks } : {}),
     ...(tr.packed ? { packed: tr.packed } : {}),
     ...(tr.hitMul !== 1 ? { split: tr.hitMul } : {}),
   };
@@ -510,7 +511,9 @@ function selfHeal(w, c, a, reached) {
  * @param {{ load: Load, heals: boolean, area: 'cross' | 'square' | null, share: number, direct: boolean, through: boolean }} how
  */
 function deliver(w, c, a, t, how) {
-  const far = how.heals ? null : fortressSplash(c, a, t), load = far ? { ...loadFor(w, c, a, t, how.load), splash: far } : loadFor(w, c, a, t, how.load);
+  const far = how.heals ? null : fortressSplash(c, a, t), built = loadFor(w, c, a, t, how.load);
+  // A fortress ranged splash replaces the trait's after loadFor (职业-12); the profile's radius still applies to it (职业-8).
+  const load = far ? { ...built, splash: splashNow(a, far) } : built;
   if (how.heals) heals(w, c, a, t, { load, jumps: load.chain ? chainOf(w, c, t, load.chain, { heals: true, antiAir: true }) : [] });
   else if (how.area) for (const u of areaOf(w, a, t, how.area, how.through)) hitTarget(w, c, a, u, u === t ? load : { ...load, amount: load.amount * how.share, hit: 'splash' });
   else if (far || (shoots(c, a, how.heals) && !how.direct)) launch(w, a, t, a.kind === KIND.OPERATOR ? { ...load, boomerang: traitOf(c, a).boomerang } : load);

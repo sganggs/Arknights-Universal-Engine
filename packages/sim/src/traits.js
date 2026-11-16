@@ -239,6 +239,39 @@ export function funnelNow(w, c, op) {
 }
 
 /**
+ * The buff a kit's profile uses to override one attack's splash radius and aftershock count (职业-8, 兼容-4). `value` ≥ 0
+ * is the radius; `n` ≥ 0 is the count. Either below 0 leaves that part of the trait alone. No behaviour: it is only read.
+ */
+export const SHOCK_BUFF = 'profileShock';
+
+/** The override buff, if the unit has one. @param {Unit} u @returns {import('./types.js').Buff | null} */
+function shockBuff(u) {
+  return u.buffs.find((b) => b.key === SHOCK_BUFF) ?? null;
+}
+
+/**
+ * The splash an attack uses (职业-8): a `profileShock` buff with `value` ≥ 0 replaces the radius of a splash the attack
+ * already has. Scale, ground and side stay. No splash stays none — the buff does not create one.
+ * @param {Unit} a @param {TraitDef['splash']} splash @returns {TraitDef['splash']}
+ */
+export function splashNow(a, splash) {
+  if (!splash) return splash;
+  const b = shockBuff(a);
+  return b && b.value >= 0 ? { ...splash, radius: b.value } : splash;
+}
+
+/**
+ * How many aftershocks an attack has (职业-8): when it already has one (`aftershock` > 0), a `profileShock` buff with
+ * `n` ≥ 0 is that count. Otherwise the trait's count. A unit with no aftershock does not gain one.
+ * @param {Unit} a @param {number} aftershock @param {number} count @returns {number}
+ */
+export function aftershockCount(a, aftershock, count) {
+  if (!(aftershock > 0)) return count;
+  const b = shockBuff(a);
+  return b && b.n >= 0 ? b.n : count;
+}
+
+/**
  * What an operator's trait behaviour makes of the 生命回复速度 its regeneration aura gives an operator (职业-6: `regen`), as a
  * function of the operator and the amount; null without one.
  * @param {World} w @param {Content} c @param {Unit} op @returns {((target: Unit, amount: number) => number) | null}
