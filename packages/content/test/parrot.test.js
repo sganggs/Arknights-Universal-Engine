@@ -112,7 +112,7 @@ test('[敌能-147] [关卡-2] the page marker covers 吉兆飞鳞; 噩兆飞鳞 
   assert.deepEqual(uncoveredAbilities([parrot()]), NAMES, 'without the marker');
   assert.equal(FOE_EXTRAS.enemy_10045_parrot_2, undefined);
   assert.deepEqual(uncoveredAbilities([withFoeExtras('enemy_10045_parrot_2', parrot({}, 'enemy_10043_sailor_2'))]), NAMES, '噩兆飞鳞');
-  assert.deepEqual(uncoveredAbilities([withFoeExtras(SAILOR, sailor())]), ['1', 'MoveSpeedUp'], '寻险水手 is not covered: 搬运模式 is out');
+  assert.deepEqual(uncoveredAbilities([withFoeExtras(SAILOR, sailor())]), ['1'], '寻险水手 is not covered: 搬运模式 is out, its talent 1 stays uncovered (MoveSpeedUp is covered, 敌能-165)');
 });
 
 /** The other users of `Stun` and `Mode` (enemy_database 17759cc8), each with only that talent. @type {[string, string, Record<string, number>][]} */

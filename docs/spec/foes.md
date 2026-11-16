@@ -2101,3 +2101,12 @@ Dor-1号失败品（`enemy_1251_lysyta`）、Dor-α号失败品（`enemy_1251_ly
 - **不在本条**：封冻的区域与紧急供暖器本身。
 
 - 来源：[PRTS「访问团持盾者」oldid=353898](https://prts.wiki/index.php?title=%E8%AE%BF%E9%97%AE%E5%9B%A2%E6%8C%81%E7%9B%BE%E8%80%85&oldid=353898) 能力「·在<封冻>的区域内防御力与法抗逐渐升高，进入"紧急供暖器"生效范围内防御力与法抗逐渐降低」，描述「在封冻的区域内防御力与法抗逐渐升高；进入紧急供暖器生效范围内防御力与法抗逐渐降低。」，天赋「每3s获得1层增益：防御力+10%，法术抗性+5（上限10层）」「位于点燃的紧急供暖器范围内时，停止获得以上增益且每3s减少1层」；[PRTS「访问团持盾长」oldid=353899](https://prts.wiki/index.php?title=%E8%AE%BF%E9%97%AE%E5%9B%A2%E6%8C%81%E7%9B%BE%E9%95%BF&oldid=353899) 能力、天赋同上；数据：enemy_database（ArknightsGameData 17759cc8）级别 0 的这两名，天赋 `ColdShield`、`MeltShield`、`Shield` 的上述各值
+
+### 敌能-165 架桥船工、扶桥老手的施工与寻险水手、历险水手的 `MoveSpeedUp`
+
+架桥船工（`enemy_10042_prtrop`）、扶桥老手（`enemy_10042_prtrop_2`）的技能 `BuildBridge`（施工：`bridge_duration` 150、`loop_duration` 5、`time_each_tile` 2、`interval` 2、`extra_skill_time` 1）只在悬索桥起点地形上触发，停止移动和攻击，向盐漠地形架设悬索桥并维持；寻险水手（`enemy_10043_sailor`）、历险水手（`enemy_10043_sailor_2`）的天赋 `MoveSpeedUp`（`move_speed` 2、`speed_up_duration` 1）在悬索桥上、被盐坨子炮传送后 1 秒内，移动速度提升至 200%。引擎的关卡里没有悬索桥起点与盐漠地形，也没有悬索桥和盐坨子炮，这两项都不会发生。同敌能-116，按覆盖处理，没有效果（推断 INF-1260）。这几名不在已收录的关卡里。
+
+- **形状**（关卡-2）：`BuildBridge` 正好是上面五个数字键，没有别的敌人用这个名字。`MoveSpeedUp` 是几名敌人共用的名字：正好是数字键 `move_speed`、`speed_up_duration` 的才是两名水手的；反装甲步兵、反装甲步兵组长、榴弹佣兵的（只有 `move_speed`）仍未覆盖。少一个键、多一个键、值不是数字，仍未覆盖。
+- **不在本条**：悬索桥、悬索桥起点与盐漠地形、盐坨子炮本身；两名水手的天赋 `1`（场上存在爆鸣水手长或美声水手长时，攻击附加自身攻击力 30% 的侵蚀损伤），仍未覆盖；两名船工页面写的隐匿（数据里没有这项天赋），也不在本条。
+
+- 来源：[PRTS「架桥船工」oldid=354068](https://prts.wiki/index.php?title=%E6%9E%B6%E6%A1%A5%E8%88%B9%E5%B7%A5&oldid=354068) 描述「隐匿，可以搭建并维持悬索桥」，技能施工「该技能仅可触发1次」「停止移动和攻击，以悬索桥起点地形预设方向向盐漠地形持续架设悬索桥」；[PRTS「扶桥老手」oldid=378685](https://prts.wiki/index.php?title=%E6%89%B6%E6%A1%A5%E8%80%81%E6%89%8B&oldid=378685) 描述「隐匿，可以搭建并维持悬索桥」，技能「以悬索桥起点地形预设方向向盐漠地形持续架设悬索桥」；[PRTS「寻险水手」oldid=357058](https://prts.wiki/index.php?title=%E5%AF%BB%E9%99%A9%E6%B0%B4%E6%89%8B&oldid=357058) 能力「·经过悬索桥或被<盐坨子炮>传送时，移动速度短暂提升」，天赋「位于悬索桥时/被盐坨子炮传送后1s内，移动速度提升至200%」；[PRTS「历险水手」oldid=357057](https://prts.wiki/index.php?title=%E5%8E%86%E9%99%A9%E6%B0%B4%E6%89%8B&oldid=357057) 天赋同上；数据：enemy_database（ArknightsGameData 17759cc8）级别 0 的这四名，技能 `BuildBridge` 与天赋 `MoveSpeedUp` 的上述各值
