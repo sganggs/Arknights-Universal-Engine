@@ -6,6 +6,7 @@ import { tinyContent } from '@aue/testkit';
 import { KIND } from '@aue/schema';
 import { createWorld, step, stateHash, takeSnapshot, restoreSnapshot } from '../src/index.js';
 import { makeEnemy, makeOperator } from '../src/units.js';
+import { makeDevice } from '../src/units.js';
 import { foeSpawn, BOLT_RADIUS } from '../src/foes.js';
 import { addBuff, makeBuff } from '../src/buffs.js';
 
@@ -87,6 +88,43 @@ test('[敌能-2] holdCooldown: a turn held does not count — a skill held for 1
   const e = foe(idle.w, idle.c, 1, 3);
   run(idle.w, idle.c, 3);
   assert.equal(e.ab['zap.cd'], 0, 'holding a ready skill keeps it at 0');
+});
+
+test('[敌能-2] an initCooldown below 0 (the data\'s −1) is ready on its first turn, and again after resetSkills; a cooldown below 0 still uses it once', () => {
+  /** @param {number} init */
+  const zaps = (init) => {
+    /** @type {any[]} */
+    const seen = [];
+    let first = -1;
+    const { c, w } = arena({ skills: [{ key: 'zap', cooldown: -1, initCooldown: init, bb: {} }] }, {
+      zap: {
+        tick: (/** @type {any} */ ctx) => {
+          if (first < 0) first = ctx.frame;
+          if (ctx.ready) { seen.push(['zap', ctx.frame - first]); ctx.use(); }
+          if (ctx.frame - first === 30) ctx.resetSkills();
+        },
+      },
+    });
+    foe(w, c, 1, 3);
+    run(w, c, 90);
+    return seen;
+  };
+  assert.deepEqual(zaps(-1), [['zap', 0], ['zap', 31]], 'ready at once, used once, ready the turn after the reset');
+  assert.deepEqual(zaps(-1), zaps(0), 'as an initCooldown of 0');
+  assert.deepEqual(zaps(0.5), [['zap', 15], ['zap', 45]], 'a positive initCooldown still counts its 15 frames, from spawning and from the reset');
+});
+
+test('[敌能-157] readyOf: another of its skills, by name, is ready once its own cooldown is over; a name it has no skill of is not', () => {
+  /** @type {[number, boolean, boolean, boolean][]} */
+  const seen = [];
+  const { c, w } = arena({ skills: [{ key: 'a', cooldown: 1, initCooldown: 0, bb: {} }, { key: 'b', cooldown: 1, initCooldown: 0.5, bb: {} }] }, {
+    a: { tick: (/** @type {any} */ ctx) => { seen.push([ctx.frame, ctx.readyOf('b'), ctx.readyOf('a'), ctx.readyOf('nope')]); } },
+  });
+  foe(w, c, 1, 3);
+  run(w, c, 20);
+  const first = seen[0][0];
+  assert.deepEqual(seen.filter(([, b]) => b).map(([f]) => f - first)[0], 15, "b's 0.5 s first cooldown is 15 frames");
+  assert.ok(seen.every(([, , a, nope]) => a && !nope), 'a ready all along; no skill of that name is never ready');
 });
 
 test('[敌能-2] targets and attack hooks change whom an enemy attacks and how', () => {
@@ -299,4 +337,24 @@ test('[敌能-86] a blast with all hits every unit in the radius, enemies includ
   assert.equal(near.hp, 90);
   assert.equal(far.hp, 100);
   assert.equal(e.hp, 990);
+});
+
+test('[敌能-151] the context\'s device: a device unit, and an operator unit whose record is a 装置 — profession TRAP, or a 装置类 summon; not an operator, another summon or an enemy', () => {
+  /** @type {Unit[]} */
+  const units = [];
+  /** @type {boolean[]} */
+  const seen = [];
+  const { c, w } = arena({ talents: { probe: {} } }, {
+    probe: { tick: (/** @type {any} */ ctx) => { if (seen.length === 0) seen.push(...units.map((u) => ctx.device(u))); } },
+  });
+  c.operators.trap = { ...c.operators.guard, profession: 'TRAP' };
+  c.operators.drone = { ...c.operators.sniper, summon: { device: true } };
+  c.operators.pet = { ...c.operators.sniper, summon: { device: false } };
+  c.devices = { box: { name: 'box', maxHp: 100, atk: 0, def: 0, res: 0, blockCnt: 0, baseAttackTime: 1, aspd: 100, tauntLevel: 0, massLevel: 0, talentBb: {} } };
+  const box = makeDevice(w, c, { alias: 'box#1', key: 'box', hidden: false, row: 1, col: 1, dir: 'UP' });
+  w.units.push(box);
+  const e = foe(w, c, 1, 4);
+  units.push(box, op(w, c, 'trap', 1, 2), op(w, c, 'drone', 0, 4), op(w, c, 'guard', 1, 3), op(w, c, 'pet', 2, 4), e);
+  run(w, c, 1);
+  assert.deepEqual(seen, [true, true, true, false, false, false]);
 });

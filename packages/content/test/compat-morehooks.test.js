@@ -1,4 +1,4 @@
-// 钩子-5's events as kits see them (docs/spec/compat.md 兼容-7): statusApplied with Stronghold's names and seconds,
+// 钩子-5's events as kits see them (docs/spec/compat.md 兼容-8): statusApplied with Stronghold's names and seconds,
 // enemyAttackStart with its units — a stun a kit gives there cancels the attack —, palsyTrigger with the 麻痹 buff and
 // `keep`; then the pinned kits that listen to them, unchanged: 真言's 噤声限域 and 酒神's 堕梦.
 import { test, before } from 'node:test';
@@ -71,7 +71,7 @@ const layersOf = (u) => u.buffs.find((/** @type {any} */ x) => x.key === 'palsy'
  */
 const hold = (w, key) => bus.on(w, 'enter', (k) => { if (k.unit.key === key) buffs.addBuff(k.unit, buffs.makeBuff({ key: 'test:hold', flags: { noAttack: true } })); });
 
-test('[兼容-7] a kit sees statusApplied in Stronghold\'s names and seconds, a stand-in\'s too; enemyAttackStart with its units, a stun there cancelling the attack; palsyTrigger\'s buff and keep', () => {
+test('[兼容-8] a kit sees statusApplied in Stronghold\'s names and seconds, a stand-in\'s too; enemyAttackStart with its units, a stun there cancelling the attack; palsyTrigger\'s buff and keep', () => {
   const log = /** @type {any[]} */ ([]);
   const kit = () => ({ skills: {}, install(/** @type {ShBattle} */ b, /** @type {any} */ u) {
     b.on('statusApplied', (k) => { log.push(['applied', k.status, k.duration, k.value, k.entered, k.source?.defId ?? null, k.target.defId]); }, { owner: u });
@@ -119,7 +119,7 @@ function mantraMatch(bb) {
   return { ...m, me, hush };
 }
 
-test('[兼容-7] [钩子-5] 真言\'s kit, unchanged: 麻痹 interrupting an enemy\'s attack deals her attack now × atk_scale as 元素伤害; prob 1 keeps the layer, 0 spends it', () => {
+test('[兼容-8] [钩子-5] 真言\'s kit, unchanged: 麻痹 interrupting an enemy\'s attack deals her attack now × atk_scale as 元素伤害; prob 1 keeps the layer, 0 spends it', () => {
   for (const [scale, prob, layers] of [[2.5, 1, 2], [1.25, 0, 1]]) {
     const { b, slime, me, hush, run } = mantraMatch({ atk_scale: scale, prob });
     const shots = run(45);
@@ -147,7 +147,7 @@ function phatmMatch(value, at, dir) {
   return { ...m, ep };
 }
 
-test('[兼容-7] [钩子-5] 酒神\'s kit, unchanged: an enemy of her range whose attack lands takes 堕梦\'s value as 神经损伤 first; the burst it causes interrupts that attack', () => {
+test('[兼容-8] [钩子-5] 酒神\'s kit, unchanged: an enemy of her range whose attack lands takes 堕梦\'s value as 神经损伤 first; the burst it causes interrupts that attack', () => {
   const { b, slime, ep, run } = phatmMatch(41, [0, 3], 0);
   const shot = run(45);
   assert.deepEqual([ep, shot.length], [[[1000, 959]], 1], 'value 41; that attack lands');

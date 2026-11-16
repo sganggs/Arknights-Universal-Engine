@@ -38,6 +38,7 @@ import { sameTargetStep, attackerHit, critScale, powerAttack, ammoChance } from 
 import { timedAttack, attackEnded } from './talenttime.js';
 import { lowestArts } from './talentfoe.js';
 import { palsyCut, epOnHit, healDotOn } from './talentelem.js';
+import { disarmed } from './disarm.js';
 import { strikes, swingLost } from './hookmore.js';
 
 /** @typedef {import('./types.js').World} World @typedef {import('./types.js').Unit} Unit @typedef {import('./types.js').Content} Content */
@@ -685,7 +686,8 @@ function crit(op, out, k) {
 /**
  * Every operator's turn this frame (攻击-1). It lets go of what its block count no longer holds (阻挡-3); its skill runs
  * (技能-2…技能-4); then, if it can act (not 晕眩, 冻结 …), its attack — one that cannot act neither attacks nor counts
- * its cooldown down, and loses the swing it was in (攻击-2).
+ * its cooldown down, and loses the swing it was in (攻击-2); one under 缴械 or 强制缴械 the same, and it stands idle
+ * (状态-12: no reload, no stored energy either).
  * @param {World} w @param {Content} c
  */
 export function operatorsAttack(w, c) {
@@ -696,8 +698,9 @@ export function operatorsAttack(w, c) {
     traitWhiles(w, c, op);
     tickSkill(w, c, op);
     skillIdle(op, traitOf(c, op));
-    if (!statsOf(op).disabled) operatorAttack(w, c, op);
-    else op.swing = null;
+    if (statsOf(op).disabled) op.swing = null;
+    else if (disarmed(op)) { op.swing = null; op.anim = ANIM.IDLE; }
+    else operatorAttack(w, c, op);
   }
 }
 
@@ -788,7 +791,7 @@ function takeHold(e) {
  * An enemy's attack this frame (敌人攻击-1, 攻击-2): like an operator's — a swing under way goes on; the cooldown counts
  * down while it can act; when it is out and there is a target, the first in the official order (索敌-5) — as many as
  * its abilities' mods say (敌能-2), one by default — are locked and a swing starts — not while it is blocked under 战栗 (状态-5; a swing under way goes on). One that cannot act, has no
- * attack or has disappeared loses its swing. A hit that asked for its next attack at once (敌能-44) clears the cooldown
+ * attack or has disappeared loses its swing, and so does one under 缴械 or 强制缴械 (状态-12). A hit that asked for its next attack at once (敌能-44) clears the cooldown
  * before it is counted. Returns whether it is attacking this frame (it does not walk).
  * @param {World} w @param {Content} c @param {Unit} e
  */

@@ -565,7 +565,7 @@
  * the operator's skill runs (`skillGround`), has less than `value` of its maximum HP (`hpBelow`), has a 重量等级 of at least
  * `value` (`heavy`), stands on the line of tiles straight in front of the operator (`front`), on its tile or the 8 around
  * (`near`), is in an element burst (`burst`), stands on a ground tile (`onGround`), or the hit is the skill's (`skill`);
- * `noDodge`: such a physical hit cannot be dodged; × `ep` on the 元素损伤 it deals the target, an elite or leader (`elite`).
+ * `noDodge`: no dodge cancels such a physical hit, though it is drawn (伤害-12); × `ep` on the 元素损伤 it deals the target, an elite or leader (`elite`).
  * From talents (职业-24): the target is blocked by no unit (`unblocked`), not by the operator (`notOwnBlocked`), has more
  * than `value` of its maximum HP (`hpAbove`), a 重量等级 of at most `value` (`light`), the tag `tag` (`tag`), a ranged
  * attack (`rangedFoe`), the status `status` (`status`); `defFlat`, `defPct` more 无视防御 for the hit. From talents on the
@@ -773,6 +773,8 @@
  * @property {boolean} [unharmful] it costs no life at the goal (目标-1)
  * @property {Record<string, number>} ab an enemy's ability state (敌能-2): cooldowns, marks, what it saw last turn;
  *   `@taken` counts accepted hits once an ability of its asks (敌能-38); absent otherwise, and never on an operator
+ *   (`@highBump`, 敌能-150: a 失衡 slide of its stopped against high ground, 1 until its turn's abilities saw it; kept
+ *   the same way, only once an ability of its asks)
  * @property {SkillState | null} skill its skill, null when it has none (技能-1)
  * @property {Record<string, number>} ep element values below their maximum, by element (元素-1); none recorded is at its maximum
  * @property {number} paid the cost its deployment took, 0 for enemies (撤退-1)

@@ -27,3 +27,41 @@ export const DIRECT_BONUS_STACKING = 'add';
 export const CHAIN_RADIUS = 1.7;
 /** An element gauge's top (Stronghold v0.2.4 constants.js ELEMENT_GAUGE_MAX; its chess kit 哈洛德). */
 export const ELEMENT_GAUGE_MAX = 1000;
+
+// Stronghold v0.4.0's values of the names its battle content beyond the kits imports (兼容-7).
+
+/** Seconds an attack's wind-up shows (莱塔尼亚's 余音). */
+export const ATTACK_ANIM_TIME = 0.35;
+/** Squared contact distances of blocking, by what blocks. */
+export const BLOCK_RADIUS_SQ = Object.freeze({ ground: 0.49999037, fly: 0.79995137, device: 0.4472 * 0.4472 });
+/** A boss field's rows below the board's (board row − 7). */
+export const BOSS_ROW_OFFSET = -7;
+/** An ally's collider radius, in tiles. */
+export const ALLY_COLLIDER_RADIUS = 0.25;
+/** Seconds an enemy's 隐匿 takes to return after a block ends. */
+export const STEALTH_RESTORE = 3;
+/** The most enemies alive on a field. */
+export const MAX_ALIVE_ENEMIES = 600;
+/** Element bursts on allies and on enemies, by Stronghold's element name. */
+export const ELEMENT = Object.freeze({
+  burn: Object.freeze({
+    burstDamage: 1200, burstType: 'arts', resDown: 20, duration: 10,
+    ally: Object.freeze({ damage: 1200, type: 'arts', resDown: 20, duration: 10 }),
+    enemy: Object.freeze({ elemDamage: 7000, resDown: 20, duration: 10 }),
+  }),
+  neural: Object.freeze({
+    burstDamage: 1000, burstType: 'true', stun: 10, duration: 10,
+    ally: Object.freeze({ damage: 1000, type: 'true', stun: 10, duration: 10 }),
+    enemy: Object.freeze({ elemDamage: 6000, palsy: 3, duration: 10 }),
+  }),
+  apoptosis: Object.freeze({
+    dps: 100, duration: 15,
+    ally: Object.freeze({ dps: 100, dpsType: 'arts', spLossPerSec: 1, duration: 15 }),
+    enemy: Object.freeze({ elemDps: 800, weaken: 0.5, duration: 15 }),
+  }),
+  erosion: Object.freeze({
+    ally: Object.freeze({ damage: 800, type: 'phys', defDown: 100, duration: 10 }),
+    enemy: Object.freeze({ elemDamage: 5000, defDown: 120, duration: 8 }),
+  }),
+  necrosis: Object.freeze({ dps: 100, duration: 12, atkDownPct: 0.2 }),
+});

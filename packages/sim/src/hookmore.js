@@ -4,6 +4,7 @@
 import { KIND } from '@aue/schema';
 import { statsOf } from './attrs.js';
 import { emit, hasHook } from './bus.js';
+import { disarmed } from './disarm.js';
 
 /** @typedef {import('./types.js').World} World @typedef {import('./types.js').Unit} Unit @typedef {import('./types.js').Buff} Buff */
 /** @typedef {import('./types.js').Swing} Swing */
@@ -33,13 +34,14 @@ export function announce(w, target, src, had, b) {
 export const palsyKept = (w, e, b) => hasHook(w, 'palsyTrigger') && !!emit(w, 'palsyTrigger', { enemy: e, buff: b, keep: false }).keep;
 
 /**
- * Whether an enemy loses an attack under way (攻击-2 step 4, 敌人攻击-1, 状态-10): it cannot act, has no attack, has
- * disappeared, may not attack (`noAttack`) or is afraid (恐惧). The one list for both an enemy's turn (combat.js
- * enemyAttack) and its attack landing after the `enemyAttackStart` handlers, so a reason added here holds for both.
+ * Whether an enemy loses an attack under way (攻击-2 step 4, 敌人攻击-1, 状态-10, 状态-12): it cannot act, has no attack,
+ * has disappeared, may not attack (`noAttack`), is afraid (恐惧) or is under 缴械 or 强制缴械 (two of the eight 阻止攻击:
+ * it may walk). The one list for both an enemy's turn (combat.js enemyAttack) and its attack landing after the
+ * `enemyAttackStart` handlers, so a reason added here holds for both.
  * @param {Unit} e @param {import('./attrs.js').Stats} [s] @returns {boolean}
  */
 export function swingLost(e, s = statsOf(e)) {
-  return s.disabled || s.atk <= 0 || !!e.hidden || !!s.flags.noAttack || !!s.flags.fear;
+  return s.disabled || s.atk <= 0 || !!e.hidden || !!s.flags.noAttack || !!s.flags.fear || disarmed(e);
 }
 
 /**
