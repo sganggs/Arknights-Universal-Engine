@@ -287,15 +287,17 @@ export function canClose(c, op) {
 /**
  * When an AUTO skill starts (技能-3): as its behaviour says — or as its behaviour works out now; a function that answers
  * `undefined` has no opinion and the default stands —, else an instant one, or one of an operator that makes no normal
- * attacks (职业-13), as soon as it is ready and the others as the operator is about to attack — one that throws a 炼金单元
- * at the enemies needs a target (技能-13). Anything that is not `'ready'` or `'attack'` means not now.
+ * attacks (职业-13) or makes them only while its skill runs (职业-12), as soon as it is ready and the others as the
+ * operator is about to attack — one that throws a 炼金单元 at the enemies needs a target (技能-13). Anything that is not
+ * `'ready'` or `'attack'` means not now.
  * @param {World} w @param {Content} c @param {Unit} op @returns {string}
  */
 function triggerOf(w, c, op) {
   const def = defOf(c, op), t = behaviorOf(c, def.id).trigger, given = typeof t === 'function' ? t(contextOf(w, c, op)) : t;
   if (given !== undefined) return given;
   if (def.alchemy) return def.alchemy.at === 'enemy' ? 'attack' : 'ready';
-  return kindOf(def) === 'instant' || traitOf(c, op).noAttack ? 'ready' : 'attack';
+  const tr = traitOf(c, op);
+  return kindOf(def) === 'instant' || tr.noAttack || tr.attackInSkill ? 'ready' : 'attack';
 }
 
 /**

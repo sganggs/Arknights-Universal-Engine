@@ -213,6 +213,13 @@ function talentTraitOf(talents) {
 }
 
 /**
+ * The fields of an operator record that only its talents give (talentFields). A kit applies its talents itself, so a
+ * kitted operator's record leaves them out (兼容-6, index.js withoutTalents): this list is what it strips, and
+ * talentFields refuses a field that is not on it, so that a new talent field cannot be applied twice.
+ */
+export const TALENT_FIELDS = Object.freeze(['talentBb', 'talentMods', 'fieldTalents', 'rangeTalents', 'critTalents', 'timedTalents', 'deployTalents', 'talentTrait', 'fieldAspd']);
+
+/**
  * The talent fields of an operator record (干员-6, 干员-9, 干员-11…干员-14, 干员-16…干员-19): the talents as they read for
  * the skill brought (干员-6); the always-on part's 部署费用 and 再部署时间 to fold in and the rest as `talentBb`, its
  * effects' modifiers as `talentMods`, the on-field team talents, the in-range, chance, timed and deployment talents, what
@@ -231,12 +238,11 @@ function talentFields(t, b, mod) {
     ['critTalents', [...talents.map(critPart).filter((p) => p !== null), ...talents.flatMap((c) => fightParts(c)?.crit ?? []), ...talents.flatMap((c) => lastParts(c)?.crit ?? [])]], ['timedTalents', talents.map(timedPart).filter((p) => p !== null)],
     ['deployTalents', talents.map(deployPart).filter((p) => p !== null)]];
   const aspd = talents.find((x) => Number.isFinite(x.bb.attack_speed_ally) && Number.isFinite(x.bb.attack_speed_enemy))?.bb;
-  return {
-    cost, respawn,
-    fields: { ...(Object.keys(talentBb).length ? { talentBb } : {}), ...(Object.keys(talentMods).length ? { talentMods } : {}), ...Object.fromEntries(lists.filter(([, v]) => v.length > 0)),
-      ...(talentTrait ? { talentTrait } : {}),
-      ...(aspd ? { fieldAspd: { ally: aspd.attack_speed_ally, enemy: aspd.attack_speed_enemy, cnt: aspd.cnt ?? 6, allyExtra: aspd.attack_speed_ally_extra ?? 0, enemyExtra: aspd.attack_speed_enemy_extra ?? 0 } } : {}) },
-  };
+  const fields = { ...(Object.keys(talentBb).length ? { talentBb } : {}), ...(Object.keys(talentMods).length ? { talentMods } : {}), ...Object.fromEntries(lists.filter(([, v]) => v.length > 0)),
+    ...(talentTrait ? { talentTrait } : {}),
+    ...(aspd ? { fieldAspd: { ally: aspd.attack_speed_ally, enemy: aspd.attack_speed_enemy, cnt: aspd.cnt ?? 6, allyExtra: aspd.attack_speed_ally_extra ?? 0, enemyExtra: aspd.attack_speed_enemy_extra ?? 0 } } : {}) };
+  for (const k of Object.keys(fields)) if (!TALENT_FIELDS.includes(k)) throw new Error(`talentFields: ${k} is not in TALENT_FIELDS`);
+  return { cost, respawn, fields };
 }
 
 /**

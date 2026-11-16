@@ -3,16 +3,20 @@
 // to the engine's unit while it is deployed, unbound in between — so the hooks its kit installs once see every
 // deployment. An enemy is the engine's unit itself. Fields Stronghold's kits keep their own state in (`mem`, `trait`)
 // live here, outside the engine's state (ADR 0057).
-import { KIND, attrs, body, traits, buffs, status, damage, blocking, dir, elements, routes, reachKeys, setRange, setAtkCd, deck } from '@aue/sim';
+import { KIND, attrs, body, traits, buffs, status, damage, blocking, dir, elements, routes, reachKeys, setRange, setAtkCd, deck, targeting } from '@aue/sim';
 import { ShSkill } from './skill.js';
 import { STATUS_NAME, ELEMENT, buffKeyOf, buffNameOf, shFlagsOf } from './mods.js';
 import { STAND_INS } from './standins.js';
 import { setRespawn } from './players.js';
+import { traitOfPiece, funnelNext } from './traitview.js';
 
 /** @typedef {import('@aue/sim').Unit} Unit @typedef {import('@aue/sim').Buff} Buff @typedef {import('./battle.js').ShBattle} ShBattle */
 
 /** Frames a second (时间-1). */
 const FPS = 30;
+
+/** When each engine unit last lost HP, in battle seconds (kits.js keeps it from the engine's `damaged`): a deployment's unit is its own. @type {WeakMap<object, number>} */
+export const hurtAt = new WeakMap();
 
 /** Whether a unit is 寒冷 (状态-5: its cold status in effect), which Stronghold keeps as the flag `cold`. @param {Unit} u */
 const chilled = (u) => attrs.activeBuffs(u.buffs).some((x) => x.key === 'cold' || x.key === 'enemyCold');
@@ -62,10 +66,22 @@ export class ShBuff {
  * The fields of a unit's attack profile that something in the layer reads when a kit writes them: the selection of targets
  * and of what may be selected (`maxTargets`, `priority`, `allInRange`, `hitAllBlocked`, `canHitFly`, `groundOnly`, `hitSleep`,
  * `skipEnemy`, `rangeTiles`, `attackRangeRadius`; 索敌-2), which the layer's target helpers take from the profile a kit passes
- * them. The engine's own attack reads none of the unit's profile: a write to any other field is kept and has no effect, and
- * is recorded as a gap (ShUnit.noteGap).
+ * them. The engine's own attack reads no other field of the unit's profile, but for a unit that has a funnel (职业-12) its `funnel`
+ * and `funnelMul` (off when it is null), through the trait behaviour (ShUnit.funnelOverride): a write to any other is kept and
+ * has no effect, and is recorded as a gap (ShUnit.noteGap).
  */
 const PROFILE_READ = Object.freeze(new Set(['maxTargets', 'priority', 'allInRange', 'hitAllBlocked', 'canHitFly', 'groundOnly', 'hitSleep', 'skipEnemy', 'rangeTiles', 'attackRangeRadius']));
+/** The profile fields the engine reads of a unit with a funnel. */
+const FUNNEL_FIELDS = Object.freeze(new Set(['funnel', 'funnelMul']));
+
+/**
+ * The fields of a kit's own `trait` the layer honours (兼容-5): the callbacks it runs (specs.js KIT_TRAIT_BEHAVIOR, onAttackHit,
+ * onSpecHit, onBoomerangHit), its own `install`, and the fields that reach the engine's trait data (kits.js attackFrom, modeFrom;
+ * `rampInit`: the engine's charge takes a 解放者's starting bonus from the module's blackboard, 职业-12). Any other field has no
+ * effect and is recorded as a gap (ShUnit.noteTraitGaps).
+ */
+const TRAIT_USED = Object.freeze(new Set(['canAttack', 'skipEnemy', 'storeEnergy', 'dmgMul', 'hitsFn', 'afterHit', 'afterAttack', 'onEachHit', 'boomerangOnward', 'install',
+  'splashRadius', 'onHitStatus', 'hits', 'hitDmgMul', 'noAttackUnlessSkill', 'hitSleep', 'rangeTiles', 'maxTargets', 'blockFly', 'dollNoAttack', 'rampInit']));
 
 /** Whether a kit's write changes a profile field: the same value (also a copy of an object) is not a change. @param {unknown} a @param {unknown} b */
 function sameField(a, b) {
@@ -131,7 +147,8 @@ export class ShUnit {
     this.pieceId = o.pieceId ?? -1;
     this.side = o.kind === 'enemy' ? 'enemy' : 'ally';
     /** @type {Record<string, any>} */ this.mem = {};
-    /** @type {Record<string, any>} */ this.trait = {};
+    /** @type {Record<string, any>} what a profession keeps of a unit: a plain object, but for the fields the engine keeps too (traitview.js) */
+    this.trait = traitOfPiece(this);
     /** @type {Record<string, any>[]} buffs that outlive a deployment (`persist`), given again at each */
     this.persist = [];
     this.deploySeq = 0;
@@ -225,6 +242,9 @@ export class ShUnit {
   /** Seconds until its next attack may start; a kit may set them (whole frames). */
   get atkCd() { return this.u ? this.u.atkCd / FPS : 0; }
   set atkCd(s) { if (this.u) setAtkCd(this.u, Number(s) * FPS); }
+  /** When it last lost HP, in battle seconds: −Infinity until it does, for each deployment (Stronghold's `lastHitAt`). */
+  get lastHitAt() { return (this.u ? hurtAt.get(this.u) : undefined) ?? -Infinity; }
+  set lastHitAt(t) { if (this.u) hurtAt.set(this.u, Number(t)); }
   /** The unit's attributes now (属性-1…属性-3). */
   /** Its attributes now, its flags as a kit reads them (兼容-4). */
   get s() {
@@ -278,6 +298,14 @@ export class ShUnit {
     this.gaps.add(mark);
     this.b.errors.push({ label: name, who: this.defId, message: `compat: ${name} is not provided yet` });
   }
+  /**
+   * Records each field of a kit's own `trait` that the layer does not honour (TRAIT_USED), once for the unit and name:
+   * `compat: trait.<name> is not provided yet`.
+   * @param {unknown} trait
+   */
+  noteTraitGaps(trait) {
+    if (trait && typeof trait === 'object') for (const name of Object.keys(trait)) if (!TRAIT_USED.has(name)) this.noteGap(`trait.${name}`);
+  }
   /** What a kit set in the piece's `base`, by name (a piece's; see base). @type {Record<string, any>} */
   baseSet = {};
   /** @type {Record<string, any> | null} */
@@ -311,44 +339,82 @@ export class ShUnit {
   /** An operator's attack range now (索敌-1, 技能-8): its tile keys. */
   get rangeKeySet() { return this.u && this.u.kind === KIND.OPERATOR ? new Set(reachKeys(this.b.c, this.u)) : new Set(); }
   get rangeKeys() { return [...this.rangeKeySet]; }
+  /**
+   * The tiles of its own range where it stands, as it faces, without a skill's range, extra tiles or any extension — the
+   * range of its default trigger (Stronghold's `baseRangeKeys`, in the order of its grid); none off the field and for a
+   * unit that is not an operator or summon (INF-1100).
+   * @returns {number[] | undefined}
+   */
+  get baseRangeKeys() {
+    const u = this.u, grid = this.rangeGrid;
+    if (!u || u.kind !== KIND.OPERATOR || !this.deployed) return undefined;
+    const cells = (grid ?? [[0, 0]]).map((/** @type {number[]} */ [row, col]) => ({ row, col }));
+    return [...targeting.rangeKeys({ rows: this.b.c.level.height, cols: this.b.c.level.width }, u, cells, 0)];
+  }
   /** Its own range grid: the one a kit gave it on the field, else its record's. A kit may set it (攻击-1); null takes it back. */
   get rangeGrid() { return this.u?.range ? this.u.range.map((x) => [x.row, x.col]) : this.def?.raw?.rangeGrid ?? this.def?.rangeGrid ?? null; }
   set rangeGrid(g) { if (this.u) setRange(this.u, Array.isArray(g) ? g.map(([row, col]) => ({ row, col })) : null); }
   /** Stronghold's stat cache: the engine's are computed when read. */
   markDirty() {}
+  /** The trait data its profile is made of: its engine unit's while deployed, else its content record's (a piece's); null for another unit. @returns {import('@aue/sim').TraitDef | null} */
+  #traitData() {
+    if (this.u?.kind === KIND.OPERATOR && this.deployed) return traits.traitOf(this.b.c, this.u);
+    const d = this.pieceId >= 0 ? this.b.c.operators[this.defId] : undefined;
+    return d ? traits.traitOfDef(d) : null;
+  }
   /**
    * What its attacks may select, as Stronghold's profile names it: an operator's trait (职业-1) — flying units when it can
-   * hit them, its funnel's 倍率 (职业-12); another unit's has only what a kit wrote.
+   * hit them, its hits, the status each gives, its funnel (职业-12), as a piece has them before it is deployed too —, its kit's
+   * own trait (Stronghold lays it over the profession's), then what a kit wrote; another unit's has only what a kit wrote.
    * @returns {Record<string, any>}
    */
   get profile() {
+    const t = this.#traitData();
     /** @type {Record<string, any>} */
-    let own = { ...this.#profileSet };
-    if (this.u?.kind === KIND.OPERATOR) {
-      const t = traits.traitOf(this.b.c, this.u);
-      const tiles = t.rangeTiles === true || this.kit?.trait?.rangeTiles === true;
-      own = { canHitFly: t.antiAir, heal: t.heal, dmgType: this.u.base.dmgType, ...(t.funnel ? { funnel: { ...t.funnel } } : {}), ...(tiles ? { rangeTiles: true } : {}), ...this.#profileSet };
-    }
+    const own = { ...(t ? this.#traitProfile(t) : {}), ...(t && this.kit?.trait && typeof this.kit.trait === 'object' ? this.kit.trait : {}), ...this.#profileSet };
     // a kit that writes a field of it (`unit.profile.funnel = …`) keeps it
     return new Proxy(own, { set: (target, k, v) => {
       const key = /** @type {string} */ (k);
-      if (typeof k === 'string' && !PROFILE_READ.has(k) && !sameField(target[key], v)) this.noteGap(`profile.${k}`);
+      if (typeof k === 'string' && this.#unread(k) && !sameField(target[key], v)) this.noteGap(`profile.${k}`);
       target[key] = v;
       (this.#profileSet ??= {})[key] = v;
       return true;
     } });
   }
+  /** Whether a write to a profile field has no effect: nothing reads it (PROFILE_READ), the funnel's fields of a unit without a funnel. @param {string} k */
+  #unread(k) { return !PROFILE_READ.has(k) && !(FUNNEL_FIELDS.has(k) && !!this.#traitData()?.funnel); }
+  /** The part of its profile the trait data gives (profile). @param {import('@aue/sim').TraitDef} t @returns {Record<string, any>} */
+  #traitProfile(t) {
+    const st = t.hitStatus, d = this.b.c.operators[this.defId];
+    return { canHitFly: t.antiAir, heal: t.heal, dmgType: this.u?.base.dmgType ?? d?.dmgType, hits: t.hits, ...(t.rangeTiles ? { rangeTiles: true } : {}),
+      ...(t.funnel ? { funnel: { ...t.funnel }, funnelMul: this.#funnelMul } : {}),
+      ...(st ? { onHitStatus: { key: STATUS_NAME[st.key] ?? st.key, duration: st.seconds, ...(st.value !== undefined ? { value: st.value } : {}) } } : {}) };
+  }
+  /**
+   * The funnel the profile gives the engine's attack (职业-6, 职业-12): none when a kit wrote `funnelMul` as null or false (a
+   * drone it has taken over); the `funnel` a kit wrote — its numbers — over the trait's; undefined: the trait's.
+   * @returns {{ init: number, delta: number, max: number } | null | undefined}
+   */
+  get funnelOverride() {
+    const set = this.#profileSet, f = set?.funnel;
+    if (!set) return undefined;
+    if (Object.hasOwn(set, 'funnelMul') && !set.funnelMul) return null;
+    const ok = f && typeof f === 'object' && [f.init, f.delta, f.max].every((x) => typeof x === 'number' && Number.isFinite(x));
+    return ok ? { init: f.init, delta: f.delta, max: f.max } : undefined;
+  }
+  /** The `funnelMul` of its profile (PROFILE_READ): a function, as Stronghold's, that gives the 倍率 the engine's funnel would take for the next attack on a target. @type {(b: unknown, u: unknown, target: { u?: Unit | null }) => number} */
+  #funnelMul = (_b, _u, target) => funnelNext(this, target?.u ?? null);
   /**
    * A kit may give the unit another profile (`unit.profile = { ...unit.profile, … }`); it stands for every deployment, null
    * takes it back. What the layer reads of it is the selection of targets (PROFILE_READ). The engine's own attack reads no
-   * field of it, so a field that is changed and not read — a funnel's 倍率, `hits`, `splashRadius`, `atkScale` — is kept,
+   * other field of it, so a field that is changed and not read — `hits`, `splashRadius`, `atkScale` — is kept,
    * has no effect and is recorded once for the unit and field (noteGap).
    * @param {Record<string, any> | null} v
    */
   set profile(v) {
     if (v && typeof v === 'object') {
       const now = this.profile;
-      for (const k of Object.keys(v)) if (!PROFILE_READ.has(k) && !sameField(now[k], v[k])) this.noteGap(`profile.${k}`);
+      for (const k of Object.keys(v)) if (this.#unread(k) && !sameField(now[k], v[k])) this.noteGap(`profile.${k}`);
     }
     this.#profileSet = v && typeof v === 'object' ? { ...v } : null;
   }
