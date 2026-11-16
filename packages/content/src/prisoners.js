@@ -1,9 +1,10 @@
 // 禁锢 and 解放 of the prisoners (docs/spec/foes.md 敌能-17): a prisoner starts confined — slower attacks, for some more
-// defence — and is liberated before its `times`-th attack — stronger, for some armour-piercing, resistant, regenerating
-// or dealing arts damage; the first liberation of one with `all` liberates every prisoner on the field. They act only
-// through the context (ADR 0055).
+// defence — and is liberated before its `times`-th attack — stronger, for some armour-piercing, resistant, regenerating,
+// dealing arts damage or attacking two targets at once (敌能-153); the first liberation of one with `all` liberates every
+// prisoner on the field. They act only through the context (ADR 0055).
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').FoeContext} FoeContext @typedef {import('@aue/sim').Unit} Unit */
+/** @typedef {import('@aue/sim').skills.AttackMods} AttackMods */
 
 /** 解放's modifiers from its blackboard (敌能-17). @param {Record<string, number>} bb @returns {Record<string, number>} */
 const libertyMods = (bb) => ({
@@ -17,10 +18,21 @@ const libertyMods = (bb) => ({
 const free = (ctx, u) => ctx.buffValue(u, 'liberty') !== null;
 
 /**
- * Liberates a prisoner not liberated yet (敌能-17): its 禁锢 buff off, its 解放 buff on.
+ * A liberated prisoner's attack (敌能-17): arts with `arts`; with `attack@max_target` that many targets at once — 术师囚犯's
+ * 「解放后同时攻击两个目标」 (敌能-153). @param {Record<string, number>} lib @param {AttackMods} mods @returns {AttackMods}
+ */
+const freedAttack = (lib, mods) => ({
+  ...mods,
+  ...(lib.arts ? { type: /** @type {const} */ ('arts') } : {}),
+  ...(lib['attack@max_target'] > 0 ? { targets: lib['attack@max_target'] } : {}),
+});
+
+/**
+ * Liberates a prisoner not liberated yet (敌能-17): its 禁锢 buff off, its 解放 buff on. 杰斯顿·威廉姆斯's 杀手形态 liberates
+ * the prisoners on the field with it (敌能-146).
  * @param {FoeContext} ctx @param {Unit} u
  */
-function liberate(ctx, u) {
+export function liberate(ctx, u) {
   const bb = ctx.talentOf(u, 'liberty');
   if (!bb || free(ctx, u)) return;
   ctx.removeBuff(u, 'confinement');
@@ -30,7 +42,7 @@ function liberate(ctx, u) {
 /**
  * 禁锢 (敌能-17): confined from the start; each attack started while confined and not under 麻痹 counts, and before the
  * `times`-th the prisoner is liberated — with `all`, every prisoner on the field with it; liberated, its attacks are
- * arts with `arts`.
+ * `freedAttack`'s, from the attack that liberates it on.
  * @type {FoeBehavior}
  */
 const confinement = Object.freeze({
@@ -45,7 +57,7 @@ const confinement = Object.freeze({
         if (lib.all) for (const u of ctx.allies(Infinity)) liberate(ctx, u);
       }
     }
-    return free(ctx, self) && lib.arts ? { ...mods, type: 'arts' } : mods;
+    return free(ctx, self) ? freedAttack(lib, mods) : mods;
   },
 });
 

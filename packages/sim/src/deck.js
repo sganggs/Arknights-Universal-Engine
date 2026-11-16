@@ -72,20 +72,37 @@ const deckWith = (c, key) => (c.decks ? c.decks.find((d) => d.includes(key)) ?? 
 export const deckOf = (c, seat) => (c.decks ? c.decks[seat] ?? [] : Object.keys(c.operators).filter((k) => !c.operators[k].summon));
 
 /**
+ * Sums values, each id's once: of several — copies of one operator in a deck (同步-9) — the one `pick` keeps (部署-10).
+ * @param {Iterable<[string, number]>} items @param {(a: number, b: number) => number} pick
+ */
+function sumOnce(items, pick) {
+  /** @type {Map<string, number>} */
+  const best = new Map();
+  for (const [id, v] of items) { const was = best.get(id); best.set(id, was === undefined ? v : pick(was, v)); }
+  let n = 0;
+  for (const v of best.values()) n += v;
+  return n;
+}
+
+/** The operator id a card counts by for its deck's talents (部署-10): copies of one operator are one. @param {Content} c @param {string} k */
+const idOf = (c, k) => c.operators[k].char ?? k;
+
+/**
  * The cuts the talents of a card's deck give it (部署-10): each `costCuts` of an operator in the deck — not for the field
- * — that is for the card, one with `first` only while the seat has deployed none it is for.
+ * — that is for the card, one with `first` only while the seat has deployed none it is for; copies of one operator give
+ * each cut once, the largest.
  * @param {Content} c @param {Player} p @param {string} key @param {import('./types.js').OperatorDef} d
  */
 function deckCut(c, p, key, d) {
-  let n = 0;
-  const deck = deckWith(c, key);
+  const deck = deckWith(c, key).filter((k) => Object.hasOwn(c.operators, k));
+  /** @type {[string, number][]} */
+  const cuts = [];
   for (const k of deck) {
-    for (const x of Object.hasOwn(c.operators, k) ? traitOfDef(c.operators[k]).costCuts : []) {
-      if (x.field || !cutFits(x, d)) continue;
-      if (!x.first || !deck.some((o) => Object.hasOwn(c.operators, o) && cutFits(x, c.operators[o]) && deployedOnce(p, o))) n += x.value;
-    }
+    traitOfDef(c.operators[k]).costCuts.forEach((x, i) => {
+      if (!x.field && cutFits(x, d) && (!x.first || !deck.some((o) => cutFits(x, c.operators[o]) && deployedOnce(p, o)))) cuts.push([`${idOf(c, k)}:${i}`, x.value]);
+    });
   }
-  return n;
+  return sumOnce(cuts, Math.min);
 }
 
 /**
@@ -135,13 +152,13 @@ export function takeCuts(c, p, key) {
 }
 
 /**
- * The cost a seat starts with (费用-1, 部署-10): the level's initial cost, plus the `startCost` of each operator in its deck,
- * then not above the maximum.
+ * The cost a seat starts with (费用-1, 部署-10): the level's initial cost, plus the `startCost` of each operator in its deck
+ * (copies of one operator once, the largest), then not above the maximum.
  * @param {Content} c @param {number} seat
  */
 export function startCost(c, seat) {
   const { initialCost, maxCost } = c.level.options;
-  const more = deckOf(c, seat).reduce((n, k) => n + (Object.hasOwn(c.operators, k) ? traitOfDef(c.operators[k]).startCost : 0), 0);
+  const more = sumOnce(deckOf(c, seat).filter((k) => Object.hasOwn(c.operators, k)).map((k) => /** @type {[string, number]} */ ([idOf(c, k), traitOfDef(c.operators[k]).startCost])), Math.max);
   return more !== 0 ? Math.min(maxCost, initialCost + more) : initialCost;
 }
 

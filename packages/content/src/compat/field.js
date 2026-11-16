@@ -7,6 +7,7 @@ import { absoluteRangeKeys, canTargetEnemy } from './sh/targeting.js';
 import { bodyInKeys, bodyInRange } from './sh/body.js';
 import { localOrder } from './sh/dir.js';
 import { ELEMENT } from './mods.js';
+import { CompatGap } from './sh/gap.js';
 
 /** @typedef {import('./battle.js').ShBattle} ShBattle @typedef {import('./unit.js').ShUnit} ShUnit @typedef {import('@aue/sim').Unit} Unit */
 /** @typedef {import('@aue/sim').damage.Damage} Damage */
@@ -174,10 +175,30 @@ export const kitHits = new WeakSet();
  * @param {Record<string, any>} d @returns {Damage}
  */
 function hitOf(d) {
-  const hit = /** @type {Damage} */ ({ ...d, type: d.type ?? 'phys', amount: Number.isFinite(+d.amount) ? +d.amount : 0, tags: [...(d.tags ?? [])], ...(d.ignoreSleep ? { throughSleep: true } : {}) });
+  const hit = /** @type {Damage} */ ({ ...d, type: d.type ?? 'phys', amount: Number.isFinite(+d.amount) ? +d.amount : 0, tags: [...(d.tags ?? [])],
+    ...(d.ignoreSleep ? { throughSleep: true } : {}), ...dodgeOf(d) });
   kitHits.add(hit);
   return hit;
 }
+
+/**
+ * A request's dodge (Stronghold v0.3.2's `dodgeMode`, `ignoreCancelReasons`) as the engine's (伤害-12): 'ignore' draws no
+ * dodge (`canDodge` false); 'uncancellable', or 'dodge' or 'miss' among the reasons it refuses, draws one that cannot
+ * cancel it (`noDodgeCancel`).
+ * @param {Record<string, any>} d
+ */
+function dodgeOf(d) {
+  if (d.dodgeMode === 'ignore') return { canDodge: false };
+  const refuses = Array.isArray(d.ignoreCancelReasons) && (d.ignoreCancelReasons.includes('dodge') || d.ignoreCancelReasons.includes('miss'));
+  return d.dodgeMode === 'uncancellable' || refuses ? { noDodgeCancel: true } : {};
+}
+
+/**
+ * Whether a request's 'resolved' amount (past its defences and its source's multipliers) is the plain amount here:
+ * 真实伤害 with no source to multiply it (兼容-7: 坚守's shared damage). Any other is a gap.
+ * @param {Record<string, any>} dmg @param {Unit | null} s
+ */
+const plainResolved = (dmg, s) => dmg.type === 'true' && (!s || !!dmg.sourceless);
 
 /**
  * Damage from a unit, or from none (伤害-7): an operator's is credited with a kill (职业-5); 元素损伤 (`type` 'element')
@@ -192,8 +213,62 @@ export function dealDamage(b, source, target, dmg) {
     const el = ELEMENT[dmg.element];
     return el ? elements.dealEpFrom(b.w, t, el, Number(dmg.amount) || 0, { src: s, c: b.c }) : 0;
   }
+  if (dmg.calculation === 'resolved' && !plainResolved(dmg, s)) throw new CompatGap('attack.calculation.resolved');
+  if (dmg.onApplied != null) throw new CompatGap('attack.onApplied');
   const hit = hitOf(dmg);
   return s && s.kind === KIND.OPERATOR ? traits.creditedDamage(b.w, b.c, s, t, hit) : damage.dealDamage(b.w, s, t, hit);
+}
+
+/**
+ * Who a hit comes from as the engine says it (伤害-7): a source, or with no source but a `credit`, the credited unit
+ * with the hit `sourceless`. A credit other than the source while there is one has no counterpart.
+ * @param {ShUnit | null | undefined} source @param {ShUnit | null | undefined} credit @returns {{ from: ShUnit | null, sourceless: boolean }}
+ */
+function originOf(source, credit) {
+  if (source) {
+    if (credit !== undefined && credit !== source) throw new CompatGap('attack.credit');
+    return { from: source, sourceless: false };
+  }
+  return { from: credit ?? null, sourceless: !!credit };
+}
+
+/**
+ * Stronghold's damage call (伤害-7) in either form: the request of v0.3.2 (`{ source, credit, target, amount, type, … }`)
+ * or the positional one (`source, target, dmg, opts`), where `opts.credit` names the unit a hit with no source is
+ * credited to.
+ * @param {ShBattle} b @param {any[]} args
+ */
+export function damageCall(b, args) {
+  if (args.length === 1) {
+    const { source = null, credit, target, ...d } = args[0] ?? {};
+    const o = originOf(source, credit);
+    return dealDamage(b, o.from, target, { ...d, ...(o.sourceless ? { sourceless: true } : {}) });
+  }
+  const [source, target, dmg, opts] = args;
+  const o = source ? { from: source, sourceless: false } : originOf(null, opts?.credit);
+  return dealDamage(b, o.from, target, { ...dmg, ...(o.sourceless ? { sourceless: true } : {}) });
+}
+
+/**
+ * Stronghold's 元素损伤 request (元素-2): `{ source, credit, target, element, amount }` with Stronghold's element name.
+ * The element taken.
+ * @param {ShBattle} b @param {Record<string, any>} req
+ */
+export function elementDamage(b, req) {
+  const { source = null, credit, target, ...d } = req ?? {};
+  return dealDamage(b, source ?? credit ?? null, target, { ...d, type: 'element' });
+}
+
+/**
+ * Stronghold's element recovery (职业-12): each element value of the unit — or only the one named — rises by the amount,
+ * not during a burst. The total risen.
+ * @param {ShUnit} target @param {number} amount @param {string | null} [element] Stronghold's name
+ */
+export function healElement(target, amount, element = null) {
+  if (!target?.u || !target.alive) return 0;
+  const el = element == null ? null : ELEMENT[/** @type {keyof typeof ELEMENT} */ (element)];
+  if (el === undefined) return 0;
+  return elements.restoreEp(target.u, Number(amount) || 0, /** @type {any} */ (el));
 }
 
 /**
@@ -212,12 +287,53 @@ export function heal(b, source, target, amount, opts) {
 }
 
 /**
- * 生命流失 (伤害-10), tagged as Stronghold tags it.
- * @param {ShBattle} b @param {ShUnit} target @param {number} amount @param {{ source?: ShUnit | null, tags?: string[] }} [o]
+ * 生命流失 (伤害-10), tagged as Stronghold tags it (`hpLoss`, the tags of the hit it comes `from`, its own). Since v0.3.2 a
+ * loss may be typed: 'phys' or 'arts' first takes the target's defence or resistance (伤害-1…伤害-5, with the
+ * penetration the options give), 'true' (the default) is an amount already mitigated. With no source, a `credit` names
+ * the unit it counts for; so does the source of a `sourceless` loss.
+ * @param {ShBattle} b @param {ShUnit} target @param {number} amount
+ * @param {Record<string, any>} [o] `source`, `credit`, `sourceless`, `tags`, `from`, `type`, penetration
  */
 export function loseHp(b, target, amount, o = {}) {
+  const type = lossType(o.type);
   if (!target?.u || !target.alive || !(amount > 0)) return 0;
-  return damage.dealDamage(b.w, o.source?.u ?? null, target.u, { type: 'true', amount, hpLoss: true, tags: ['hpLoss', ...(o.tags ?? [])] });
+  const lost = type === 'true' ? amount : damage.mitigate(amount, type, attrs.statsOf(target.u), damage.penetration(null, o));
+  if (!(lost > 0)) return 0;
+  const tags = [...new Set(['hpLoss', ...(o.from?.tags ?? []), ...(o.tags ?? [])])];
+  const { who, sourceless } = lossOrigin(o);
+  return damage.dealDamage(b.w, who?.u ?? null, target.u, { type, amount: lost, hpLoss: true, tags, ...(sourceless ? { sourceless: true } : {}) });
+}
+
+/**
+ * A 生命流失's type: 'phys', 'arts' or 'true' (the default). @param {unknown} t @returns {'phys' | 'arts' | 'true'}
+ */
+function lossType(t) {
+  if (t === undefined || t === null) return 'true';
+  if (t !== 'phys' && t !== 'arts' && t !== 'true') throw new TypeError('HP loss supports phys, arts or true');
+  return t;
+}
+
+/**
+ * Whom a 生命流失 counts for and whether its events see no source: its `credit` when one is given — the kill and the
+ * statistics are its, as Stronghold's (阿戈尔's 吞噬: source the target itself, credit the marker); the engine has one
+ * unit for both, so the events see it as the source too —, else its source; with no source, the credit unseen; a
+ * `sourceless` loss (or one from a sourceless hit) unseen too.
+ * @param {Record<string, any>} o @returns {{ who: ShUnit | null, sourceless: boolean }}
+ */
+function lossOrigin(o) {
+  const who = o.credit ?? o.source ?? null;
+  return { who, sourceless: !!o.sourceless || !!o.from?.sourceless || (!o.source && !!o.credit) };
+}
+
+/**
+ * Stronghold's 生命流失 call in either form (v0.3.2): the request `{ source, credit, target, amount, type, origin, … }` or
+ * the positional `target, amount, opts`.
+ * @param {ShBattle} b @param {any[]} args
+ */
+export function hpLossCall(b, args) {
+  if (args.length !== 1) return loseHp(b, args[0], args[1], args[2] ?? {});
+  const { target, amount, origin, ...o } = args[0] ?? {};
+  return loseHp(b, target, amount, { ...o, from: origin ?? null });
 }
 
 /** An operator leaves the field as a retreat (撤退-1). @param {ShBattle} b @param {ShUnit} unit */

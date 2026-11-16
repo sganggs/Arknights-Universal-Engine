@@ -24,6 +24,7 @@ import { refractBehaviors } from './refract.js';
 import { statueBehaviors } from './statue.js';
 import { auraBehaviors } from './auras.js';
 import { chargedBehaviors } from './charged.js';
+import { powerAttackOwns } from './dubmb.js';
 import { staticBehaviors } from './static.js';
 import { ballBehaviors, ballAura, ballBoom, ballBoomTick, PHYSIC_KEYS } from './ball.js';
 import { pitchBehaviors, spotAura } from './pitch.js';
@@ -101,6 +102,17 @@ import { vineBehaviors, vineOwns } from './vine.js';
 import { bladeBehaviors, bladeOwns } from './blade.js';
 import { snowBehaviors, snowOwns } from './snowpriest.js';
 import { mudrockBehaviors, mudrockOwns } from './mudrock.js';
+import { ratBehaviors, ratOwns, ratWhole } from './ratking.js';
+import { rotKnightBehaviors, rotKnightOwns } from './rotknights.js';
+import { jakillBehaviors, jakillOwns } from './jakill.js';
+import { parrotBehaviors, parrotOwns } from './parrot.js';
+import { wolfBehaviors, wolfOwns } from './wolflord.js';
+import { volleyBehaviors, atkUpOwns } from './volley.js';
+import { hitWallBehaviors, hitWallOwns } from './hitwall.js';
+import { bountyShape, bountyAttack, bountyHit, powerHitOwns } from './bounty.js';
+import { sharedShapeOwns } from './shapes.js';
+import { lucienBehaviors, lucienOwns } from './lucien.js';
+import { maceBehaviors, maceOwns } from './mace.js';
 import { FOE_EXTRAS } from './foe-extras.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior @typedef {import('@aue/sim').EnemyDef} EnemyDef */
@@ -308,15 +320,21 @@ const Bomb = Object.freeze({
   },
 });
 
-/** 强击 (敌能-11): a mark when it appears and whenever its block ends; the next attack with the mark is stronger. @type {FoeBehavior} */
+/**
+ * 强击 (敌能-11): a mark when it appears and whenever its block ends; the next attack with the mark is stronger. The
+ * `{cost}` shape of the same name is 赏金攫取 (敌能-151): each hook hands it to bounty.js.
+ * @type {FoeBehavior}
+ */
 const PowerHit = Object.freeze({
-  spawn: (ctx) => { ctx.state.set('mark', 1); },
-  tick: (ctx) => { if (ctx.unblocked) ctx.state.set('mark', 1); },
+  spawn: (ctx) => { if (!bountyShape(ctx.bb)) ctx.state.set('mark', 1); },
+  tick: (ctx) => { if (ctx.unblocked && !bountyShape(ctx.bb)) ctx.state.set('mark', 1); },
   attack: (ctx, mods) => {
+    if (bountyShape(ctx.bb)) return bountyAttack(ctx, mods);
     if (!ctx.state.get('mark')) return mods;
     ctx.state.set('mark', 0);
     return { ...mods, atkPct: (mods.atkPct ?? 0) + ctx.bb.atk };
   },
+  hit: (ctx, target, dealt, ranged) => { if (bountyShape(ctx.bb)) bountyHit(ctx, target, ranged); },
 });
 
 /** Behaviours by talent or skill name. @type {Readonly<Record<string, FoeBehavior>>} */
@@ -401,6 +419,15 @@ export const foeBehaviors = Object.freeze({
   ...bladeBehaviors,
   ...snowBehaviors,
   ...mudrockBehaviors,
+  ...ratBehaviors,
+  ...rotKnightBehaviors,
+  ...jakillBehaviors,
+  ...parrotBehaviors,
+  ...wolfBehaviors,
+  ...volleyBehaviors,
+  ...hitWallBehaviors,
+  ...lucienBehaviors,
+  ...maceBehaviors,
   rush,
   ...axetroBehaviors,
 });
@@ -505,6 +532,20 @@ export const FOE_NEEDS = Object.freeze({
   // 泥岩 (敌能-143): the layer cap and the two markers are only on its page. The drones' `charge`, the 轻语者 and 乐团
   // skills of that name, 物欲拮抗者's RefreshShield and 冬灵血巫's `occupy` have none of them and stay uncovered.
   charge: Object.freeze(['layers']), RefreshShield: Object.freeze(['page']), occupy: Object.freeze(['page']),
+  // 唱沙's arm length is the page's range figure, not data (敌能-144). The exact shape is ratOwns.
+  DriftSand: Object.freeze(['arm']),
+  // 腐败骑士 / 凋零骑士 (敌能-145): the page marker, and 爆炸箭's 最多3个. 并驾骑士 and the other 凋零骑士 share the data and lack them.
+  triggerrage: Object.freeze(['page']), TripleAttack: Object.freeze(['n']),
+  // 杰斯顿·威廉姆斯 (敌能-146): `page` on its `reborn` and `enhance` above and on its two skills. enemy_5055_dqkill has the
+  // same data and no read page, so it stays uncovered (关卡-2).
+  ironsandstorm: Object.freeze(['page']), armorpiercing: Object.freeze(['page']),
+  // 吉兆飞鳞's page marker on each of its abilities (敌能-147): 噩兆飞鳞, 锋羽兽, 狡兽 … share these names and shapes. parrotOwns has the shapes.
+  Mode: Object.freeze(['parrot']), Stun: Object.freeze(['parrot']), M0SpeedUp: Object.freeze(['parrot']), M1SpeedUp: Object.freeze(['parrot']),
+  ThrowEnemy: Object.freeze(['parrot']), StateController: Object.freeze(['parrot']),
+  // 扎罗，“狼之主” (敌能-148): the page-only numbers and marker. 依然“狼之主” has the same data and none of them.
+  Passive2: Object.freeze(['range_radius', 'times']), WildCalling: Object.freeze(['page']), FearCage: Object.freeze(['init_sp', 'sp_recovery_per_sec']),
+  // 雪孩子 / 雪顽童's 5 s is on their pages only (敌能-150). 直立小雪怪 has the same `value` and no page read: no `rearm`.
+  hitWall: Object.freeze(['value', 'rearm']),
 });
 
 /**
@@ -526,19 +567,19 @@ const cartBoom = (k, bb) => k === 'boom' && cartShape(bb);
  * The shape checks of the shared names (关卡-2): each says whether a blackboard of its names is the shape its behaviour
  * understands, and passes every other name. In a list, so that each family adds one entry, not one more `&&`.
  */
-const SHAPE_OWNERS = Object.freeze([rebornShape, boarOwns, elementHitOwns, takeOffOwns, wineOwns, whipOwns, bornBugsOwns, radioOwns, shieldOwns, punchOwns, passiveOwns, defdownOwns, knightOwns, blinkOwns, healAuraOwns, vampireOwns, chargeAttackOwns, rebornOwns, faustOwns, shotbuffOwns, bornCarOwns, stunAttackOwns, bombdOwns, evadeOwns, carnivalOwns, heteroOwns, pompeiiOwns, ninjaOwns, spearOwns, catapultOwns, plantOwns, companionOwns, crystalOwns, chargeOwns, bottleOwns, broOwns, avalancheOwns, crossOwns, absentOwns, weaknessOwns, mechOwns, nucleusOwns, castOwns, aoeOwns, combatOwns, designerOwns, heteroBeastOwns, seedVineOwns, imperialArmorOwns, axetroOwns, tombOwns, vineOwns, bladeOwns, snowOwns, mudrockOwns]);
+const SHAPE_OWNERS = Object.freeze([rebornShape, boarOwns, elementHitOwns, takeOffOwns, wineOwns, whipOwns, bornBugsOwns, radioOwns, shieldOwns, punchOwns, passiveOwns, defdownOwns, knightOwns, blinkOwns, healAuraOwns, vampireOwns, chargeAttackOwns, rebornOwns, faustOwns, shotbuffOwns, bornCarOwns, stunAttackOwns, bombdOwns, evadeOwns, carnivalOwns, heteroOwns, pompeiiOwns, ninjaOwns, spearOwns, catapultOwns, plantOwns, companionOwns, crystalOwns, chargeOwns, bottleOwns, broOwns, avalancheOwns, crossOwns, absentOwns, weaknessOwns, mechOwns, nucleusOwns, castOwns, aoeOwns, combatOwns, designerOwns, heteroBeastOwns, seedVineOwns, imperialArmorOwns, axetroOwns, tombOwns, vineOwns, bladeOwns, snowOwns, mudrockOwns, ratOwns, rotKnightOwns, jakillOwns, parrotOwns, wolfOwns, atkUpOwns, hitWallOwns, powerHitOwns, sharedShapeOwns, lucienOwns, maceOwns, powerAttackOwns]);
 
 /** Shapes whole in themselves, whatever FOE_NEEDS lists for their name (关卡-2). @type {readonly ((k: string, bb: Record<string, unknown>) => boolean)[]} */
 const WHOLE_SHAPES = Object.freeze([nestPulseOwns, cartBoom, noPeriodic, (k, bb) => k === 'boom' && ballBoom(bb), (k, bb) => k === 'Shield' && heteroShield(bb), (k, bb) => k === 'defdown' && acidShape(bb),
   (k, bb) => k === 'rush' && chargeShape(bb), (k, bb) => k === 'Shield' && broShield(bb), (k, bb) => k === 'enhance' && scaleShape(bb),
-  (k, bb) => k === 'combat' && rageShape(bb), (k, bb) => k === 'DeathRattle' && sedanShape(bb)]);
+  (k, bb) => k === 'combat' && rageShape(bb), (k, bb) => k === 'DeathRattle' && sedanShape(bb), ratWhole]);
 
 /** FOE_NEEDS's keys all numbers, a `Boom` with `heal_scale` its page marker (敌能-58). @param {string} k @param {Record<string, unknown>} bb */
 const needsMet = (k, bb) => (healBoom(k, bb) ? typeof bb.page === 'number' : (FOE_NEEDS[/** @type {keyof typeof FOE_NEEDS} */ (k)] ?? []).every((n) => typeof bb[n] === 'number'));
 
 /**
  * Whether an ability has what its behaviour needs (关卡-2). A shared talent name only counts when its blackboard is the
- * shape that behaviour understands (敌能-38, 敌能-47, 敌能-63, 敌能-65, 敌能-66, 敌能-67, 敌能-68, 敌能-70, 敌能-71, 敌能-73, 敌能-74, 敌能-75, 敌能-77, 敌能-78, 敌能-79, 敌能-81, 敌能-82, 敌能-83, 敌能-85, 敌能-86, 敌能-118, 敌能-122, 敌能-124, 敌能-125, 敌能-127, 敌能-128, 敌能-129, 敌能-131, 敌能-132, 敌能-133, 敌能-135, 敌能-136, 敌能-137, 敌能-138, 敌能-139, 敌能-140, 敌能-141, 敌能-142, 敌能-143) — an `aura` only with 敌能-28's stack cap (敌能-45), as a ball's (足球-2) or a 守门位's (足球-13); anything else
+ * shape that behaviour understands (敌能-38, 敌能-47, 敌能-63, 敌能-65, 敌能-66, 敌能-67, 敌能-68, 敌能-70, 敌能-71, 敌能-73, 敌能-74, 敌能-75, 敌能-77, 敌能-78, 敌能-79, 敌能-81, 敌能-82, 敌能-83, 敌能-85, 敌能-86, 敌能-118, 敌能-122, 敌能-124, 敌能-125, 敌能-127, 敌能-128, 敌能-129, 敌能-131, 敌能-132, 敌能-133, 敌能-135, 敌能-136, 敌能-137, 敌能-138, 敌能-139, 敌能-140, 敌能-141, 敌能-142, 敌能-143, 敌能-144, 敌能-145, 敌能-146, 敌能-147, 敌能-148, 敌能-149, 敌能-150, 敌能-151, 敌能-152, 敌能-153, 敌能-154, 敌能-156, 敌能-157) — an `aura` only with 敌能-28's stack cap (敌能-45), as a ball's (足球-2) or a 守门位's (足球-13); anything else
  * stays incomplete. The nest pulse does not need `el`: the page names 神经损伤. A `Boom` with `heal_scale` needs its page
  * marker (敌能-58). The candy cart's `boom` needs no death-blast radius or delay (敌能-82). A ball's `boom` (足球-16),
  * 异质源石虫's `Shield` (敌能-102) and 酸液源石虫's `defdown` (敌能-101) are whole by their shapes. `{ atk_scale }`'s
