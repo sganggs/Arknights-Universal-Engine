@@ -266,8 +266,8 @@
   {
     "id": "DIF-0034",
     "clause": "部署-9",
-    "ours": "一般方式的移动不保留 Buff 与技能状态（运行中的技能结束），清空技力，部署时的效果再次生效，再按移动前的生命比例流失生命；Stronghold 的 kit 在兼容层里用保留方式，与 Stronghold 相同。",
-    "stronghold": "server/sim/battle/tiles.js moveRedeploy：生命、Buff 和运行中的技能都保留，只发 deploy 事件（move）；clearSp 时清空技力。",
+    "ours": "一般方式的移动不保留 Buff 与技能状态（运行中的技能结束），清空技力，部署时的效果再次生效，再按移动前的生命比例流失生命；Stronghold 的 kit 在兼容层里用保留方式，与 Stronghold 相同。保留方式下元素值回到最大值、元素爆发结束（INF-1170），Stronghold 两者都保留。",
+    "stronghold": "server/sim/battle/tiles.js moveRedeploy：生命、Buff 和运行中的技能都保留，只发 deploy 事件（move）；clearSp 时清空技力。元素值与元素爆发（爆发冷却的 Buff）也保留。",
     "reason": "PRTS「术语释义」移动：「除非具有特殊设置，否则执行移动行为时：不会继承任何Buff、技能状态…可以通过移动行为多次触发部署时触发的效果…部署完成后，立刻流失一次生命值以匹配移动前的生命比例；部署时将清空技力」。",
     "status": "有效"
   },
