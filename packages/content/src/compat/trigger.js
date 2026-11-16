@@ -9,7 +9,7 @@ import { absoluteRangeKeys } from './sh/targeting.js';
 /** @typedef {import('./battle.js').ShBattle} ShBattle @typedef {import('./unit.js').ShUnit} ShUnit */
 /** @typedef {{ rule: string, grid: number[][] | null }} Change a rule and grid a kit set while the battle runs (setTrigger) */
 /** @typedef {{ rule: string, grid: number[][] | null, allies: boolean, enemies: boolean, hpAtMost: number }} Trigger */
-/** @typedef {'ready' | 'never' | undefined} Answer */
+/** @typedef {'ready' | 'attack' | 'never' | undefined} Answer */
 
 /** Enemies a trigger range takes: any it can select, air units too (Stronghold's TRIGGER_PROFILE). */
 const ANY_ENEMY = Object.freeze({ canHitFly: true });
@@ -108,12 +108,15 @@ const asTick = (holds) => (holds ? 'ready' : 'never');
 /**
  * The basic rule (DEFAULT, and a rule Stronghold does not know, which falls back to it): the cast waits for the attack
  * about to be made, which the engine's rule does too; what the spec adds is the ally a cast needs — an injured one for
- * `trigger.allies`, for a heal skill one in the unit's range. Nothing to add: no opinion.
+ * `trigger.allies`, for a heal skill one in the unit's range. A toggle says so itself: the engine takes the record's kind,
+ * and a stance with no duration and no attack keys in its record (山's 横扫架势) is instant there, started when ready.
+ * Nothing else to add: no opinion.
  * @param {ShBattle} b @param {ShUnit} p @param {Trigger} t @param {Record<string, any>} spec @returns {Answer}
  */
 function basic(b, p, t, spec) {
-  if (t.allies) return allyHolds(b, p, t) ? undefined : 'never';
-  return heals(b, p, spec) && !healHolds(b, p, t) ? 'never' : undefined;
+  const held = t.allies ? !allyHolds(b, p, t) : heals(b, p, spec) && !healHolds(b, p, t);
+  if (held) return 'never';
+  return spec.kind === 'toggle' ? 'attack' : undefined;
 }
 
 /**
