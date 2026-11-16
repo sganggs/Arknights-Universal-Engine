@@ -207,17 +207,82 @@ test('[兼容-4] an error of a handler a kit registered without an owner names t
   assert.deepEqual([...new Set(b.errors.map((e) => `${e.label}|${e.who}`))].sort(), ['every|siege', 'hook:tick|siege']);
 });
 
-test('[兼容-4] a buff spec’s damage-judgement callbacks are not carried yet: the buff is given and the gap is recorded once for the unit and key', () => {
-  const kit = () => ({ install(/** @type {ShBattle} */ b, /** @type {ShUnit} */ u) {
-    b.on('deploy', () => { for (let i = 0; i < 3; i++) b.addBuff(u, { key: 'kit:armor', injury() {}, observeInjury() {}, mods: { defPct: 0.1 }, duration: 20 }); }, { owner: u });
-  } });
-  const { c, w, b } = match({ siege: { factory: kit, chess: true } }, ['siege']);
-  step(w, c, [DEPLOY.siege]);
-  assert.deepEqual(b.errors.map((e) => [e.label, e.who, e.message]), [
-    ['buff.injury', 'siege', 'compat: buff.injury is not provided yet (buff kit:armor)'],
-    ['buff.observeInjury', 'siege', 'compat: buff.observeInjury is not provided yet (buff kit:armor)'],
-  ]);
-  assert.ok(piece(b, 'siege').hasBuff('kit:armor'));
+/**
+ * siege on the field with the buffs `give` adds at her deployment, and an enemy to hit her with.
+ * @param {(b: ShBattle, u: ShUnit) => void} give
+ */
+function judged(give) {
+  const kit = () => ({ install(/** @type {ShBattle} */ b, /** @type {ShUnit} */ u) { b.on('deploy', () => give(b, u), { owner: u }); } });
+  const m = match({ siege: { factory: kit, chess: true } }, ['siege']);
+  step(m.w, m.c, [DEPLOY.siege]);
+  return { ...m, p: piece(m.b, 'siege'), e: enemy(m.b, m.w, m.c) };
+}
+
+/** True damage from an enemy to siege, at once; the HP it took. @param {{ b: ShBattle, p: ShUnit, e: ShUnit }} m @param {number} amount @param {Record<string, unknown>} [more] */
+function hit(m, amount, more = {}) {
+  const before = m.p.hp;
+  m.b.dealDamage({ source: m.e, target: m.p, amount, type: 'true', ...more });
+  return Math.round((before - m.p.hp) * 1e6) / 1e6;
+}
+
+test('[兼容-4] a kit buff’s 伤判 callbacks run in its turn: injury may change the amount; of the reductions under one name only the strongest counts, other names add; observeInjury sees what is left', () => {
+  /** @type {unknown[][]} */
+  const seen = [];
+  const m = judged((b, u) => {
+    b.addBuff(u, { key: 'kit:half', injury(/** @type {any} */ c) { c.amount *= 0.5; } });
+    b.addBuff(u, { key: 'kit:weak', damageReduction: { true: 100 }, reductionGroup: 'g' });
+    b.addBuff(u, { key: 'kit:strong', damageReduction: { true: 300 }, reductionGroup: 'g' });
+    b.addBuff(u, { key: 'kit:other', damageReduction: { true: 50, phys: 9 } });
+    b.addBuff(u, { key: 'kit:watch', observeInjury(/** @type {any} */ c) { seen.push([c.amount, c.cancelled, c.outcome, c.type, c.source?.kind, c.target === u, c.buff.key]); } });
+  });
+  assert.equal(hit(m, 2000), 650, '2000 × 0.5 − 300 − 50');
+  assert.deepEqual(seen, [[650, false, null, 'true', 'enemy', true, 'kit:watch']]);
+  assert.deepEqual(m.b.errors, []);
+});
+
+test('[兼容-4] an injury callback may dodge or block the hit: nothing is taken, a dodge is the engine’s dodge event, the buffs after it only observe; a hit that cannot be dodged is not', () => {
+  /** @type {unknown[][]} */
+  const seen = [];
+  let dodges = 0, how = 'dodge';
+  const m = judged((b, u) => {
+    b.addBuff(u, { key: 'kit:evade', injury(/** @type {any} */ c) { if (how === 'dodge') c.dodge(); else c.block(); } });
+    b.addBuff(u, { key: 'kit:after', injury(/** @type {any} */ c) { c.amount = 0; seen.push(['injury']); }, observeInjury(/** @type {any} */ c) { seen.push([c.amount, c.cancelled, c.outcome]); } });
+  });
+  m.b.on('dodge', () => { dodges++; });
+  assert.equal(hit(m, 500), 0);
+  assert.equal(dodges, 1);
+  how = 'block';
+  assert.equal(hit(m, 500), 0);
+  assert.equal(dodges, 1, 'a block is not a dodge');
+  how = 'dodge';
+  assert.equal(hit(m, 500, { canDodge: false }), 0, 'not dodged: the next buff takes it all');
+  assert.deepEqual(seen, [[0, true, 'dodged'], [0, true, 'blocked'], ['injury'], [0, false, 'zero']]);
+  assert.deepEqual(m.b.errors, []);
+});
+
+test('[兼容-4] a kit buff’s shield layers are the engine’s; the used-up one goes and its onRemove runs; a higher injuryPriority goes first; a callback that throws is recorded and the hit goes on', () => {
+  /** @type {string[]} */
+  const order = [];
+  let removed = 0;
+  const m = judged((b, u) => {
+    b.addBuff(u, { key: 'kit:first', injury() { order.push('first'); } });
+    b.addBuff(u, { key: 'kit:urgent', injuryPriority: 10, injury() { order.push('urgent'); throw new Error('boom'); } });
+  });
+  assert.equal(hit(m, 300), 300);
+  assert.deepEqual(order, ['urgent', 'first']);
+  assert.deepEqual(m.b.errors.map((e) => [e.label, e.who, e.message]), [['buff.injury', 'siege', 'boom']]);
+  m.b.addBuff(m.p, { key: 'kit:layer', shieldHits: 1, onRemove() { removed++; } });
+  assert.equal(m.p.findBuff('kit:layer')?.shieldHits, 1);
+  assert.equal(hit(m, 300), 0, 'the layer takes the hit');
+  assert.equal(m.p.hasBuff('kit:layer'), false);
+  assert.equal(removed, 1);
+  assert.equal(hit(m, 300), 300);
+});
+
+test('[兼容-4] an empty shield that stays is not carried yet: the buff is given and the gap is recorded once for the unit and key', () => {
+  const m = judged((b, u) => { for (let i = 0; i < 3; i++) b.addBuff(u, { key: 'kit:armor', shield: 50, keepEmptyShield: true, mods: { defPct: 0.1 }, duration: 20 }); });
+  assert.deepEqual(m.b.errors.map((e) => [e.label, e.who, e.message]), [['buff.keepEmptyShield', 'siege', 'compat: buff.keepEmptyShield is not provided yet (buff kit:armor)']]);
+  assert.ok(m.p.hasBuff('kit:armor'));
 });
 
 test('[兼容-4] pushDistance is the distance the engine’s push takes an enemy on open ground; 0 for one that cannot be displaced or a force its weight takes away', () => {
@@ -227,7 +292,7 @@ test('[兼容-4] pushDistance is the distance the engine’s push takes an enemy
   assert.ok(want > 1 && b.pushDistance(e, 3) > want && b.pushDistance(e, 0) < want);
   assert.ok(b.pushDistance(e, 0, { effect: true }) < b.pushDistance(e, 0), 'an effect’s push moves from the next frame');
   assert.equal(b.pushDistance(e, -5), 0, 'weight takes the force away');
-  assert.equal(b.push(e, 1, { from: { x: x0 - 1, y: y0 } }), 1);
+  assert.ok(Math.abs(b.push(e, 1, { from: { x: x0 - 1, y: y0 } }) - want) < 1e-9, 'push returns the tiles it moves it: on open ground the distance it says (the wall and the edge: compat-events.test.js)');
   for (let i = 0; i < 300 && /** @type {any} */ (e.u).slide; i++) step(w, c);
   assert.ok(Math.abs(Math.hypot(e.x - x0, e.y - y0) - want) < 1e-9, `moved ${Math.hypot(e.x - x0, e.y - y0)}, said ${want}`);
   assert.equal(b.pushDistance(piece(b, 'siege'), 1), 0, 'not an enemy');

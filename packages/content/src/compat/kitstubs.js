@@ -2,7 +2,7 @@
 // the next jump of a 链愈师 heal chain (职业-11) and an attack now with a profile of the kit's (攻击-5); and the layers of
 // a 麻痹 a kit gives (状态-8). The stand-in module sh/ai.js exports the first two.
 import rangeTable from '../../data/ranges.json' with { type: 'json' };
-import { attrs, bus, status, attackNow, healJump } from '@aue/sim';
+import { attrs, bus, status, attackNow, healJump, healsThrough } from '@aue/sim';
 
 /** @typedef {import('./battle.js').ShBattle} ShBattle @typedef {import('./unit.js').ShUnit} ShUnit @typedef {import('@aue/sim').Unit} Unit */
 
@@ -10,20 +10,17 @@ import { attrs, bus, status, attackNow, healJump } from '@aue/sim';
 const X4 = /** @type {Record<string, { row: number, col: number }[]>} */ (rangeTable.ranges)['x-4'];
 
 /**
- * Whether the healer's kit trait heals `a` through its refusal of allies' heals (Stronghold's profile `healThrough`:
- * Mon3tr on her 重构体); an answer that throws is recorded, and no.
+ * Whether the healer heals `a` through its refusal of allies' heals (伤害-13: the answer of its kit trait's
+ * `healThrough`, Mon3tr on her 重构体, which the engine reads for the heal and the choice of targets alike).
  * @param {ShBattle} b @param {ShUnit} healer @param {ShUnit} a
  */
-function healsThrough(b, healer, a) {
-  const fn = healer.kit?.trait?.healThrough;
-  return typeof fn === 'function' && !!b.safe(() => fn(healer, a), 'profile.healThrough', healer);
-}
+const healsA = (b, healer, a) => !!healer.u && healsThrough(b.w, b.c, healer.u, /** @type {Unit} */ (a.u));
 
 /**
  * Stronghold's chainHealNext: the next unit of `healer`'s heal chain from `prev` — the engine's jump (职业-11: x-4
  * around prev's tile, on the field, full HP or not, the lowest 生命比例 at 0.001, then the latest deployed), none of
- * `seen` (the kits' ids). As a kit picks allies: never a 孤立 one; one that refuses allies' heals only when the healer's
- * kit trait heals it through (INF-1130); the healer itself either way (its own heal reaches it, 职业-9; Stronghold's
+ * `seen` (the kits' ids). As a kit picks allies: never a 孤立 one; one that refuses allies' heals only when the healer
+ * heals it through that (伤害-13, INF-1130); the healer itself either way (its own heal reaches it, 职业-9; Stronghold's
  * `a !== healer`). Null for none.
  * @param {ShBattle} b @param {ShUnit | null} healer @param {ShUnit} prev @param {Set<number>} seen @returns {ShUnit | null}
  */
@@ -33,7 +30,7 @@ export function chainHealNext(b, healer, prev, seen) {
     const a = b.unitOf(u), f = attrs.statsOf(u).flags;
     if (seen.has(a.id)) return false;
     if (a === healer) return true;
-    return !f.isolated && (!f.noAllyHeal || healsThrough(b, healer, a));
+    return !f.isolated && (!f.noAllyHeal || healsA(b, healer, a));
   };
   const next = healJump(b.w, b.c, prev.u, new Set(), { cells: X4, may });
   return next ? b.unitOf(next) : null;

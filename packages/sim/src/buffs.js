@@ -16,8 +16,9 @@ import { statsOf, maxHpOf } from './attrs.js';
  * What a buff does on its triggers, when it ends, and during its own 伤判 (伤害-8), by key. Its expiry gets the content,
  * so damage it deals takes the content's part of the path (tags, buff behaviours) as the hits of abilities do. `take`
  * replaces the damage left while there is some; `afterCancel` is what it still does in its turn once an earlier effect
- * cancelled the hit or brought it to 0 (反伤, 受伤计数).
- * @typedef {{ tick?: (w: World, u: Unit, b: Buff) => void, expire?: (w: World, u: Unit, b: Buff, c?: import('./types.js').Content) => void, take?: (w: World, u: Unit, b: Buff, amount: number, hit: TakeHit) => number, afterCancel?: (w: World, u: Unit, b: Buff, hit: TakeHit) => void }} Behavior
+ * cancelled the hit or brought it to 0 (反伤, 受伤计数); `spent` runs once the buff went because its shield was used up.
+ * @typedef {{ tick?: (w: World, u: Unit, b: Buff) => void, expire?: (w: World, u: Unit, b: Buff, c?: import('./types.js').Content) => void, take?: (w: World, u: Unit, b: Buff, amount: number, hit: TakeHit) => number, afterCancel?: (w: World, u: Unit, b: Buff, hit: TakeHit) => void,
+ *   spent?: (w: World, u: Unit, b: Buff) => void }} Behavior
  */
 
 /** @typedef {Partial<Buff> & { key: string }} BuffInit */
