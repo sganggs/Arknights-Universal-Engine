@@ -1,7 +1,7 @@
 // Stronghold's battle grid over the level's tiles (docs/spec/compat.md 兼容-4): the whole map is the battle's
 // rectangle; each tile as Stronghold describes it — low or high ground, what may be deployed on it, how units pass it
-// (地形-1), start and goal tiles; the tiles an enemy's ground way crosses (寻路-2). Obstacles that content places are not
-// here yet (gaps).
+// (地形-1), start and goal tiles; the tiles an enemy's ground way crosses and its waypoints (寻路-2). Obstacles that content
+// places and the flow field itself are not here yet (gaps).
 import { paths } from '@aue/sim';
 import { gap } from './sh/gap.js';
 
@@ -50,6 +50,26 @@ export class ShGrid {
     return tiles ? tiles.map((k) => /** @type {[number, number]} */ ([Math.floor(k / this.cols), k % this.cols])) : null;
   }
 
+  /**
+   * Stronghold's waypoints of an enemy's ground way from (sr, sc) to (er, ec) (兼容-4): the start, then each tile the
+   * engine's ground flow field toward the goal points it on to (寻路-1, 寻路-2), the goal last, as [row, col] — joined by
+   * their lines they are findPath's tiles; [[sr, sc]] on the goal itself; null off the map, for a row or column that is
+   * not a whole number (the field has no such tile) or when the start cannot reach the goal. `allowDiagonal`, as
+   * Stronghold's, is on when left out; given a false value, lines of sight run along a row or a column only. No content
+   * obstacles exist, so `ignoreObstacles` changes nothing; the way is the engine's, not Stronghold's preference (INF-1180,
+   * INF-1181).
+   * @param {number} sr @param {number} sc @param {number} er @param {number} ec @param {{ allowDiagonal?: unknown, ignoreObstacles?: boolean }} [o]
+   * @returns {[number, number][] | null}
+   */
+  waypoints(sr, sc, er, ec, o = {}) {
+    if (![sr, sc, er, ec].every(Number.isInteger) || !this.inBounds(sr, sc) || !this.inBounds(er, ec)) return null;
+    const start = this.key(sr, sc);
+    if (start === this.key(er, ec)) return [[sr, sc]];
+    const f = paths.flowField(/** @type {any} */ (this.level), er, ec, { diagonal: o.allowDiagonal === undefined || !!o.allowDiagonal });
+    if (f.dist[start] < 0) return null;
+    return [[sr, sc], ...paths.chain(f, start).map((k) => /** @type {[number, number]} */ ([Math.floor(k / this.cols), k % this.cols]))];
+  }
+
   /** Ground units may stand here. @param {number} r @param {number} c */
   groundPassable(r, c) { return this.tile(r, c).pass === 'ALL'; }
   /** @param {number} r @param {number} c */
@@ -86,4 +106,4 @@ export class ShGrid {
   }
 }
 
-Object.assign(ShGrid.prototype, { waypoints: gap('grid.waypoints'), setObstacle: gap('grid.setObstacle'), flowField: gap('grid.flowField') });
+Object.assign(ShGrid.prototype, { setObstacle: gap('grid.setObstacle'), flowField: gap('grid.flowField') });

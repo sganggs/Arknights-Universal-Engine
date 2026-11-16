@@ -8,7 +8,7 @@ import { makeBuff, addBuff, removeBuff } from './buffs.js';
 import { inflict } from './status.js';
 import { dealDamage, heal } from './damage.js';
 import { draw } from './rng.js';
-import { dealEp } from './elements.js';
+import { dealEpFrom } from './elements.js';
 import { vsDamage, vsHeal, vsEp } from './vs.js';
 import { afterOwnHit } from './riders.js';
 import { talentKill, talentDealt, dotOnHit } from './talentfx.js';
@@ -30,7 +30,7 @@ import { woundedInRange } from './chain.js';
  */
 export const defaultTrait = (position) => ({
   antiAir: position !== 'MELEE', blockedFirst: position === 'MELEE', filter: 'HATRED_DES', secondary: '', targets: 1,
-  heal: false, hits: 1, mods: {}, flags: {}, killCost: 0, refund: 0.5, hitStatus: null, splash: null, aftershock: 0, unblockedScale: 1, selfHeal: 0, selfHealMax: Infinity, selfHealOn: 'attack',
+  heal: false, hits: 1, hitMul: 1, mods: {}, flags: {}, killCost: 0, refund: 0.5, hitStatus: null, splash: null, aftershock: 0, unblockedScale: 1, selfHeal: 0, selfHealMax: Infinity, selfHealOn: 'attack',
   rangedTiles: false, meleeTiles: false, skillArts: false, immuneBlocking: [], hpDrain: 0, costDrain: null, zone: null, chain: null, healOnHit: 0,
   attackInSkill: false, idleMods: {}, idleFlags: {}, idleAirOnly: false, skillSplash: null, liftoffBlock: 0, fortress: 0, charge: null, skillHeal: 0, bullets: null, store: 0, epHeal: 0, funnel: null, boomerang: null, noAttack: false, free: false, noInspire: false, spendAtk: null, regenAura: 0,
   summonBlocked: false, summonBlockedScale: 1, trapTiles: false, doll: null, rangeTiles: false, vs: [], far: null, crowd: null, packed: null, whiles: [], extraArts: 0, counterArts: 0, epRider: null, burstHit: null, spOn: null, payStack: null, auras: [],
@@ -170,7 +170,10 @@ export const traitTargets = (t, op) => (t.targets === 'all' ? Infinity : t.targe
  * operator may attack now (false: it may not); what an attack turn without a target does (true: it stored, its attack
  * interval starts again; false: nothing; undefined: the engine's own rule — 职业-6, 职业-12); which enemies it does not
  * select now (`skip`: true for one); whether it takes the place of the branch's own deployment effects for this operator
- * (true: no trait buff or upkeep from the engine).
+ * (true: no trait buff or upkeep from the engine); which funnel its operator has now (`funnel`: another's — `init`, `delta`,
+ * `max` —, or null for none; undefined: the trait's); how much 生命回复速度 its regeneration aura gives one operator (`regen`:
+ * another amount for the one given, or undefined for it); which allies its operator heals through their 禁疗
+ * (`healThrough`: true for one, 伤害-13).
  * @typedef {object} TraitBehavior
  * @property {(ctx: TraitContext) => void} [deploy]
  * @property {(ctx: TraitContext, target: Unit) => void} [hit]
@@ -179,6 +182,9 @@ export const traitTargets = (t, op) => (t.targets === 'all' ? Infinity : t.targe
  * @property {(ctx: TraitContext) => boolean | undefined} [store]
  * @property {(ctx: TraitContext) => boolean | undefined} [own]
  * @property {(ctx: TraitContext, target: Unit) => boolean | undefined} [skip]
+ * @property {(ctx: TraitContext) => { init: number, delta: number, max: number } | null | undefined} [funnel]
+ * @property {(ctx: TraitContext, target: Unit, amount: number) => number | undefined} [regen]
+ * @property {(ctx: TraitContext, target: Unit) => boolean | undefined} [healThrough]
  */
 
 /** Gives the owner cost, up to the level's maximum (费用-1). @param {World} w @param {Content} c @param {number} seat @param {number} n */
@@ -199,7 +205,7 @@ export function actorContext(w, c, op, bb) {
     removeBuff: (t, key) => { removeBuff(t, key); },
     applyStatus: (t, key, o) => { inflict(w, t, key, { ...o, src: op }); },
     dealDamage: (t, dmg) => creditedDamage(w, c, op, t, dmg),
-    dealEp: (t, el, amount) => dealEp(w, t, el, amount * vsEp(w, c, op, t), op),
+    dealEp: (t, el, amount) => dealEpFrom(w, t, el, amount * vsEp(w, c, op, t), { src: op, c }),
     heal: (t, amount) => heal(w, op, t, amount * vsHeal(w, c, op, t)),
     gainCost: (n) => { gainCost(w, c, op.owner, n); },
   };
@@ -221,6 +227,27 @@ function behaviorOf(c, op) {
 export function traitAsk(w, c, op, name) {
   const fn = behaviorOf(c, op)?.[name];
   return typeof fn === 'function' ? fn(contextOf(w, c, op)) : undefined;
+}
+
+/**
+ * An operator's funnel now (职业-6, 职业-12): the one its trait behaviour gives — null for none —, else its trait's.
+ * @param {World} w @param {Content} c @param {Unit} op @returns {TraitDef['funnel']}
+ */
+export function funnelNow(w, c, op) {
+  const fn = behaviorOf(c, op)?.funnel, own = typeof fn === 'function' ? fn(contextOf(w, c, op)) : undefined;
+  return own === undefined ? traitOf(c, op).funnel : own;
+}
+
+/**
+ * What an operator's trait behaviour makes of the 生命回复速度 its regeneration aura gives an operator (职业-6: `regen`), as a
+ * function of the operator and the amount; null without one.
+ * @param {World} w @param {Content} c @param {Unit} op @returns {((target: Unit, amount: number) => number) | null}
+ */
+export function traitRegen(w, c, op) {
+  const fn = behaviorOf(c, op)?.regen;
+  if (typeof fn !== 'function') return null;
+  const ctx = contextOf(w, c, op);
+  return (t, amount) => fn(ctx, t, amount) ?? amount;
 }
 
 /**
@@ -260,7 +287,7 @@ export function traitDeploy(w, c, op) {
 export function traitHit(w, c, op, target) {
   const t = traitOf(c, op);
   if (t.hitStatus && target.hp > 0) inflict(w, target, t.hitStatus.key, { seconds: t.hitStatus.seconds + (t.hitStatus.key === 'sluggish' ? t.hitStatusPlus : 0), src: op, ...(t.hitStatus.value !== undefined ? { value: t.hitStatus.value } : {}) });
-  t.onHit.forEach((h, i) => { if ((h.when !== 'beyondRange' || !inBaseRange(c, op, target)) && (h.during === undefined || w.frame - op.born < secondsToFrames(h.during))) talentHit(w, op, target, { h, i }); });
+  t.onHit.forEach((h, i) => { if ((h.when !== 'beyondRange' || !inBaseRange(c, op, target)) && (h.during === undefined || w.frame - op.born < secondsToFrames(h.during))) talentHit(w, c, op, target, { h, i }); });
   behaviorOf(c, op)?.hit?.(contextOf(w, c, op), target);
 }
 
@@ -275,10 +302,10 @@ function inBaseRange(c, op, t) {
  * unit, for one that says so): once on each enemy for a
  * `first` one — the target keeps a buff `seen:<operator id>:<n>` without an end —; at its chance (one draw) when it has
  * one; its status (状态-5), or its modifiers for its seconds as a buff `talentHit:<operator id>:<n>`, the time starting
- * again at each hit; its damage over time (dotOnHit).
- * @param {World} w @param {Unit} op @param {Unit} target @param {{ h: import('./types.js').TalentHit, i: number }} at
+ * again at each hit; its damage over time (dotOnHit); its 元素损伤, with the content for a burst it sets off (伤害-8).
+ * @param {World} w @param {Content} c @param {Unit} op @param {Unit} target @param {{ h: import('./types.js').TalentHit, i: number }} at
  */
-function talentHit(w, op, target, { h, i }) {
+function talentHit(w, c, op, target, { h, i }) {
   if (target.hp <= 0 || (h.when === 'unblocked' && target.blockedBy >= 0)) return;
   if (h.first) {
     const seen = `seen:${op.id}:${i}`;
@@ -293,7 +320,7 @@ function talentHit(w, op, target, { h, i }) {
     addBuff(target, makeBuff({ key, src: op.id, left: secondsToFrames(h.debuff.seconds), mods: h.debuff.mods }));
   }
   if (h.dot) dotOnHit(op, target, h.dot, i);
-  if (h.ep && target.hp > 0) dealEp(w, target, /** @type {import('./elements.js').Element} */ (h.ep.el), h.ep.amount, op);
+  if (h.ep && target.hp > 0) dealEpFrom(w, target, /** @type {import('./elements.js').Element} */ (h.ep.el), h.ep.amount, { src: op, c });
 }
 
 /**
