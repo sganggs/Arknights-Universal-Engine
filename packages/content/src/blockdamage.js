@@ -1,6 +1,7 @@
 // 莱茵生命防卫科 (docs/spec/foes.md 敌能-51): `max_block_damage_cnt` layers of 护盾 on appearing, minus
 // `block_damage_cnt` already spent. Each layer cancels one physical or arts instance (伤害-8) and does not return.
-// 异质源石虫's `Shield` (敌能-102) is its 屏障, in heteroslime.js; 绝望的大哥's (敌能-113) in bigbro.js. Other talents also named Shield stay uncovered (关卡-2).
+// 异质源石虫's `Shield` (敌能-102) is its 屏障, in heteroslime.js; 绝望的大哥's (敌能-113) in bigbro.js; 访问团持盾者's (敌能-164) has no
+// layers here and does nothing. Other talents also named Shield stay uncovered (关卡-2).
 import { heteroShield, heteroSpawn } from './heteroslime.js';
 import { broShield, broSpawn, broTick, broFell } from './bigbro.js';
 

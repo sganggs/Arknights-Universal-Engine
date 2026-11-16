@@ -64,7 +64,7 @@ import { seedVineBehaviors, seedVineOwns, seedUnlit } from './seedvine.js';
 import { broBehaviors, broOwns, broShield } from './bigbro.js';
 import { avalancheBehaviors, avalancheOwns } from './avalanche.js';
 import { crossBehaviors, crossOwns } from './crossroad.js';
-import { absentBehaviors, absentOwns, sedanShape } from './absent.js';
+import { absentBehaviors, absentOwns, sedanShape, visitorShield } from './absent.js';
 import { tyrantBehaviors } from './tyrant.js';
 import { colossusBehaviors } from './colossus.js';
 import { pengBehaviors } from './peng.js';
@@ -573,7 +573,7 @@ const SHAPE_OWNERS = Object.freeze([rebornShape, boarOwns, elementHitOwns, takeO
 
 /** Shapes whole in themselves, whatever FOE_NEEDS lists for their name (关卡-2). @type {readonly ((k: string, bb: Record<string, unknown>) => boolean)[]} */
 const WHOLE_SHAPES = Object.freeze([nestPulseOwns, cartBoom, noPeriodic, (k, bb) => k === 'boom' && ballBoom(bb), (k, bb) => k === 'Shield' && heteroShield(bb), (k, bb) => k === 'defdown' && acidShape(bb),
-  (k, bb) => k === 'rush' && chargeShape(bb), (k, bb) => k === 'Shield' && broShield(bb), (k, bb) => k === 'enhance' && scaleShape(bb),
+  (k, bb) => k === 'rush' && chargeShape(bb), (k, bb) => k === 'Shield' && broShield(bb), (k, bb) => k === 'Shield' && visitorShield(bb), (k, bb) => k === 'enhance' && scaleShape(bb),
   (k, bb) => k === 'combat' && rageShape(bb), (k, bb) => k === 'DeathRattle' && sedanShape(bb), ratWhole]);
 
 /** FOE_NEEDS's keys all numbers, a `Boom` with `heal_scale` its page marker (敌能-58). @param {string} k @param {Record<string, unknown>} bb */
