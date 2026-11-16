@@ -226,8 +226,6 @@ export const BOLT_RADIUS = 0.3;
  *   before its HP drops (敌能-2; the bus's `hpDamage`, 钩子-3). The amount of this hit is already fixed
  * @property {(ctx: FoeContext, dead: Unit) => void} [down] another enemy on the field was knocked down this frame, after its
  *   own death hooks (敌能-2)
- * @property {(ctx: FoeContext, burst: { source: Unit | null, target: Unit, element: string }) => void} [elementBurst]
- *   a unit's 元素爆发 is beginning, before its burst buff (钩子-3 `elementBurst`, 敌能-161): every enemy still on the field
  */
 
 /** The squared distance between two points. @param {{ x: number, y: number }} a @param {{ x: number, y: number }} b */
@@ -716,44 +714,19 @@ export function foeLanded(w, c, e, t, how) {
 
 /** The owner of the bus handler below (钩子-1). */
 const HP_DAMAGE = 'foeHpDamage';
-/** The owner of the 元素爆发 handler (钩子-1, 敌能-161). */
-const EP_BURST = 'foeElementBurst';
 
 /**
  * The foe `hpDamage` hook (敌能-2) on the bus's `hpDamage` (钩子-3): once per world, and only when a foe behaviour of the
  * content has one. Every hit on an enemy with damage left after 伤判 calls it once, before the HP drops.
  * @param {World} w @param {Content} c
  */
-function hookHpDamage(w, c) {
+export function foeHooks(w, c) {
   if (!Object.values(c.behaviors?.foes ?? {}).some((b) => b.hpDamage) || w.bus?.hooks.get('hpDamage')?.some((h) => h.owner === HP_DAMAGE)) return;
   on(w, 'hpDamage', (ctx) => {
     if (ctx.target.kind !== KIND.ENEMY) return;
     const hit = { source: ctx.source, credit: ctx.credit, amount: ctx.amount, dmg: ctx.dmg };
     each(w, c, ctx.target, 'hpDamage', (b, x) => b.hpDamage?.(x, hit));
   }, { owner: HP_DAMAGE });
-}
-
-/**
- * The foe `elementBurst` hook (敌能-161) on the bus's `elementBurst` (钩子-3): once per world, and only when a foe
- * behaviour has one. Every enemy still up hears it, before the burst buff is added.
- * @param {World} w @param {Content} c
- */
-function hookElementBurst(w, c) {
-  const foes = c.behaviors?.foes ?? {};
-  if (!Object.values(foes).some((b) => b.elementBurst)) return;
-  if (w.bus?.hooks.get('elementBurst')?.some((h) => h.owner === EP_BURST)) return;
-  on(w, 'elementBurst', (ctx) => {
-    for (const e of w.units) {
-      if (e.hp <= 0 || e.kind !== KIND.ENEMY) continue;
-      each(w, c, e, 'elementBurst', (b, x) => b.elementBurst?.(x, ctx));
-    }
-  }, { owner: EP_BURST });
-}
-
-/** The foe bus hooks (敌能-2, 敌能-161): once per world, and only for hooks some behaviour has. @param {World} w @param {Content} c */
-export function foeHooks(w, c) {
-  hookHpDamage(w, c);
-  hookElementBurst(w, c);
 }
 
 /**

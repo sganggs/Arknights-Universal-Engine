@@ -3,7 +3,6 @@
 // only through the context (ADR 0055).
 
 import { KIND } from '@aue/sim';
-import { cloudDeath, cloudHit, siltBurst, siltDeath, siltTick } from './imaginary.js';
 import { plantShape, plantSpawn, plantTick } from './plant.js';
 
 /** @typedef {import('@aue/sim').FoeBehavior} FoeBehavior */
@@ -42,16 +41,11 @@ export const spyShape = (bb) => typeof bb.ammo === 'number';
  * 悖谬谍报官 (敌能-31): it comes in with `ammo` rounds. With a round left its attack is a ranged one and spends
  * −`attack@sp` of them, and the next time its attack deals damage to an operator that operator's player loses
  * −`attack@cost` cost for each such attack since (down to 0); with none left it attacks only the unit blocking it, without
- * a projectile. The same object also dispatches 蚀裂's cloud and 淤困's attachment (敌能-160, 敌能-161); those
- * shapes are not the spy's, and the spy's hooks leave them alone.
+ * a projectile.
  * @type {FoeBehavior}
  */
 const spy = Object.freeze({
   spawn: (ctx) => { if (spyShape(ctx.bb)) ctx.state.set('ammo', ctx.bb.ammo); },
-  tick: (ctx) => { siltTick(ctx); },
-  hpDamage: (ctx, hit) => { cloudHit(ctx, hit); },
-  death: (ctx) => { cloudDeath(ctx); siltDeath(ctx); },
-  elementBurst: (ctx, burst) => { siltBurst(ctx, burst); },
   targets: (ctx, cands) => {
     if (!spyShape(ctx.bb) || ctx.state.get('ammo') >= 1) return cands;
     const b = ctx.blocker();
