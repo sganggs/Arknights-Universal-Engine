@@ -22,6 +22,10 @@ const healsA = (b, healer, a) => !!healer.u && healsThrough(b.w, b.c, healer.u, 
  * `seen` (the kits' ids). As a kit picks allies: never a 孤立 one; one that refuses allies' heals only when the healer
  * heals it through that (伤害-13, INF-1130); the healer itself either way (its own heal reaches it, 职业-9; Stronghold's
  * `a !== healer`). Null for none.
+ * Neither this, the engine's own jump nor Stronghold's passes over an ally under 禁疗 (the heal then restores
+ * nothing, 伤害-11) or under 隐匿 (only another side may not select it, 索敌-2). Stronghold's passes over its
+ * `hidden` allies too; the engine makes only enemies disappear (路线-4, 敌能-16), and the jump takes operators only
+ * — devices never, as Stronghold's.
  * @param {ShBattle} b @param {ShUnit | null} healer @param {ShUnit} prev @param {Set<number>} seen @returns {ShUnit | null}
  */
 export function chainHealNext(b, healer, prev, seen) {
@@ -68,9 +72,12 @@ export const palsyLayers = (v) => Math.max(1, Math.min(PALSY_MAX, Math.floor(typ
 /**
  * A 麻痹 a kit gives (兼容-4): its value is its layers (palsyLayers), given at once and added to those there up to the
  * cap (状态-2, 状态-8). The `beforeStatus` event carries the value as the kit gave it, and the layers are what its
- * handlers leave — Stronghold makes its 麻痹 from the value after them —: the engine reads them as it makes the buff,
- * after the event, from this application's own event, which the first handler of all keeps (one sent from a handler of
- * it comes later). Whether it took hold.
+ * handlers leave — Stronghold makes its 麻痹 from the value after them. So `stacks` is a getter, and this relies on
+ * status.inflict sending `beforeStatus` before it reads the options' `stacks` (it reads them as it makes the buff,
+ * after the event): read first, the layers would be the kit's value from before the handlers. The getter reads this
+ * application's own event, which a handler ahead of all others keeps (one sent from inside a handler comes later);
+ * without a `beforeStatus` handler inflict sends none and the layers are the kit's value. The test「a handler's new
+ * value gives the layers」(compat-kitstubs.test.js) fails if inflict reads them first. Whether it took hold.
  * @param {ShBattle} b @param {ShUnit} target @param {number | undefined} frames @param {{ source?: ShUnit | null, value?: number }} o
  * @returns {boolean}
  */
