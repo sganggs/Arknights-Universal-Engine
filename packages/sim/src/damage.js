@@ -204,7 +204,7 @@ function tagMul(m, tags, pa) {
  * physical from a source whose flags ignore 物理闪避 (`ignoreDodgePhys`). The dodge is drawn all the same.
  * @param {Damage} dmg @param {Unit | null} src
  */
-const dodgeProof = (dmg, src) => !!dmg.noDodgeCancel || (dmg.type === 'phys' && !!src && !!statsOf(src).flags.ignoreDodgePhys);
+export const dodgeProof = (dmg, src) => !!dmg.noDodgeCancel || (dmg.type === 'phys' && !!src && !!statsOf(src).flags.ignoreDodgePhys);
 
 /**
  * One buff's 伤判 effects on a hit, in a fixed order within the buff: dodge, 抵挡, taken multipliers, shield, barrier
@@ -268,8 +268,12 @@ function reachable(e) {
   return e.kind === KIND.ENEMY && e.hp > 0 && !f.invincible && !stealthed(e) && !f.untargetable;
 }
 
-/** A dodge or a miss (伤害-8): the `dodge` event (钩子-3), and one more on the target's `dodges` tracker (职业-26). @param {World} w @param {Unit} u @param {Unit | null} src @param {Damage} dmg */
-function dodged(w, u, src, dmg) {
+/**
+ * A dodge or a miss (伤害-8): the `dodge` event (钩子-3), and one more on the target's `dodges` tracker (职业-26). Content
+ * whose `take` dodges a hit calls it too, so the hit counts as dodged like one of the engine's own.
+ * @param {World} w @param {Unit} u @param {Unit | null} src @param {Damage} dmg
+ */
+export function dodged(w, u, src, dmg) {
   dmg.dodged = true;
   emit(w, 'dodge', { source: src, target: u, dmg });
   const t = tracker(u, 'dodges');
@@ -313,16 +317,27 @@ export function takeDamage(w, u, amount, dmg, from = {}) {
       behaviorOf(from.c, b)?.afterCancel?.(w, u, b, { dmg, src, credit, tags, c: from.c });
       continue;
     }
-    const hits = b.shieldHits;
-    const hit = { dmg, src, credit, tags, c: from.c };
-    left = judge(w, u, b, left, hit);
-    // The layer is already spent, and the buff may already be gone: the object still shows the drop (部署-8).
-    if (b.tag === 'shieldBreak' && b.shieldHits < hits) brokeShield(u, b.n, from.c);
-    if (left > 0) left = applyTake(w, u, b, left, hit);
-    if (left < 0) dodged(w, u, src, dmg);
+    left = turnOf(w, u, b, left, { dmg, src, credit, tags, c: from.c });
     gone = !(left > 0);
   }
   return gone ? 0 : left;
+}
+
+/**
+ * One buff's turn in the 伤判 (伤害-8): its own effects, a broken deployment-shield layer (部署-8), `spent` when that
+ * used up its shield and it went, then `take` while damage is left; a dodge is the `dodge` event. The damage left.
+ * @param {World} w @param {Unit} u @param {Buff} b @param {number} amount
+ * @param {{ dmg: Damage, src: Unit | null, credit: Unit | null, tags: readonly string[], c?: import('./types.js').Content }} hit
+ */
+function turnOf(w, u, b, amount, hit) {
+  const hits = b.shieldHits, held = u.buffs.includes(b);
+  let left = judge(w, u, b, amount, hit);
+  // The layer is already spent, and the buff may already be gone: the object still shows the drop (部署-8).
+  if (b.tag === 'shieldBreak' && b.shieldHits < hits) brokeShield(u, b.n, hit.c);
+  if (held && !u.buffs.includes(b)) behaviorOf(hit.c, b)?.spent?.(w, u, b);
+  if (left > 0) left = applyTake(w, u, b, left, hit);
+  if (left < 0) dodged(w, u, hit.src, hit.dmg);
+  return left;
 }
 
 /** A buff's behaviour in the content (伤害-8): by `act`, or the buff's key. @param {import('./types.js').Content | undefined} c @param {Buff} b */

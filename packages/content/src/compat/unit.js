@@ -40,6 +40,9 @@ export class ShBuff {
   get flags() { return this.buff.flags; }
   get shield() { return this.buff.shield; }
   set shield(v) { damage.setShield(this.holder, this.buff, v); }
+  /** Its 护盾 layers (伤害-8); a kit may set them (whole layers, a buff that is only used-up layers goes). */
+  get shieldHits() { return this.buff.shieldHits; }
+  set shieldHits(n) { damage.setShieldHits(this.holder, this.buff, n); }
   get value() { return this.buff.value; }
   /** The unit that gave it, or null. */
   get source() { return this.b.unitById(this.buff.src); }

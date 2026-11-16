@@ -537,9 +537,9 @@ export class ShBattle {
   }
 
   /**
-   * What a kit's buff spec asks that the engine's buffs do not carry yet (兼容-4): the callbacks of the damage judgement
-   * (`injury`, `observeInjury`) and `damageReduction`. The buff is given without them, and the gap is recorded once for
-   * each unit and key, so that a kit whose buff does less than it says shows in the errors.
+   * What a kit's buff spec asks that the engine's buffs do not carry yet (兼容-4): an empty shield that stays
+   * (`keepEmptyShield`; the engine drops a buff that is only a used-up shield, 伤害-8). The buff is given without it, and
+   * the gap is recorded once for each unit and key, so that a kit whose buff does less than it says shows in the errors.
    * @param {ShUnit} unit @param {Record<string, any>} spec
    */
   noteUnsupported(unit, spec) {
@@ -559,7 +559,7 @@ export class ShBattle {
     if (there && !RULES[spec.refresh ?? 'replace']) buffs.removeBuff(u, there);
     const h = hooksOf(spec);
     const b = buffs.makeBuff({ key: spec.key, src: spec.source?.u?.id ?? -1, rule: /** @type {any} */ (RULES[spec.refresh] ?? 'queue'), mods: modsOf(spec.mods),
-      flags: flagsOf(spec.flags), stacks: spec.stacks ?? 1, maxStacks: spec.maxStacks ?? 1, left: framesLeft(spec.duration),
+      flags: flagsOf(spec.flags), stacks: spec.stacks ?? 1, maxStacks: spec.maxStacks ?? 1, left: framesLeft(spec.duration), ...judgedOf(spec),
       ...(h ? { act: KIT_BUFF, every: h.every, fixed: true } : {}) });
     if (spec.data !== undefined) this.buffData.set(b, spec.data);
     if (h) this.buffHooks.set(b, h.hooks);
@@ -615,7 +615,20 @@ export class ShBattle {
 const inEffect = (u, b) => (u.buffs.includes(b) ? b : u.buffs.find((x) => x.key === b.key) ?? null);
 
 /** The parts of a kit's buff spec the engine's buffs do not carry (noteUnsupported). */
-const UNSUPPORTED_BUFF = Object.freeze(['injury', 'observeInjury', 'damageReduction']);
+const UNSUPPORTED_BUFF = Object.freeze(['keepEmptyShield']);
+
+/**
+ * What a kit buff brings to the engine's 伤判 (伤害-8): its 护盾 layers (`shieldHits`), its 屏障 (`shield`) and the types
+ * they take (Stronghold's list as the engine's `a+b`; none named, every type); its `injuryPriority` as the event priority.
+ * @param {Record<string, any>} spec
+ */
+function judgedOf(spec) {
+  const prio = Number.isFinite(spec.injuryPriority) ? { prio: Number(spec.injuryPriority) } : {};
+  const hits = Math.max(0, Math.round(Number(spec.shieldHits) || 0)), amount = Math.max(0, Number(spec.shield) || 0);
+  if (!hits && !amount) return prio;
+  const t = spec.shieldType, type = Array.isArray(t) ? t.join('+') : typeof t === 'string' ? t : '';
+  return { ...prio, shieldHits: hits, shield: amount, shieldType: type };
+}
 
 /** A buff's seconds as frames left, −1 for none. @param {number | undefined} seconds */
 const framesLeft = (seconds) => (seconds === undefined || seconds === Infinity ? -1 : secondsToFrames(Math.max(0, seconds)));
