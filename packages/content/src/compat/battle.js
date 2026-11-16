@@ -77,6 +77,11 @@ const SHAPES = {
   beforeStatus: (b, k) => ({ source: sh(b, k.source), target: sh(b, k.target), status: STATUS_NAME[k.status] ?? k.status,
     get duration() { return k.frames < 0 ? Infinity : k.frames * TICK; }, set duration(v) { k.frames = v === Infinity ? -1 : secondsToFrames(Math.max(0, Number(v) || 0)); },
     get value() { return k.strength; }, set value(v) { k.strength = v; }, get cancel() { return k.cancel; }, set cancel(v) { k.cancel = v; } }),
+  // 钩子-5's events (兼容-8)
+  statusApplied: (b, k) => ({ source: sh(b, k.source), target: sh(b, k.target), status: STATUS_NAME[k.status] ?? k.status,
+    duration: k.frames < 0 ? Infinity : k.frames * TICK, value: k.strength, entered: k.entered }),
+  enemyAttackStart: (b, k) => ({ enemy: sh(b, k.enemy), targets: k.targets.map((/** @type {Unit} */ t) => b.unitOf(t)) }),
+  palsyTrigger: (b, k) => ({ enemy: sh(b, k.enemy), buff: b.buffOf(k.enemy, k.buff), get keep() { return k.keep; }, set keep(v) { k.keep = v; } }),
 };
 
 /**
