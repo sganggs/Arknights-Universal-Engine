@@ -326,5 +326,45 @@
     "stronghold": "同一增益里先乘倍率、减固定减伤、再用护盾、再调 injury、最后判定闪避；每个增益不论谁取消了伤害都调用 observeInjury；defer 的回调在扣除生命之后运行；抵挡发 block 事件。",
     "reason": "引擎的伤判（伤害-8）给内容的口子是 take 和 afterCancel：take 在增益自己的效果之后、伤害仍大于 0 时才调用，取消之后只调用后面增益的 afterCancel，扣除生命之后没有口子。第二期下半的棋子 kit 里，伤判回调的增益都不带护盾和闪避，也没有用 defer 的，次序的不同在这些 kit 上不起作用；同时带护盾和伤判回调的增益会有差异。",
     "status": "有效"
+  },
+  {
+    "id": "DIF-0050",
+    "clause": "兼容-4",
+    "ours": "push 返回的是敌人被推动的格数，按推的那一刻算出来：弹道推动当帧的一步，加上之后的失衡滑行逐帧积分到停下，遇墙或地图边缘就停在那里（引擎的位移-3）；这是对将发生的滑行的预计，推完当时单位只走了一步，其余在之后的帧里走。静态刚体受力进入失衡，返回 0。",
+    "stronghold": "push 当场用 displace 每 0.1 格一步把敌人移到停下，返回实际走的格数；静态刚体不动，返回 0。",
+    "reason": "引擎的推只给敌人一个速度，位移在之后的帧里按摩擦逐帧发生（位移-2、位移-3），push 返回时还没走完。预计与 Stronghold 的结果在空地上相等（弹道与特效的理想距离，PRTS 推与拉）；遇墙时引擎以一帧的步长停下、Stronghold 以 0.1 格的步长停下，停下的位置可以差一步，见行者这样的 kit 比较的是「少于应走的距离减 0.05」，所以撞墙时都判为撞墙，贴着墙的边界情形可以不同。另外，推一个静态刚体以前返回 1（力起了作用），现在同 Stronghold 为 0。",
+    "status": "有效"
+  },
+  {
+    "id": "DIF-0051",
+    "clause": "钩子-3",
+    "ours": "引擎在 damageApplying 之前就已经给了目标受击回复（技能-2）、记了敌人的受击计数（敌能-38）和来源的符文技力（符文-4），所以被 damageApplying 的处理函数取消的伤害，这几项已经算了；damageApplied 在扣生命之后、damaged 之前发。",
+    "stronghold": "受击回复在扣生命之后才算（applyHpDecrease 里的 onDamaged），被 damageApplying 取消的伤害没有；damageApplied 在扣生命之后、hpChanged 与 modifierApplied 之后、damaged 之前发。",
+    "reason": "引擎的受击回复、受击计数、符文技力在伤判之前、不论伤判结果如何都算（技能-2、敌能-38、符文-4：被闪避的伤害也算），damageApplying 放在它们和防御计算之后；改成在扣生命之后算会改动引擎自己干员与敌人的结果。蒂比的紧急赶场通知（受到伤害前触发技能、闪避这次伤害）在这里取消伤害后，目标多得一次受击回复。",
+    "status": "有效"
+  },
+  {
+    "id": "DIF-0052",
+    "clause": "兼容-4",
+    "ours": "spawnToken 没有给 kit 时，只对有 kit 的干员的召唤物，用 tokens 模块的 kits 里这个召唤物的 kit；别的干员的召唤物（引擎自己的干员）没有 kit，仍是引擎自己的处理。",
+    "stronghold": "战斗对每个造出的召唤物（setupUnitKit）都用 tokens 模块的 kits[召唤物 id]，没有时用通用 kit。",
+    "reason": "引擎自己的干员的召唤物按引擎的规则运行（召唤-1…召唤-6）；再装 tokens 的 kit 会让两套规则同时作用在同一个召唤物上。通用 kit（genericKit，Stronghold 按技能说明生成的效果）没有对应：召唤物在模块里没有 kit 时仍没有 kit，它的技能按引擎的通用效果（技能-5）。",
+    "status": "有效"
+  },
+  {
+    "id": "DIF-0053",
+    "clause": "钩子-3",
+    "ours": "statusApplied 的 frames（给 kit 的 duration 秒数）是 beforeStatus 之后的长度，没有计入抵抗：可抵抗的状态（晕眩、寒冷、冻结、恐惧、诱导、麻痹）的抵抗在引擎里是更快的流失（状态-8），不缩短施加的长度。",
+    "stronghold": "statusApplied 的 duration 已经按目标的抵抗缩短（duration × (1 − 抵抗)）。",
+    "reason": "引擎按官方的做法让抵抗加快状态的流失，而不是改施加时的时长（状态-8）。读状态名、来源、目标与 entered 的 kit 与内容（halo2、titi、lumen、aroma 的 kit，规程的盟约、装备、盟约的处理函数）不受影响；Stronghold v0.4.0 里没有处理函数读 statusApplied 的 duration（逐个看过），所以对照里没有差异，只有目标带抵抗时 duration 会比 Stronghold 的长。",
+    "status": "有效"
+  },
+  {
+    "id": "DIF-0054",
+    "clause": "兼容-4",
+    "ours": "kit 登记 damageOutput、damageBeforeApply、damageCalculateTarget、block、blocked、projectileStep、spGain、palsyTrigger、enemyAttackStart、hpChanged、modifierApplied、elementApplied、enemyLeak、battleEnd 时，引擎不发这些事件，只记一条缺口（compat: event.<名字> is not emitted yet，每个单位每个事件一次）；逐个 kit 的对照里它显为一条 errors 行（slent2 的 spGain、phatm2 的 enemyAttackStart、mantra 的 palsyTrigger）。",
+    "stronghold": "这些事件在它的结算、技能、敌人行动、投射物与战斗生命周期里照常发出，kit 的处理函数被调用。",
+    "reason": "引擎没有这些事件的对应点：伤害输出与应用前的两步属于 Stronghold 的有序结算里引擎没有的阶段，技力获得、麻痹触发、敌人攻击开始、投射物步进、阻挡、生命变化等要在引擎各自的流程里加事件，没有做。kit 自己 emit 的这些事件照常到它的处理函数。逐个 kit 的对照里这三个 kit 的技能效果与 Stronghold 一致（对照的情形没有触发这些事件），显出的只是这条缺口记录。",
+    "status": "有效"
   }
 ]

@@ -246,6 +246,48 @@
           "hits 76.6,118.7,134,191.5,207.8,249,296.8,306.4 ≠ 76.6,118.8,134.1,191.5,207.8,248.9,296.8,306.4"
         ]
       }
+    },
+    "char_1031_slent2": {
+      "because": [
+        "DIF-0054"
+      ],
+      "skills": {
+        "S3": [
+          "errors event.spGain: compat: event.spGain is not emitted yet"
+        ]
+      }
+    },
+    "char_1042_phatm2": {
+      "because": [
+        "DIF-0054"
+      ],
+      "skills": {
+        "S1": [
+          "errors event.enemyAttackStart: compat: event.enemyAttackStart is not emitted yet"
+        ],
+        "S2": [
+          "errors event.enemyAttackStart: compat: event.enemyAttackStart is not emitted yet"
+        ],
+        "S3": [
+          "errors event.enemyAttackStart: compat: event.enemyAttackStart is not emitted yet"
+        ]
+      }
+    },
+    "char_4204_mantra": {
+      "because": [
+        "DIF-0054"
+      ],
+      "skills": {
+        "S1": [
+          "errors event.palsyTrigger: compat: event.palsyTrigger is not emitted yet"
+        ],
+        "S2": [
+          "errors event.palsyTrigger: compat: event.palsyTrigger is not emitted yet"
+        ],
+        "S3": [
+          "errors event.palsyTrigger: compat: event.palsyTrigger is not emitted yet"
+        ]
+      }
     }
   }
 }

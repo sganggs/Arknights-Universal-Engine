@@ -80,7 +80,8 @@ const FIRST = 1e9;
  * Stronghold's battle content beyond the kits (兼容-7): its players' inputs by seat, and the content modules a battle
  * installs after the kits, in order (Stronghold's installContent: each module's `install(battle)`); `seen`, given to a
  * match's content (index.js matchContent), gets each battle made.
- * @typedef {{ players?: (PlayerInput | null | undefined)[], modules?: { name: string, install: (b: ShBattle) => void }[], seen?: (b: ShBattle) => void }} ContentInput
+ * A module that defines kits for summons (`kits`: the tokens module) gives them to every summon of an operator with a kit.
+ * @typedef {{ players?: (PlayerInput | null | undefined)[], modules?: { name: string, install: (b: ShBattle) => void, kits?: Readonly<Record<string, Function>> }[], seen?: (b: ShBattle) => void }} ContentInput
  */
 
 /**
@@ -112,7 +113,10 @@ export function kitsWorld(kits, seen, o = {}) {
         else if (o.players && Object.hasOwn(c.operators, key) && !c.operators[key].summon) addPiece(b, seat, key, plainDef(c, key, facts), facts);
       }
     });
-    for (const m of o.modules ?? []) b.safe(() => m.install(b), `content:${m.name}`, null);
+    for (const m of o.modules ?? []) {
+      if (m.name === 'tokens' && m.kits) b.tokenKits = m.kits;
+      b.safe(() => m.install(b), `content:${m.name}`, null);
+    }
     seen?.(b);
   };
 }

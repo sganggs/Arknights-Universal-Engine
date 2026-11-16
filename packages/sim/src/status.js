@@ -107,18 +107,59 @@ export function statusBuff(key, target, o = {}) {
 }
 
 /**
+ * The frames of the freeze a cold pair forms, after the `beforeStatus` event for that freeze (状态-6, 钩子-3), as the
+ * freeze would pass it if it were applied on its own: a handler may cancel it (null), or change its frames.
+ * @param {import('./types.js').World | null} w @param {Unit} target @param {Unit | null} src @param {number} left
+ * @returns {number | null}
+ */
+function freezeFrames(w, target, src, left) {
+  if (!w || !hasHook(w, 'beforeStatus')) return left;
+  const k = emit(w, 'beforeStatus', { source: src, target, status: 'freeze', frames: left, strength: undefined, cancel: false });
+  const frames = Number.isFinite(k.frames) ? Math.trunc(k.frames) : left;
+  return k.cancel || target.hp <= 0 || (frames <= 0 && frames !== -1) ? null : frames;
+}
+
+/**
  * Cold (状态-6). A friendly cold meets a friendly cold already there: the pair becomes a friendly freeze lasting the
  * longer of the two. An enemy cold on a unit with an enemy cold or freeze becomes an enemy freeze. A unit immune to
- * freezing just gets colder.
- * @param {Unit} target @param {Buff} cold @returns {Buff}
+ * freezing just gets colder; so does one whose `beforeStatus` handler cancels the freeze (given the world).
+ * @param {Unit} target @param {Buff} cold @param {import('./types.js').World | null} w @param {Unit | null} src @returns {Buff}
  */
-function applyCold(target, cold) {
+function applyCold(target, cold, w, src) {
   const enemy = cold.key === 'enemyCold', freezeKey = enemy ? 'enemyFreeze' : 'freeze';
   const there = target.buffs.find((b) => b.key === cold.key || (enemy && b.key === 'enemyFreeze'));
   if (!there || immuneTo(target, 'freeze')) return addBuff(target, cold);
-  const left = enemy ? cold.left : (cold.left < 0 || there.left < 0 ? -1 : Math.max(cold.left, there.left));
+  const frames = freezeFrames(w, target, src, enemy ? cold.left : (cold.left < 0 || there.left < 0 ? -1 : Math.max(cold.left, there.left)));
+  if (frames === null) return addBuff(target, cold);
   if (!enemy) removeBuff(target, there);
-  return addBuff(target, statusBuff(freezeKey, target, { frames: left, src: null }));
+  return addBuff(target, statusBuff(freezeKey, target, { frames, src: null }));
+}
+
+/** What `statusApplied` calls a buff key: the status as it is asked for, so the enemy kinds of cold and freeze are cold and freeze. */
+const ASKED = Object.freeze({ enemyCold: 'cold', enemyFreeze: 'freeze' });
+
+/**
+ * The context of the `statusApplied` event after a status took hold (状态-5, 钩子-3). `status` is the one that took hold — a
+ * cold pair's is the freeze —, `frames` how long this application lasts, `strength` its value, `entered` whether the
+ * target had none of that status before (`held`: its buff keys before).
+ * @param {Unit | null} src @param {Unit} target @param {Buff} asked the buff made for the application
+ * @param {Buff} given the buff now in the list @param {ReadonlySet<string>} held
+ */
+function appliedOf(src, target, asked, given, held) {
+  return { source: src, target, status: ASKED[/** @type {keyof typeof ASKED} */ (given.key)] ?? given.key, frames: given.key !== asked.key ? given.left : asked.left,
+    strength: asked.value, entered: !held.has(given.key) };
+}
+
+/**
+ * Adds the buff of a status (状态-6): a cold meets its pair; given the world, the status that took hold is reported
+ * (`statusApplied`) and a cold pair's freeze goes through `beforeStatus`.
+ * @param {Unit} target @param {Buff} b @param {Unit | null} src @param {import('./types.js').World | null} w @returns {Buff}
+ */
+function putStatus(target, b, src, w) {
+  const held = w && hasHook(w, 'statusApplied') ? new Set(target.buffs.map((x) => x.key)) : null;
+  const given = b.key === 'cold' || b.key === 'enemyCold' ? applyCold(target, b, w, src) : addBuff(target, b);
+  if (w && held) emit(w, 'statusApplied', appliedOf(src, target, b, given, held));
+  return given;
 }
 
 /**
@@ -135,15 +176,14 @@ function noted(target, k, o) {
  * Puts a status on a unit (状态-5…状态-7). Cold and freeze from an enemy are the enemy kinds. Returns the buff now in
  * the list, or null when it does not take hold (浮空 on a flying unit, 缚地 on a ground unit, 恐惧 on a character).
  * Does not look at 起飞: the caller already decided that (阻挡-2), so a handler that lifts the target does not cancel it.
- * @param {Unit} target @param {StatusKey} key @param {StatusOptions} o @returns {Buff | null}
+ * @param {Unit} target @param {StatusKey} key @param {StatusOptions} o @param {import('./types.js').World | null} [w] @returns {Buff | null}
  */
-function giveStatus(target, key, o) {
+function giveStatus(target, key, o, w = null) {
   const fromEnemy = o.src?.kind === KIND.ENEMY;
   const k = fromEnemy && key === 'cold' ? 'enemyCold' : fromEnemy && key === 'freeze' ? 'enemyFreeze' : key;
   if (STATUS[k].refuse(statsOf(target), target) || framesOf(o) === 0) return null;
   const b = statusBuff(k, target, noted(target, k, o));
-  if (b.left === 0) return null;
-  return k === 'cold' || k === 'enemyCold' ? applyCold(target, b) : addBuff(target, b);
+  return b.left === 0 ? null : putStatus(target, b, o.src ?? null, w);
 }
 
 /**
@@ -159,16 +199,16 @@ export function applyStatus(target, key, o = {}) {
 /**
  * A status in a battle (状态-5, 钩子-3): refused for 起飞 before the event (阻挡-2); then the `beforeStatus` event — a
  * handler may cancel it, change its frames (−1 for no end; none left cancels it) or its strength (the status's value) —
- * then the status. Taking off inside the handler does not cancel it: the check already passed.
+ * then the status, then the `statusApplied` event. Taking off inside the handler does not cancel it: the check already passed.
  * @param {import('./types.js').World} w @param {Unit} target @param {StatusKey} key @param {StatusOptions} [o] @returns {Buff | null}
  */
 export function inflict(w, target, key, o = {}) {
   if (liftoffRefused(o.src ?? null, target)) return null;
-  if (!hasHook(w, 'beforeStatus')) return giveStatus(target, key, o);
+  if (!hasHook(w, 'beforeStatus')) return giveStatus(target, key, o, w);
   const k = emit(w, 'beforeStatus', { source: o.src ?? null, target, status: key, frames: framesOf(o), strength: o.value, cancel: false });
   const frames = Number.isFinite(k.frames) ? Math.trunc(k.frames) : framesOf(o);
   if (k.cancel || target.hp <= 0 || (frames <= 0 && frames !== -1)) return null;
-  return giveStatus(target, key, { ...o, frames, seconds: undefined, value: k.strength });
+  return giveStatus(target, key, { ...o, frames, seconds: undefined, value: k.strength }, w);
 }
 
 /** 麻痹 loses a layer every this many frames at a 综合抵抗衰减率 of 1 (状态-8: 10 s). */
