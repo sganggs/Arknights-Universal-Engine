@@ -80,7 +80,7 @@ const FUNNEL_FIELDS = Object.freeze(new Set(['funnel', 'funnelMul']));
  * `rampInit`: the engine's charge takes a 解放者's starting bonus from the module's blackboard, 职业-12). Any other field has no
  * effect and is recorded as a gap (ShUnit.noteTraitGaps).
  */
-const TRAIT_USED = Object.freeze(new Set(['canAttack', 'skipEnemy', 'storeEnergy', 'dmgMul', 'hitsFn', 'afterHit', 'afterAttack', 'onEachHit', 'boomerangOnward', 'install',
+const TRAIT_USED = Object.freeze(new Set(['canAttack', 'skipEnemy', 'storeEnergy', 'healThrough', 'dmgMul', 'hitsFn', 'afterHit', 'afterAttack', 'onEachHit', 'boomerangOnward', 'install',
   'splashRadius', 'onHitStatus', 'hits', 'hitDmgMul', 'noAttackUnlessSkill', 'hitSleep', 'rangeTiles', 'maxTargets', 'blockFly', 'dollNoAttack', 'rampInit']));
 
 /** Whether a kit's write changes a profile field: the same value (also a copy of an object) is not a change. @param {unknown} a @param {unknown} b */

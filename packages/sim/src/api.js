@@ -7,9 +7,10 @@
  * say whether its operator may attack (canAttack) and what an attack turn without a target does (store); 5: a trait
  * behaviour may say which enemies its operator does not select (skip), a skill behaviour the running skill's range
  * (range); 6: a trait behaviour may say which funnel its operator has (funnel) and how much its regeneration
- * aura gives an operator (regen).
+ * aura gives an operator (regen); 7: a trait behaviour may say which allies its operator heals through their 禁疗
+ * (healThrough).
  */
-export const BEHAVIOR_API_VERSION = 6;
+export const BEHAVIOR_API_VERSION = 7;
 
 /** What every behaviour's context has (职业-6). */
 export const CONTEXT_MEMBERS = Object.freeze(['self', 'bb', 'frame', 'stats', 'addBuff', 'removeBuff', 'applyStatus', 'dealDamage', 'dealEp', 'heal', 'gainCost']);

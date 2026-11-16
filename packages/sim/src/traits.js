@@ -172,7 +172,8 @@ export const traitTargets = (t, op) => (t.targets === 'all' ? Infinity : t.targe
  * select now (`skip`: true for one); whether it takes the place of the branch's own deployment effects for this operator
  * (true: no trait buff or upkeep from the engine); which funnel its operator has now (`funnel`: another's — `init`, `delta`,
  * `max` —, or null for none; undefined: the trait's); how much 生命回复速度 its regeneration aura gives one operator (`regen`:
- * another amount for the one given, or undefined for it).
+ * another amount for the one given, or undefined for it); which allies its operator heals through their 禁疗
+ * (`healThrough`: true for one, 伤害-13).
  * @typedef {object} TraitBehavior
  * @property {(ctx: TraitContext) => void} [deploy]
  * @property {(ctx: TraitContext, target: Unit) => void} [hit]
@@ -183,6 +184,7 @@ export const traitTargets = (t, op) => (t.targets === 'all' ? Infinity : t.targe
  * @property {(ctx: TraitContext, target: Unit) => boolean | undefined} [skip]
  * @property {(ctx: TraitContext) => { init: number, delta: number, max: number } | null | undefined} [funnel]
  * @property {(ctx: TraitContext, target: Unit, amount: number) => number | undefined} [regen]
+ * @property {(ctx: TraitContext, target: Unit) => boolean | undefined} [healThrough]
  */
 
 /** Gives the owner cost, up to the level's maximum (费用-1). @param {World} w @param {Content} c @param {number} seat @param {number} n */

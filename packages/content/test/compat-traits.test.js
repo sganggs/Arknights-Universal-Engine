@@ -271,7 +271,7 @@ test('[兼容-5] a 傀儡师 under a kit: the module’s attack and HP bonus for
 test('[兼容-5] a field of a kit’s trait that the layer does not honour is a gap, once for the piece and name; the fields it honours are not', () => {
   const trait = { hits: 2, hitDmgMul: 0.5, onHitStatus: null, noAttackUnlessSkill: false, hitSleep: false, canAttack: () => true, rampInit: 0.5, priority: 'notBurst', healThrough: () => true, selfHeal: 1 };
   const { b } = world({ siege: kit(trait) });
-  assert.deepEqual(b.errors.map((e) => [e.label, e.who, e.message]).sort(), ['healThrough', 'priority', 'selfHeal'].map((k) => [`trait.${k}`, 'siege', `compat: trait.${k} is not provided yet`]));
+  assert.deepEqual(b.errors.map((e) => [e.label, e.who, e.message]).sort(), ['priority', 'selfHeal'].map((k) => [`trait.${k}`, 'siege', `compat: trait.${k} is not provided yet`]));
 });
 
 test('[兼容-5] a bard’s regeneration aura asks the kit’s bardRegen handler for each ally’s share, as Stronghold’s profession does', () => {
