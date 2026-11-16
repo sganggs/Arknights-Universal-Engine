@@ -1,6 +1,8 @@
 // Stronghold's names → the engine's where they differ (docs/spec/compat.md 兼容-4): buff flags (属性-2, 状态-5), status
-// keys (状态-5) and elements with their bursts' buffs (元素-1, 元素-3), both ways. Modifier keys are the same in both (the engine took Stronghold's names, ADR 0012); one
+// keys (状态-5), elements with their bursts' buffs (元素-1, 元素-3) and the buff keys the engine keeps for its auras
+// (INF-1110), both ways. Modifier keys are the same in both (the engine took Stronghold's names, ADR 0012); one
 // the engine does not know stays on the buff and changes nothing.
+import { isAuraKey } from '@aue/sim';
 
 /** Stronghold's flags → the engine's (反隐 `reveal` is the engine's `unstealth`, 索敌-2). @type {Readonly<Record<string, string>>} */
 const FLAG = Object.freeze({ invulnerable: 'invincible', bind: 'root', noHeal: 'noAllyHeal', tremble: 'disarmedCombat', reveal: 'unstealth' });
@@ -20,16 +22,33 @@ export const ELEMENT = Object.freeze({ neural: 'SANITY', erosion: 'WATER', burn:
 /** The engine's elements → Stronghold's names. @type {Readonly<Record<string, string>>} */
 export const ELEMENT_NAME = Object.freeze(Object.fromEntries(Object.entries(ELEMENT).map(([k, v]) => [v, k])));
 
-/** A buff key as the engine names it: Stronghold's `<element>Burst` is the engine's `burst:<ELEMENT>` (元素-3). @param {string} key */
+/** The namespace a kit's buffs are kept in when their key has the shape of the engine's aura keys (INF-1110). */
+const KIT_SPACE = 'kit:';
+
+/**
+ * Whether the engine's aura sync would take a kit's buff key for an aura's and remove the buff (INF-1110): its keys of that
+ * shape (sim/aura.js), and those already in the kit namespace, so that the mapping loses no name.
+ * @param {string} key
+ */
+const inAuraSpace = (key) => isAuraKey(key.replace(/^(?:kit:)+/, ''));
+
+/**
+ * A buff key as the engine names it: Stronghold's `<element>Burst` is the engine's `burst:<ELEMENT>` (元素-3); a key of
+ * the shape of the engine's aura keys (`aura:spRecovery`, `inspire:hp`) is kept as `kit:<key>`, so that the aura sync
+ * leaves it be (INF-1110).
+ * @param {string} key
+ */
 export function buffKeyOf(key) {
   const el = key.endsWith('Burst') ? ELEMENT[key.slice(0, -5)] : undefined;
-  return el ? `burst:${el}` : key;
+  if (el) return `burst:${el}`;
+  return inAuraSpace(key) ? KIT_SPACE + key : key;
 }
 
 /** A buff key as Stronghold names it (the other way of buffKeyOf). @param {string} key */
 export function buffNameOf(key) {
   const el = key.startsWith('burst:') ? ELEMENT_NAME[key.slice(6)] : undefined;
-  return el ? `${el}Burst` : key;
+  if (el) return `${el}Burst`;
+  return key.startsWith(KIT_SPACE) && inAuraSpace(key.slice(KIT_SPACE.length)) ? key.slice(KIT_SPACE.length) : key;
 }
 
 /** A buff's modifiers as the engine reads them: numbers only. @param {Record<string, unknown> | null | undefined} m @returns {Record<string, number>} */
@@ -45,15 +64,14 @@ const FLAG_NAME = Object.freeze(Object.fromEntries(Object.entries(FLAG).map(([k,
 
 /**
  * A unit's attribute flags as a kit reads them: the engine's, also under Stronghold's names where it names them
- * otherwise, `burstLock` during an element burst (元素-3) and `cold` while it is 寒冷 (the engine's cold status has no
- * flag of its own, 状态-5).
- * @param {Record<string, boolean>} flags @param {boolean} bursting @param {boolean} [cold] @returns {Record<string, boolean>}
+ * otherwise, `burstLock` during an element burst (元素-3). `cold` is the engine's own flag of the cold statuses (状态-5), which
+ * a unit immune to 寒冷 does not have (状态-7).
+ * @param {Record<string, boolean>} flags @param {boolean} bursting @returns {Record<string, boolean>}
  */
-export function shFlagsOf(flags, bursting, cold = false) {
+export function shFlagsOf(flags, bursting) {
   const out = { ...flags };
   for (const [k, on] of Object.entries(flags)) if (on && Object.hasOwn(FLAG_NAME, k)) out[FLAG_NAME[k]] = true;
   if (bursting) out.burstLock = true;
-  if (cold) out.cold = true;
   return out;
 }
 
