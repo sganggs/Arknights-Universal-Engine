@@ -146,7 +146,7 @@ Stronghold 在 kit 之外还有一局战斗的内容模块（`server/sim/content
 
 钩子-5 的三个事件给 kit 的上下文同 Stronghold：
 
-- **`statusApplied`**：`source`、`target` 是 kit 看到的单位（兼容-4）；`status` 用 Stronghold 的名字（`bind`、`resist`、`tremble`；敌人施加的寒冷、冻结也是 `cold`、`freeze`）；`duration` 为秒（剩余帧数 × 1/30，无期限为 `Infinity`）——抵抗与重量在引擎里按衰减率缩短状态（状态-3、状态-5），不在这个数里，Stronghold 的是施加时乘过的（抵抗见 DIF-0006）；`value` 为数值；`entered` 同引擎。免疫的目标也发（钩子-5），Stronghold 免疫时不施加，也就不发（DIF-0012）。兼容层代用的状态（`defDown`，兼容-4）生效后同样发，`entered` 为施加前目标没有这个键的增益。
+- **`statusApplied`**：`source`、`target` 是 kit 看到的单位（兼容-4）；`status` 用 Stronghold 的名字（`bind`、`resist`、`tremble`；敌人施加的寒冷、冻结也是 `cold`、`freeze`）；`duration` 为秒（剩余帧数 × 1/30，无期限为 `Infinity`）——抵抗与重量在引擎里按衰减率缩短状态（状态-3、状态-5），不在这个数里，Stronghold 的是施加时乘过的（抵抗见 DIF-0006）；`value` 为数值；`entered` 同引擎。免疫的目标也发（钩子-5），Stronghold 免疫时不施加，也就不发（DIF-0012）。兼容层代用的状态（`defDown`、反隐 `reveal`，兼容-4）生效后同样发，`entered` 为施加前目标没有这个键的增益。
 - **`enemyAttackStart`**：`enemy` 和 `targets` 是 kit 看到的单位。kit 在这里让敌人晕眩、倒下（或 钩子-5 列出的别的情形）时，这次攻击取消。
 - **`palsyTrigger`**：`enemy`；`buff` 是 kit 看到的麻痹增益（层数、剩余时间……，兼容-4）；`keep` 直接读写引擎的上下文，设为是时这一层不消耗。
 - 固定版本（v0.3.1）的 72 个干员 kit 里，酒神的「堕梦」用 `enemyAttackStart`，真言的「噤声限域」用 `palsyTrigger` 和 `keep`；`statusApplied` 干员 kit 不用：Stronghold 里用它的是棋子 kit（v0.4.0 中 4 个）、版本 kit（`ver-christ.js`）、特质（`garrisons/battle.js`）、装备（`items/battle.js`）、规程（`bonds/regulation.js`）和把它转给敌人能力的 `content/enemies.js`，兼容-7 载入的这些内容模块同样收到它。Stronghold 让内容把已有的状态当作新进入的选项（`reenter`，棋子 kit 缇缇）不提供。
