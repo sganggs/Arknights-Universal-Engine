@@ -24,7 +24,7 @@ const chilled = (u) => attrs.activeBuffs(u.buffs).some((x) => x.key === 'cold' |
 
 /**
  * A buff as a kit sees it: its key, the status it is (Stronghold's name), who gave it, its data, the seconds left, its
- * modifiers (which a kit may replace: the holder's HP keeps its ratio, 属性-4), flags and shield.
+ * modifiers (which a kit may replace: the holder's HP keeps its ratio, 属性-4), flags, barrier and 护盾 layers.
  */
 export class ShBuff {
   /** @param {ShBattle} b @param {Unit} holder @param {Buff} buff */

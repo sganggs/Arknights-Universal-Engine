@@ -9,6 +9,7 @@ import { withGrid } from './grid.js';
 import { ShUnit, ShBuff } from './unit.js';
 import { STATUS_NAME, ELEMENT_NAME, statusKeyOf, modsOf, flagsOf, buffKeyOf } from './mods.js';
 import { KIT_BUFF, hooksOf, runHook } from './buffhooks.js';
+import { shieldOf, raiseMerged } from './shields.js';
 import { STAND_INS, giveStandIn } from './standins.js';
 import { ShProjectiles } from './projectiles.js';
 import * as field from './field.js';
@@ -620,10 +621,12 @@ export class ShBattle {
     const h = hooksOf(spec);
     const b = buffs.makeBuff({ key, src: spec.source?.u?.id ?? -1, rule: /** @type {any} */ (RULES[spec.refresh] ?? 'queue'), mods: modsOf(spec.mods),
       flags: flagsOf(spec.flags), stacks: spec.stacks ?? 1, maxStacks: spec.maxStacks ?? 1, left: framesLeft(spec.duration), ...judgedOf(spec),
-      ...(h ? { act: KIT_BUFF, every: h.every, fixed: true } : {}) });
+      ...(h ? { act: KIT_BUFF, every: h.every, fixed: true } : {}),
+      // its barrier, layers and their type (shields.js; after the flags: they may come with the one that keeps them spent)
+      ...shieldOf(spec) });
     if (spec.data !== undefined) this.buffData.set(b, spec.data);
     if (h) this.buffHooks.set(b, h.hooks);
-    buffs.addBuff(u, b);
+    raiseMerged(u, buffs.addBuff(u, b), b, spec.refresh);
     return inEffect(u, b);
   }
 
@@ -678,16 +681,12 @@ const inEffect = (u, b) => (u.buffs.includes(b) ? b : u.buffs.find((x) => x.key 
 const UNSUPPORTED_BUFF = Object.freeze(['keepEmptyShield']);
 
 /**
- * What a kit buff brings to the engine's 伤判 (伤害-8): its 护盾 layers (`shieldHits`), its 屏障 (`shield`) and the types
- * they take (Stronghold's list as the engine's `a+b`; none named, every type); its `injuryPriority` as the event priority.
+ * What a kit buff brings to the engine's 伤判 (伤害-8): its `injuryPriority` as the event priority. Its 护盾 layers,
+ * 屏障 and the types they take are `shieldOf`'s (shields.js).
  * @param {Record<string, any>} spec
  */
 function judgedOf(spec) {
-  const prio = Number.isFinite(spec.injuryPriority) ? { prio: Number(spec.injuryPriority) } : {};
-  const hits = Math.max(0, Math.round(Number(spec.shieldHits) || 0)), amount = Math.max(0, Number(spec.shield) || 0);
-  if (!hits && !amount) return prio;
-  const t = spec.shieldType, type = Array.isArray(t) ? t.join('+') : typeof t === 'string' ? t : '';
-  return { ...prio, shieldHits: hits, shield: amount, shieldType: type };
+  return Number.isFinite(spec.injuryPriority) ? { prio: Number(spec.injuryPriority) } : {};
 }
 
 /** A buff's seconds as frames left, −1 for none. @param {number | undefined} seconds */
