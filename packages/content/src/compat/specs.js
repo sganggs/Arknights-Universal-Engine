@@ -347,6 +347,19 @@ function mainTarget(b, p, h) {
 }
 
 /**
+ * A heal attack of a kitted piece on one target (the engine's `healHit`, 兼容-5): while the skill runs, or for the skill's
+ * own attack, the spec's `onHit` with the target and `heal`, the attack's amount for it — Stronghold's doHeal calls it
+ * after the heal and its chain.
+ * @param {Record<string, any>} k the engine's context
+ */
+export function onHealHit(k) {
+  const r = pieceOf(k.healer);
+  if (!r || !(r.p.skill?.active || k.isSkill)) return;
+  const target = r.b.unitOf(k.target);
+  call(r.b, r.p, r.p.skill?.spec?.onHit, 'skill.onHit', { target, heal: k.amount, x: target.x, y: target.y });
+}
+
+/**
  * A boomerang of a kitted piece at its target (the engine's `boomerangHit`, 职业-12): a profile with `boomerangOnward`
  * (the skill attack's when a skill's attack threw it, else the kit trait's — the profile it was thrown with, as
  * Stronghold's) takes its flight over — the engine holds it there and the

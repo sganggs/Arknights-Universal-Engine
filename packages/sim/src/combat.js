@@ -421,10 +421,11 @@ function jumpHits(w, c, src, t, load) {
  * chain's share of the one before; each heal also restores element values by the trait's share of it (× its talents' on
  * a ground unit, 职业-31), gives the one healed its talents' SP for it (职业-25) and leaves their heal over time (职业-29);
  * what the talents give for any heal is the heal hook's (职业-33). One it heals through 禁疗 is healed through it (伤害-13).
+ * Then the `healHit` event (钩子-3), with the attack's amount for the target before the heal multipliers.
  * @param {World} w @param {Content} c @param {Unit} a @param {Unit} t @param {{ load: Load, jumps: Unit[] }} how
  */
 function heals(w, c, a, t, how) {
-  const ep = traitOf(c, a).epHeal;
+  const ep = traitOf(c, a).epHeal, first = how.load.amount * vsHeal(w, c, a, t);
   let amount = how.load.amount;
   for (const u of [t, ...how.jumps]) {
     for (let k = 0; k < how.load.times; k++) {
@@ -435,6 +436,7 @@ function heals(w, c, a, t, how) {
     }
     amount *= how.load.chain?.scale ?? 1;
   }
+  if (hasHook(w, 'healHit')) emit(w, 'healHit', { healer: a, target: t, amount: first, isSkill: !!how.load.skill, mark: how.load.mark ?? 0 });
 }
 
 /**
