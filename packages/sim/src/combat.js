@@ -110,12 +110,13 @@ export const pickTarget = (w, c, op) => targetsOf(w, c, op)[0] ?? null;
 /** @typedef {import('./skills.js').AttackMods} AttackMods @typedef {import('./types.js').Swing} Swing */
 /**
  * What an attack carries to one target: its damage type and amount, hits, 元素损伤, and an operator's splash and
- * aftershock (职业-8) and chain (职业-11); whether the skill makes it, and which of its hits this is (钩子-3).
+ * aftershock (职业-8) and chain (职业-11); whether the skill makes it, and which of its hits this is (钩子-3). `split`: the
+ * share of the amount each of its hits takes, after the defences, and `later` marks the hits after the first (职业-3).
  * @typedef {{ type: import('./types.js').DamageType, amount: number, times: number, element: string, ep: number, splash?: import('./types.js').Splash | null,
  *   aftershock?: number, chain?: import('./types.js').Chain | null, ranged?: boolean, hitStatus?: { key: import('./status.js').StatusKey, seconds: number, value?: number, prob?: number } | null,
  *   hitDebuff?: { seconds: number, mods: Record<string, number> }, displace?: { pull: boolean, force: number, along?: boolean },
  *   skill?: boolean, hit?: 'splash' | 'chain' | 'aftershock', mark?: number, frozen?: number, packed?: { cnt: number, atk: number }, aftershocks?: number, ignoreDef?: number, ignoreSelect?: boolean,
- *   facScale?: number, plain?: number, atkMul?: number, vsBuff?: { key: string, scale: number } }} Load
+ *   facScale?: number, plain?: number, atkMul?: number, vsBuff?: { key: string, scale: number }, split?: number, later?: boolean }} Load
  */
 
 /**
@@ -131,7 +132,8 @@ function vsBuffMul(load, t) {
  * A hit's damage, with where it comes from (钩子-3, the names of Stronghold's content): an attack's hit on its target,
  * on one splashed or jumped to; an aftershock is a splash and no attack's hit; whether the skill made it; a projectile's.
  * Its amount × `frozen` on a target 冻结 as the hit is worked out (敌能-27), × `vsBuff` on a target holding that buff
- * (敌能-141); both before the target's defences.
+ * (敌能-141); both before the target's defences. With a `split` it is that share after them, and the hits after the first
+ * give no 受击回复 (职业-3).
  * @param {Load} load @param {Unit} t @returns {import('./damage.js').Damage}
  */
 function damageOf(load, t) {
@@ -140,6 +142,10 @@ function damageOf(load, t) {
     ...(load.ignoreDef ? { defIgnorePct: load.ignoreDef } : {}), ...(load.ignoreSelect ? { ignoreSelect: true } : {}) });
   if (how === 'splash' || how === 'aftershock') d.isSplash = true;
   if (how === 'chain' || how === 'aftershock') d.tags = [how];
+  if (load.split !== undefined) {
+    d.mul = load.split;
+    if (load.later) d.noHurtSp = true;
+  }
   return d;
 }
 
@@ -153,7 +159,8 @@ function damageOf(load, t) {
 function hitTarget(w, c, src, t, load) {
   if (src && src.kind === KIND.ENEMY && !load.hit && foeCancelHit(w, c, src, t)) return;
   let total = 0;
-  for (let k = 0; k < load.times; k++) total += oneHit(w, c, src, t, load);
+  const later = load.split !== undefined ? { ...load, later: true } : load;
+  for (let k = 0; k < load.times; k++) total += oneHit(w, c, src, t, k === 0 ? load : later);
   if (src && load.displace && t.hp > 0) displaceOnHit(w, c, src, t, load.displace);
   if (src) emit(w, 'attackHit', { attacker: src, target: t, dealt: total, kind: load.hit ?? 'main', isSkill: !!load.skill, mark: load.mark ?? 0 });
 }
@@ -340,9 +347,10 @@ function loadFor(w, c, a, t, load) {
   if (a.kind !== KIND.OPERATOR) return hit;
   const tr = traitOf(c, a);
   return {
-    ...hit, amount: hit.amount * traitScale(w, c, a, t) * funnelScale(c, a, t), splash: tr.skillSplash && inSkill(a) ? tr.skillSplash : tr.splash, aftershock: tr.aftershock, chain: tr.chain,
+    ...hit, amount: hit.amount * traitScale(w, c, a, t) * funnelScale(w, c, a, t), splash: tr.skillSplash && inSkill(a) ? tr.skillSplash : tr.splash, aftershock: tr.aftershock, chain: tr.chain,
     ...(tr.aftershocks !== 1 ? { aftershocks: tr.aftershocks } : {}),
     ...(tr.packed ? { packed: tr.packed } : {}),
+    ...(tr.hitMul !== 1 ? { split: tr.hitMul } : {}),
   };
 }
 

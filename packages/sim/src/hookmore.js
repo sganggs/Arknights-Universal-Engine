@@ -1,6 +1,6 @@
-// More of the engine's events (docs/spec/hooks.md 钩子-5): after a status took hold, at an enemy's attack landing before
-// 麻痹 is checked, and as 麻痹 interrupts an attack. Names and contexts are Stronghold's, whose kits listen to them
-// (酒神's 堕梦, 真言's 噤声限域). With no handler nothing more is done, so the state is what it was without them.
+// More of the engine's events (docs/spec/hooks.md 钩子-5): at an enemy's attack landing before 麻痹 is checked, and as
+// 麻痹 interrupts an attack. Names and contexts are Stronghold's, whose kits listen to them (酒神's 堕梦, 真言's
+// 噤声限域). With no handler nothing more is done, so the state is what it was without them.
 import { KIND } from '@aue/schema';
 import { statsOf } from './attrs.js';
 import { emit, hasHook } from './bus.js';
@@ -8,23 +8,6 @@ import { disarmed } from './disarm.js';
 
 /** @typedef {import('./types.js').World} World @typedef {import('./types.js').Unit} Unit @typedef {import('./types.js').Buff} Buff */
 /** @typedef {import('./types.js').Swing} Swing */
-
-/**
- * The status keys a unit holds before a status is given (钩子-5 `entered`), when `statusApplied` has a handler; else null.
- * @param {World} w @param {Unit} u @returns {Set<string> | null}
- */
-export const heldBefore = (w, u) => (hasHook(w, 'statusApplied') ? new Set(u.buffs.map((b) => b.key)) : null);
-
-/**
- * After a status is given in a battle (钩子-5): when it took hold — `b`, the buff now in the list — and `had` was taken,
- * the `statusApplied` event with what took hold (a friendly cold pair is a freeze, 状态-6), its frames left, its value,
- * and whether the target held none of it before. Returns `b`.
- * @param {World} w @param {Unit} target @param {Unit | null} src @param {Set<string> | null} had @param {Buff | null} b @returns {Buff | null}
- */
-export function announce(w, target, src, had, b) {
-  if (had && b) emit(w, 'statusApplied', { source: src, target, status: b.key, frames: b.left, strength: b.value, entered: !had.has(b.key) });
-  return b;
-}
 
 /**
  * 麻痹 interrupting an enemy's attack, before its layer goes (钩子-5, 状态-8): the `palsyTrigger` event; whether a handler

@@ -1,8 +1,8 @@
 // Stronghold's statuses that have no counterpart among the official abnormal effects, so none in the engine's catalogue
 // (状态-5), as the compatibility layer's stand-ins (docs/spec/compat.md 兼容-4): a buff of the status's own key with
 // Stronghold's modifiers that keeps the strongest value (状态-2 `max`, its value as its data), given after the same
-// `beforeStatus` event (钩子-3) as the engine's statuses — a handler may cancel it or change its frames or its value —
-// and followed by the same `statusApplied` (钩子-5).
+// `beforeStatus` event (钩子-3) as the engine's statuses — a handler may cancel it or change its frames or its value — and
+// followed by the same `statusApplied` event.
 // 反隐 is no abnormal effect either (PRTS 异常效果: 隐匿免疫, an immunity; its old flag is unused): its stand-in carries
 // the engine's own 反隐 flag (索敌-2) and keeps the longer time, as Stronghold refreshes a status.
 import { secondsToFrames } from '@aue/math';
@@ -26,6 +26,17 @@ export const STAND_INS = Object.freeze({
 });
 
 /**
+ * Puts the buff of a stand-in on a unit and tells it (`statusApplied`, 钩子-3): how long, its value, and whether the unit had none of the key.
+ * @param {ShBattle} b @param {Unit} u @param {Unit | null} src @param {string} key @param {{ buff: import('@aue/sim').Buff, frames: number, v: number }} made
+ */
+function put(b, u, src, key, made) {
+  const entered = !u.buffs.some((x) => x.key === key);
+  b.buffData.set(made.buff, { value: made.v });
+  buffs.addBuff(u, made.buff);
+  if (bus.hasHook(b.w, 'statusApplied')) bus.emit(b.w, 'statusApplied', { source: src, target: u, status: key, frames: made.frames, strength: made.v, entered });
+}
+
+/**
  * Gives a stand-in status (whether it took hold): seconds as frames (none: no end).
  * @param {ShBattle} b @param {ShUnit} target @param {string} key @param {{ duration?: number, source?: ShUnit | null, value?: number }} o
  */
@@ -36,18 +47,6 @@ export function giveStandIn(b, target, key, o) {
   if (bus.hasHook(b.w, 'beforeStatus')) bus.emit(b.w, 'beforeStatus', k);
   const frames = Number.isFinite(k.frames) ? Math.trunc(k.frames) : -1, v = Number(k.strength);
   if (k.cancel || u.hp <= 0 || (frames <= 0 && frames !== -1) || !Number.isFinite(v)) return false;
-  const buff = buffs.makeBuff({ key, src: src ? src.id : -1, rule: s.rule ?? 'max', value: v, mods: s.mods(v), flags: s.flags, left: frames });
-  b.buffData.set(buff, { value: v });
-  const entered = !u.buffs.some((x) => x.key === key);
-  buffs.addBuff(u, buff);
-  announce(b, { source: src, target: u, status: key, frames, strength: v, entered });
+  put(b, u, src, key, { buff: buffs.makeBuff({ key, src: src ? src.id : -1, rule: s.rule ?? 'max', value: v, mods: s.mods(v), flags: s.flags, left: frames }), frames, v });
   return true;
-}
-
-/**
- * A stand-in that took hold: the `statusApplied` event the engine's statuses have (钩子-5), when it has a handler.
- * @param {ShBattle} b @param {{ source: Unit | null, target: Unit, status: string, frames: number, strength: number, entered: boolean }} k
- */
-function announce(b, k) {
-  if (bus.hasHook(b.w, 'statusApplied')) bus.emit(b.w, 'statusApplied', k);
 }

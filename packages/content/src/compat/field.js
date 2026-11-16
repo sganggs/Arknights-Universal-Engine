@@ -215,7 +215,8 @@ export function dealDamage(b, source, target, dmg) {
   if (dmg.calculation === 'resolved' && !plainResolved(dmg, s)) throw new CompatGap('attack.calculation.resolved');
   if (dmg.onApplied != null) throw new CompatGap('attack.onApplied');
   const hit = hitOf(dmg);
-  return s && s.kind === KIND.OPERATOR ? traits.creditedDamage(b.w, b.c, s, t, hit) : damage.dealDamage(b.w, s, t, hit);
+  // with the content, so the target's buff behaviours (a kit buff's 伤判 callbacks, 伤害-8) see the hit
+  return s && s.kind === KIND.OPERATOR ? traits.creditedDamage(b.w, b.c, s, t, hit) : damage.dealDamage(b.w, s, t, hit, b.c);
 }
 
 /**

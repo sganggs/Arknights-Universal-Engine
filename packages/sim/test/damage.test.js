@@ -237,6 +237,21 @@ test('[伤害-8] after a cancel or a drop to 0, later buffs do no dodge, 抵挡,
   assert.deepEqual(seen.map((s) => s[0]), ['after', 'after']);
 });
 
+test('[伤害-8] a buff that goes because its shield is used up calls its behaviour’s spent once; one that stays, or goes otherwise, does not', () => {
+  const u = mk(1), w = world();
+  /** @type {string[]} */
+  const seen = [];
+  const c = /** @type {any} */ ({ behaviors: { buffs: { obs: { spent: (/** @type {World} */ _w, /** @type {Unit} */ _u, /** @type {any} */ b) => { seen.push(b.key); } } } } });
+  u.buffs.push(makeBuff({ key: 'layers', act: 'obs', shieldHits: 2 }), makeBuff({ key: 'bar', act: 'obs', shield: 30 }), makeBuff({ key: 'kept', act: 'obs', shield: 5, mods: { defFlat: 0 } }));
+  assert.equal(takeDamage(w, u, 100, { type: 'phys', amount: 100 }, { c }), 0);
+  assert.deepEqual(seen, [], 'a layer left: it stays');
+  assert.equal(takeDamage(w, u, 100, { type: 'phys', amount: 100 }, { c }), 0);
+  assert.deepEqual(seen, ['layers'], 'the last layer: it goes');
+  assert.equal(takeDamage(w, u, 100, { type: 'phys', amount: 100 }, { c }), 65);
+  assert.deepEqual(seen, ['layers', 'bar'], 'the barrier used up goes; the one with modifiers stays');
+  assert.deepEqual(u.buffs.map((b) => [b.key, b.shield]), [['kept', 0]]);
+});
+
 test('[伤害-9] HP goes to 0, not below; damage is not rounded', () => {
   const w = world(), t = mk(1, { maxHp: 100 });
   assert.equal(dealDamage(w, null, t, { type: 'true', amount: 33.3 }), 33.3);

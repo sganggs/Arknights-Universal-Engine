@@ -246,6 +246,139 @@
           "hits 76.6,118.7,134,191.5,207.8,249,296.8,306.4 ≠ 76.6,118.8,134.1,191.5,207.8,248.9,296.8,306.4"
         ]
       }
+    },
+    "char_2024_chyue": {
+      "because": [
+        "DIF-0001"
+      ],
+      "skills": {
+        "S2": [
+          "hits 651,1171.8,2278.5 ≠ 651,1171.8,2278.5,4101.3,5624.7",
+          "statuses  ≠ levitate:2"
+        ]
+      }
+    },
+    "char_003_kalts": {
+      "because": [
+        "DIF-0045"
+      ],
+      "skills": {
+        "S1": [
+          "errors trait.healThrough: compat: trait.healThrough is not provided yet"
+        ],
+        "S2": [
+          "errors trait.healThrough: compat: trait.healThrough is not provided yet"
+        ],
+        "S3": [
+          "errors trait.healThrough: compat: trait.healThrough is not provided yet"
+        ]
+      }
+    },
+    "char_1044_hsgma2": {
+      "because": [
+        "DIF-0045"
+      ],
+      "skills": {
+        "S1": [
+          "errors trait.dmgType: compat: trait.dmgType is not provided yet"
+        ],
+        "S2": [
+          "errors trait.dmgType: compat: trait.dmgType is not provided yet"
+        ],
+        "S3": [
+          "errors trait.dmgType: compat: trait.dmgType is not provided yet"
+        ]
+      }
+    },
+    "char_1052_kalts2": {
+      "because": [
+        "DIF-0045"
+      ],
+      "skills": {
+        "S1": [
+          "errors trait.healThrough: compat: trait.healThrough is not provided yet"
+        ],
+        "S2": [
+          "errors trait.healThrough: compat: trait.healThrough is not provided yet"
+        ],
+        "S3": [
+          "errors trait.healThrough: compat: trait.healThrough is not provided yet"
+        ]
+      }
+    },
+    "char_179_cgbird": {
+      "because": [
+        "DIF-0045"
+      ],
+      "skills": {
+        "S1": [
+          "errors trait.heal: compat: trait.heal is not provided yet"
+        ],
+        "S2": [
+          "errors trait.heal: compat: trait.heal is not provided yet"
+        ],
+        "S3": [
+          "errors trait.heal: compat: trait.heal is not provided yet"
+        ]
+      }
+    },
+    "char_197_poca": {
+      "because": [
+        "DIF-0045"
+      ],
+      "skills": {
+        "S1": [
+          "errors trait.priority: compat: trait.priority is not provided yet"
+        ],
+        "S2": [
+          "errors trait.priority: compat: trait.priority is not provided yet"
+        ],
+        "S3": [
+          "errors trait.priority: compat: trait.priority is not provided yet"
+        ]
+      }
+    },
+    "char_2012_typhon": {
+      "because": [
+        "DIF-0045"
+      ],
+      "skills": {
+        "S1": [
+          "errors trait.priority: compat: trait.priority is not provided yet"
+        ],
+        "S2": [
+          "errors trait.priority: compat: trait.priority is not provided yet"
+        ],
+        "S3": [
+          "errors trait.priority: compat: trait.priority is not provided yet"
+        ]
+      }
+    },
+    "char_4179_monstr": {
+      "because": [
+        "DIF-0045"
+      ],
+      "skills": {
+        "S1": [
+          "errors trait.heal: compat: trait.heal is not provided yet | trait.healThrough: compat: trait.healThrough is not provided yet"
+        ],
+        "S2": [
+          "errors trait.heal: compat: trait.heal is not provided yet | trait.healThrough: compat: trait.healThrough is not provided yet"
+        ],
+        "S3": [
+          "errors trait.heal: compat: trait.heal is not provided yet | trait.healThrough: compat: trait.healThrough is not provided yet"
+        ]
+      }
+    },
+    "char_1031_slent2": {
+      "because": [
+        "DIF-0054"
+      ],
+      "skills": {
+        "S3": [
+          "errors event.spGain: compat: event.spGain is not emitted yet"
+        ]
+      }
     }
   }
 }

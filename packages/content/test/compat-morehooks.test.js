@@ -1,6 +1,6 @@
-// 钩子-5's events as kits see them (docs/spec/compat.md 兼容-8): statusApplied with Stronghold's names and seconds,
-// enemyAttackStart with its units — a stun a kit gives there cancels the attack —, palsyTrigger with the 麻痹 buff and
-// `keep`; then the pinned kits that listen to them, unchanged: 真言's 噤声限域 and 酒神's 堕梦.
+// 钩子-5's events as kits see them (docs/spec/compat.md 兼容-8): enemyAttackStart with its units — a stun a kit gives
+// there cancels the attack —, palsyTrigger with the 麻痹 buff and `keep`; then the pinned kits that listen to them,
+// unchanged: 真言's 噤声限域 and 酒神's 堕梦.
 import { test, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { register } from 'node:module';
@@ -71,10 +71,9 @@ const layersOf = (u) => u.buffs.find((/** @type {any} */ x) => x.key === 'palsy'
  */
 const hold = (w, key) => bus.on(w, 'enter', (k) => { if (k.unit.key === key) buffs.addBuff(k.unit, buffs.makeBuff({ key: 'test:hold', flags: { noAttack: true } })); });
 
-test('[兼容-8] a kit sees statusApplied in Stronghold\'s names and seconds, a stand-in\'s too; enemyAttackStart with its units, a stun there cancelling the attack; palsyTrigger\'s buff and keep', () => {
+test('[兼容-8] a kit sees enemyAttackStart with its units, a stun there cancelling the attack; palsyTrigger\'s buff and keep', () => {
   const log = /** @type {any[]} */ ([]);
   const kit = () => ({ skills: {}, install(/** @type {ShBattle} */ b, /** @type {any} */ u) {
-    b.on('statusApplied', (k) => { log.push(['applied', k.status, k.duration, k.value, k.entered, k.source?.defId ?? null, k.target.defId]); }, { owner: u });
     b.on('enemyAttackStart', (k) => {
       log.push(['strike', k.enemy.defId, k.targets.map((/** @type {any} */ t) => t.defId)]);
       if (u.mem.stun) b.applyStatus(k.enemy, 'stun', { duration: 0.1, source: u });
@@ -83,19 +82,14 @@ test('[兼容-8] a kit sees statusApplied in Stronghold\'s names and seconds, a 
   } });
   const { w, b, slime, run } = match({ guard: { def: { name: 'guard', skill: null, raw: {} }, factory: kit } });
   step(w, b.c, [[0, { type: 'deploy', op: 'guard', row: 1, col: 1, dir: 0 }]]);
-  const g = b.unitOf(unit(w, 'guard')), s = b.unitOf(slime);
-  assert.deepEqual([b.applyStatus(s, 'bind', { duration: 1.5, source: g }), b.applyStatus(g, 'cold', { duration: 2, source: s })], [true, true]);
-  assert.deepEqual([b.applyStatus(s, 'defDown', { duration: 1, value: 0.2 }), b.applyStatus(s, 'defDown', {}), b.applyStatus(s, 'palsy', {})], [true, true, true]);
-  assert.deepEqual(log.splice(0), [
-    ['applied', 'bind', 1.5, 0, false, 'guard', 'slime'], ['applied', 'cold', 2, 0, true, 'slime', 'guard'],
-    ['applied', 'defDown', 1, 0.2, true, null, 'slime'], ['applied', 'defDown', Infinity, 0.3, false, null, 'slime'], ['applied', 'palsy', Infinity, 0, true, null, 'slime'],
-  ], 'root as bind (already rooted: no entry), the enemy\'s cold as cold; the stand-in after its beforeStatus');
+  const g = b.unitOf(unit(w, 'guard'));
+  assert.equal(b.applyStatus(b.unitOf(slime), 'palsy', {}), true);
   g.mem.keep = true;
   const kept = run(60);
   assert.deepEqual([log.splice(0), kept, layersOf(slime)], [[['strike', 'slime', ['guard']], ['palsy', 'slime', 'palsy', 'palsy', 1]], [], 1], 'interrupted, the layer kept');
   g.mem.stun = true;
   const stunned = run(60);
-  assert.deepEqual([log.splice(0).map((x) => x[0]), stunned, layersOf(slime)], [['strike', 'applied'], [], 1], 'a stun at the landing: no shot, 麻痹 not looked at');
+  assert.deepEqual([log.splice(0).map((x) => x[0]), stunned, layersOf(slime)], [['strike'], [], 1], 'a stun at the landing: no shot, 麻痹 not looked at');
   assert.deepEqual(b.errors, []);
 });
 

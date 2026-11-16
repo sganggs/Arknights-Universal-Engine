@@ -22,15 +22,29 @@ export function setupKit(b, unit, kit) {
 }
 
 /**
+ * The kit Stronghold's tokens module defines for a summon (兼容-7), as its battle resolves one for every token it spawns:
+ * the module's factory for the summon's id, built with the summon's def (marked `fromTokens` by the module). Only a summon
+ * of an operator that has a kit gets one: another operator's summons are the engine's own. Null for none, or when the
+ * factory throws (recorded and skipped).
+ * @param {ShBattle} b @param {ShUnit} s
+ */
+function tokenKitOf(b, s) {
+  const kits = b.tokenKits, make = s.ownerUnit?.kit && kits && Object.hasOwn(kits, s.defId) ? kits[s.defId] : null;
+  if (typeof make !== 'function') return null;
+  const def = s.def ?? {};
+  return b.safe(() => make(def.skill?.bb ?? {}, def.raw ?? def, def), `tokenKit:${s.defId}`, s) ?? null;
+}
+
+/**
  * A summon on the field as a token (兼容-4): its summon id, its owner's unit and the def of its owner's loadout; the kit
- * spawnToken is placing, installed.
+ * spawnToken is placing — else the one the tokens module defines for it (兼容-7) —, installed.
  * @param {ShBattle} b @param {Unit} u @returns {ShUnit}
  */
 export function tokenUnit(b, u) {
   const d = b.c.operators[u.key], id = d.char ?? u.key, owner = b.unitById(/** @type {number} */ (u.summoner));
   const s = new ShUnit(b, { kind: 'token', key: id, ownerId: u.owner, def: owner?.tokenDefs[id] ?? { name: d.name }, unit: u, ownerUnit: owner });
   b.others.set(u, s);
-  const kit = b.pendingKit;
+  const kit = b.pendingKit ?? tokenKitOf(b, s);
   b.pendingKit = null;
   if (kit) setupKit(b, s, kit);
   return s;

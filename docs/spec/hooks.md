@@ -31,15 +31,19 @@
 | `death` | 单位离场时：生命归零的单位在帧末移除（帧-1 第 9 步，`reason` 为 `killed`，到达目标点的为 `leak`），撤退的干员离场时（撤退-1，`retreat`） | `unit`、`reason`、`killer`：`killed` 时为这一帧最后一次命中它、仍在场上的单位，没有则为空 |
 | `kill` | 生命归零的单位离场、有击杀者时，紧接在它的 `death` 之前 | `killer`、`victim` |
 | `hit` | 一次伤害（伤害-7）判定无敌之后、计算防御之前 | `source`、`credit`、`target`、`dmg`：处理函数可改 `amount`、`mul`、`type` 与四项穿透，设 `cancel` 取消这次伤害 |
+| `damageCalculate` | `hit` 之后、计算防御之前，有来源的伤害（无来源的没有，伤害-7）；标明 `calculation`（`precomputed`、`resolved`）的没有 | `source`、`credit`、`target`、`dmg`：处理函数可改 `dmg`（同 `hit`），设 `cancel` 取消这次伤害，也可以另造伤害——标明 `calculation` 为 `precomputed` 的，不再触发它 |
+| `damageApplying` | 计算完防御、倍率与来源的倍率之后、目标的伤判效果之前（伤害-7 第 7 步），含无来源的伤害 | `source`（无来源的为空）、`credit`、`target`、`dmg`、`amount`（将进入伤判的伤害，处理函数可改，不低于 0，不是有限数的按 0）：处理函数设 `dmg.cancel` 时整次伤害不造成、不做伤判 |
 | `dodge` | 伤判效果里闪避了这次伤害时（伤害-8） | `source`、`target`、`dmg` |
 | `hpDamage` | 伤判效果之后、扣生命之前，剩下的伤害大于 0 时 | `source`、`credit`、`target`、`amount`（只能调低）、`dmg` |
 | `fatal` | 扣生命使它归零时（含生命流失） | `unit`、`source`、`credit`、`dmg`、`amount`、`prevented`：设为是时它留下 1 点生命（生命上限不足 1 时为上限） |
+| `damageApplied` | 扣生命之后、`damaged` 之前，造成了伤害的（生命流失没有，伤害为 0 的没有） | `source`（无来源的为空）、`credit`、`target`、`dmg`、`kind`（`damage`）、`amount`（进入扣生命的伤害）、`hpRemoved`（实际扣去的生命） |
 | `damaged` | 扣生命之后（含生命流失） | `source`、`credit`、`target`、`amount`、`type`、`dmg`。这四个伤害事件的 `credit` 是伤害记在谁名下：一般同 `source`；记在来源名下的无来源伤害（伤害-7）`source` 为空，`credit` 是来源 |
 | `heal` | 治疗算完倍率、回复生命之前（伤害-11） | `source`、`target`、`amount`（可改）、`trait`（是治疗者特性的自身回复时为真，职业-9） |
 | `beforeAttack` | 一次攻击锁定目标时（攻击-2 第 1 步） | `attacker`、`targets`（可换，留下仍在场、有生命的；为空时这次不攻击）、`isSkill`、`scale`（这次攻击的倍率再乘它，默认 1）、`mark`（内容给这次攻击的标记，整数，默认 0；随攻击和它的投射物带到 `attackHit`） |
 | `attack` | 一次攻击命中、对锁定的目标结算之后（攻击-2 第 3 步），有目标时 | `attacker`、`targets`、`isSkill`、`noAmmo`：设为是时这次攻击不耗弹药技能的弹药 |
 | `attackHit` | 一次攻击对一个目标的各段伤害结算之后（引擎自己的事件） | `attacker`、`target`、`dealt`（各段合计）、`kind`：`main`、`splash`、`chain`、`aftershock`，`isSkill`，`mark`（这次攻击的标记） |
 | `skillStart` | 技能发动、它的行为开始之后（技能-3、技能-4） | `unit`、`reason`：`manual`（玩家发动）、`auto`、`deploy`（被动技能） |
+| `ammoUsed` | 弹药技能的一次攻击用掉一发弹药之后（技能-4）；`attack` 事件里设了 `noAmmo` 的攻击不用，也没有这个事件 | `unit`、`left`（剩下的发数） |
 | `skillEnd` | 技能结束之后（技能-4、技能-7）；运行中的干员离场时，先于它的 `death` | `unit`、`reason`：`duration`、`instant`（立即生效或下次攻击的技能）、`ammo`、`stopped`（玩家关闭）、`death`（离场）、`move`（一般方式的移动，部署-9） |
 | `elementHit` | 一次元素损伤判定不受影响之后、计算受到的量之前（元素-2） | `source`、`target`、`dmg`：`type` 为 `element`、`element`、`amount` 与 `mul`（可改）、`cancel` |
 | `elementBurst` | 元素爆发开始、爆发 Buff 加上之前（元素-3） | `source`（使它爆发的单位）、`target`、`element` |
@@ -47,11 +51,12 @@
 | `boomerangHit` | 回旋投射物到达目标、结算之后（职业-12） | `unit`（投出它的干员）、`target`、`x`、`y`（到达处）、`isSkill`、`shot`、`hold`：设为是时投射物停在那里，由内容接管 |
 | `boomerangCaught` | 干员回收一个回旋投射物时（职业-12） | `unit`、`x`、`y`（回收处）、`isSkill`（技能的攻击投出的） |
 | `merchantPay` | 干员的费用消耗扣费之前（职业-10） | `unit`、`cost`（可改，负数按 0）、`cancel`：设为是时这次不扣费 |
-| `beforeStatus` | 战斗中施加一个状态之前（状态-5） | `source`、`target`、`status`、`frames`（−1 为无期限；改为 0 或更少则不施加）、`strength`（状态的数值）、`cancel` |
+| `beforeStatus` | 战斗中施加一个状态之前（状态-5）；寒冷变为冻结（状态-6）时，这条冻结另有一次 | `source`、`target`、`status`、`frames`（−1 为无期限；改为 0 或更少则不施加）、`strength`（状态的数值）、`cancel` |
+| `statusApplied` | 战斗中的状态施加上之后（状态-5）；寒冷变为冻结时是冻结的，不是那条寒冷的；被取消的、被拒绝的、没有时间的没有 | `source`、`target`、`status`（施加上的状态；敌方寒冷与敌方冻结写作 `cold`、`freeze`）、`frames`（这一次的帧数，−1 为无期限，是 `beforeStatus` 之后、抵抗之前的）、`strength`、`entered`（目标此前没有这个状态） |
 
-伤害信息 `dmg` 用 Stronghold 内容接口的字段名（ADR 0012）：`type`、`amount`、`mul`、`cancel`、四项穿透，以及来源标记——`isAttack`（一次攻击的命中，含溅射与跳跃）、`isSkill`（技能运行时或技能造成）、`isSplash`（溅射，余震也算）、`isProjectile`、`tags`（跳跃为 `chain`，余震为 `aftershock`；余震不算攻击的命中）、`hpLoss`（生命流失）。伤害开始结算时补齐缺省的字段：`mul` 为 1，`tags` 为空，`cancel` 为否，四项穿透为 0。
+伤害信息 `dmg` 用 Stronghold 内容接口的字段名（ADR 0012）：`type`、`amount`、`mul`、`cancel`、`calculation`（已经算好：`precomputed` 不发 `damageCalculate`，`resolved` 同）、四项穿透，以及来源标记——`isAttack`（一次攻击的命中，含溅射与跳跃）、`isSkill`（技能运行时或技能造成）、`isSplash`（溅射，余震也算）、`isProjectile`、`tags`（跳跃为 `chain`，余震为 `aftershock`；余震不算攻击的命中）、`hpLoss`（生命流失）。伤害开始结算时补齐缺省的字段：`mul` 为 1，`tags` 为空，`cancel` 为否，四项穿透为 0。
 
-- 来源：设计决定，见 [ADR 0057](../adr/0057-hook-bus-and-timers.md)；事件名、时机与上下文同 Stronghold 的钩子（`docs/SIM.md` §5，`server/sim/damage.js` 的伤害与治疗流程，GPL-3.0-or-later）
+- 来源：设计决定，见 [ADR 0057](../adr/0057-hook-bus-and-timers.md)；事件名、时机与上下文同 Stronghold 的钩子（`docs/SIM.md` §5，`server/sim/damage.js` 的伤害与治疗流程，GPL-3.0-or-later）；`damageCalculate`、`damageApplying`、`damageApplied` 取自 Stronghold v0.4.0 的 `server/sim/attack/hit.js`、`attack/health.js`，`statusApplied` 与寒冷变为冻结时的 `beforeStatus` 取自 `server/sim/battle/status.js`，`ammoUsed` 取自 `server/sim/skills.js`（GPL-3.0-or-later）；引擎里这几个事件的次序与 Stronghold 的不同处见 DIF-0051、DIF-0053，`damageApplying` 的伤害含引擎自己的几步见推断 INF-1111
 
 ### 钩子-4 每局的挂接
 
@@ -59,20 +64,18 @@
 
 - 来源：设计决定，见 [ADR 0057](../adr/0057-hook-bus-and-timers.md)
 
-### 钩子-5 状态生效之后、敌人出手、麻痹触发的事件
+### 钩子-5 敌人出手、麻痹触发的事件
 
-三个事件，名字和上下文同 Stronghold 的钩子。没有处理函数时引擎不多做任何事，状态与不发这些事件时相同。
+两个事件，名字和上下文同 Stronghold 的钩子。没有处理函数时引擎不多做任何事，状态与不发这些事件时相同。
 
 | 事件 | 时机 | 上下文 |
 |---|---|---|
-| `statusApplied` | 战斗中施加的状态生效之后（状态-5；之前已发 `beforeStatus`，钩子-3）；被拒绝、取消或没有剩下帧数的不发 | `source`、`target`、`status`（生效的那种：两条友方寒冷变成的冻结是 `freeze`，敌人施加的寒冷是 `enemyCold`，状态-6）、`frames`（它的 Buff 这时的剩余帧数，−1 为无期限）、`strength`（它的数值）、`entered`（施加之前目标没有这种状态：新进入，不是刷新或多一层） |
 | `enemyAttackStart` | 敌人的攻击落下那一帧（攻击-2 第 3 步：前摇结束），检查麻痹（状态-8）之前 | `enemy`、`targets`（锁定的目标中仍在场、有生命、没有消失的；改动它不影响这次攻击） |
 | `palsyTrigger` | 麻痹打断敌人的攻击时（状态-8：落下那一帧，或开始后 2 秒），消耗一层之前；回应打断的天赋（职业-29）在它之后 | `enemy`、`buff`（麻痹的 Buff）、`keep`：设为是时这一层不消耗，攻击照样被打断、照样得到麻痹震颤 |
 
 - **落下之后**：`enemyAttackStart` 的处理函数之后，敌人生命为 0、已经离场，或者有了让敌人正在进行的攻击中止的情形（无法行动——如处理函数给的晕眩——、没有攻击力、消失，攻击-2 第 4 步；不能普通攻击 `noAttack`，敌人攻击-1；恐惧，状态-10），这次攻击取消：不检查麻痹，不命中，不发 `attack`；攻击开始时起计的冷却照常。否则照常检查麻痹：处理函数造成的神经损伤爆发给的麻痹（元素-4）打断的就是这一次。
 - **打断**：麻痹在开始后 2 秒就打断的攻击没有落下，只发 `palsyTrigger`。`palsyTrigger` 的处理函数里敌人倒下的，这次攻击也算被打断。
 - **谁的攻击**：敌人类单位的，中立单位（合作-9）也是；干员（召唤物也是）的攻击不发这两个事件，装置不攻击。连续命中的攻击（敌能-6）每一下都落下一次，各发一次；某一下取消时，这次攻击剩下的几下也没有了。名字沿用 Stronghold 的：`enemyAttackStart` 在落下时，不在抬手时（抬手锁定目标时发的是 `beforeAttack`，钩子-3）。
-- **哪些施加**：`statusApplied` 发在发 `beforeStatus` 的施加上；引擎直接给的状态（打断时的麻痹震颤，状态-8）两个都不发。状态是否生效按 状态-5…状态-7：免疫的目标身上 Buff 照样加上（状态-7），也发；抵抗与重量按衰减率缩短状态（状态-3、状态-5），`frames` 不含它们。
-- **其他**：`enemyAttackStart` 在任何命中之前（远程攻击在发射投射物时），之后被闪避、打在无敌单位上的也已发过；敌人被沉默照常普通攻击，照常发。三个事件都不留下状态，合作关卡的间歇没有要带过去的。
+- **其他**：`enemyAttackStart` 在任何命中之前（远程攻击在发射投射物时），之后被闪避、打在无敌单位上的也已发过；敌人被沉默照常普通攻击，照常发。两个事件都不留下状态，合作关卡的间歇没有要带过去的。
 
-- 来源：设计决定，见 [ADR 0057](../adr/0057-hook-bus-and-timers.md)；事件名与上下文同 Stronghold 的钩子（`docs/SIM.md` §5，`server/sim/battle/status.js`、`server/sim/ai.js`，GPL-3.0-or-later）；[PRTS「酒神」oldid=392146](https://prts.wiki/index.php?title=%E9%85%92%E7%A5%9E&oldid=392146) 天赋「堕梦」：「攻击范围内的敌人普通攻击时受到70点神经损伤」，备注「※于敌人成功普通攻击前之前触发（意味着触发的元素爆发可打断当次普攻，且不会触发成功攻击前的效果）」；[PRTS「真言」oldid=399971](https://prts.wiki/index.php?title=%E7%9C%9F%E8%A8%80&oldid=399971) 天赋「噤声限域」：「场上敌人触发麻痹效果时立即受到相当于真言攻击力135%的元素伤害，且触发麻痹时有10%概率不消耗麻痹层数」，备注「※本天赋的“触发麻痹时”指的是敌人的攻击被麻痹打断时（而非获得麻痹时）」；落下那一帧、检查麻痹之前为推断 INF-1100
+- 来源：设计决定，见 [ADR 0057](../adr/0057-hook-bus-and-timers.md)；事件名与上下文同 Stronghold 的钩子（`docs/SIM.md` §5，`server/sim/ai.js`，GPL-3.0-or-later）；[PRTS「酒神」oldid=392146](https://prts.wiki/index.php?title=%E9%85%92%E7%A5%9E&oldid=392146) 天赋「堕梦」：「攻击范围内的敌人普通攻击时受到70点神经损伤」，备注「※于敌人成功普通攻击前之前触发（意味着触发的元素爆发可打断当次普攻，且不会触发成功攻击前的效果）」；[PRTS「真言」oldid=399971](https://prts.wiki/index.php?title=%E7%9C%9F%E8%A8%80&oldid=399971) 天赋「噤声限域」：「场上敌人触发麻痹效果时立即受到相当于真言攻击力135%的元素伤害，且触发麻痹时有10%概率不消耗麻痹层数」，备注「※本天赋的“触发麻痹时”指的是敌人的攻击被麻痹打断时（而非获得麻痹时）」；落下那一帧、检查麻痹之前为推断 INF-1105

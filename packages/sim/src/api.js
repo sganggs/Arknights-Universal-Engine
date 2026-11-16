@@ -6,9 +6,10 @@
  * has its description's extra modifiers; 3: a skill behaviour's end is told why the skill ends; 4: a trait behaviour may
  * say whether its operator may attack (canAttack) and what an attack turn without a target does (store); 5: a trait
  * behaviour may say which enemies its operator does not select (skip), a skill behaviour the running skill's range
- * (range).
+ * (range); 6: a trait behaviour may say which funnel its operator has (funnel) and how much its regeneration
+ * aura gives an operator (regen).
  */
-export const BEHAVIOR_API_VERSION = 5;
+export const BEHAVIOR_API_VERSION = 6;
 
 /** What every behaviour's context has (职业-6). */
 export const CONTEXT_MEMBERS = Object.freeze(['self', 'bb', 'frame', 'stats', 'addBuff', 'removeBuff', 'applyStatus', 'dealDamage', 'dealEp', 'heal', 'gainCost']);
