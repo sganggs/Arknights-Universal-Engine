@@ -6,6 +6,7 @@ import { DIR, summons } from '@aue/sim';
 import { ShUnit } from './unit.js';
 import { normDir } from './sh/dir.js';
 import { CompatGap } from './sh/gap.js';
+import { summonKey } from '../deckkeys.js';
 
 /** @typedef {import('./battle.js').ShBattle} ShBattle @typedef {import('@aue/sim').Unit} Unit */
 
@@ -47,7 +48,8 @@ export function spawnToken(b, owner, tokenId, tile, opts = {}) {
   if (!(owner instanceof ShUnit) || !owner.u || !owner.alive) return null;
   const facing = opts.dir ?? opts.facing, at = { ...tile, ...(facing != null ? { dir: DIR[normDir(facing)] } : {}) };
   b.pendingKit = opts.kit ?? null;
-  const u = summons.spawnSummon(b.w, b.c, owner.u, `${tokenId}#${owner.ownerId}`, at);
+  // the owner's own summon record: a copy of an operator has its own (同步-9)
+  const u = summons.spawnSummon(b.w, b.c, owner.u, summonKey(tokenId, owner.u.key) ?? `${tokenId}#${owner.ownerId}`, at);
   b.pendingKit = null;
   if (!u) return null;
   const t = b.unitOf(u);

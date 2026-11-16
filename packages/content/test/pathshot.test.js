@@ -113,10 +113,10 @@ function shift(u, row, col) {
 const fly = (u) => { u.base.motion = 'FLY'; };
 /** @param {Unit} u */
 const hide = (u) => { buffs.addBuff(u, buffs.makeBuff({ key: 'camou', flags: { camou: true } })); };
-/** @param {Unit} u @param {'silence' | 'noAttack'} kind */
+/** @param {Unit} u @param {'silence' | 'disarm' | 'noAttack'} kind */
 function quiet(u, kind) {
-  if (kind === 'silence') status.applyStatus(u, 'silence', { seconds: 30 });
-  else buffs.addBuff(u, buffs.makeBuff({ key: 'held', left: 900, flags: { noAttack: true } }));
+  if (kind === 'noAttack') buffs.addBuff(u, buffs.makeBuff({ key: 'held', left: 900, flags: { noAttack: true } }));
+  else status.applyStatus(u, kind, { seconds: 30 });
 }
 
 /** @param {any[]} ev @param {number} id @param {number} [target] */
@@ -238,17 +238,17 @@ test('[敌能-81] 阵地撕裂者: selects through camouflage, and neither shot 
 /** @param {Box} box @param {Unit} u @param {number} full */
 function heldFor(box, u, full) {
   assert.equal(copies(u, 'silence').length, 1);
-  assert.equal(copies(u, 'shotbuffDisarm').length, 1);
+  assert.equal(copies(u, 'disarm').length, 1);
   assert.equal(copies(u, 'silence')[0]?.left, full);
-  assert.equal(copies(u, 'shotbuffDisarm')[0]?.left, full);
+  assert.equal(copies(u, 'disarm')[0]?.left, full);
   assert.equal(attrs.statsOf(u).flags.silence, true);
-  assert.equal(attrs.statsOf(u).flags.noAttack, true);
+  assert.deepEqual([attrs.statsOf(u).flags.disarm, attrs.statsOf(u).flags.noAttack], [true, undefined], '状态-12 的缴械, not noAttack');
   const spent = attrs.intervalFrames(attrs.statsOf(box.e).bat, attrs.statsOf(box.e).aspd);
   const melee = again(box);
   assert.equal(copies(u, 'silence').length, 1);
-  assert.equal(copies(u, 'shotbuffDisarm').length, 1);
+  assert.equal(copies(u, 'disarm').length, 1);
   assert.equal(copies(u, 'silence')[0]?.left, full - spent);
-  assert.equal(copies(u, 'shotbuffDisarm')[0]?.left, full - spent);
+  assert.equal(copies(u, 'disarm')[0]?.left, full - spent);
   assert.equal(rounds(box.e), 0);
   return melee;
 }
@@ -266,8 +266,11 @@ test('[敌能-81] 寻路者信使: one 150% arts shot, 15s disarm and silence, t
   assert.deepEqual(hitList(melee, box.e.id), [600]);
 });
 
-test('[敌能-81] 寻路者信使: a clean operator comes before one already silenced or disarmed', () => {
-  for (const kind of /** @type {const} */ (['silence', 'noAttack'])) {
+test('[敌能-81] [状态-12] 寻路者信使: a clean operator comes before one already silenced or disarmed; noAttack alone is not 缴械', () => {
+  const plain = open('enemy_1219_mtrbty', foe('enemy_1219_mtrbty'), [[1, 2, false], [1, 4, false]]);
+  quiet(at(plain.ops, 1, 2), 'noAttack');
+  assert.equal(locked(play(plain, 1), plain.e.id), at(plain.ops, 1, 2).id, 'only noAttack: the blocker stays first');
+  for (const kind of /** @type {const} */ (['silence', 'disarm'])) {
     const box = open('enemy_1219_mtrbty', foe('enemy_1219_mtrbty'), [[1, 2, false], [1, 4, false]]);
     const blocker = at(box.ops, 1, 2);
     const other = at(box.ops, 1, 4);
