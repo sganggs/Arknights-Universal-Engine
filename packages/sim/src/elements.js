@@ -5,7 +5,7 @@ import { FPS, secondsToFrames } from '@aue/math';
 import { KIND } from '@aue/schema';
 import { statsOf } from './attrs.js';
 import { liftoffRefused } from './targeting.js';
-import { makeBuff, addBuff, count, retune } from './buffs.js';
+import { makeBuff, addBuff, count, retune, removeBuff } from './buffs.js';
 import { inflict } from './status.js';
 import { dealDamage } from './damage.js';
 import { loseSp } from './sp.js';
@@ -181,7 +181,10 @@ const BURSTS = Object.freeze({
     side({ secs: 10, mods: { resFlat: -20 }, start: (w, u, _frames, src, c) => burstHit(w, u, 'elemental', 7000, { src, c }) }),
   ],
   DARK: [
-    side({ secs: 15, ticks: true, start: (w, u, frames, src) => { inflict(w, u, 'noSp', { frames, src }); inflict(w, u, 'mute', { frames, src }); } }),
+    side({ secs: 15, ticks: true, start: (w, u, frames, src) => {
+      inflict(w, u, 'noSp', { frames, tag: burstKey('DARK'), src });
+      inflict(w, u, 'mute', { frames, tag: burstKey('DARK'), src });
+    } }),
     side({ secs: 15, ticks: true, start: (w, u, frames, src) => { inflict(w, u, 'weaken', { frames, value: 0.5, tag: burstKey('DARK'), src }); } }),
   ],
   ANGER: [side({ secs: 15, ticks: true, mods: { aspd: 50 } }), side({ secs: 15 })],
@@ -248,4 +251,20 @@ export const BURST_BEHAVIORS = Object.freeze(Object.fromEntries(ELEMENTS.map((el
 export function rampageAttack(u) {
   const b = u.buffs.find((x) => x.key === burstKey('ANGER'));
   if (b) count(b, 1);
+}
+
+/** Whether a buff is one a burst's buff carries as its own, tagged with the burst's key (凋亡's 阻回, 静默, 虚弱; INF-1171). @param {Buff} b */
+const ofBurst = (b) => isBurst(b) || b.tag.startsWith('burst:');
+
+/**
+ * A 移动 that keeps the rest (部署-9) still starts the element values afresh: it is a retreat and a deployment (PRTS
+ * 术语释义 移动), and a deployed unit has every value at its maximum and no burst (元素-1, INF-1170). A burst under way
+ * ends: its buff, the 爆发冷却 with what it carries (元素-3), is removed rather than expired, and so are the buffs that
+ * end with it (凋亡's 阻回 and 静默); the buffs the burst gave at its start that do not (晕眩, 侵蚀's DEF cut) stay with
+ * the others (INF-1171).
+ * @param {Unit} u
+ */
+export function resetElements(u) {
+  for (const b of u.buffs.filter(ofBurst)) removeBuff(u, b);
+  u.ep = {};
 }

@@ -6403,5 +6403,19 @@
     "statement": "爆发的伤害（无来源伤害）在数据里免除的取消原因一栏写 NONE，读作它不免除闪避：可以被闪避。这一栏写 MISS 的才免除闪避。",
     "basis": "数据里没有说明这一栏的含义。写 MISS 的无来源伤害全文件只有三处（logos_s_1、entlec_a[damage]、makoto_s2_fear_aura_inst_kill），虎狼丸 kormr_t[attack] 的 MISS 对得上干员天赋「黑色猎犬」的「无视闪避的斩击」；由此读作：写 MISS 是这一下免除闪避，写 NONE 是什么取消都不免。数据里另有一个标记说伤害能否被闪避，它在凋亡的技力流失上为真、在每秒的伤害上为假，与这个读法没有对上。PRTS 没有直接写爆发的伤害能否闪避。",
     "status": "待查证"
+  },
+  {
+    "id": "INF-1170",
+    "clause": "部署-9",
+    "statement": "保留方式的移动（内容的特殊设置）不保留元素值：发 deploy 事件之前，每种元素的元素值回到最大值，正在进行的元素爆发结束——爆发 Buff 去掉，不算到期，它带的效果随之结束；之后的元素损伤照常结算。移动到它所在的格（原地移动）也一样。",
+    "basis": "PRTS「术语释义」oldid=401060 移动：「本质上为一次特殊的撤退-再部署行为」，「除非具有特殊设置，否则执行移动行为时：不会继承任何Buff、技能状态」，留下的只有按比例的生命；部署的单位每种元素值初始为最大值（元素-1）。内容的特殊设置保留的是 Buff、技能状态和生命，元素值不在其中，所以按再部署回到最大值。元素爆发在数据里是一个 Buff（ep_breakbuff_table.elementBuffs：ep_break_sanity 等），它是元素值的爆发冷却（元素-3：期间元素值不变，结束时回到最大值），随元素值一起重新开始；不然移动后元素值满了却仍被锁住。页面没有直接写移动时元素值与爆发怎样。旁证：Stronghold 的 server/sim/battle/tiles.js 里 moveRedeploy 的注释写明官方「除技能点名的以外什么都不继承」，它保留其余是它作者的取舍。",
+    "status": "待查证"
+  },
+  {
+    "id": "INF-1171",
+    "clause": "部署-9",
+    "statement": "保留方式的移动结束元素爆发时，去掉爆发 Buff（连同它带的灼燃的法术抗性降低、狂躁的攻击速度提升、凋亡与狂躁每秒的效果）和随爆发结束的凋亡的阻回、静默；爆发开始时给的晕眩（神经）和侵蚀的防御力降低是别的 Buff，照常保留：晕眩到原来的时间结束，防御力降低一直在。",
+    "basis": "保留方式保留 Buff（部署-9、DIF-0034）；元素-4 的这几项在引擎里是单独的状态或 Buff，不是爆发 Buff 的一部分。数据（buff_template_data）里神经给干员的晕眩（ep_break_sanity_char）和侵蚀的 ep_water_def_down（ep_break_water_char）不是跟着上一级 Buff 结束的派生 Buff，不随爆发 Buff 结束；灼燃的 ep_fire_magic_res_down（ep_break_fire_char）与凋亡的 sp_loss、ep_break_dark[damage]（ep_break_dark_char）连同它们的上一级都是随上一级 Buff 结束的派生 Buff，随爆发 Buff 结束。sp_loss 下的 sp_loss[decrease_sp] 带阻止技力回复与禁止发动技能的标志（PRTS「异常效果」oldid=422666 的表：阻回、静默），所以官方的结构里凋亡给干员的阻回与静默随爆发一起结束，这里按它去掉。狂躁正相反：攻击速度提升 ep_break_anger_char[attack_speed] 与每秒的真实伤害在 ep_break_anger_char 上，ep_break_anger 给它时它不是派生 Buff，所以官方的结构里它们不随爆发 Buff 结束；这里它们在爆发 Buff 上（元素-4「爆发期间」），随它结束，是否应留到原来的时间待查。",
+    "status": "待查证"
   }
 ]
