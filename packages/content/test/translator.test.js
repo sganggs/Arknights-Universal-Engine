@@ -397,7 +397,7 @@ test('[敌能-158] [阻挡-1] a block and a full count seen at the same turn: bl
   assert.equal(formOf(quiet.e), 2, 'silenced: the change still comes');
 });
 
-test('[敌能-158] [状态-7] [状态-5] [状态-6] a stun held off in 原始形态 takes hold once the form begins; 寒冷 is not held off, and two colds still freeze it then', () => {
+test('[敌能-158] [状态-7] [状态-5] [状态-6] a stun held off in 原始形态 takes hold once the form begins; 寒冷 is not held off, and two colds do not freeze it, then or after', () => {
   const box = open(rec()), e = box.e;
   status.applyStatus(e, 'stun', { seconds: 10 });
   status.applyStatus(e, 'cold', { seconds: 10 });
@@ -406,13 +406,13 @@ test('[敌能-158] [状态-7] [状态-5] [状态-6] a stun held off in 原始形
   changeBy(box, 'phys', 4);
   assert.equal(formOf(e), 1);
   assert.deepEqual([attrs.statsOf(e).flags.stun, attrs.statsOf(e).disabled], [true, true], 'the immunity went with 原始形态');
-  // 状态-6 looks only at the data's 冻结免疫: the pair becomes a freeze, whose flag waits like the stun
+  // 状态-6 looks at a Buff's 冻结免疫 as at the data's: the colds stay colds, and the form's change does not pair them
   const two = open(rec()), t = two.e;
   status.applyStatus(t, 'cold', { seconds: 10 });
   status.applyStatus(t, 'cold', { seconds: 10 });
-  assert.deepEqual([t.buffs.some((b) => b.key === 'freeze'), attrs.statsOf(t).flags.freeze, attrs.statsOf(t).disabled], [true, undefined, false], 'a freeze, held off');
+  assert.deepEqual([t.buffs.some((b) => b.key === 'freeze'), t.buffs.filter((b) => b.key === 'cold').length, attrs.statsOf(t).disabled], [false, 2, false], 'no freeze: immune to it');
   changeBy(two, 'arts', 4);
-  assert.deepEqual([formOf(t), attrs.statsOf(t).flags.freeze, attrs.statsOf(t).disabled], [2, true, true], 'frozen once the form begins');
+  assert.deepEqual([formOf(t), t.buffs.some((b) => b.key === 'freeze'), attrs.statsOf(t).flags.freeze, attrs.statsOf(t).disabled], [2, false, undefined, false], 'the immunity went with 原始形态; the colds do not pair then (INF-1151)');
 });
 
 test('[敌能-158] [属性-4] 寻仇者形态 is physical whatever the record\'s type; its anger waits for the form', () => {

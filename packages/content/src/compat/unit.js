@@ -18,10 +18,6 @@ const FPS = 30;
 /** When each engine unit last lost HP, in battle seconds (kits.js keeps it from the engine's `damaged`): a deployment's unit is its own. @type {WeakMap<object, number>} */
 export const hurtAt = new WeakMap();
 
-/** Whether a unit is 寒冷 (状态-5: its cold status in effect), which Stronghold keeps as the flag `cold`. @param {Unit} u */
-const chilled = (u) => attrs.activeBuffs(u.buffs).some((x) => x.key === 'cold' || x.key === 'enemyCold');
-
-
 /**
  * A buff as a kit sees it: its key, the status it is (Stronghold's name), who gave it, its data, the seconds left, its
  * modifiers (which a kit may replace: the holder's HP keeps its ratio, 属性-4), flags, barrier and 护盾 layers.
@@ -251,7 +247,7 @@ export class ShUnit {
     const u = this.u;
     if (!u) return null;
     const s = attrs.statsOf(u);
-    return { ...s, flags: shFlagsOf(s.flags, elements.bursting(u), chilled(u)) };
+    return { ...s, flags: shFlagsOf(s.flags, elements.bursting(u)) };
   }
   get maxHp() { return this.u ? attrs.statsOf(this.u).maxHp ?? 0 : 0; }
   /** The most 元素损伤 it can take before a burst (元素-2: its element value's maximum). */
@@ -264,7 +260,7 @@ export class ShUnit {
     return id < 0 ? [] : this.b.w.units.filter((e) => e.kind === KIND.ENEMY && e.blockedBy === id).map((e) => this.b.unitOf(e));
   }
   /** Its attribute flags now (stun, sleep, …). */
-  get flags() { return this.u ? shFlagsOf(attrs.statsOf(this.u).flags, elements.bursting(this.u), chilled(this.u)) : {}; }
+  get flags() { return this.u ? shFlagsOf(attrs.statsOf(this.u).flags, elements.bursting(this.u)) : {}; }
   /** @param {string} k */
   hasFlag(k) { return !!this.flags[k]; }
   /** An air unit (飞行, 浮空…, 属性-2). */
