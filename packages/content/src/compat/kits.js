@@ -7,7 +7,7 @@
 import { KIND, bus, reserveIds, traits } from '@aue/sim';
 import { ShBattle } from './battle.js';
 import { ShUnit, hurtAt } from './unit.js';
-import { battles, SPEC_BEHAVIOR, KIT_TRAIT_BEHAVIOR, onAttackHit, onAttackDone, onSpecHit, onBoomerangHit } from './specs.js';
+import { battles, SPEC_BEHAVIOR, KIT_TRAIT_BEHAVIOR, onAttackHit, onHealHit, onAttackDone, onSpecHit, onBoomerangHit } from './specs.js';
 import { KIT_BUFF, KIT_BUFF_BEHAVIOR, worldBattles } from './buffhooks.js';
 import { withGrid } from './grid.js';
 import { pieceLeft, pieceBack, keepFreeCuts } from './players.js';
@@ -154,6 +154,7 @@ export function kitsWorld(kits, seen, o = {}) {
     bus.on(w, 'damaged', (k) => { if (k.target && k.amount > 0) hurtAt.set(k.target, b.time); }, { priority: FIRST });
     bus.on(w, 'skillStart', (k) => { const s = b.pieces.get(`${k.unit.owner}|${k.unit.key}`)?.skill; if (s && !s.counted) s.activations++; if (s) s.counted = false; }, { priority: FIRST });
     bus.on(w, 'attackHit', onAttackHit);
+    bus.on(w, 'healHit', onHealHit);
     bus.on(w, 'attack', onAttackDone, { priority: FIRST });
     bus.on(w, 'hit', onSpecHit, { priority: FIRST });
     bus.on(w, 'boomerangHit', onBoomerangHit);

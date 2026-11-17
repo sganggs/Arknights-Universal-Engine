@@ -1,8 +1,9 @@
 // Abilities whose counterpart the engine's levels do not have (docs/spec/foes.md 敌能-116): 集团军盾卫's `ExtraPower` acts
-// under a 指挥官指令, and “家族专用轿车”'s `DeathRattle` brings in 家族士兵, whom the level's data does not carry. Each is
-// covered in its shape and does nothing. So are 访问团持盾者's and 访问团持盾长's `ColdShield`, `MeltShield` and their
-// shape of `Shield`, which work in 封冻 areas and near a lit 紧急供暖器, neither of which a level has (敌能-164). `DeathRattle` has a second shape that does act: the boats' `enemy_key`, whose
-// crew goes on fighting (敌能-133, boats.js).
+// under a 指挥官指令, and “家族专用轿车”'s `DeathRattle` brings in 家族士兵, whom the level's data does not carry; the Dor
+// series' `Driver` gives SP to an inactive R-series power armour, a device no level has (敌能-163). So are 访问团持盾者's
+// and 访问团持盾长's `ColdShield`, `MeltShield` and their shape of `Shield`, which work in 封冻 areas and near a lit
+// 紧急供暖器, neither of which a level has (敌能-164). Each is covered in its shape and does nothing. `DeathRattle` has a
+// second shape that does act: the boats' `enemy_key`, whose crew goes on fighting (敌能-133, boats.js).
 
 import { boatShape, boatDeath } from './boats.js';
 
@@ -21,6 +22,7 @@ export const visitorShield = (bb) => exact(bb, ['max_stack_cnt', 'min_stack_cnt'
 export function absentOwns(name, bb) {
   if (name === 'ExtraPower') return Object.keys(bb).length === 1 && typeof bb.damage_resistance === 'number';
   if (name === 'DeathRattle') return sedanShape(bb) || boatShape(bb);
+  if (name === 'Driver') return exact(bb, ['sp']);
   if (name === 'ColdShield') return exact(bb, ['max_stack_cnt', 'def', 'interval', 'magic_resistance']);
   if (name === 'MeltShield') return exact(bb, ['interval']);
   return true;
@@ -28,8 +30,14 @@ export function absentOwns(name, bb) {
 
 /**
  * The behaviours of this file, by name: the sedan's `DeathRattle` does nothing, the boats' brings their crew (敌能-133);
- * `ExtraPower`, `ColdShield` and `MeltShield` do nothing. 访问团's `Shield` goes to blockdamage.js's, which finds no layers
- * in its shape.
+ * `ExtraPower`, `Driver`, `ColdShield` and `MeltShield` do nothing. 访问团's `Shield` goes to blockdamage.js's, which
+ * finds no layers in its shape.
  * @type {Readonly<Record<string, FoeBehavior>>}
  */
-export const absentBehaviors = Object.freeze({ ExtraPower: Object.freeze({}), DeathRattle: Object.freeze({ death: boatDeath }), ColdShield: Object.freeze({}), MeltShield: Object.freeze({}) });
+export const absentBehaviors = Object.freeze({
+  ExtraPower: Object.freeze({}),
+  DeathRattle: Object.freeze({ death: boatDeath }),
+  Driver: Object.freeze({}),
+  ColdShield: Object.freeze({}),
+  MeltShield: Object.freeze({}),
+});
