@@ -2054,6 +2054,24 @@ R-11突击动力装甲（`enemy_1256_lyacpa`）、R-11a突击动力装甲（`ene
 
 - 来源：[PRTS「孽罪奇美拉」oldid=353968](https://prts.wiki/index.php?title=%E5%AD%BD%E7%BD%AA%E5%A5%87%E7%BE%8E%E6%8B%89&oldid=353968) 能力「受源石污染区或活性源石风暴影响后会在自身周围持续生成源石污染区，并且攻击转为造成法术伤害」，描述「受源石污染区或活性源石风暴影响后会在自身周围持续生成源石污染区，并且攻击转为造成更高额的法术伤害。」，天赋「受源石污染区/活性源石风暴影响后切换至污染模式：自身普通攻击造成法术伤害，攻击力+0；自身半径1.2范围内的所有单位持续视为受到源石污染区影响，技力自然回复速度倍率-80%，每0.5秒受到50真实持续伤害（同类效果取最高）」，「近战 物理 法术」「没有任何常见的抗性」；[PRTS「渎罪奇美拉」oldid=353969](https://prts.wiki/index.php?title=%E6%B8%8E%E7%BD%AA%E5%A5%87%E7%BE%8E%E6%8B%89&oldid=353969) 能力「受源石污染区或活性源石风暴影响后会在自身周围持续生成源石污染区，并且攻击转为造成法术伤害」，描述「受源石污染区或活性源石风暴影响后会在自身周围持续生成源石污染区，并且攻击转为造成更高额的法术伤害。」，天赋「受源石污染区/活性源石风暴影响后切换至污染模式：自身普通攻击造成法术伤害，攻击力+0；自身半径1.2范围内的所有单位持续视为受到源石污染区影响，技力自然回复速度倍率-80%，每0.5秒受到50真实持续伤害（同类效果取最高）」，「近战 物理 法术」「没有任何常见的抗性」；数据：enemy_database（ArknightsGameData 17759cc8，级别 0）的 enemy_1425_lrcmra、enemy_1425_lrcmra_2：`OrigAura.sp_recover_ratio` −0.8、`OrigAura.damage` 50、`AtkBoost.atk` 0，技能 `triggerAnim` 的 initCooldown 9999、cooldown 9999、spCost 0、blackboard 为空；同名天赋与技能没有别的使用者。源石污染区与活性源石风暴不在引擎里、污染模式不会进入为推断 INF-1230
 
+### 敌能-163 Dor 系列的 `Driver`
+
+Dor-1号失败品（`enemy_1251_lysyta`）、Dor-α号失败品（`enemy_1251_lysyta_2`）、Dor-2号复制体（`enemy_1252_lysytb`）、Dor-β号复制体（`enemy_1252_lysytb_2`）、Dor-3号改造体（`enemy_1253_lysytc`）、Dor-γ号改造体（`enemy_1253_lysytc_2`）的天赋 `Driver` 只有 `sp`（前四名 50，后两名 100）：接触未激活的 R 系列动力装甲（装置）时为它回复这么多技力，随后退场。引擎的关卡里没有未激活的 R 系列动力装甲这种装置，R-31、R-11 及其 a 型只作为敌人出现（敌能-67、敌能-68），这项能力不会发生。同敌能-116，按覆盖处理，没有效果（推断 INF-1240）。这几名不在已收录的关卡里。
+
+- **形状**（关卡-2）：正好一个数字键 `sp`。少一个键、多一个键、值不是数字，仍未覆盖。没有别的敌人用这个名字。
+- **不在本条**：未激活的 R 系列动力装甲本身；Dor-3号改造体、Dor-γ号改造体的 `DamageReduce`（未被阻挡时减伤），仍未覆盖。
+
+- 来源：[PRTS「Dor-1号失败品」oldid=353650](https://prts.wiki/index.php?title=Dor-1%E5%8F%B7%E5%A4%B1%E8%B4%A5%E5%93%81&oldid=353650) 能力「·接触未激活的<R系列动力装甲>时，为其回复一定技力」，天赋「半径1范围内时，为其回复50点sp，随后退场」；[PRTS「Dor-α号失败品」oldid=353651](https://prts.wiki/index.php?title=Dor-%CE%B1%E5%8F%B7%E5%A4%B1%E8%B4%A5%E5%93%81&oldid=353651)、[PRTS「Dor-2号复制体」oldid=353652](https://prts.wiki/index.php?title=Dor-2%E5%8F%B7%E5%A4%8D%E5%88%B6%E4%BD%93&oldid=353652)、[PRTS「Dor-β号复制体」oldid=353653](https://prts.wiki/index.php?title=Dor-%CE%B2%E5%8F%B7%E5%A4%8D%E5%88%B6%E4%BD%93&oldid=353653) 天赋「接触未激活的R系列动力装甲」「时，为其回复50点sp，随后退场」；[PRTS「Dor-3号改造体」oldid=353655](https://prts.wiki/index.php?title=Dor-3%E5%8F%B7%E6%94%B9%E9%80%A0%E4%BD%93&oldid=353655)、[PRTS「Dor-γ号改造体」oldid=353656](https://prts.wiki/index.php?title=Dor-%CE%B3%E5%8F%B7%E6%94%B9%E9%80%A0%E4%BD%93&oldid=353656) 天赋「时，为其回复100点sp，随后退场」；数据：enemy_database（ArknightsGameData 17759cc8）级别 0 的这六名，天赋 `Driver` 的 `sp`（50、50、50、50、100、100）
+
+### 敌能-164 访问团持盾者与访问团持盾长
+
+访问团持盾者（`enemy_1387_winshd`）、访问团持盾长（`enemy_1387_winshd_2`）的天赋 `ColdShield`（`max_stack_cnt` 10、`def` 0.1、`interval` 3、`magic_resistance` 5）、`MeltShield`（`interval` 3）与 `Shield`（`max_stack_cnt` 5、`min_stack_cnt` 2）：能力写在封冻的区域内防御力与法抗逐渐升高，进入紧急供暖器生效范围内逐渐降低；天赋写每 3 秒获得 1 层增益（防御力 +10%、法术抗性 +5，上限 10 层），位于点燃的紧急供暖器范围内时停止获得、每 3 秒减少 1 层。引擎的关卡里没有封冻的区域，也没有紧急供暖器，这几项都不会发生。同敌能-116，按覆盖处理，没有效果（推断 INF-1250）。这两名不在已收录的关卡里。
+
+- **形状**（关卡-2）：`ColdShield` 正好是上面四个数字键，`MeltShield` 正好是数字键 `interval`，没有别的敌人用这两个名字。`Shield` 是许多敌人共用的名字：正好是数字键 `max_stack_cnt`、`min_stack_cnt` 的才是这两名的，它走原来那一个 `Shield` 行为，那个行为在这个形状里找不到护盾层数，什么也不做（敌能-51）。同名的别的形状覆盖与否不变（敌能-51、敌能-102、敌能-113）。少一个键、多一个键、有一个值不是数字，仍未覆盖。
+- **不在本条**：封冻的区域与紧急供暖器本身。
+
+- 来源：[PRTS「访问团持盾者」oldid=353898](https://prts.wiki/index.php?title=%E8%AE%BF%E9%97%AE%E5%9B%A2%E6%8C%81%E7%9B%BE%E8%80%85&oldid=353898) 能力「·在<封冻>的区域内防御力与法抗逐渐升高，进入"紧急供暖器"生效范围内防御力与法抗逐渐降低」，描述「在封冻的区域内防御力与法抗逐渐升高；进入紧急供暖器生效范围内防御力与法抗逐渐降低。」，天赋「每3s获得1层增益：防御力+10%，法术抗性+5（上限10层）」「位于点燃的紧急供暖器范围内时，停止获得以上增益且每3s减少1层」；[PRTS「访问团持盾长」oldid=353899](https://prts.wiki/index.php?title=%E8%AE%BF%E9%97%AE%E5%9B%A2%E6%8C%81%E7%9B%BE%E9%95%BF&oldid=353899) 能力、天赋同上；数据：enemy_database（ArknightsGameData 17759cc8）级别 0 的这两名，天赋 `ColdShield`、`MeltShield`、`Shield` 的上述各值
+
 ### 敌能-165 架桥船工、扶桥老手的施工与寻险水手、历险水手的 `MoveSpeedUp`
 
 架桥船工（`enemy_10042_prtrop`）、扶桥老手（`enemy_10042_prtrop_2`）的技能 `BuildBridge`（施工：`bridge_duration` 150、`loop_duration` 5、`time_each_tile` 2、`interval` 2、`extra_skill_time` 1）只在悬索桥起点地形上触发，停止移动和攻击，向盐漠地形架设悬索桥并维持；寻险水手（`enemy_10043_sailor`）、历险水手（`enemy_10043_sailor_2`）的天赋 `MoveSpeedUp`（`move_speed` 2、`speed_up_duration` 1）在悬索桥上、被盐坨子炮传送后 1 秒内，移动速度提升至 200%。引擎的关卡里没有悬索桥起点与盐漠地形，也没有悬索桥和盐坨子炮，这两项都不会发生。同敌能-116，按覆盖处理，没有效果（推断 INF-1260）。这几名不在已收录的关卡里。

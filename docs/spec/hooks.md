@@ -42,6 +42,7 @@
 | `beforeAttack` | 一次攻击锁定目标时（攻击-2 第 1 步） | `attacker`、`targets`（可换，留下仍在场、有生命的；为空时这次不攻击）、`isSkill`、`scale`（这次攻击的倍率再乘它，默认 1）、`mark`（内容给这次攻击的标记，整数，默认 0；随攻击和它的投射物带到 `attackHit`） |
 | `attack` | 一次攻击命中、对锁定的目标结算之后（攻击-2 第 3 步），有目标时 | `attacker`、`targets`、`isSkill`、`noAmmo`：设为是时这次攻击不耗弹药技能的弹药 |
 | `attackHit` | 一次攻击对一个目标的各段伤害结算之后（引擎自己的事件） | `attacker`、`target`、`dealt`（各段合计）、`kind`：`main`、`splash`、`chain`、`aftershock`，`isSkill`，`mark`（这次攻击的标记） |
+| `healHit` | 治疗者的一次治疗攻击对一个目标（连同它的治疗链各跳，职业-11）治疗之后（引擎自己的事件） | `healer`、`target`、`amount`（这次攻击给这个目标的治疗数值：含按目标的倍率（职业-17），乘治疗倍率与受到治疗倍率之前；目标在禁疗下没有回复时也照发，同 Stronghold）、`isSkill`、`mark` |
 | `skillStart` | 技能发动、它的行为开始之后（技能-3、技能-4） | `unit`、`reason`：`manual`（玩家发动）、`auto`、`deploy`（被动技能） |
 | `ammoUsed` | 弹药技能的一次攻击用掉一发弹药之后（技能-4）；`attack` 事件里设了 `noAmmo` 的攻击不用，也没有这个事件 | `unit`、`left`（剩下的发数） |
 | `skillEnd` | 技能结束之后（技能-4、技能-7）；运行中的干员离场时，先于它的 `death` | `unit`、`reason`：`duration`、`instant`（立即生效或下次攻击的技能）、`ammo`、`stopped`（玩家关闭）、`death`（离场）、`move`（一般方式的移动，部署-9） |
@@ -56,7 +57,7 @@
 
 伤害信息 `dmg` 用 Stronghold 内容接口的字段名（ADR 0012）：`type`、`amount`、`mul`、`cancel`、`calculation`（已经算好：`precomputed` 不发 `damageCalculate`，`resolved` 同）、四项穿透，以及来源标记——`isAttack`（一次攻击的命中，含溅射与跳跃）、`isSkill`（技能运行时或技能造成）、`isSplash`（溅射，余震也算）、`isProjectile`、`tags`（跳跃为 `chain`，余震为 `aftershock`；余震不算攻击的命中）、`hpLoss`（生命流失）。伤害开始结算时补齐缺省的字段：`mul` 为 1，`tags` 为空，`cancel` 为否，四项穿透为 0。
 
-- 来源：设计决定，见 [ADR 0057](../adr/0057-hook-bus-and-timers.md)；事件名、时机与上下文同 Stronghold 的钩子（`docs/SIM.md` §5，`server/sim/damage.js` 的伤害与治疗流程，GPL-3.0-or-later）；`damageCalculate`、`damageApplying`、`damageApplied` 取自 Stronghold v0.4.0 的 `server/sim/attack/hit.js`、`attack/health.js`，`statusApplied` 与寒冷变为冻结时的 `beforeStatus` 取自 `server/sim/battle/status.js`，`ammoUsed` 取自 `server/sim/skills.js`（GPL-3.0-or-later）；引擎里这几个事件的次序与 Stronghold 的不同处见 DIF-0051、DIF-0053，`damageApplying` 的伤害含引擎自己的几步见推断 INF-1111
+- 来源：设计决定，见 [ADR 0057](../adr/0057-hook-bus-and-timers.md)；事件名、时机与上下文同 Stronghold 的钩子（`docs/SIM.md` §5，`server/sim/damage.js` 的伤害与治疗流程，GPL-3.0-or-later）；`damageCalculate`、`damageApplying`、`damageApplied` 取自 Stronghold v0.4.0 的 `server/sim/attack/hit.js`、`attack/health.js`，`statusApplied` 与寒冷变为冻结时的 `beforeStatus` 取自 `server/sim/battle/status.js`，`ammoUsed` 取自 `server/sim/skills.js`（GPL-3.0-or-later）；`healHit` 是引擎自己的事件，时机同 Stronghold v0.3.1 `server/sim/ai.js` 的 doHeal 在治疗与治疗链之后调用技能的 `onHit`（GPL-3.0-or-later）；引擎里这几个事件的次序与 Stronghold 的不同处见 DIF-0051、DIF-0053，`damageApplying` 的伤害含引擎自己的几步见推断 INF-1111
 
 ### 钩子-4 每局的挂接
 
